@@ -1,0 +1,5 @@
+﻿<Solution>
+  <Project Path="FPSLAN.Game.csproj" />
+  <Project Path="FPSLAN.Editor.csproj" />
+  <Project Path="FPSLAN.Bootstrap.csproj" />
+</Solution>

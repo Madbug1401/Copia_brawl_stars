@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f72060ecbd09104e852bf61d286439a, type: 3}
+  m_Name: BrawlerRegistry
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.BrawlerRegistry
+  brawlers:
+  - {fileID: 11400000, guid: 531f93514aeb92a4a9bf6c72df869d81, type: 2}
+  - {fileID: 11400000, guid: 37f0fac5e3ac1f640a2f2f80ac1ba324, type: 2}
+  - {fileID: 11400000, guid: e2e3e1efa6acc3b478e6627a18c2e342, type: 2}
+  - {fileID: 11400000, guid: bdb16dd15e9d117468194a4b10f22912, type: 2}

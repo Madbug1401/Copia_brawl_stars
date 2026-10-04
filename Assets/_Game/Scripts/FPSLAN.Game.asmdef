@@ -1,0 +1,32 @@
+{
+    "name": "FPSLAN.Game",
+    "rootNamespace": "FPSLAN",
+    "references": [
+        "Unity.Netcode.Runtime",
+        "Unity.Collections",
+        "Unity.Networking.Transport",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "FPSLAN_NGO"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.netcode.gameobjects",
+            "expression": "2.0.0",
+            "define": "FPSLAN_NGO"
+        },
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "1.0.0",
+            "define": "FPSLAN_INPUTSYS"
+        }
+    ],
+    "noEngineReferences": false
+}

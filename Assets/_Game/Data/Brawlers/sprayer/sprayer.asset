@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 080b4c69ecad92341a9e109a5b4cc77b, type: 3}
+  m_Name: sprayer
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.BrawlerDefinition
+  brawlerId: sprayer
+  displayName: "N\xE9voa"
+  role: "Spray \u2014 nuvem em cone que causa mais dano \xE0 dist\xE2ncia; Super: aura que abranda e causa dano"
+  available: 1
+  stats:
+    maxHealth: 120
+    regenDelay: 3
+    regenPercentPerSecond: 0.15
+  movement:
+    walkSpeed: 6.4
+    sprintSpeed: 9.4
+    jumpHeight: 1.3
+  primary:
+    attack: {fileID: 11400000, guid: 1a588f9b44b001c4ab61e8ca42e6b146, type: 2}
+    maxCharges: 3
+    reloadTimePerCharge: 2
+    cooldown: 0.65
+  super:
+    attack: {fileID: 11400000, guid: 172ea680203a2f640814c89e7a0f0778, type: 2}
+    chargeRequired: 150
+  abilities: []
+  firstPerson:
+    rig: 4
+    prefabOverride: {fileID: 0}
+    muzzleOffsets:
+    - {x: 0.18, y: -0.1, z: 0.45}
+    accentColor: {r: 0.78, g: 0.5, b: 1, a: 1}
+  thirdPerson:
+    rig: 4
+    prefabOverride: {fileID: 0}
+    muzzleOffsets:
+    - {x: 0.3, y: 0.05, z: 0.55}
+    bodyColor: {r: 0.78, g: 0.5, b: 1, a: 1}
+  animations:
+    animatorController: {fileID: 0}
+    attackKick: 0.3
+    attackDuration: 0.6
+    reloadDuration: 0.5
+    superDuration: 0.8
+    bobAmount: 1
+  vfx:
+    primaryColor: {r: 0.8, g: 0.55, b: 1, a: 1}
+    superColor: {r: 0.7, g: 0.4, b: 1, a: 1}
+    muzzleFlashScale: 1
+    impactScale: 1
+  sfx:
+    primary: 12
+    super: 1
+    impact: 2
+    primaryClip: {fileID: 0}
+    superClip: {fileID: 0}
+  bot:
+    preferredRange: 7
+    superUseRange: 4.5
+    aimAtFeet: 0

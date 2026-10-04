@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 080b4c69ecad92341a9e109a5b4cc77b, type: 3}
+  m_Name: trapper
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.BrawlerDefinition
+  brawlerId: trapper
+  displayName: Vigia
+  role: "Armadilheiro \u2014 tr\xEAs flechas explosivas em leque; Super: tr\xEAs minas escondidas"
+  available: 1
+  stats:
+    maxHealth: 125
+    regenDelay: 3
+    regenPercentPerSecond: 0.15
+  movement:
+    walkSpeed: 6.6
+    sprintSpeed: 9.6
+    jumpHeight: 1.3
+  primary:
+    attack: {fileID: 11400000, guid: fb133e11d097e2a4092baa8b32755fb9, type: 2}
+    maxCharges: 3
+    reloadTimePerCharge: 1.7
+    cooldown: 0.55
+  super:
+    attack: {fileID: 11400000, guid: 2a0e2fdde291af144a102d39aee8d55a, type: 2}
+    chargeRequired: 180
+  abilities: []
+  firstPerson:
+    rig: 3
+    prefabOverride: {fileID: 0}
+    muzzleOffsets:
+    - {x: 0.05, y: -0.08, z: 0.55}
+    accentColor: {r: 0.4, g: 0.7, b: 1, a: 1}
+  thirdPerson:
+    rig: 3
+    prefabOverride: {fileID: 0}
+    muzzleOffsets:
+    - {x: 0.1, y: 0.05, z: 0.7}
+    bodyColor: {r: 0.4, g: 0.7, b: 1, a: 1}
+  animations:
+    animatorController: {fileID: 0}
+    attackKick: 0.7
+    attackDuration: 0.45
+    reloadDuration: 0.45
+    superDuration: 0.6
+    bobAmount: 1
+  vfx:
+    primaryColor: {r: 0.45, g: 0.75, b: 1, a: 1}
+    superColor: {r: 0.35, g: 0.6, b: 1, a: 1}
+    muzzleFlashScale: 1
+    impactScale: 1
+  sfx:
+    primary: 11
+    super: 10
+    impact: 13
+    primaryClip: {fileID: 0}
+    superClip: {fileID: 0}
+  bot:
+    preferredRange: 15
+    superUseRange: 10
+    aimAtFeet: 0

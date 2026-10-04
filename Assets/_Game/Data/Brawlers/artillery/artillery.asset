@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 080b4c69ecad92341a9e109a5b4cc77b, type: 3}
+  m_Name: artillery
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.BrawlerDefinition
+  brawlerId: artillery
+  displayName: Cardo
+  role: "Artilheiro \u2014 duas cargas em arco que explodem ap\xF3s um atraso; Super: barril com knockback"
+  available: 1
+  stats:
+    maxHealth: 110
+    regenDelay: 3
+    regenPercentPerSecond: 0.15
+  movement:
+    walkSpeed: 6.6
+    sprintSpeed: 9.6
+    jumpHeight: 1.3
+  primary:
+    attack: {fileID: 11400000, guid: d331396606035054592b5f5dbee08bc3, type: 2}
+    maxCharges: 3
+    reloadTimePerCharge: 1.4
+    cooldown: 0.6
+  super:
+    attack: {fileID: 11400000, guid: d43de597ca2ff1e4aa007e1a0538df10, type: 2}
+    chargeRequired: 180
+  abilities: []
+  firstPerson:
+    rig: 2
+    prefabOverride: {fileID: 0}
+    muzzleOffsets:
+    - {x: 0.22, y: -0.12, z: 0.42}
+    - {x: -0.22, y: -0.12, z: 0.42}
+    accentColor: {r: 1, g: 0.45, b: 0.2, a: 1}
+  thirdPerson:
+    rig: 2
+    prefabOverride: {fileID: 0}
+    muzzleOffsets:
+    - {x: 0.35, y: 0.2, z: 0.4}
+    - {x: -0.35, y: 0.2, z: 0.4}
+    bodyColor: {r: 0.9, g: 0.4, b: 0.25, a: 1}
+  animations:
+    animatorController: {fileID: 0}
+    attackKick: 0.6
+    attackDuration: 0.5
+    reloadDuration: 0.4
+    superDuration: 0.7
+    bobAmount: 1
+  vfx:
+    primaryColor: {r: 1, g: 0.45, b: 0.2, a: 1}
+    superColor: {r: 1, g: 0.25, b: 0.15, a: 1}
+    muzzleFlashScale: 1
+    impactScale: 1.4
+  sfx:
+    primary: 10
+    super: 10
+    impact: 13
+    primaryClip: {fileID: 0}
+    superClip: {fileID: 0}
+  bot:
+    preferredRange: 13
+    superUseRange: 16
+    aimAtFeet: 1
