@@ -55,7 +55,7 @@ Shader "FPSLAN/FxAlpha"
             float4 frag(v2f i) : SV_Target
             {
                 float4 c = tex2D(_MainTex, i.uv) * i.color;
-                UNITY_APPLY_FOG_COLOR(i.fogCoord, c, float4(0, 0, 0, 0));
+                UNITY_APPLY_FOG(i.fogCoord, c);
                 return c;
             }
             ENDCG

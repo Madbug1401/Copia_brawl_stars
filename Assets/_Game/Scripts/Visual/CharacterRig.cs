@@ -123,10 +123,37 @@ namespace FPSLAN
                 if (dual) m_WeaponL = WeaponModels.Build(Style, m_SocketL, accentColor, 1, shadows);
             }
 
-            Root.GetComponentsInChildren(true, m_Renderers);
-            foreach (var r in m_Renderers) r.gameObject.layer = layer;
+            MergeStaticParts();
+            Root.GetComponentsInChildren(false, m_Renderers);
+            foreach (var t in Root.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = layer;
             m_LastHeadPos = HeadPosition;
             Pose(0f, default);
+        }
+
+        /// <summary>Junta as peças de cada osso numa só malha (menos draw calls). As partes animadas ficam separadas.</summary>
+        void MergeStaticParts()
+        {
+            if (!Art.SupportsVertexColor) return;
+            var keep = new HashSet<Transform> { m_Body, m_Hips, m_LegL, m_LegR, m_Spine, m_Head, m_ArmL, m_ArmR, m_SocketL, m_SocketR };
+            var weapons = new[] { m_WeaponL, m_WeaponR };
+            foreach (var w in weapons)
+            {
+                if (w == null) continue;
+                foreach (var t in new[] { w.drum, w.pump, w.nock, w.arrows, w.stringTop, w.stringBottom, w.scope })
+                    if (t != null) keep.Add(t);
+            }
+
+            var plain = Art.ToonVC;
+            var outlined = Art.ToonOutlineVC;
+            foreach (var bone in new[] { m_Hips, m_LegL, m_LegR, m_Spine, m_Head, m_ArmL, m_ArmR })
+                MeshMerge.MergeInto(bone, keep, plain, outlined);
+            foreach (var w in weapons)
+            {
+                if (w == null) continue;
+                MeshMerge.MergeInto(w.root, keep, plain, outlined);
+                foreach (var t in new[] { w.drum, w.pump, w.arrows, w.scope })
+                    if (t != null) MeshMerge.MergeInto(t, keep, plain, outlined);
+            }
         }
 
         static Transform Node(string name, Transform parent, Vector3 pos)
@@ -405,7 +432,7 @@ namespace FPSLAN
             // ---------------- morte
             if (m_Dead)
             {
-                m_DeadT = Mathf.Min(1.2f, m_DeadT + dt * 2.4f);
+                m_DeadT = Mathf.Min(1.2f, m_DeadT + dt * 1.3f);
                 float k = Mathf.Clamp01(m_DeadT / 0.45f);
                 float fall = 1f - (1f - k) * (1f - k);
                 Root.localRotation = Quaternion.Euler(-80f * fall, 0f, 12f * fall);

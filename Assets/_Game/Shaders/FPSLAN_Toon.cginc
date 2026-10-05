@@ -20,6 +20,7 @@ float _TopLight;
 float _Flash;
 float _Fade;
 float _Noise;
+float _VertexColor;
 
 // Transparência por "dithering" (sem ordenar transparentes): usada por arbustos e jogadores escondidos.
 void toon_dither(float4 sp, float fade)
@@ -47,11 +48,13 @@ struct toon_v2f
     float4 sp : TEXCOORD3;
     SHADOW_COORDS(4)
     UNITY_FOG_COORDS(5)
+    float4 color : COLOR;
 };
 
-toon_v2f toon_vert(appdata_base v)
+toon_v2f toon_vert(appdata_full v)
 {
     toon_v2f o;
+    o.color = lerp(float4(1, 1, 1, 1), v.color, _VertexColor);
     o.pos = UnityObjectToClipPos(v.vertex);
     o.wn = UnityObjectToWorldNormal(v.normal);
     o.wp = mul(unity_ObjectToWorld, v.vertex).xyz;
@@ -69,7 +72,7 @@ float toon_hash(float2 p)
 
 float4 toon_albedo(toon_v2f i, float3 n)
 {
-    float4 albedo = tex2D(_MainTex, i.uv) * _Color;
+    float4 albedo = tex2D(_MainTex, i.uv) * _Color * i.color;
     // Mosaico em espaço do mundo (chão de relva/areia em quadrados)
     if (_Checker > 0.001)
     {
@@ -101,8 +104,8 @@ float4 toon_frag_base(toon_v2f i) : SV_Target
     float ndl = dot(n, l);
     // Duas bandas de luz (cel shading) + sombra projetada também em banda
     float band = smoothstep(-0.02, 0.06, ndl) * 0.75 + smoothstep(0.45, 0.55, ndl) * 0.25;
-    float shadow = smoothstep(0.25, 0.55, atten);
-    float lit = band * shadow;
+    float shadowBand = smoothstep(0.25, 0.55, atten);
+    float lit = band * shadowBand;
 
     float3 ambient = ShadeSH9(float4(n, 1.0));
     float3 lightCol = _LightColor0.rgb;

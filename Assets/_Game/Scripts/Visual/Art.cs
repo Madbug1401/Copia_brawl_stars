@@ -19,7 +19,7 @@ namespace FPSLAN
         public static readonly int OutlineWidthId = Shader.PropertyToID("_OutlineWidth");
         public static readonly int OutlineColorId = Shader.PropertyToID("_OutlineColor");
 
-        static Material s_Toon, s_ToonOutline, s_FxAdd, s_FxAlpha, s_FxAddMesh, s_FxAlphaMesh;
+        static Material s_Toon, s_ToonOutline, s_FxAdd, s_FxAlpha, s_FxAddMesh, s_FxAlphaMesh, s_ToonVC, s_ToonOutlineVC;
         static Texture2D s_Soft, s_Smoke, s_Ring, s_Star, s_Spark, s_Circle, s_Beam;
         static Material s_BeamMat;
         static Mesh s_Quad;
@@ -29,7 +29,7 @@ namespace FPSLAN
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics()
         {
-            s_Toon = s_ToonOutline = s_FxAdd = s_FxAlpha = s_FxAddMesh = s_FxAlphaMesh = null;
+            s_Toon = s_ToonOutline = s_FxAdd = s_FxAlpha = s_FxAddMesh = s_FxAlphaMesh = s_ToonVC = s_ToonOutlineVC = null;
             s_Soft = s_Smoke = s_Ring = s_Star = s_Spark = s_Circle = s_Beam = null;
             s_BeamMat = null;
             s_Quad = null;
@@ -46,6 +46,23 @@ namespace FPSLAN
 
         /// <summary>Cel shading com contorno escuro (personagens, armas, projéteis).</summary>
         public static Material ToonOutline => s_ToonOutline != null ? s_ToonOutline : (s_ToonOutline = Load("Art/M_ToonOutline", "FPSLAN/ToonOutline", false));
+
+        /// <summary>Cel shading com cor nos vértices (malhas juntas pelo MeshMerge).</summary>
+        public static Material ToonVC => s_ToonVC != null ? s_ToonVC : (s_ToonVC = VertexColored(Toon));
+
+        /// <summary>Cel shading com contorno e cor nos vértices (malhas juntas pelo MeshMerge).</summary>
+        public static Material ToonOutlineVC => s_ToonOutlineVC != null ? s_ToonOutlineVC : (s_ToonOutlineVC = VertexColored(ToonOutline));
+
+        /// <summary>Os shaders cartoon estão disponíveis (senão o MeshMerge perderia as cores).</summary>
+        public static bool SupportsVertexColor => Toon != null && Toon.HasProperty("_VertexColor") && ToonOutline != null && ToonOutline.HasProperty("_VertexColor");
+
+        static Material VertexColored(Material source)
+        {
+            var m = new Material(source) { name = source.name + " (VC)" };
+            if (m.HasProperty("_VertexColor")) m.SetFloat("_VertexColor", 1f);
+            if (m.HasProperty("_Color")) m.SetColor("_Color", Color.white);
+            return m;
+        }
 
         /// <summary>Partículas aditivas (fogo, brilhos, faíscas). Usa a cor dos vértices.</summary>
         public static Material FxAdditive => s_FxAdd != null ? s_FxAdd : (s_FxAdd = FxMaterial("Art/M_FxAdditive", "FPSLAN/FxAdditive", true, SoftTexture));
@@ -138,6 +155,7 @@ namespace FPSLAN
         {
             if (s_Meshes.TryGetValue(type, out var m) && m != null) return m;
             var go = GameObject.CreatePrimitive(type);
+            go.SetActive(false); // o colisor temporário não pode interferir com tiros neste frame
             m = go.GetComponent<MeshFilter>().sharedMesh;
             Object.Destroy(go);
             s_Meshes[type] = m;

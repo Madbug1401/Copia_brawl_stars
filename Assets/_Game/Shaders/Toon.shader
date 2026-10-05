@@ -10,6 +10,7 @@ Shader "FPSLAN/Toon"
         _Checker ("Mosaico", Range(0,1)) = 0
         _CheckerScale ("Tamanho do mosaico", Float) = 2
         _Noise ("Variação", Range(0,1)) = 0
+        _VertexColor ("Usar cor dos vértices", Float) = 0
         _TopLight ("Topo mais claro", Range(0,1)) = 0
         _Flash ("Flash de dano", Range(0,1)) = 0
         _Fade ("Opacidade (dither)", Range(0,1)) = 1
