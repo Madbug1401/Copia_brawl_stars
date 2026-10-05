@@ -286,7 +286,7 @@ namespace FPSLAN
                 var l = lgo.AddComponent<Light>();
                 l.type = LightType.Point;
                 l.shadows = LightShadows.None;
-                l.renderMode = LightRenderMode.ForcePixel;
+                l.renderMode = LightRenderMode.Auto; // respeita o limite de luzes por pixel da qualidade (PCs modestos)
                 l.enabled = false;
                 m_Lights.Add(new FlashLight { light = l });
             }
