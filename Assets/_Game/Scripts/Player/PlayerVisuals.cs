@@ -47,6 +47,37 @@ namespace FPSLAN
         Vector3 m_DeathPos;
         bool m_Concealed;
         float m_NextSuperSpark;
+        Transform m_Crown;
+
+        // Líder da partida (calculado uma vez por frame para todos)
+        static PlayerNetwork s_Leader;
+        static int s_LeaderFrame = -1;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics()
+        {
+            s_Leader = null;
+            s_LeaderFrame = -1;
+        }
+
+        static PlayerNetwork Leader
+        {
+            get
+            {
+                if (s_LeaderFrame == Time.frameCount) return s_Leader;
+                s_LeaderFrame = Time.frameCount;
+                PlayerNetwork best = null;
+                bool tie = false;
+                foreach (var p in PlayerNetwork.All)
+                {
+                    if (p == null || !p.IsSpawned) continue;
+                    if (best == null || p.Kills.Value > best.Kills.Value) { best = p; tie = false; }
+                    else if (p.Kills.Value == best.Kills.Value) tie = true;
+                }
+                s_Leader = best != null && !tie && best.Kills.Value > 0 ? best : null;
+                return s_Leader;
+            }
+        }
 
         public Camera PlayerCamera => m_Camera;
         /// <summary>Até quando este jogador fica visível mesmo dentro de um arbusto (atacou/levou dano).</summary>
@@ -102,6 +133,7 @@ namespace FPSLAN
             else
             {
                 CreateBubble();
+                CreateCrown();
             }
 
             RebuildRigs();
@@ -196,6 +228,24 @@ namespace FPSLAN
             m_TargetMarker.name = "AimMarker";
             m_TargetMarkerR = m_TargetMarker.GetComponent<Renderer>();
             m_TargetMarker.gameObject.SetActive(false);
+        }
+
+        /// <summary>Coroa dourada que flutua sobre o líder da partida.</summary>
+        void CreateCrown()
+        {
+            m_Crown = new GameObject("LeaderCrown").transform;
+            m_Crown.SetParent(transform, false);
+            var gold = new Color(1f, 0.8f, 0.2f);
+            Art.Part(PrimitiveType.Cylinder, m_Crown, Vector3.zero, new Vector3(0.42f, 0.07f, 0.42f), gold, true, default, ShadowCastingMode.Off);
+            for (int i = 0; i < 5; i++)
+            {
+                float a = i * 72f * Mathf.Deg2Rad;
+                var pos = new Vector3(Mathf.Sin(a) * 0.17f, 0.12f, Mathf.Cos(a) * 0.17f);
+                Art.Part(PrimitiveType.Cube, m_Crown, pos, new Vector3(0.08f, 0.16f, 0.08f), gold, true, new Vector3(0f, i * 72f, 45f), ShadowCastingMode.Off);
+                Art.Part(PrimitiveType.Sphere, m_Crown, pos + Vector3.up * 0.11f, Vector3.one * 0.06f, i % 2 == 0 ? new Color(1f, 0.3f, 0.35f) : new Color(0.35f, 0.75f, 1f), false, default, ShadowCastingMode.Off);
+            }
+            foreach (var r in m_Crown.GetComponentsInChildren<Renderer>()) Art.SetEmission(r, new Color(0.25f, 0.18f, 0.02f));
+            m_Crown.gameObject.SetActive(false);
         }
 
         void CreateBubble()
@@ -382,6 +432,18 @@ namespace FPSLAN
                 m_NextSuperSpark = Time.time + 0.12f;
                 var c = b != null ? Color.Lerp(b.vfx.superColor, new Color(1f, 0.9f, 0.3f), 0.5f) : Color.yellow;
                 Fx.Glow(m_Rig.ChestPosition + Random.insideUnitSphere * 0.5f, Vector3.up * 1.2f, c, 0.12f, 0.6f);
+            }
+
+            // ---------------- coroa do líder
+            if (m_Crown != null)
+            {
+                bool show = !dead && !m_Concealed && !m_PendingRespawn && Leader == m_Player;
+                if (m_Crown.gameObject.activeSelf != show) m_Crown.gameObject.SetActive(show);
+                if (show)
+                {
+                    m_Crown.position = HeadPosition + Vector3.up * (1.3f + Mathf.Sin(Time.time * 3f) * 0.05f);
+                    m_Crown.rotation = Quaternion.Euler(0f, Time.time * 90f, 0f);
+                }
             }
 
             // ---------------- escudo de spawn

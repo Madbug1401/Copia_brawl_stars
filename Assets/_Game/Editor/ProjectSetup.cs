@@ -549,7 +549,7 @@ namespace FPSLAN.EditorTools
                         var plat = Block(Group(p.kind), "Platform", p.center, p.size, rot, m.platform, true);
                         Visual(plat.transform, PrimitiveType.Cube, "Top", new Vector3(0f, 0.5f, 0f), new Vector3(1.03f, 0.06f / p.size.y, 1.03f), Quaternion.identity, m.platformTop, true, true);
                         foreach (var c in new[] { new Vector3(1, 0, 1), new Vector3(-1, 0, 1), new Vector3(1, 0, -1), new Vector3(-1, 0, -1) })
-                            Visual(Group(p.kind), PrimitiveType.Cube, "Pillar", p.center + new Vector3(c.x * p.size.x * 0.5f, 0f, c.z * p.size.z * 0.5f), new Vector3(0.6f, p.size.y + 0.25f, 0.6f), Quaternion.identity, m.stone, false);
+                            Block(Group(p.kind), "Pillar", p.center + new Vector3(c.x * p.size.x * 0.5f, 0.125f, c.z * p.size.z * 0.5f), new Vector3(0.6f, p.size.y + 0.25f, 0.6f), Quaternion.identity, m.stone, true);
                         break;
                     }
 
@@ -1015,7 +1015,8 @@ namespace FPSLAN.EditorTools
                 for (int j = 0; j < puffs; j++)
                 {
                     float s = 5f + (float)rng.NextDouble() * 4f;
-                    Visual(c, PrimitiveType.Sphere, "Puff", new Vector3((j - puffs * 0.5f) * 3.2f, (float)rng.NextDouble() * 1.5f, (float)(rng.NextDouble() - 0.5) * 2f), new Vector3(s, s * 0.6f, s * 0.8f), Quaternion.identity, m.cloud, false, true);
+                    var puff = Visual(c, PrimitiveType.Sphere, "Puff", new Vector3((j - puffs * 0.5f) * 3.2f, (float)rng.NextDouble() * 1.5f, (float)(rng.NextDouble() - 0.5) * 2f), new Vector3(s, s * 0.6f, s * 0.8f), Quaternion.identity, m.cloud, false, true);
+                    puff.isStatic = false; // as nuvens deslizam (Spinner)
                 }
                 c.gameObject.AddComponent<Spinner>().drift = new Vector3(0.6f, 0f, 0.2f);
             }

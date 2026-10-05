@@ -382,7 +382,7 @@ namespace FPSLAN
         void Outlined(Rect r, string text, GUIStyle style, Color color, float thickness = 2f)
         {
             var old = style.normal.textColor;
-            style.normal.textColor = Ink;
+            style.normal.textColor = new Color(Ink.r, Ink.g, Ink.b, color.a);
             float t = thickness * Scale;
             GUI.Label(new Rect(r.x - t, r.y - t, r.width, r.height), text, style);
             GUI.Label(new Rect(r.x + t, r.y - t, r.width, r.height), text, style);
@@ -718,7 +718,7 @@ namespace FPSLAN
                 if (p.Visuals != null && p.Visuals.IsConcealedForLocal) continue;
 
                 var head = p.Visuals != null ? p.Visuals.HeadPosition : p.transform.position + Vector3.up * 1.6f;
-                var world = head + Vector3.up * 0.55f;
+                var world = head + Vector3.up * 0.95f;
                 var sp = cam.WorldToScreenPoint(world);
                 if (sp.z <= 0f || sp.z > 50f) continue;
 
