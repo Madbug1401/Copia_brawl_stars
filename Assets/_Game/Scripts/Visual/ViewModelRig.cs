@@ -85,7 +85,7 @@ namespace FPSLAN
                     break;
 
                 case RigStyle.Bow:
-                    m_GunLRest = new Vector3(-0.17f, -0.1f, 0.5f);
+                    m_GunLRest = new Vector3(-0.2f, -0.12f, 0.6f);
                     m_GunL = Holder("Bow", m_GunLRest);
                     m_GunL.localScale = Vector3.one * 0.85f;
                     m_GunLRot = Quaternion.Euler(0f, 6f, 16f);
@@ -93,6 +93,7 @@ namespace FPSLAN
                     m_WeaponL = WeaponModels.Build(Style, m_GunL, m_Accent, 1, s);
                     m_HandL = Hand(m_GunL, Vector3.zero, glove);
                     m_HandR = Hand(m_Sway, new Vector3(0.02f, -0.15f, 0.3f), glove);
+                    m_HandR.localScale = Vector3.one * 0.7f;
                     break;
 
                 case RigStyle.SprayCan:
@@ -103,7 +104,7 @@ namespace FPSLAN
                     break;
 
                 case RigStyle.Shotgun:
-                    m_GunRRest = new Vector3(0.17f, -0.2f, 0.2f);
+                    m_GunRRest = new Vector3(0.21f, -0.25f, 0.3f);
                     m_GunR = Holder("Shotgun", m_GunRRest);
                     m_WeaponR = WeaponModels.Build(Style, m_GunR, m_Accent, 0, s);
                     m_HandR = Hand(m_GunR, new Vector3(0f, -0.06f, -0.06f), glove);
@@ -111,7 +112,7 @@ namespace FPSLAN
                     break;
 
                 case RigStyle.Sniper:
-                    m_GunRRest = new Vector3(0.15f, -0.19f, 0.17f);
+                    m_GunRRest = new Vector3(0.2f, -0.24f, 0.28f);
                     m_GunR = Holder("Sniper", m_GunRRest);
                     m_WeaponR = WeaponModels.Build(Style, m_GunR, m_Accent, 0, s);
                     m_HandR = Hand(m_GunR, new Vector3(0f, -0.06f, -0.08f), glove);

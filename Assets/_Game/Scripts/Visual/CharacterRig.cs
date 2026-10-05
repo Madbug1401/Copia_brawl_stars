@@ -21,6 +21,8 @@ namespace FPSLAN
     /// </summary>
     public class CharacterRig
     {
+        const float HipHeight = 0.5f;
+
         public Transform Root { get; private set; }
         public RigStyle Style { get; private set; }
 
@@ -68,7 +70,8 @@ namespace FPSLAN
             Style = tp.rig;
             var L = m_Look;
             var accentColor = b != null ? b.firstPerson.accentColor : Color.white;
-            float hs = Mathf.Clamp(L.headScale, 0.6f, 1.6f);
+            // Proporções chibi: cabeça grande, pernas curtas, tronco largo
+            float hs = Mathf.Clamp(L.headScale, 0.6f, 1.6f) * 1.15f;
             float bulk = Mathf.Clamp(L.bulk, 0.6f, 1.8f);
             m_Scale = Mathf.Clamp(L.bodyScale, 0.7f, 1.4f);
 
@@ -80,23 +83,24 @@ namespace FPSLAN
             m_Body.localScale = Vector3.one * m_Scale;
 
             // ---------------- ancas e pernas
-            m_Hips = Node("Hips", m_Body, new Vector3(0f, 0.62f, 0f));
-            Part(PrimitiveType.Cube, m_Hips, new Vector3(0f, 0f, 0f), new Vector3(0.42f * bulk, 0.2f, 0.28f), L.pants, shadows);
-            m_LegL = Node("LegL", m_Hips, new Vector3(-0.13f * bulk, -0.02f, 0f));
-            m_LegR = Node("LegR", m_Hips, new Vector3(0.13f * bulk, -0.02f, 0f));
+            m_Hips = Node("Hips", m_Body, new Vector3(0f, HipHeight, 0f));
+            Part(PrimitiveType.Cube, m_Hips, new Vector3(0f, 0f, 0f), new Vector3(0.48f * bulk, 0.22f, 0.32f), L.pants, shadows);
+            m_LegL = Node("LegL", m_Hips, new Vector3(-0.14f * bulk, -0.02f, 0f));
+            m_LegR = Node("LegR", m_Hips, new Vector3(0.14f * bulk, -0.02f, 0f));
             foreach (var leg in new[] { m_LegL, m_LegR })
             {
-                Part(PrimitiveType.Capsule, leg, new Vector3(0f, -0.25f, 0f), new Vector3(0.19f, 0.25f, 0.19f), L.pants, shadows);
-                Part(PrimitiveType.Cube, leg, new Vector3(0f, -0.55f, 0.05f), new Vector3(0.21f, 0.12f, 0.32f), Art.Darken(L.gear, 0.7f), shadows);
+                Part(PrimitiveType.Capsule, leg, new Vector3(0f, -0.2f, 0f), new Vector3(0.24f, 0.2f, 0.24f), L.pants, shadows);
+                Part(PrimitiveType.Cube, leg, new Vector3(0f, -0.43f, 0.05f), new Vector3(0.25f, 0.13f, 0.36f), Art.Darken(L.gear, 0.7f), shadows);
+                Part(PrimitiveType.Cube, leg, new Vector3(0f, -0.37f, 0.02f), new Vector3(0.27f, 0.05f, 0.3f), Art.Darken(L.gear, 0.5f), ShadowCastingMode.Off);
             }
 
             // ---------------- tronco
             m_Spine = Node("Spine", m_Hips, new Vector3(0f, 0.04f, 0f));
-            Part(PrimitiveType.Sphere, m_Spine, new Vector3(0f, 0.3f, 0f), new Vector3(0.58f * bulk, 0.62f, 0.44f), L.outfit, shadows);
-            Part(PrimitiveType.Cylinder, m_Spine, new Vector3(0f, 0.08f, 0f), new Vector3(0.5f * bulk, 0.035f, 0.4f), Art.Darken(L.gear, 0.6f), shadows);
-            Part(PrimitiveType.Cube, m_Spine, new Vector3(0f, 0.08f, 0.2f), new Vector3(0.1f, 0.08f, 0.04f), new Color(1f, 0.82f, 0.3f), ShadowCastingMode.Off);
+            Part(PrimitiveType.Sphere, m_Spine, new Vector3(0f, 0.3f, 0f), new Vector3(0.68f * bulk, 0.66f, 0.5f), L.outfit, shadows);
+            Part(PrimitiveType.Cylinder, m_Spine, new Vector3(0f, 0.08f, 0f), new Vector3(0.6f * bulk, 0.04f, 0.46f), Art.Darken(L.gear, 0.6f), shadows);
+            Part(PrimitiveType.Cube, m_Spine, new Vector3(0f, 0.08f, 0.235f), new Vector3(0.12f, 0.09f, 0.04f), new Color(1f, 0.82f, 0.3f), ShadowCastingMode.Off);
             // Lenço ao pescoço (cor de destaque)
-            Part(PrimitiveType.Sphere, m_Spine, new Vector3(0f, 0.53f, 0.05f), new Vector3(0.36f * bulk, 0.12f, 0.32f), L.accent, shadows);
+            Part(PrimitiveType.Sphere, m_Spine, new Vector3(0f, 0.55f, 0.05f), new Vector3(0.4f * bulk, 0.13f, 0.36f), L.accent, shadows);
             BuildBackAccessory(m_Spine, L, accentColor, shadows, bulk);
 
             // ---------------- cabeça
@@ -106,8 +110,8 @@ namespace FPSLAN
             BuildHeadGear(m_Head, L, hs, shadows);
 
             // ---------------- braços
-            m_ArmL = Node("ArmL", m_Spine, new Vector3(-0.31f * bulk, 0.42f, 0f));
-            m_ArmR = Node("ArmR", m_Spine, new Vector3(0.31f * bulk, 0.42f, 0f));
+            m_ArmL = Node("ArmL", m_Spine, new Vector3(-0.36f * bulk, 0.42f, 0f));
+            m_ArmR = Node("ArmR", m_Spine, new Vector3(0.36f * bulk, 0.42f, 0f));
             m_SocketL = BuildArm(m_ArmL, L, shadows);
             m_SocketR = BuildArm(m_ArmR, L, shadows);
 
@@ -171,9 +175,9 @@ namespace FPSLAN
 
         Transform BuildArm(Transform shoulder, CharacterLook L, ShadowCastingMode s)
         {
-            Part(PrimitiveType.Sphere, shoulder, new Vector3(0f, -0.02f, 0f), Vector3.one * 0.21f, L.outfit, s);
-            Part(PrimitiveType.Capsule, shoulder, new Vector3(0f, -0.21f, 0f), new Vector3(0.14f, 0.2f, 0.14f), L.skin, s);
-            Part(PrimitiveType.Sphere, shoulder, new Vector3(0f, -0.43f, 0f), Vector3.one * 0.16f, Art.Darken(L.gear, 0.85f), s);
+            Part(PrimitiveType.Sphere, shoulder, new Vector3(0f, -0.02f, 0f), Vector3.one * 0.24f, L.outfit, s);
+            Part(PrimitiveType.Capsule, shoulder, new Vector3(0f, -0.21f, 0f), new Vector3(0.16f, 0.2f, 0.16f), L.skin, s);
+            Part(PrimitiveType.Sphere, shoulder, new Vector3(0f, -0.43f, 0f), Vector3.one * 0.19f, Art.Darken(L.gear, 0.85f), s);
             var socket = Node("Socket", shoulder, new Vector3(0f, -0.45f, 0f));
             socket.localRotation = Quaternion.Euler(90f, 0f, 0f);
             socket.localScale = Vector3.one * 1.45f; // armas maiores = mais legíveis em terceira pessoa
@@ -226,15 +230,15 @@ namespace FPSLAN
                     {
                         float a = (i - 2.5f) * 24f;
                         var dir = Quaternion.Euler(-25f + Mathf.Abs(i - 2.5f) * 6f, a, 0f) * Vector3.up;
-                        Part(PrimitiveType.Capsule, head, new Vector3(0f, top, -0.04f * hs) + dir * 0.26f * hs, new Vector3(0.13f, 0.17f, 0.13f) * hs, L.hair, s, Quaternion.FromToRotation(Vector3.up, dir).eulerAngles);
+                        Part(PrimitiveType.Capsule, head, new Vector3(0f, top, -0.04f * hs) + dir * 0.28f * hs, new Vector3(0.15f, 0.2f, 0.15f) * hs, L.hair, s, Quaternion.FromToRotation(Vector3.up, dir).eulerAngles);
                     }
                     Part(PrimitiveType.Sphere, head, new Vector3(0f, top + 0.08f * hs, -0.03f * hs), new Vector3(0.6f, 0.4f, 0.58f) * hs, L.hair, s);
                     // Óculos na testa
                     Part(PrimitiveType.Cylinder, head, new Vector3(0f, top + 0.1f * hs, 0f), new Vector3(0.62f, 0.035f, 0.62f) * hs, Art.Darken(L.gear, 0.6f), ShadowCastingMode.Off, new Vector3(-12f, 0f, 0f));
                     for (int side = -1; side <= 1; side += 2)
                     {
-                        Part(PrimitiveType.Cylinder, head, new Vector3(side * 0.11f, top + 0.13f * hs, 0.27f * hs), new Vector3(0.16f, 0.04f, 0.16f) * hs, L.gear, s, new Vector3(70f, 0f, 0f));
-                        var lens = Part(PrimitiveType.Cylinder, head, new Vector3(side * 0.11f, top + 0.135f * hs, 0.31f * hs), new Vector3(0.12f, 0.01f, 0.12f) * hs, new Color(0.55f, 0.85f, 1f), ShadowCastingMode.Off, new Vector3(70f, 0f, 0f), false);
+                        Part(PrimitiveType.Cylinder, head, new Vector3(side * 0.11f * hs, top + 0.13f * hs, 0.27f * hs), new Vector3(0.16f, 0.04f, 0.16f) * hs, L.gear, s, new Vector3(70f, 0f, 0f));
+                        var lens = Part(PrimitiveType.Cylinder, head, new Vector3(side * 0.11f * hs, top + 0.135f * hs, 0.31f * hs), new Vector3(0.12f, 0.01f, 0.12f) * hs, new Color(0.55f, 0.85f, 1f), ShadowCastingMode.Off, new Vector3(70f, 0f, 0f), false);
                         Art.SetEmission(lens.GetComponent<Renderer>(), new Color(0.15f, 0.25f, 0.3f));
                     }
                     break;
@@ -244,8 +248,8 @@ namespace FPSLAN
                     Part(PrimitiveType.Sphere, head, new Vector3(0f, top + 0.04f * hs, -0.06f * hs), new Vector3(0.68f, 0.66f, 0.64f) * hs, L.gear, s);
                     for (int side = -1; side <= 1; side += 2)
                     {
-                        Part(PrimitiveType.Cube, head, new Vector3(side * 0.18f, top + 0.33f * hs, -0.04f * hs), new Vector3(0.17f, 0.17f, 0.06f) * hs, L.gear, s, new Vector3(0f, 0f, 45f + side * 12f));
-                        Part(PrimitiveType.Cube, head, new Vector3(side * 0.18f, top + 0.32f * hs, -0.01f * hs), new Vector3(0.09f, 0.09f, 0.03f) * hs, L.accent, ShadowCastingMode.Off, new Vector3(0f, 0f, 45f + side * 12f), false);
+                        Part(PrimitiveType.Cube, head, new Vector3(side * 0.18f * hs, top + 0.33f * hs, -0.04f * hs), new Vector3(0.17f, 0.17f, 0.06f) * hs, L.gear, s, new Vector3(0f, 0f, 45f + side * 12f));
+                        Part(PrimitiveType.Cube, head, new Vector3(side * 0.18f * hs, top + 0.32f * hs, -0.01f * hs), new Vector3(0.09f, 0.09f, 0.03f) * hs, L.accent, ShadowCastingMode.Off, new Vector3(0f, 0f, 45f + side * 12f), false);
                     }
                     // Máscara de pano na parte de baixo da cara
                     Part(PrimitiveType.Sphere, head, new Vector3(0f, 0.17f * hs, 0.12f * hs), new Vector3(0.56f, 0.24f, 0.42f) * hs, L.accent, s);
@@ -255,20 +259,20 @@ namespace FPSLAN
                 {
                     Part(PrimitiveType.Sphere, head, new Vector3(0f, 0.17f * hs, 0.24f * hs), new Vector3(0.3f, 0.24f, 0.2f) * hs, new Color(0.25f, 0.27f, 0.3f), s);
                     for (int side = -1; side <= 1; side += 2)
-                        Part(PrimitiveType.Cylinder, head, new Vector3(side * 0.16f, 0.1f * hs, 0.26f * hs), new Vector3(0.12f, 0.05f, 0.12f) * hs, L.accent, s, new Vector3(70f, side * 30f, 0f));
+                        Part(PrimitiveType.Cylinder, head, new Vector3(side * 0.16f * hs, 0.1f * hs, 0.26f * hs), new Vector3(0.12f, 0.05f, 0.12f) * hs, L.accent, s, new Vector3(70f, side * 30f, 0f));
                     Part(PrimitiveType.Sphere, head, new Vector3(0f, top + 0.1f * hs, -0.02f * hs), new Vector3(0.64f, 0.46f, 0.64f) * hs, L.gear, s);
                     Part(PrimitiveType.Cylinder, head, new Vector3(0f, top - 0.02f * hs, 0f), new Vector3(0.65f, 0.05f, 0.65f) * hs, Art.Darken(L.gear, 0.75f), s);
                     Part(PrimitiveType.Sphere, head, new Vector3(0f, top + 0.36f * hs, -0.02f * hs), Vector3.one * 0.15f * hs, L.accent, s);
                     // Madeixas a sair do gorro
-                    Part(PrimitiveType.Capsule, head, new Vector3(0.24f, 0.18f * hs, -0.12f * hs), new Vector3(0.12f, 0.16f, 0.12f) * hs, L.hair, s, new Vector3(0f, 0f, 15f));
-                    Part(PrimitiveType.Capsule, head, new Vector3(-0.24f, 0.18f * hs, -0.12f * hs), new Vector3(0.12f, 0.16f, 0.12f) * hs, L.hair, s, new Vector3(0f, 0f, -15f));
+                    Part(PrimitiveType.Capsule, head, new Vector3(0.24f * hs, 0.18f * hs, -0.12f * hs), new Vector3(0.12f, 0.16f, 0.12f) * hs, L.hair, s, new Vector3(0f, 0f, 15f));
+                    Part(PrimitiveType.Capsule, head, new Vector3(-0.24f * hs, 0.18f * hs, -0.12f * hs), new Vector3(0.12f, 0.16f, 0.12f) * hs, L.hair, s, new Vector3(0f, 0f, -15f));
                     break;
                 }
                 case HeadGear.Bandana:
                 {
                     Part(PrimitiveType.Sphere, head, new Vector3(0f, top + 0.06f * hs, -0.04f * hs), new Vector3(0.62f, 0.5f, 0.62f) * hs, L.hair, s);
                     Part(PrimitiveType.Cylinder, head, new Vector3(0f, top + 0.12f * hs, 0f), new Vector3(0.64f, 0.06f, 0.64f) * hs, L.accent, s, new Vector3(-10f, 0f, 0f));
-                    Part(PrimitiveType.Cube, head, new Vector3(0.05f, top + 0.08f * hs, -0.33f * hs), new Vector3(0.08f, 0.18f, 0.04f) * hs, L.accent, s, new Vector3(-20f, 0f, 25f));
+                    Part(PrimitiveType.Cube, head, new Vector3(0.05f * hs, top + 0.08f * hs, -0.33f * hs), new Vector3(0.08f, 0.18f, 0.04f) * hs, L.accent, s, new Vector3(-20f, 0f, 25f));
                     Part(PrimitiveType.Capsule, head, new Vector3(0f, top - 0.05f * hs, -0.36f * hs), new Vector3(0.16f, 0.22f, 0.16f) * hs, L.hair, s, new Vector3(-30f, 0f, 0f));
                     break;
                 }
@@ -278,8 +282,8 @@ namespace FPSLAN
                     Part(PrimitiveType.Cube, head, new Vector3(0f, top + 0.06f * hs, 0.32f * hs), new Vector3(0.42f, 0.03f, 0.26f) * hs, Art.Darken(L.gear, 0.8f), s, new Vector3(-8f, 0f, 0f));
                     for (int side = -1; side <= 1; side += 2)
                     {
-                        Part(PrimitiveType.Cube, head, new Vector3(side * 0.2f, top + 0.3f * hs, -0.02f * hs), new Vector3(0.1f, 0.2f, 0.05f) * hs, L.gear, s, new Vector3(0f, 0f, side * -20f));
-                        Part(PrimitiveType.Capsule, head, new Vector3(side * 0.24f, top + 0.44f * hs, -0.02f * hs), new Vector3(0.04f, 0.08f, 0.04f) * hs, L.hair, ShadowCastingMode.Off, new Vector3(0f, 0f, side * -25f), false);
+                        Part(PrimitiveType.Cube, head, new Vector3(side * 0.2f * hs, top + 0.3f * hs, -0.02f * hs), new Vector3(0.1f, 0.2f, 0.05f) * hs, L.gear, s, new Vector3(0f, 0f, side * -20f));
+                        Part(PrimitiveType.Cube, head, new Vector3(side * 0.23f * hs, top + 0.41f * hs, -0.02f * hs), new Vector3(0.07f, 0.07f, 0.03f) * hs, L.hair, ShadowCastingMode.Off, new Vector3(0f, 0f, 45f + side * 15f), false);
                     }
                     Part(PrimitiveType.Sphere, head, new Vector3(0f, top + 0.2f * hs, 0.2f * hs), Vector3.one * 0.09f * hs, L.accent, ShadowCastingMode.Off);
                     break;
@@ -481,7 +485,7 @@ namespace FPSLAN
             m_LegR.localRotation = Quaternion.Euler(Mathf.Lerp(-legL, 22f, m_Air), 0f, Mathf.Lerp(-legSideL, 6f, m_Air));
 
             float breathe = Mathf.Sin(time * 2.2f) * 0.012f * (1f - move01);
-            m_Hips.localPosition = new Vector3(0f, 0.62f + bob * 0.045f * move01 + breathe + m_Air * 0.04f, 0f);
+            m_Hips.localPosition = new Vector3(0f, HipHeight + bob * 0.045f * move01 + breathe + m_Air * 0.04f, 0f);
             m_Hips.localRotation = Quaternion.Euler(0f, swing * 8f * move01, 0f);
 
             // ---------------- tronco e cabeça (seguem a pontaria)

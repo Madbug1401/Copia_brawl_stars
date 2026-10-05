@@ -15,7 +15,7 @@ namespace FPSLAN
     /// </summary>
     public class CombatSystem : MonoBehaviour
     {
-        public const float HeadshotHeight = 1.45f;
+        public const float HeadshotHeight = 1.38f;
 
         public static CombatSystem Instance { get; private set; }
 
