@@ -73,3 +73,25 @@ Cada fase: implementar → compilar → corrigir → testar no Editor → verifi
 - Sem arte: rigs de primitivas transmitem timing/intenção, não qualidade final.
 - Coberturas destrutíveis exigem objetos de rede na cena (só onde necessário).
 - TTK baixo com os números iniciais.
+
+## 6. Fase visual "Arena dos Brawlers" (2026-10-05)
+
+Ver `NOVIDADES.md` para o resumo para jogadores. Notas técnicas:
+
+- **Apresentação FP/TP implementada** (`Scripts/Visual`): `CharacterRig` (TP, rig de primitivas com animação procedural,
+  peças juntas por osso via `MeshMerge`), `ViewModelRig` (FP, câmara própria na camada `ViewModel`), `WeaponModels`
+  (modelos por `RigStyle`), `ProjectileVisuals` (aspeto dos projéteis por `ProjectileStyle`), `Fx` (partículas partilhadas
+  com `Emit`, luzes, tracers, `CameraShake`). Tudo só visual; o combate continua autoritativo no host.
+- **Dados novos**: `ThirdPersonPresentation.look` (`CharacterLook`: cores, `HeadGear`, proporções),
+  `AttackVisuals.style` (`ProjectileStyle`), `BotProfile.superIsEscape`, `RigStyle.Shotgun/Sniper`.
+- **Mecânica nova**: `LeapDelivery` — `AttackDelivery.OnOwnerFire` (novo gancho, corre só em quem controla o atacante)
+  lança o jogador com `PlayerMotor.Launch`; as bombas são projéteis em arco normais (`CombatSystem.LaunchArcFrom`).
+- **Mundo**: `Bush` (esconde a > 3,4 m, revelado ao atacar/levar dano; bots respeitam), `JumpPad` (usa `PlayerMotor.Launch`),
+  `MapInfo` (limites + waypoints dos bots). Barreiras invisíveis na camada *Ignore Raycast*: travam o movimento,
+  os tiros passam (`CombatMath.ShotMask`).
+- **Escudo de spawn**: `PlayerHealth.ProtectedUntil` (hora do servidor), termina ao atacar.
+- **Shaders** (`Assets/_Game/Shaders`): `FPSLAN/Toon`, `FPSLAN/ToonOutline`, `FPSLAN/FxAdditive`, `FPSLAN/FxAlpha`;
+  materiais base em `Resources/Art` (gerados pelo `ProjectSetup`) para entrarem no build.
+- **Conteúdo versionado**: `ProjectSetup.SetupVersion` + `Data/setup_version.txt`; ao subir a versão o Editor regenera
+  dados, materiais, prefab e cena sozinho.
+- `CombatSystem.HeadshotHeight` passou de 1,45 para 1,38 m (cabeças maiores nas rigs chibi).

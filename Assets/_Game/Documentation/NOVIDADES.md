@@ -77,6 +77,7 @@ cinto de dinamites), **Vigia** (capuz de raposa, aljava), **Névoa** (máscara d
 - **Escudo de spawn** (2,2 s; termina ao atacar).
 - **Números de dano** a flutuar (somam numa rajada; amarelo = headshot, vermelho = eliminação).
 - Avisos: "LUTEM!", "ELIMINAÇÃO!", "DUPLA!", "SUPER PRONTO!".
+- **Coroa dourada** a flutuar sobre o líder da partida.
 - Linha de trajetória + marcador no chão para ataques em arco, minas e salto.
 - Bots: respeitam os arbustos, patrulham pontos do mapa e a Lince usa o Super para fugir.
 
