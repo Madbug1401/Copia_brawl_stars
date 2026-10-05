@@ -34,7 +34,7 @@ namespace FPSLAN
             public Vector3 position, velocity;
             public float gravity, remaining, traveled, radius, life, maxLife, fuse;
             public bool pierce, ignorePlayers, isArc;
-            public Transform visual;
+            public ProjVisual visual;
             public readonly List<PlayerHealth> pierced = new List<PlayerHealth>();
         }
 
@@ -43,7 +43,7 @@ namespace FPSLAN
             public AttackContext ctx;
             public Vector3 position;
             public float timer, total;
-            public Transform visual;
+            public ProjVisual visual;
         }
 
         class Zone
@@ -52,8 +52,8 @@ namespace FPSLAN
             public ZoneSettings settings;
             public Vector3 position;
             public PlayerNetwork follow;
-            public float age, nextTick;
-            public Transform visual;
+            public float age, nextTick, nextPuff;
+            public ZoneVisual visual;
         }
 
         class Trap
@@ -63,7 +63,7 @@ namespace FPSLAN
             public Vector3 position;
             public float age, triggeredAt = -1f;
             public bool ownerView;
-            public Transform visual;
+            public ProjVisual visual;
         }
 
         class Cone
@@ -75,13 +75,11 @@ namespace FPSLAN
             public int puffCount;
         }
 
-        class Fx
+        /// <summary>Visual de uma zona/aura: disco no chão + anel que roda + borda.</summary>
+        public class ZoneVisual
         {
-            public Transform t;
-            public float age, life, size;
-            public Vector3 velocity;
-            public bool grow;
-            public Stack<Transform> pool;
+            public Transform root, disc, ring, edge;
+            public Renderer discR, ringR, edgeR;
         }
 
         readonly List<PendingAttack> m_Pending = new List<PendingAttack>();
@@ -90,20 +88,16 @@ namespace FPSLAN
         readonly List<Zone> m_Zones = new List<Zone>();
         readonly List<Trap> m_Traps = new List<Trap>();
         readonly List<Cone> m_Cones = new List<Cone>();
-        readonly List<Fx> m_Fx = new List<Fx>();
 
-        readonly Stack<Transform> m_SpherePool = new Stack<Transform>();
-        readonly Stack<Transform> m_CubePool = new Stack<Transform>();
-        readonly Stack<Transform> m_DiskPool = new Stack<Transform>();
+        readonly Stack<ZoneVisual> m_ZonePool = new Stack<ZoneVisual>();
         readonly Stack<Projectile> m_ProjectilePool = new Stack<Projectile>();
 
         readonly RaycastHit[] m_Hits = new RaycastHit[32];
-        MaterialPropertyBlock m_Block;
+        readonly List<PlayerHealth> m_HitscanPierced = new List<PlayerHealth>();
 
         void Awake()
         {
             Instance = this;
-            m_Block = new MaterialPropertyBlock();
         }
 
         void OnDestroy()
@@ -134,15 +128,13 @@ namespace FPSLAN
             m_Pending.Clear();
             foreach (var p in m_Projectiles) ReleaseProjectile(p);
             m_Projectiles.Clear();
-            foreach (var f in m_Fuses) Release(f.visual, m_CubePool);
+            foreach (var f in m_Fuses) ProjectileVisuals.Release(f.visual);
             m_Fuses.Clear();
-            foreach (var z in m_Zones) Release(z.visual, m_DiskPool);
+            foreach (var z in m_Zones) ReleaseZone(z.visual);
             m_Zones.Clear();
-            foreach (var t in m_Traps) Release(t.visual, m_DiskPool);
+            foreach (var t in m_Traps) ProjectileVisuals.ReleaseMine(t.visual);
             m_Traps.Clear();
             m_Cones.Clear();
-            foreach (var fx in m_Fx) Release(fx.t, fx.pool);
-            m_Fx.Clear();
         }
 
         // ------------------------------------------------------------------ primitivas (usadas pelas deliveries)
@@ -153,9 +145,10 @@ namespace FPSLAN
             Vector3 end = origin + dir * range;
             bool hitSomething = false;
 
-            int count = Physics.SphereCastNonAlloc(origin, Mathf.Max(0.01f, radius), dir, m_Hits, range, ~0, QueryTriggerInteraction.Ignore);
+            int count = Physics.SphereCastNonAlloc(origin, Mathf.Max(0.01f, radius), dir, m_Hits, range, CombatMath.ShotMask, QueryTriggerInteraction.Ignore);
             SortHits(count);
-            var pierced = new List<PlayerHealth>();
+            var pierced = m_HitscanPierced;
+            pierced.Clear();
 
             for (int i = 0; i < count; i++)
             {
@@ -168,7 +161,7 @@ namespace FPSLAN
                 {
                     if (health.IsDead || pierced.Contains(health)) continue;
                     if (ctx.authoritative) EffectResolver.DirectHit(ctx, health, point, hit.distance);
-                    else SpawnImpact(point, ctx.attack.visuals.color, 0.12f, 0.3f);
+                    else Fx.HitStar(point, ctx.attack.visuals.color, 0.9f);
                     pierced.Add(health);
                     if (pierce) continue;
                     end = point;
@@ -184,9 +177,12 @@ namespace FPSLAN
 
             if (!ctx.authoritative)
             {
-                SpawnTracer(Muzzle(ctx, shotIndex), end, ctx.attack.visuals.color, ctx.attack.visuals.scale);
+                var from = Muzzle(ctx, shotIndex);
+                float w = 0.07f * Mathf.Max(0.6f, ctx.attack.visuals.scale);
+                Fx.TracerLine(from, end, ctx.attack.visuals.color, w, 0.14f);
+                Fx.TracerLine(from, end, Color.white, w * 0.35f, 0.08f);
                 ctx.shooter?.Visuals?.MuzzleFlash(ctx.attack.visuals.color, shotIndex);
-                if (hitSomething) SpawnImpact(end, ctx.attack.visuals.color, 0.15f, 0.3f);
+                if (hitSomething) Fx.Impact(end, ctx.attack.visuals.color, 1.2f);
             }
             if (hitSomething) Detonate(ctx, end, false);
         }
@@ -216,16 +212,21 @@ namespace FPSLAN
         public void LaunchArc(AttackContext ctx, ArcProjectileDelivery d, Vector3 target, int shotIndex)
         {
             Vector3 start = ctx.authoritative ? ctx.origin : Muzzle(ctx, shotIndex);
-            var velocity = d.Velocity(start, target, out float flight);
             if (!ctx.authoritative) ctx.shooter?.Visuals?.MuzzleFlash(ctx.attack.visuals.color, shotIndex);
+            LaunchArcFrom(ctx, start, target, d.gravity, d.speed, d.minFlightTime, d.maxFlightTime, d.radius, d.fuseDelay);
+        }
 
+        /// <summary>Projétil em arco genérico (passa por cima de jogadores; explode ao aterrar ou após o fuse).</summary>
+        public void LaunchArcFrom(AttackContext ctx, Vector3 start, Vector3 target, float gravity, float horizontalSpeed, float minTime, float maxTime, float radius, float fuse)
+        {
+            var velocity = CombatMath.ArcVelocity(start, target, gravity, horizontalSpeed, minTime, maxTime, out float flight);
             var p = NewProjectile(ctx, start, velocity);
-            p.gravity = d.gravity;
+            p.gravity = gravity;
             p.remaining = float.MaxValue;
-            p.radius = d.radius;
+            p.radius = radius;
             p.isArc = true;
             p.ignorePlayers = true;
-            p.fuse = d.fuseDelay;
+            p.fuse = fuse;
             p.maxLife = flight + 1.5f;
             m_Projectiles.Add(p);
         }
@@ -257,13 +258,10 @@ namespace FPSLAN
             };
             if (!ctx.authoritative)
             {
-                t.visual = Take(m_DiskPool, PrimitiveType.Cylinder);
                 bool discreet = settings.hiddenFromEnemies && !t.ownerView;
-                float d = discreet ? 0.32f : 0.6f;
-                t.visual.localScale = new Vector3(d, 0.06f, d);
-                t.visual.position = t.position + Vector3.up * 0.04f;
-                SetColor(t.visual, discreet ? settings.color * 0.3f : settings.color * 0.7f);
-                SpawnImpact(t.position + Vector3.up * 0.2f, settings.color, 0.15f, 0.4f);
+                t.visual = ProjectileVisuals.TakeMine(settings.color, t.position, discreet);
+                Fx.Ring(t.position, settings.color, 1.6f, 0.35f);
+                Fx.Sparks(t.position + Vector3.up * 0.2f, settings.color, 5, 3f);
             }
             m_Traps.Add(t);
         }
@@ -274,10 +272,13 @@ namespace FPSLAN
             var z = new Zone { ctx = ctx, settings = settings, position = position, follow = follow };
             if (!ctx.authoritative)
             {
-                z.visual = Take(m_DiskPool, PrimitiveType.Cylinder);
-                z.visual.localScale = new Vector3(settings.radius * 2f, 0.02f, settings.radius * 2f);
-                z.visual.position = position + Vector3.up * 0.03f;
-                SetColor(z.visual, settings.color * 0.45f);
+                z.visual = TakeZone();
+                z.visual.root.position = position + Vector3.up * 0.04f;
+                Art.SetColor(z.visual.discR, Art.WithAlpha(settings.color, 0.22f));
+                Art.SetColor(z.visual.ringR, Art.WithAlpha(Color.Lerp(settings.color, Color.white, 0.3f), 0.9f));
+                Art.SetColor(z.visual.edgeR, Art.WithAlpha(settings.color, 0.55f));
+                PoseZone(z, 0f);
+                Fx.Ring(position, settings.color, settings.radius * 2.2f, 0.35f);
             }
             m_Zones.Add(z);
         }
@@ -311,15 +312,11 @@ namespace FPSLAN
             {
                 var f = m_Fuses[i];
                 f.timer -= dt;
-                if (f.visual != null)
-                {
-                    float blink = Mathf.Sin((f.total - f.timer) * 30f) > 0f ? 1.6f : 0.7f;
-                    SetColor(f.visual, f.ctx.attack.visuals.color * blink);
-                }
+                if (f.visual != null) ProjectileVisuals.Blink(f.visual, 1f - f.timer / Mathf.Max(0.01f, f.total));
                 if (f.timer <= 0f)
                 {
                     Detonate(f.ctx, f.position + Vector3.up * 0.3f, true);
-                    Release(f.visual, m_CubePool);
+                    ProjectileVisuals.Release(f.visual);
                     m_Fuses.RemoveAt(i);
                 }
             }
@@ -331,7 +328,7 @@ namespace FPSLAN
             {
                 if (!StepZone(m_Zones[i], dt))
                 {
-                    Release(m_Zones[i].visual, m_DiskPool);
+                    ReleaseZone(m_Zones[i].visual);
                     m_Zones.RemoveAt(i);
                 }
             }
@@ -340,12 +337,10 @@ namespace FPSLAN
             {
                 if (!StepTrap(m_Traps[i], dt))
                 {
-                    Release(m_Traps[i].visual, m_DiskPool);
+                    ProjectileVisuals.ReleaseMine(m_Traps[i].visual);
                     m_Traps.RemoveAt(i);
                 }
             }
-
-            StepFx(dt);
         }
 
         bool ProcessPending(PendingAttack p, float now)
@@ -385,12 +380,12 @@ namespace FPSLAN
 
             if (!ctx.authoritative)
             {
-                p.visual = Take(m_SpherePool, PrimitiveType.Sphere);
-                float w = 0.13f * ctx.attack.visuals.scale;
-                p.visual.localScale = new Vector3(w, w, Mathf.Max(w, 0.6f * Mathf.Min(1.6f, ctx.attack.visuals.scale)));
-                p.visual.position = start;
-                if (velocity.sqrMagnitude > 0.001f) p.visual.rotation = Quaternion.LookRotation(velocity);
-                SetColor(p.visual, ctx.attack.visuals.color * 1.6f);
+                var style = ctx.styleOverride != ProjectileStyle.Auto ? ctx.styleOverride : ProjectileVisuals.Resolve(ctx.attack);
+                float scale = ctx.attack.visuals.scale;
+                // Os estilos com modelo próprio já têm tamanho legível; a escala só exagera balas/orbes
+                if (style == ProjectileStyle.Dynamite || style == ProjectileStyle.Barrel || style == ProjectileStyle.Bomb || style == ProjectileStyle.Arrow)
+                    scale = 1f;
+                p.visual = ProjectileVisuals.Take(style, ctx.attack.visuals.color, scale, start, velocity);
             }
             return p;
         }
@@ -411,7 +406,7 @@ namespace FPSLAN
             if (dist <= 0.0001f) return false;
             Vector3 dir = disp / dist;
 
-            int count = Physics.SphereCastNonAlloc(p.position, p.radius, dir, m_Hits, dist, ~0, QueryTriggerInteraction.Ignore);
+            int count = Physics.SphereCastNonAlloc(p.position, p.radius, dir, m_Hits, dist, CombatMath.ShotMask, QueryTriggerInteraction.Ignore);
             SortHits(count);
 
             for (int i = 0; i < count; i++)
@@ -427,7 +422,7 @@ namespace FPSLAN
                     if (p.ignorePlayers || health.IsDead || p.pierced.Contains(health)) continue;
 
                     if (p.ctx.authoritative) EffectResolver.DirectHit(p.ctx, health, point, p.traveled + hit.distance);
-                    else SpawnImpact(point, p.ctx.attack.visuals.color, 0.12f, 0.35f);
+                    else Fx.HitStar(point, p.ctx.attack.visuals.color, Mathf.Clamp(p.ctx.attack.visuals.scale, 0.7f, 1.5f));
 
                     p.pierced.Add(health);
                     if (p.pierce) continue;
@@ -445,11 +440,7 @@ namespace FPSLAN
             p.traveled += dist;
             if (!p.isArc) p.remaining -= dist;
 
-            if (p.visual != null)
-            {
-                p.visual.position = p.position;
-                if (p.velocity.sqrMagnitude > 0.001f) p.visual.rotation = Quaternion.LookRotation(p.velocity);
-            }
+            if (p.visual != null) ProjectileVisuals.Step(p.visual, p.position, p.velocity, dt);
 
             bool alive = (p.isArc || p.remaining > 0f) && p.life < p.maxLife && p.position.y > -30f;
             if (!alive && p.isArc) Impact(p, p.position, null);
@@ -461,20 +452,20 @@ namespace FPSLAN
             if (p.isArc && p.fuse > 0f)
             {
                 var f = new Fuse { ctx = p.ctx, position = GroundAt(point), timer = p.fuse, total = p.fuse };
-                if (!p.ctx.authoritative)
+                if (!p.ctx.authoritative && p.visual != null)
                 {
-                    f.visual = Take(m_CubePool, PrimitiveType.Cube);
-                    float s = 0.12f * p.ctx.attack.visuals.scale;
-                    f.visual.localScale = new Vector3(s, s * 2.2f, s);
-                    f.visual.position = f.position + Vector3.up * s;
-                    f.visual.rotation = Quaternion.Euler(0f, p.life * 400f, 75f);
+                    // O mesmo objeto fica no chão a arder até explodir
+                    f.visual = p.visual;
+                    p.visual = null;
+                    ProjectileVisuals.Land(f.visual, f.position + Vector3.up * 0.12f);
+                    Fx.Smoke(f.position + Vector3.up * 0.1f, Vector3.up * 0.3f, 0.5f, 0.5f, 0.45f);
                 }
                 m_Fuses.Add(f);
                 return;
             }
 
             if (!p.ctx.attack.effect.HasSplash && surface != null && !p.ctx.authoritative)
-                SpawnImpact(point, p.ctx.attack.visuals.color, 0.18f, 0.35f);
+                Fx.Impact(point, p.ctx.attack.visuals.color, Mathf.Clamp(p.ctx.attack.visuals.scale, 0.7f, 1.6f));
 
             Detonate(p.ctx, point, false);
         }
@@ -488,13 +479,13 @@ namespace FPSLAN
                 if (ctx.authoritative) EffectResolver.Explosion(ctx, point);
                 else
                 {
-                    SpawnImpact(point, ctx.attack.visuals.color, 0.32f, e.splashRadius * 1.5f);
-                    Sfx.PlayAt(ctx.attack.visuals.impactSound, point, 1f);
+                    Fx.Explosion(point, e.splashRadius, ctx.attack.visuals.color, e.splashRadius < 1.6f ? 0.6f : 1f);
+                    Sfx.PlayAt(ctx.attack.visuals.impactSound, point, Mathf.Clamp(0.5f + e.splashRadius * 0.2f, 0.6f, 1.2f));
                 }
             }
             else if (always && !ctx.authoritative)
             {
-                SpawnImpact(point, ctx.attack.visuals.color, 0.2f, 0.6f);
+                Fx.Impact(point, ctx.attack.visuals.color, 1.5f);
             }
 
             if (e.zoneOnImpact != null && e.zoneOnImpact.enabled)
@@ -534,15 +525,20 @@ namespace FPSLAN
 
             if (!ctx.authoritative && c.age < d.duration * 0.85f && c.age >= c.nextPuff)
             {
-                c.nextPuff += 0.035f;
+                c.nextPuff += 0.022f;
                 var rng = ctx.RngFor(1000 + c.puffCount++);
                 float yaw = (float)(rng.NextDouble() * 2.0 - 1.0) * halfAngle;
                 float pitch = (float)(rng.NextDouble() * 2.0 - 1.0) * halfAngle * 0.5f;
                 var dir = Quaternion.LookRotation(ctx.direction) * Quaternion.Euler(pitch, yaw, 0f) * Vector3.forward;
                 bool local = ctx.shooter != null && ctx.shooter.IsLocalHuman;
                 var start = c.visualOrigin + ctx.direction * (local ? 0.9f : 0.2f);
-                float speed = d.range / Mathf.Max(0.05f, d.expandTime + 0.15f);
-                SpawnPuff(start, dir * speed, ctx.attack.visuals.color, d.expandTime + 0.25f, 0.35f * ctx.attack.visuals.scale);
+                float speed = d.range / Mathf.Max(0.05f, d.expandTime + 0.15f) * 1.25f;
+                var col = Color.Lerp(ctx.attack.visuals.color, Color.white, (float)rng.NextDouble() * 0.35f);
+                col.a = local ? 0.4f : 0.7f;
+                float life = d.expandTime + 0.35f;
+                Fx.Puff(start, dir * speed, col, (local ? 0.45f : 0.6f) * ctx.attack.visuals.scale, life);
+                if (c.puffCount % 3 == 0)
+                    Fx.Glow(start + dir * 0.3f, dir * speed * 0.9f, Color.Lerp(ctx.attack.visuals.color, Color.white, 0.5f), 0.12f, life * 0.8f);
             }
 
             return c.age < d.duration;
@@ -564,10 +560,8 @@ namespace FPSLAN
 
             if (z.visual != null)
             {
-                z.visual.position = z.position + Vector3.up * 0.03f;
-                float fade = Mathf.Clamp01((s.duration - z.age) / 0.5f);
-                float d = s.radius * 2f * (0.85f + 0.15f * fade);
-                z.visual.localScale = new Vector3(d, 0.02f, d);
+                z.visual.root.position = z.position + Vector3.up * 0.04f;
+                PoseZone(z, dt);
             }
 
             if (z.ctx.authoritative && z.age >= z.nextTick)
@@ -597,22 +591,7 @@ namespace FPSLAN
                 if (!t.ctx.authoritative) Sfx.PlayAt(Sound.MineArm, t.position, 1f);
             }
 
-            if (t.visual != null)
-            {
-                if (t.triggeredAt >= 0f)
-                {
-                    // Aviso: pisca e cresce
-                    float k = (t.age - t.triggeredAt) / Mathf.Max(0.05f, s.warningTime);
-                    float d = Mathf.Lerp(0.6f, 1.2f, k);
-                    t.visual.localScale = new Vector3(d, 0.08f, d);
-                    SetColor(t.visual, Mathf.Sin(t.age * 50f) > 0f ? new Color(1f, 0.2f, 0.15f) : s.color);
-                }
-                else if (armed && t.ownerView)
-                {
-                    float pulse = 0.7f + 0.3f * Mathf.Abs(Mathf.Sin(t.age * 4f));
-                    SetColor(t.visual, s.color * pulse);
-                }
-            }
+            if (t.visual != null) ProjectileVisuals.PoseMine(t.visual, armed, t.triggeredAt >= 0f, t.ownerView, t.age);
 
             if (t.triggeredAt >= 0f && t.age >= t.triggeredAt + s.warningTime)
             {
@@ -657,7 +636,7 @@ namespace FPSLAN
 
         public static Vector3 GroundAt(Vector3 point)
         {
-            if (Physics.Raycast(point + Vector3.up * 0.6f, Vector3.down, out var hit, 30f, ~0, QueryTriggerInteraction.Ignore)
+            if (Physics.Raycast(point + Vector3.up * 0.6f, Vector3.down, out var hit, 30f, CombatMath.ShotMask, QueryTriggerInteraction.Ignore)
                 && hit.collider.GetComponentInParent<PlayerHealth>() == null)
                 return hit.point;
             return point;
@@ -678,115 +657,69 @@ namespace FPSLAN
             }
         }
 
-        // ------------------------------------------------------------------ visuais (pooled)
-
-        Transform Take(Stack<Transform> pool, PrimitiveType type)
-        {
-            while (pool.Count > 0)
-            {
-                var t = pool.Pop();
-                if (t == null) continue;
-                t.gameObject.SetActive(true);
-                return t;
-            }
-            var go = GameObject.CreatePrimitive(type);
-            go.name = "FX_" + type;
-            var c = go.GetComponent<Collider>();
-            c.enabled = false;
-            Destroy(c);
-            var r = go.GetComponent<Renderer>();
-            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            r.receiveShadows = false;
-            go.transform.SetParent(transform, false);
-            return go.transform;
-        }
-
-        static void Release(Transform t, Stack<Transform> pool)
-        {
-            if (t == null) return;
-            t.gameObject.SetActive(false);
-            pool.Push(t);
-        }
-
         void ReleaseProjectile(Projectile p)
         {
-            Release(p.visual, m_SpherePool);
+            ProjectileVisuals.Release(p.visual);
             p.visual = null;
             p.ctx = null;
             m_ProjectilePool.Push(p);
         }
 
-        void SpawnImpact(Vector3 point, Color color, float life, float size)
-        {
-            if (m_Fx.Count > 120) return;
-            var t = Take(m_CubePool, PrimitiveType.Cube);
-            t.position = point;
-            t.rotation = Random.rotation;
-            t.localScale = Vector3.one * size;
-            SetColor(t, color);
-            m_Fx.Add(new Fx { t = t, life = life, size = size, pool = m_CubePool });
-        }
+        // ------------------------------------------------------------------ visuais de zonas (pooled)
 
-        void SpawnPuff(Vector3 start, Vector3 velocity, Color color, float life, float size)
+        ZoneVisual TakeZone()
         {
-            if (m_Fx.Count > 120) return;
-            var t = Take(m_SpherePool, PrimitiveType.Sphere);
-            t.position = start;
-            t.rotation = Quaternion.identity;
-            t.localScale = Vector3.one * size * 0.4f;
-            SetColor(t, color * 0.9f);
-            m_Fx.Add(new Fx { t = t, life = life, size = size, velocity = velocity, grow = true, pool = m_SpherePool });
-        }
-
-        void SpawnTracer(Vector3 from, Vector3 to, Color color, float scale)
-        {
-            if (m_Fx.Count > 120) return;
-            var t = Take(m_CubePool, PrimitiveType.Cube);
-            var d = to - from;
-            float len = d.magnitude;
-            if (len < 0.05f) { Release(t, m_CubePool); return; }
-            t.position = from + d * 0.5f;
-            t.rotation = Quaternion.LookRotation(d);
-            float w = 0.025f * Mathf.Max(0.5f, scale);
-            t.localScale = new Vector3(w, w, len);
-            SetColor(t, color * 1.8f);
-            m_Fx.Add(new Fx { t = t, life = 0.07f, size = -1f, pool = m_CubePool });
-        }
-
-        void StepFx(float dt)
-        {
-            for (int i = m_Fx.Count - 1; i >= 0; i--)
+            while (m_ZonePool.Count > 0)
             {
-                var fx = m_Fx[i];
-                fx.age += dt;
-                if (fx.age >= fx.life || fx.t == null)
-                {
-                    Release(fx.t, fx.pool);
-                    m_Fx.RemoveAt(i);
-                    continue;
-                }
-                float k = fx.age / fx.life;
-                if (fx.velocity != Vector3.zero)
-                {
-                    fx.t.position += fx.velocity * dt;
-                    fx.velocity *= 1f - Mathf.Clamp01(dt * 2.5f);
-                }
-                if (fx.size > 0f)
-                {
-                    float s = fx.grow ? Mathf.Lerp(fx.size * 0.4f, fx.size * 2.2f, k) * (1f - k * 0.3f) : fx.size * (1f - k) + 0.05f;
-                    fx.t.localScale = Vector3.one * s;
-                }
+                var v = m_ZonePool.Pop();
+                if (v == null || v.root == null) continue;
+                v.root.gameObject.SetActive(true);
+                return v;
             }
+            var z = new ZoneVisual();
+            z.root = new GameObject("Zone").transform;
+            z.root.SetParent(transform, false);
+            z.disc = Art.FxPart(PrimitiveType.Cylinder, z.root, Vector3.zero, new Vector3(1f, 0.005f, 1f), Color.white, false);
+            z.discR = z.disc.GetComponent<Renderer>();
+            z.ring = Art.FxQuad(z.root, Art.RingTexture, Color.white, true);
+            z.ring.localPosition = Vector3.up * 0.02f;
+            z.ringR = z.ring.GetComponent<Renderer>();
+            z.edge = Art.FxQuad(z.root, Art.RingTexture, Color.white, false);
+            z.edge.localPosition = Vector3.up * 0.01f;
+            z.edgeR = z.edge.GetComponent<Renderer>();
+            return z;
         }
 
-        void SetColor(Transform t, Color c)
+        void ReleaseZone(ZoneVisual v)
         {
-            var r = t.GetComponent<Renderer>();
-            r.GetPropertyBlock(m_Block);
-            m_Block.SetColor("_Color", c);
-            m_Block.SetColor("_BaseColor", c);
-            m_Block.SetColor("_EmissionColor", c);
-            r.SetPropertyBlock(m_Block);
+            if (v == null || v.root == null) return;
+            v.root.gameObject.SetActive(false);
+            m_ZonePool.Push(v);
+        }
+
+        void PoseZone(Zone z, float dt)
+        {
+            var v = z.visual;
+            var s = z.settings;
+            float grow = Mathf.Clamp01(z.age / 0.2f);
+            float fade = Mathf.Clamp01((s.duration - z.age) / 0.5f);
+            float d = s.radius * 2f * Mathf.Lerp(0.3f, 1f, grow) * (0.85f + 0.15f * fade);
+            v.disc.localScale = new Vector3(d, 0.005f, d);
+            v.edge.localScale = new Vector3(d * 1.02f, 1f, d * 1.02f);
+            float pulse = 0.92f + 0.08f * Mathf.Sin(z.age * 6f);
+            v.ring.localScale = new Vector3(d * pulse, 1f, d * pulse);
+            v.ring.localRotation = Quaternion.Euler(0f, z.age * 70f, 0f);
+
+            // Nuvem/partículas dentro da zona
+            if (dt > 0f && z.age >= z.nextPuff)
+            {
+                z.nextPuff = z.age + 0.06f;
+                var r = Random.insideUnitCircle * s.radius * 0.9f;
+                var c = Art.WithAlpha(s.color, 0.55f * fade);
+                Fx.Puff(z.position + new Vector3(r.x, 0.2f, r.y), Vector3.up * Random.Range(0.4f, 1.2f), c, Random.Range(0.6f, 1.1f), 0.9f);
+                if (Random.value < 0.5f)
+                    Fx.Glow(z.position + new Vector3(-r.y, 0.1f, r.x), Vector3.up * Random.Range(1f, 2.2f), Color.Lerp(s.color, Color.white, 0.4f), 0.1f, 0.7f);
+            }
         }
     }
 }

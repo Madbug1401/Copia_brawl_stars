@@ -49,6 +49,39 @@ namespace FPSLAN
         DualExplosives,
         Bow,
         SprayCan,
+        Shotgun,
+        Sniper,
+    }
+
+    /// <summary>Acessório de cabeça do personagem (silhueta reconhecível à distância).</summary>
+    public enum HeadGear
+    {
+        None,
+        WideHat,      // chapéu de aba larga
+        Goggles,      // óculos de aviador + cabelo espetado
+        FoxHood,      // capuz com orelhas de raposa
+        GasMask,      // máscara de gás + gorro
+        Bandana,      // lenço na cabeça + rabo de cavalo
+        EarCap,       // boné com tufos de lince
+    }
+
+    /// <summary>Aspeto do corpo em terceira pessoa (rig procedural de primitivas, estilo cartoon).</summary>
+    [Serializable]
+    public class CharacterLook
+    {
+        public Color skin = new Color(1f, 0.8f, 0.64f);
+        public Color outfit = new Color(0.9f, 0.7f, 0.3f);
+        public Color pants = new Color(0.25f, 0.3f, 0.45f);
+        public Color accent = new Color(0.9f, 0.2f, 0.2f);
+        public Color hair = new Color(0.35f, 0.22f, 0.12f);
+        public Color gear = new Color(0.45f, 0.3f, 0.18f);
+        public HeadGear headGear = HeadGear.None;
+        [Tooltip("Escala geral do corpo (tanques maiores).")]
+        public float bodyScale = 1f;
+        [Tooltip("Escala da cabeça (proporções chibi).")]
+        public float headScale = 1f;
+        [Tooltip("Largura do tronco.")]
+        public float bulk = 1f;
     }
 
     [Serializable]
@@ -70,6 +103,7 @@ namespace FPSLAN
         [Tooltip("Pontos de saída dos ataques relativos ao AimPivot.")]
         public Vector3[] muzzleOffsets = { new Vector3(0.32f, 0.02f, 0.7f) };
         public Color bodyColor = Color.white;
+        public CharacterLook look = new CharacterLook();
     }
 
     [Serializable]

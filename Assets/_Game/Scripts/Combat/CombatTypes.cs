@@ -72,11 +72,25 @@ namespace FPSLAN
         public Color color = new Color(0.3f, 0.55f, 1f);
     }
 
+    /// <summary>Aspeto do projétil em voo (Auto = escolhido pela forma de entrega).</summary>
+    public enum ProjectileStyle
+    {
+        Auto,
+        Bullet,
+        Pellet,
+        Arrow,
+        Dynamite,
+        Barrel,
+        Orb,
+        Bomb,
+    }
+
     [Serializable]
     public class AttackVisuals
     {
         public Color color = new Color(1f, 0.85f, 0.35f);
         public float scale = 1f;
+        public ProjectileStyle style = ProjectileStyle.Auto;
         public Sound sound = Sound.Shot;
         public Sound impactSound = Sound.Explosion;
     }
@@ -96,6 +110,8 @@ namespace FPSLAN
         public Vector3 direction;
         public Vector3 target;
         public int seed;
+        /// <summary>Aspeto dos projéteis lançados por este contexto (ex.: bombas do salto). Auto = o do ataque.</summary>
+        public ProjectileStyle styleOverride = ProjectileStyle.Auto;
 
         public EffectPayload Effect => attack.effect;
         public float Range => attack.Range;

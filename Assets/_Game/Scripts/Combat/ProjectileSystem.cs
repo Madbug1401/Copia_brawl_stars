@@ -437,7 +437,7 @@ namespace FPSLAN
             bool killed = victim.ServerApplyDamage(dmg, attackerId);
             if (attacker == null) attacker = PlayerNetwork.Find(attackerId);
             if (attacker != null && attacker.IsSpawned)
-                attacker.Combat.ServerOnDealtDamage(dmg, fromSuper, headshot, killed);
+                attacker.Combat.ServerOnDealtDamage(dmg, fromSuper, headshot, killed, victim.transform.position);
         }
 
         void ServerExplosion(Vector3 center, float radius, int damage, ulong attackerId, PlayerNetwork attacker, bool fromSuper, ZoneSpec slowFrom)

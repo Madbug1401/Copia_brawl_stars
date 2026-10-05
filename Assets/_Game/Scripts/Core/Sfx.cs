@@ -20,6 +20,14 @@ namespace FPSLAN
         Spray,
         Explosion,
         MineArm,
+        Shotgun,
+        Sniper,
+        Launch,
+        Respawn,
+        SuperReady,
+        Poof,
+        Twirl,
+        Crate,
         Count
     }
 

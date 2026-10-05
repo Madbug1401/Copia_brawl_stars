@@ -36,11 +36,17 @@ namespace FPSLAN
     {
         static readonly RaycastHit[] s_Hits = new RaycastHit[24];
 
+        /// <summary>
+        /// Camadas que bloqueiam ataques e linha de visão. Exclui "Ignore Raycast" (usada pelas barreiras invisíveis
+        /// do mapa: água e limites, que travam o movimento mas deixam passar tiros).
+        /// </summary>
+        public static int ShotMask => Physics.DefaultRaycastLayers;
+
         /// <summary>Primeiro ponto atingido ao longo de um raio, ignorando os colisores do próprio jogador.</summary>
         public static bool Raycast(Vector3 origin, Vector3 dir, float maxDist, PlayerNetwork ignore, out RaycastHit best)
         {
             best = default;
-            int n = Physics.RaycastNonAlloc(origin, dir, s_Hits, maxDist, ~0, QueryTriggerInteraction.Ignore);
+            int n = Physics.RaycastNonAlloc(origin, dir, s_Hits, maxDist, ShotMask, QueryTriggerInteraction.Ignore);
             float bestDist = float.MaxValue;
             bool found = false;
             for (int i = 0; i < n; i++)
@@ -53,6 +59,13 @@ namespace FPSLAN
                 found = true;
             }
             return found;
+        }
+
+        /// <summary>Chão por baixo de um ponto (ignora o próprio jogador).</summary>
+        public static Vector3 GroundBelow(Vector3 point, PlayerNetwork ignore)
+        {
+            if (Raycast(point + Vector3.up * 0.3f, Vector3.down, 40f, ignore, out var hit)) return hit.point;
+            return point;
         }
 
         /// <summary>Ponto para onde o jogador está a apontar (ou o ponto máximo do alcance).</summary>

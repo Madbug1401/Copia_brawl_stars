@@ -44,14 +44,21 @@ namespace FPSLAN
         float m_CoyoteTimer, m_JumpBuffer;
         float m_RecoilPitch;
         Vector3 m_ExternalVelocity; // knockback (decai)
+        Vector3 m_LaunchVelocity;   // salto/plataforma: mantém-se até aterrar
+        bool m_Launched;
+        float m_LaunchTime;
+        float m_PadCooldown;
+        bool m_Sprinting;
 
         public float Yaw => IsOwner ? m_Yaw : State.Value.Yaw;
         public float Pitch => IsOwner ? m_Pitch : State.Value.Pitch;
         public float EyeHeight => cameraRoot != null ? cameraRoot.localPosition.y : 1.6f;
         public bool IsGrounded => IsOwner ? (m_Controller.enabled && m_Controller.isGrounded) : State.Value.Grounded;
         public bool IsMoving => IsOwner ? m_HorizontalVelocity.sqrMagnitude > 0.5f : State.Value.Moving;
-        public Vector3 Velocity => m_HorizontalVelocity + Vector3.up * m_VerticalVelocity;
-        public Vector3 HorizontalVelocity => m_HorizontalVelocity;
+        public Vector3 Velocity => HorizontalVelocity + Vector3.up * m_VerticalVelocity;
+        public Vector3 HorizontalVelocity => m_HorizontalVelocity + (m_Launched ? m_LaunchVelocity : Vector3.zero);
+        public bool IsSprinting => IsOwner && m_Sprinting;
+        public bool IsLaunched => m_Launched;
 
         /// <summary>Posição dos olhos vista por esta máquina (dono: exata; outros: último estado recebido).</summary>
         public Vector3 EyePosition => IsOwner ? cameraRoot.position : State.Value.Position + Vector3.up * EyeHeight;
@@ -120,19 +127,43 @@ namespace FPSLAN
             if (wish.sqrMagnitude > 1f) wish.Normalize();
 
             bool sprinting = cmd.sprint && cmd.move.y > 0.1f;
+            m_Sprinting = sprinting && alive;
             float speed = (sprinting ? move.sprintSpeed : move.walkSpeed) * m_Player.Health.SpeedMultiplier;
 
             bool grounded = m_Controller.isGrounded;
             m_CoyoteTimer = grounded ? coyoteTime : m_CoyoteTimer - dt;
 
+            // Plataformas de salto
+            m_PadCooldown -= dt;
+            if (grounded && alive && m_PadCooldown <= 0f && !m_Launched)
+            {
+                var pad = JumpPad.Find(transform.position);
+                if (pad != null)
+                {
+                    Launch(pad.target, pad.flightTime);
+                    m_PadCooldown = 0.6f;
+                }
+            }
+
+            // Lançado (salto/plataforma): segue o arco até aterrar, com pouco controlo no ar
+            if (m_Launched && (Time.time - m_LaunchTime > 0.15f) && grounded)
+            {
+                m_HorizontalVelocity = m_LaunchVelocity;
+                m_LaunchVelocity = Vector3.zero;
+                m_Launched = false;
+            }
+
             float accel = grounded ? groundAccel : airAccel;
-            m_HorizontalVelocity = Vector3.MoveTowards(m_HorizontalVelocity, wish * speed, accel * dt);
+            if (m_Launched)
+                m_HorizontalVelocity = Vector3.MoveTowards(m_HorizontalVelocity, wish * speed * 0.25f, airAccel * dt);
+            else
+                m_HorizontalVelocity = Vector3.MoveTowards(m_HorizontalVelocity, wish * speed, accel * dt);
 
             // --- Jump ---
             if (cmd.jumpPressed) m_JumpBuffer = jumpBufferTime;
             else m_JumpBuffer -= dt;
 
-            if (m_JumpBuffer > 0f && m_CoyoteTimer > 0f)
+            if (m_JumpBuffer > 0f && m_CoyoteTimer > 0f && !m_Launched)
             {
                 m_VerticalVelocity = Mathf.Sqrt(2f * gravity * move.jumpHeight);
                 m_JumpBuffer = 0f;
@@ -144,10 +175,17 @@ namespace FPSLAN
             m_VerticalVelocity -= gravity * dt;
 
             m_ExternalVelocity = Vector3.MoveTowards(m_ExternalVelocity, Vector3.zero, (grounded ? 30f : 8f) * dt);
-            var flags = m_Controller.Move((m_HorizontalVelocity + m_ExternalVelocity + Vector3.up * m_VerticalVelocity) * dt);
+            var launch = m_Launched ? m_LaunchVelocity : Vector3.zero;
+            var flags = m_Controller.Move((m_HorizontalVelocity + launch + m_ExternalVelocity + Vector3.up * m_VerticalVelocity) * dt);
             if ((flags & CollisionFlags.Above) != 0 && m_VerticalVelocity > 0f) m_VerticalVelocity = 0f;
+            // Bateu numa parede durante o salto: perde o impulso horizontal
+            if (m_Launched && (flags & CollisionFlags.Sides) != 0) m_LaunchVelocity *= 0.5f;
 
-            if (transform.position.y < -20f) TeleportLocal(new Vector3(0f, 3f, 0f), m_Yaw);
+            if (transform.position.y < -20f)
+            {
+                SpawnPoint.Pick(m_Player, out var safe, out var safeYaw);
+                TeleportLocal(safe, safeYaw);
+            }
 
             PushState();
         }
@@ -197,6 +235,26 @@ namespace FPSLAN
             if (impulse.y > 0f) m_VerticalVelocity = Mathf.Max(m_VerticalVelocity, impulse.y);
         }
 
+        /// <summary>
+        /// Dono: lança o jogador em arco até 'target' em 'flightTime' segundos (plataformas de salto, Super de salto).
+        /// Usa a mesma gravidade do movimento, por isso cai exatamente no destino se nada o travar.
+        /// </summary>
+        public void Launch(Vector3 target, float flightTime)
+        {
+            if (!IsOwner) return;
+            float T = Mathf.Max(0.2f, flightTime);
+            var delta = target - transform.position;
+            m_LaunchVelocity = new Vector3(delta.x / T, 0f, delta.z / T);
+            m_VerticalVelocity = (delta.y + 0.5f * gravity * T * T) / T;
+            m_HorizontalVelocity = Vector3.zero;
+            m_ExternalVelocity = Vector3.zero;
+            m_Launched = true;
+            m_LaunchTime = Time.time;
+            m_JumpBuffer = 0f;
+            m_CoyoteTimer = 0f;
+            if (m_Player.IsLocalHuman) Sfx.Play2D(Sound.Launch, 0.8f);
+        }
+
         public void AddRecoil(float degrees)
         {
             m_RecoilPitch = Mathf.Min(m_RecoilPitch + degrees, 6f);
@@ -219,6 +277,8 @@ namespace FPSLAN
             m_Pitch = 0f;
             m_HorizontalVelocity = Vector3.zero;
             m_ExternalVelocity = Vector3.zero;
+            m_LaunchVelocity = Vector3.zero;
+            m_Launched = false;
             m_VerticalVelocity = 0f;
             transform.rotation = Quaternion.Euler(0f, m_Yaw, 0f);
             if (m_Player.Bot != null) m_Player.Bot.OnTeleported(yaw);

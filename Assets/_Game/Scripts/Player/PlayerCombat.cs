@@ -77,7 +77,11 @@ namespace FPSLAN
             {
                 int before = Mathf.FloorToInt(m_Ammo);
                 m_Ammo = Mathf.Min(b.primary.maxCharges, m_Ammo + dt / Mathf.Max(0.05f, b.primary.reloadTimePerCharge));
-                if (Mathf.FloorToInt(m_Ammo) > before && m_Player.IsLocalHuman) Sfx.Play2D(Sound.Reload, 0.6f);
+                if (Mathf.FloorToInt(m_Ammo) > before && m_Player.IsLocalHuman)
+                {
+                    Sfx.Play2D(Sound.Reload, 0.6f);
+                    m_Player.Visuals?.OnChargeReloaded();
+                }
             }
 
             m_Cooldown -= dt;
@@ -133,7 +137,9 @@ namespace FPSLAN
             var target = CombatMath.AimPoint(m_Player, attack.Range);
             int seed = Random.Range(int.MinValue, int.MaxValue);
 
-            CombatSystem.Instance.StartAttack(MakeContext(attack, super, false, origin, dir, target, seed));
+            var ctx = MakeContext(attack, super, false, origin, dir, target, seed);
+            CombatSystem.Instance.StartAttack(ctx);
+            attack.delivery.OnOwnerFire(m_Player, ctx);
             m_Player.Visuals?.OnAttackStarted(attack, super);
             FireRpc(super, origin, dir, target, seed);
         }
@@ -192,23 +198,38 @@ namespace FPSLAN
             !(float.IsNaN(v.x) || float.IsNaN(v.y) || float.IsNaN(v.z) || float.IsInfinity(v.x) || float.IsInfinity(v.y) || float.IsInfinity(v.z));
 
         /// <summary>Servidor: chamado pelo EffectResolver quando um ataque deste jogador acerta alguém.</summary>
-        public void ServerOnDealtDamage(int damage, bool fromSuper, bool headshot, bool killed)
+        public void ServerOnDealtDamage(int damage, bool fromSuper, bool headshot, bool killed, Vector3 victimPosition)
         {
             if (!fromSuper && Brawler != null)
             {
                 float required = Mathf.Max(1f, Brawler.super.chargeRequired);
+                bool wasReady = SuperCharge.Value >= 0.999f;
                 SuperCharge.Value = Mathf.Min(1f, SuperCharge.Value + damage / required);
+                if (!wasReady && SuperCharge.Value >= 0.999f && !m_Player.IsBot) SuperReadyRpc();
             }
-            if (!m_Player.IsBot) HitConfirmRpc(damage, headshot, killed);
+            if (!m_Player.IsBot) HitConfirmRpc(damage, headshot, killed, victimPosition);
         }
 
         [Rpc(SendTo.Owner)]
-        void HitConfirmRpc(int damage, bool headshot, bool killed)
+        void HitConfirmRpc(int damage, bool headshot, bool killed, Vector3 victimPosition)
         {
             if (!m_Player.IsLocalHuman) return;
             GameUI.ShowHitMarker(headshot, killed);
-            if (killed) Sfx.Play2D(Sound.Kill, 0.9f);
+            GameUI.AddDamageNumber(victimPosition + Vector3.up * 2.1f, damage, headshot, killed);
+            if (killed)
+            {
+                Sfx.Play2D(Sound.Kill, 0.9f);
+                GameUI.AnnounceKill();
+            }
             else Sfx.Play2D(headshot ? Sound.HeadHit : Sound.Hit, 0.7f);
+        }
+
+        [Rpc(SendTo.Owner)]
+        void SuperReadyRpc()
+        {
+            if (!m_Player.IsLocalHuman) return;
+            Sfx.Play2D(Sound.SuperReady, 0.8f);
+            GameUI.Toast("SUPER PRONTO!", new Color(1f, 0.8f, 0.2f));
         }
 
         public void ServerRefill()

@@ -9,11 +9,15 @@ namespace FPSLAN
     public class PlayerHealth : NetworkBehaviour
     {
         public float respawnDelay = 3f;
+        [Tooltip("Segundos de proteção depois de reaparecer (termina ao atacar).")]
+        public float spawnProtection = 2.2f;
 
         public readonly NetworkVariable<int> Health = new NetworkVariable<int>(100);
         public readonly NetworkVariable<bool> Dead = new NetworkVariable<bool>(false);
         /// <summary>NetworkObjectId de quem matou por último.</summary>
         public readonly NetworkVariable<ulong> LastKiller = new NetworkVariable<ulong>(ulong.MaxValue);
+        /// <summary>Hora do servidor até à qual o jogador está protegido (escudo de spawn).</summary>
+        public readonly NetworkVariable<double> ProtectedUntil = new NetworkVariable<double>(0);
 
         PlayerNetwork m_Player;
         float m_LastCombatTime;
@@ -25,6 +29,7 @@ namespace FPSLAN
         public bool IsDead => Dead.Value;
         public int MaxHealth => m_Player.Brawler != null ? m_Player.Brawler.stats.maxHealth : 100;
         public float RespawnRemaining => Mathf.Max(0f, m_ClientRespawnAt - Time.time);
+        public bool IsProtected => IsSpawned && NetworkManager != null && !Dead.Value && NetworkManager.ServerTime.Time < ProtectedUntil.Value;
 
         // Abrandamento vive agora no StatusEffects; mantido aqui por compatibilidade.
         public bool IsSlowed => m_Player.Status != null && m_Player.Status.IsSlowed;
@@ -83,6 +88,7 @@ namespace FPSLAN
                 GameUI.FlashDamage();
             }
             if (current < previous && m_Player.Bot != null) m_Player.Bot.OnDamaged();
+            if (current < previous && !Dead.Value) m_Player.Visuals?.OnHurt(previous - current);
         }
 
         /// <summary>Servidor: aplica dano. Devolve true se matou.</summary>
@@ -90,6 +96,7 @@ namespace FPSLAN
         {
             if (!IsServer || Dead.Value || amount <= 0) return false;
             if (MatchManager.IsMatchOver) return false;
+            if (IsProtected) return false;
 
             m_LastCombatTime = Time.time;
             Health.Value = Mathf.Max(0, Health.Value - amount);
@@ -106,11 +113,17 @@ namespace FPSLAN
             if (m_Player.Status != null) m_Player.Status.ServerApplySlow(factor, duration);
         }
 
-        public void ServerNotifyAttacked() => m_LastCombatTime = Time.time;
+        public void ServerNotifyAttacked()
+        {
+            m_LastCombatTime = Time.time;
+            // Atacar termina a proteção de spawn
+            if (ProtectedUntil.Value > 0) ProtectedUntil.Value = 0;
+        }
 
         void ServerDie(ulong attackerId)
         {
             Dead.Value = true;
+            ProtectedUntil.Value = 0;
             LastKiller.Value = attackerId;
             m_Player.Status?.ServerClear();
             m_RespawnAt = Time.time + respawnDelay;
@@ -132,6 +145,7 @@ namespace FPSLAN
             m_Player.Status?.ServerClear();
             m_Player.Motor.TeleportRpc(pos, yaw);
             m_Player.Combat.ServerRefill();
+            ProtectedUntil.Value = NetworkManager.ServerTime.Time + spawnProtection;
             Dead.Value = false;
         }
 

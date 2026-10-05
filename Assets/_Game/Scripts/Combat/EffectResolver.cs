@@ -116,7 +116,7 @@ namespace FPSLAN
             bool killed = victim.ServerApplyDamage(amount, attackerId);
             var attacker = PlayerNetwork.Find(attackerId);
             if (attacker != null && attacker.IsSpawned && attacker.Health != victim)
-                attacker.Combat.ServerOnDealtDamage(amount, fromSuper, headshot, killed);
+                attacker.Combat.ServerOnDealtDamage(amount, fromSuper, headshot, killed, victim.transform.position);
         }
     }
 }

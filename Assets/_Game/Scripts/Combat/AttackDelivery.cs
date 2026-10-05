@@ -14,6 +14,12 @@ namespace FPSLAN
         /// <summary>Usa o ponto-alvo (onde o jogador aponta) em vez de só a direção (arcos, armadilhas).</summary>
         public virtual bool UsesTargetPoint => false;
 
+        /// <summary>
+        /// Chamado só na máquina que controla o atacante, no momento do disparo (ex.: saltos/impulsos do próprio jogador,
+        /// que são movimento e por isso pertencem ao dono).
+        /// </summary>
+        public virtual void OnOwnerFire(PlayerNetwork shooter, AttackContext ctx) { }
+
         /// <summary>Executa um disparo. Corre no host (autoritativo) e em todas as máquinas (visual).</summary>
         public abstract void FireShot(CombatSystem combat, AttackContext ctx, int shotIndex);
 
