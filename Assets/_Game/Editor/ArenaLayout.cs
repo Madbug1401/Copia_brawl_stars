@@ -253,9 +253,9 @@ namespace FPSLAN.EditorTools
                     if (!Free(list, p, 1.1f, false, false)) continue;
                     extra.Add(new Piece { kind = PieceKind.Waypoint, center = p, size = Vector3.one });
                 }
-            // Topo da plataforma central
-            extra.Add(new Piece { kind = PieceKind.Waypoint, center = new Vector3(1.6f, 1.5f, -1.6f), size = Vector3.one });
-            extra.Add(new Piece { kind = PieceKind.Waypoint, center = new Vector3(-1.6f, 1.5f, 1.6f), size = Vector3.one });
+            // Fundo das rampas (os bots sobem à plataforma a partir daqui)
+            for (int k = 0; k < 4; k++)
+                extra.Add(new Piece { kind = PieceKind.Waypoint, center = new Quadrant(extra, k).R(new Vector3(0f, 0f, 9.2f)), size = Vector3.one });
             list.AddRange(extra);
         }
     }
