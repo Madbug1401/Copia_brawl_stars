@@ -73,8 +73,21 @@ namespace FPSLAN
             Tint(Mathf.Clamp01(hp / (float)Mathf.Max(1, maxHealth)));
 
             var center = transform.position + Vector3.up * 0.5f;
-            if (wasAlive && !alive) Sfx.PlayAt(Sound.Explosion, center, 1f);
-            else if (damaged && alive) Sfx.PlayAt(Sound.Hit, center, 0.5f);
+            var baseColor = m_BaseColors.Length > 0 ? m_BaseColors[0] : new Color(0.6f, 0.4f, 0.25f);
+            if (wasAlive && !alive)
+            {
+                Sfx.PlayAt(Sound.Crate, center, 1f);
+                var size = transform.lossyScale;
+                int pieces = Mathf.Clamp(Mathf.RoundToInt(size.x * size.y * size.z * 6f), 8, 22);
+                Fx.Debris(center, baseColor, pieces, 7f);
+                Fx.Smoke(center, Vector3.up * 0.8f, Mathf.Max(1f, size.magnitude * 0.6f), 1f, 0.7f);
+                Fx.Smoke(center + Vector3.up * 0.3f, Random.insideUnitSphere, Mathf.Max(0.8f, size.magnitude * 0.4f), 0.8f, 0.6f);
+            }
+            else if (damaged && alive)
+            {
+                Sfx.PlayAt(Sound.Hit, center, 0.5f);
+                Fx.Debris(center + Vector3.up * 0.3f, baseColor, 3, 4f);
+            }
         }
 
         void SetAlive(bool alive)

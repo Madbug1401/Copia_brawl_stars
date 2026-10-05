@@ -251,7 +251,12 @@ namespace FPSLAN
             if (local) CameraShake.Add(0.04f);
         }
 
-        public void OnChargeReloaded() => m_View?.OnChargeReloaded();
+        public void OnChargeReloaded()
+        {
+            m_View?.OnChargeReloaded();
+            var b = m_Player.Brawler;
+            if (m_Player.IsLocalHuman && b != null && b.firstPerson.rig == RigStyle.DualRevolvers) Sfx.Play2D(Sound.Twirl, 0.5f);
+        }
 
         public void OnHurt(int amount)
         {
@@ -275,6 +280,8 @@ namespace FPSLAN
                 m_PoofDone = instant;
                 if (m_Rig != null)
                 {
+                    // O próprio jogador vê o seu boneco cair (câmara de morte em terceira pessoa)
+                    if (m_Player.IsLocalHuman) m_Rig.SetShadowsOnly(false);
                     m_Rig.SetDead(true, instant);
                     if (instant) m_Rig.SetVisible(false);
                 }
@@ -282,6 +289,7 @@ namespace FPSLAN
             else
             {
                 m_Dead = false;
+                if (m_Player.IsLocalHuman) m_Rig?.SetShadowsOnly(true);
                 if (instant)
                 {
                     m_PendingRespawn = false;

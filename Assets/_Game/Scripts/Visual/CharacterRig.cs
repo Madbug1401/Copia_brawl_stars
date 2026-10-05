@@ -463,7 +463,8 @@ namespace FPSLAN
             m_BodyKick = Mathf.MoveTowards(m_BodyKick, 0f, dt * 6f);
             m_SuperPose = Mathf.MoveTowards(m_SuperPose, 0f, dt * 2.2f);
             float lean = 9f * move01 * Mathf.Max(0f, fwd) - m_Hurt * 14f - m_BodyKick * 7f;
-            m_Spine.localRotation = Quaternion.Euler(lean + pitch * 0.25f, -swing * 6f * move01, -side * 5f * move01 + m_Hurt * 6f);
+            float spinePitch = lean + pitch * 0.25f;
+            m_Spine.localRotation = Quaternion.Euler(spinePitch, -swing * 6f * move01, -side * 5f * move01 + m_Hurt * 6f);
             m_Head.localRotation = Quaternion.Euler(pitch * 0.45f - m_Hurt * 10f, 0f, Mathf.Sin(time * 1.3f) * 2f * (1f - move01));
 
             // ---------------- braços por estilo
@@ -472,7 +473,8 @@ namespace FPSLAN
             bool attacking = m_AttackT < m_AttackDur;
             m_KickL = Mathf.MoveTowards(m_KickL, 0f, dt * 9f);
             m_KickR = Mathf.MoveTowards(m_KickR, 0f, dt * 9f);
-            float aim = -90f + pitch;
+            // Os braços são filhos do tronco: compensa a inclinação para apontarem para onde o jogador olha
+            float aim = -90f + pitch - spinePitch;
             float idleArm = Mathf.Sin(time * 2f) * 2f;
             float superRaise = -45f * m_SuperPose * (1f - atk);
 

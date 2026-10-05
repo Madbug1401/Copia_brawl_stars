@@ -37,6 +37,8 @@ namespace FPSLAN
         float m_UnstickUntil;
         Vector2 m_UnstickMove;
         float m_NoiseSeed;
+        float m_EscapeUntil;
+        static readonly RaycastHit[] s_Hits = new RaycastHit[16];
 
         // Afinação por dificuldade
         float m_AimError;      // graus
@@ -124,7 +126,14 @@ namespace FPSLAN
             float desiredYaw = Mathf.Atan2(toLook.x, toLook.z) * Mathf.Rad2Deg;
             float desiredPitch = -Mathf.Atan2(toLook.y, new Vector2(toLook.x, toLook.z).magnitude) * Mathf.Rad2Deg;
 
-            if (m_Target != null)
+            bool escaping = now < m_EscapeUntil && m_Target != null;
+            if (escaping)
+            {
+                // Fuga com o Super (salto): vira-se de costas para o alvo e aponta longe
+                desiredYaw += 180f;
+                desiredPitch = -12f;
+            }
+            else if (m_Target != null)
             {
                 // Erro de pontaria suave (Perlin) — os bots não acertam tudo
                 float t = now * 0.9f;
@@ -136,7 +145,7 @@ namespace FPSLAN
                 desiredPitch = 0f;
             }
 
-            m_Yaw = Mathf.MoveTowardsAngle(m_Yaw, desiredYaw, m_TurnSpeed * dt);
+            m_Yaw = Mathf.MoveTowardsAngle(m_Yaw, desiredYaw, (escaping ? 900f : m_TurnSpeed) * dt);
             m_Pitch = Mathf.MoveTowards(m_Pitch, Mathf.Clamp(desiredPitch, -60f, 60f), m_TurnSpeed * 0.6f * dt);
             cmd.yaw = m_Yaw;
             cmd.pitch = m_Pitch;
@@ -205,7 +214,22 @@ namespace FPSLAN
                 if (m_Self.Combat.SuperReady)
                 {
                     float superRange = profile.superUseRange;
-                    cmd.superPressed = distToTarget <= superRange && aimErr <= m_FireAngle;
+                    if (profile.superIsEscape)
+                    {
+                        if (distToTarget <= superRange && !escaping) m_EscapeUntil = now + 0.7f;
+                        cmd.fire = cmd.fire && !escaping;
+                    }
+                    else cmd.superPressed = distToTarget <= superRange && aimErr <= m_FireAngle;
+                }
+            }
+
+            if (escaping && m_Self.Combat.SuperReady)
+            {
+                float away = Mathf.Atan2(toLook.x, toLook.z) * Mathf.Rad2Deg + 180f;
+                if (Mathf.Abs(Mathf.DeltaAngle(m_Yaw, away)) < 20f)
+                {
+                    cmd.superPressed = true;
+                    m_EscapeUntil = 0f;
                 }
             }
 
@@ -223,6 +247,8 @@ namespace FPSLAN
                 if (p == null || p == m_Self || !p.IsSpawned || p.Health.IsDead) continue;
                 float d = Vector3.Distance(m_Self.transform.position, p.transform.position);
                 if (d > 45f) continue;
+                // Escondido num arbusto (e não revelado): o bot não o vê
+                if (Bush.Conceals(p, m_Self.transform.position)) continue;
                 bool visible = CombatMath.HasLineOfSight(m_Self, p);
                 // Preferir alvos visíveis e próximos; manter o alvo atual (histerese)
                 float score = d + (visible ? 0f : 25f) + (p == m_Target ? -5f : 0f);
@@ -273,17 +299,28 @@ namespace FPSLAN
 
         bool Blocked(Vector3 from, Vector3 dir, float dist)
         {
-            if (!CombatMath.Raycast(from, dir.normalized, dist, m_Self, out var hit)) return false;
-            // Outros jogadores não contam como paredes
-            return hit.collider.GetComponentInParent<PlayerHealth>() == null;
+            // Todas as camadas (inclui barreiras invisíveis como a água), exceto jogadores
+            int n = Physics.RaycastNonAlloc(from, dir.normalized, s_Hits, dist, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                var c = s_Hits[i].collider;
+                if (c == null || c.GetComponentInParent<PlayerHealth>() != null) continue;
+                return true;
+            }
+            return false;
         }
 
         void PickWanderPoint()
         {
-            // Pontos aleatórios dentro da arena, com tendência para o centro (onde há luta)
-            var r = Random.insideUnitCircle * 17f;
-            if (Random.value < 0.35f) r *= 0.35f;
-            m_WanderPoint = new Vector3(r.x, 0f, r.y);
+            // Pontos de patrulha do mapa (ou aleatórios), com tendência para o centro (onde há luta)
+            if (Random.value < 0.3f)
+            {
+                var r = Random.insideUnitCircle * 5f;
+                m_WanderPoint = new Vector3(r.x, 0f, r.y);
+                if (MapInfo.Instance != null && MapInfo.Instance.waypoints != null && MapInfo.Instance.waypoints.Length > 0)
+                    m_WanderPoint = MapInfo.RandomWaypoint();
+            }
+            else m_WanderPoint = MapInfo.RandomWaypoint();
         }
 
         static Vector3 EstimateVelocity(PlayerNetwork p)

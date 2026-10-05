@@ -146,6 +146,8 @@ namespace FPSLAN
         public float superUseRange = 15f;
         [Tooltip("Ataque em arco: apontar para o chão junto ao alvo.")]
         public bool aimAtFeet;
+        [Tooltip("O Super serve para fugir (ex.: salto): o bot usa-o de costas para o inimigo quando este se aproxima.")]
+        public bool superIsEscape;
     }
 
     /// <summary>

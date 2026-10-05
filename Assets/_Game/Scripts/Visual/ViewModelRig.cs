@@ -85,9 +85,10 @@ namespace FPSLAN
                     break;
 
                 case RigStyle.Bow:
-                    m_GunLRest = new Vector3(-0.07f, -0.12f, 0.48f);
+                    m_GunLRest = new Vector3(-0.17f, -0.1f, 0.5f);
                     m_GunL = Holder("Bow", m_GunLRest);
-                    m_GunLRot = Quaternion.Euler(0f, 4f, 18f);
+                    m_GunL.localScale = Vector3.one * 0.85f;
+                    m_GunLRot = Quaternion.Euler(0f, 6f, 16f);
                     m_GunL.localRotation = m_GunLRot;
                     m_WeaponL = WeaponModels.Build(Style, m_GunL, m_Accent, 1, s);
                     m_HandL = Hand(m_GunL, Vector3.zero, glove);
