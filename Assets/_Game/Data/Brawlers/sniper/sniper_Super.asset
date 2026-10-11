@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c6cc1542dabdf841b6340bc5070f90f, type: 3}
+  m_Name: sniper_Super
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.AttackDefinition
+  delivery: {fileID: 11400000, guid: 77d570f8a91104a448305c606892f6b8, type: 2}
+  effect:
+    damage: 0
+    nearMultiplier: 1
+    farMultiplier: 1
+    canHeadshot: 0
+    headshotMultiplier: 1.5
+    splashRadius: 2.4
+    splashDamage: 32
+    slowFactor: 1
+    slowDuration: 0
+    dotDamagePerSecond: 0
+    dotDuration: 0
+    knockback: 6
+    knockbackUp: 3
+    coverDamage: 30
+    zoneOnImpact:
+      enabled: 0
+      radius: 3
+      duration: 4
+      tickInterval: 0.5
+      tickDamage: 5
+      slowFactor: 1
+      slowDuration: 0.6
+      color: {r: 0.6, g: 0.9, b: 0.4, a: 1}
+  visuals:
+    color: {r: 0.55, g: 1, b: 0.75, a: 1}
+    scale: 1
+    style: 7
+    sound: 17
+    impactSound: 13

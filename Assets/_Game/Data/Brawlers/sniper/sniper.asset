@@ -1,0 +1,81 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 080b4c69ecad92341a9e109a5b4cc77b, type: 3}
+  m_Name: sniper
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.BrawlerDefinition
+  brawlerId: sniper
+  displayName: Lince
+  role: "Atiradora \u2014 tiro certeiro que causa mais dano ao longe; Super: salto de fuga que deixa bombas para tr\xE1s"
+  available: 1
+  stats:
+    maxHealth: 85
+    regenDelay: 3
+    regenPercentPerSecond: 0.15
+  movement:
+    walkSpeed: 6.5
+    sprintSpeed: 9.5
+    jumpHeight: 1.35
+  primary:
+    attack: {fileID: 11400000, guid: e2193cf149ff17943b1de926bebc3ebe, type: 2}
+    maxCharges: 3
+    reloadTimePerCharge: 2.1
+    cooldown: 0.8
+  super:
+    attack: {fileID: 11400000, guid: bb958f6a2ca3bf444b506941b6591e49, type: 2}
+    chargeRequired: 150
+  abilities: []
+  firstPerson:
+    rig: 6
+    prefabOverride: {fileID: 0}
+    muzzleOffsets:
+    - {x: 0.15, y: -0.16, z: 0.85}
+    accentColor: {r: 0.45, g: 1, b: 0.8, a: 1}
+  thirdPerson:
+    rig: 6
+    prefabOverride: {fileID: 0}
+    muzzleOffsets:
+    - {x: 0.3, y: 0.05, z: 1}
+    bodyColor: {r: 0.45, g: 0.82, b: 0.55, a: 1}
+    look:
+      skin: {r: 0.72, g: 0.5, b: 0.36, a: 1}
+      outfit: {r: 0.4, g: 0.62, b: 0.35, a: 1}
+      pants: {r: 0.32, g: 0.3, b: 0.22, a: 1}
+      accent: {r: 0.98, g: 0.9, b: 0.55, a: 1}
+      hair: {r: 0.25, g: 0.18, b: 0.12, a: 1}
+      gear: {r: 0.55, g: 0.48, b: 0.3, a: 1}
+      headGear: 6
+      bodyScale: 0.96
+      headScale: 1
+      bulk: 0.9
+  animations:
+    animatorController: {fileID: 0}
+    attackKick: 1.6
+    attackDuration: 0.5
+    reloadDuration: 0.5
+    superDuration: 0.8
+    bobAmount: 1
+  vfx:
+    primaryColor: {r: 0.55, g: 1, b: 0.85, a: 1}
+    superColor: {r: 0.55, g: 1, b: 0.75, a: 1}
+    muzzleFlashScale: 1.3
+    impactScale: 1
+  sfx:
+    primary: 16
+    super: 17
+    impact: 13
+    primaryClip: {fileID: 0}
+    superClip: {fileID: 0}
+  bot:
+    preferredRange: 24
+    superUseRange: 6
+    aimAtFeet: 0
+    superIsEscape: 1

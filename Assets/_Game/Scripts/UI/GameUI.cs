@@ -13,11 +13,24 @@ namespace FPSLAN
     public class GameUI : MonoBehaviour
     {
         static GameUI s_Instance;
+        const int SettingsTabControls = 0;
+        const int SettingsTabHud = 1;
+        const int SettingsTabGameplay = 2;
+        const int SettingsTabAudio = 3;
 
         public static bool GameplayInputAllowed => s_Instance != null && s_Instance.m_InGame && !s_Instance.m_Paused;
+        public static bool MobileHudEditing => s_Instance != null && s_Instance.m_SettingsOpen &&
+            s_Instance.m_SettingsTab == SettingsTabHud;
 
         bool m_InGame;
         bool m_Paused;
+        bool m_SettingsOpen;
+        int m_SettingsTab;
+        bool m_CapturingBinding;
+        GameAction m_CapturingAction;
+        int m_CaptureStartFrame;
+        Vector2 m_SettingsScroll;
+        string m_SettingsMessage;
 
         string m_Name;
         string m_Ip;
@@ -46,6 +59,7 @@ namespace FPSLAN
         double m_LastMatchEnd = -1;
         MatchPhase m_LastPhase = MatchPhase.Playing;
         bool m_AnnouncedStart;
+        Vector2 m_MobileMenuScroll;
 
         GUIStyle m_Title, m_Label, m_Big, m_Small, m_Center, m_Button, m_Field, m_Tiny, m_TinyCenter, m_Panel, m_Card, m_Huge;
         Texture2D m_White, m_Rounded, m_Vignette, m_Circle, m_Ring;
@@ -71,6 +85,7 @@ namespace FPSLAN
             BotManager.Difficulty = (BotDifficulty)PlayerPrefs.GetInt("fpslan.botdiff", (int)BotDifficulty.Normal);
             m_LocalIps = ConnectionManager.GetLocalIPv4();
             m_Preview = new BrawlerPreview();
+            GameSession.ApplyAudioSettings();
         }
 
         void OnDestroy()
@@ -183,9 +198,15 @@ namespace FPSLAN
             m_InGame = NM != null && NM.IsListening && PlayerNetwork.Local != null;
 
             if (!m_InGame) m_Paused = false;
-            else if (InputReader.PausePressed) m_Paused = !m_Paused;
+            else if (InputReader.PausePressed && !m_CapturingBinding)
+            {
+                if (m_SettingsOpen)
+                    CloseSettings();
+                else
+                    m_Paused = !m_Paused;
+            }
 
-            bool lockCursor = GameplayInputAllowed && Application.isFocused;
+            bool lockCursor = !Application.isMobilePlatform && GameplayInputAllowed && Application.isFocused;
             Cursor.lockState = lockCursor ? CursorLockMode.Locked : CursorLockMode.None;
             Cursor.visible = !lockCursor;
 
@@ -420,7 +441,8 @@ namespace FPSLAN
 
             if (!m_InGame)
             {
-                DrawMainMenu();
+                if (m_SettingsOpen) DrawSettingsMenu();
+                else DrawMainMenu();
                 return;
             }
 
@@ -437,6 +459,36 @@ namespace FPSLAN
                 DrawScoreboard();
 
             if (m_Paused) DrawPauseMenu();
+            if (m_SettingsOpen) DrawSettingsMenu();
+            MobileControls.DrawOverlay();
+            if (m_InGame && !m_Paused && !m_SettingsOpen && IsScopeActive())
+                DrawScopeOverlay();
+        }
+
+        static bool IsScopeActive()
+        {
+            var player = PlayerNetwork.Local;
+            return player != null && player.Brawler != null &&
+                player.Brawler.firstPerson.rig == RigStyle.Sniper && InputReader.AimHeld;
+        }
+
+        void DrawScopeOverlay()
+        {
+            var screen = new Rect(0f, 0f, Screen.width, Screen.height);
+            Tex(screen, m_Vignette, new Color(0f, 0f, 0f, 0.78f));
+            float radius = Mathf.Min(Screen.height * 0.34f, Screen.width * 0.24f);
+            var scope = new Rect(Screen.width * 0.5f - radius, Screen.height * 0.5f - radius,
+                radius * 2f, radius * 2f);
+            Tex(scope, m_Ring, new Color(0.42f, 0.94f, 0.86f, 0.88f));
+
+            float cx = Screen.width * 0.5f, cy = Screen.height * 0.5f;
+            float line = Mathf.Max(1.5f, Scale * 2f);
+            var color = new Color(0.9f, 1f, 0.9f, 0.86f);
+            Fill(new Rect(cx - radius * 0.72f, cy - line * 0.5f, radius * 0.62f, line), color);
+            Fill(new Rect(cx + radius * 0.1f, cy - line * 0.5f, radius * 0.62f, line), color);
+            Fill(new Rect(cx - line * 0.5f, cy - radius * 0.72f, line, radius * 0.62f), color);
+            Fill(new Rect(cx - line * 0.5f, cy + radius * 0.1f, line, radius * 0.62f), color);
+            Fill(new Rect(cx - line, cy - line, line * 2f, line * 2f), color);
         }
 
         // ================================================================== menu principal
@@ -448,6 +500,12 @@ namespace FPSLAN
             Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0.05f, 0.08f, 0.2f, 0.45f));
             Tex(new Rect(0, 0, Screen.width, Screen.height), m_Vignette, new Color(0.02f, 0.02f, 0.08f, 0.8f));
 
+            if (Application.isMobilePlatform)
+            {
+                DrawMobileMainMenu();
+                return;
+            }
+
             float w = 600 * s, h = Mathf.Min(Screen.height - 40 * s, 760 * s);
             var area = new Rect(40 * s, (Screen.height - h) / 2f, w, h);
             InkPanel(area, PanelDark, 4f * s);
@@ -456,14 +514,16 @@ namespace FPSLAN
             var titleRect = GUILayoutUtility.GetRect(10, 70 * s);
             Outlined(titleRect, "FPS-LAN", m_Title, Gold, 3f);
             var subRect = GUILayoutUtility.GetRect(10, 26 * s);
-            Outlined(subRect, "ARENA DOS BRAWLERS  ·  LAN + BOTS", m_Center, new Color(0.7f, 0.9f, 1f));
+            Outlined(subRect, "ARENA DE COMBATE  ·  MULTIPLAYER LAN", m_Center, new Color(0.7f, 0.9f, 1f));
+            if (LayoutButton("DEFINIÇÕES  ·  TECLAS E HUD", new Color(0.28f, 0.36f, 0.56f), GUILayout.Height(38 * s)))
+                OpenSettings();
             GUILayout.Space(8 * s);
 
-            GUILayout.Label("Nome", m_Small);
+            GUILayout.Label("PERFIL DO JOGADOR", m_Small);
             m_Name = GUILayout.TextField(m_Name ?? "", 16, m_Field, GUILayout.Height(38 * s));
 
             GUILayout.Space(8 * s);
-            GUILayout.Label("Escolhe o teu Brawler", m_Small);
+            GUILayout.Label("ESCOLHE O TEU BRAWLER", m_Small);
             DrawBrawlerCards(s, ref m_Hero, false, area.width - 48 * s);
 
             GUILayout.Space(8 * s);
@@ -473,6 +533,7 @@ namespace FPSLAN
             DrawBotControls(s, false);
             GUILayout.Space(8 * s);
 
+            GUILayout.Label("CRIAR UMA SALA", m_Small);
             GUILayout.BeginHorizontal();
             if (LayoutButton("HOST", new Color(0.3f, 0.75f, 1f), GUILayout.Height(52 * s)))
             {
@@ -487,7 +548,8 @@ namespace FPSLAN
             GUILayout.EndHorizontal();
 
             GUILayout.Space(8 * s);
-            GUILayout.Label("IP do host", m_Small);
+            GUILayout.Label("ENTRAR NUMA SALA", m_Small);
+            GUILayout.Label("IP do anfitrião · UDP " + ConnectionManager.DefaultPort, m_Tiny);
             GUILayout.BeginHorizontal();
             m_Ip = GUILayout.TextField(m_Ip ?? "", 40, m_Field, GUILayout.Height(42 * s));
             if (LayoutButton("JOIN", new Color(0.45f, 0.9f, 0.45f), GUILayout.Width(130 * s), GUILayout.Height(42 * s)))
@@ -514,10 +576,157 @@ namespace FPSLAN
 
             GUILayout.FlexibleSpace();
             var ips = m_LocalIps != null && m_LocalIps.Count > 0 ? string.Join("   ", m_LocalIps) : "desconhecido";
-            GUILayout.Label("O teu IP na rede: " + ips + "   (porta " + ConnectionManager.DefaultPort + ")", m_Small);
+            GUILayout.Label("O teu IP na rede: " + ips + "   ·   UDP " + ConnectionManager.DefaultPort, m_Small);
             GUILayout.EndArea();
 
             DrawBrawlerShowcase(m_Hero, new Rect(area.xMax + 30 * s, area.y, Screen.width - area.xMax - 70 * s, h));
+        }
+
+        void DrawMobileMainMenu()
+        {
+            var safe = Screen.safeArea;
+            if (safe.width <= 0f || safe.height <= 0f)
+                safe = new Rect(0f, 0f, Screen.width, Screen.height);
+            float s = Scale;
+            var area = new Rect(safe.xMin + 14f * s, Screen.height - safe.yMax + 12f * s,
+                safe.width - 28f * s, safe.height - 24f * s);
+            InkPanel(area, PanelDark, 4f * s);
+
+            float padding = 14f * s;
+            float headerHeight = Mathf.Clamp(66f * s, 48f, area.height * 0.22f);
+            var header = new Rect(area.x + padding, area.y + 6f * s, area.width - padding * 2f, headerHeight);
+            var title = new GUIStyle(m_Big) { alignment = TextAnchor.MiddleLeft, fontSize = Mathf.RoundToInt(34f * s) };
+            Outlined(new Rect(header.x, header.y, header.width * 0.45f, header.height * 0.62f),
+                "FPS-LAN", title, Gold, 1.5f);
+            Outlined(new Rect(header.x + 2f * s, header.y + header.height * 0.58f, header.width * 0.66f, header.height * 0.35f),
+                "ARENA DE COMBATE  /  MULTIPLAYER LAN", m_Tiny, new Color(0.72f, 0.84f, 1f), 0.5f);
+
+            float buttonWidth = Mathf.Clamp(144f * s, 104f, 168f);
+            var settingsRect = new Rect(header.xMax - buttonWidth, header.y + (header.height - 38f * s) * 0.5f,
+                buttonWidth, 38f * s);
+            if (Button(settingsRect, "DEFINIÇÕES", new Color(0.25f, 0.34f, 0.54f)))
+                OpenSettings();
+
+            float contentY = header.yMax + 8f * s;
+            float contentHeight = Mathf.Max(0f, area.yMax - padding - contentY);
+            if (area.width >= area.height * 1.18f)
+                DrawMobileMainMenuColumns(area, padding, contentY, contentHeight, s);
+            else
+                DrawMobileMainMenuCompact(area, padding, contentY, contentHeight, s);
+        }
+
+        void DrawMobileMainMenuColumns(Rect area, float padding, float contentY, float contentHeight, float s)
+        {
+            float gap = 12f * s;
+            float leftWidth = Mathf.Clamp((area.width - padding * 2f - gap) * 0.47f, 250f * s, area.width * 0.52f);
+            var profile = new Rect(area.x + padding, contentY, leftWidth, contentHeight);
+            var lobby = new Rect(profile.xMax + gap, contentY, area.xMax - padding - (profile.xMax + gap), contentHeight);
+            Panel(profile, new Color(0.1f, 0.12f, 0.21f, 0.94f));
+            Panel(lobby, new Color(0.1f, 0.12f, 0.21f, 0.94f));
+
+            float inset = 10f * s;
+            GUILayout.BeginArea(new Rect(profile.x + inset, profile.y + 6f * s, profile.width - inset * 2f, profile.height - 12f * s));
+            GUILayout.Label("JOGADOR", m_Tiny);
+            m_Name = GUILayout.TextField(m_Name ?? "", 16, m_Field, GUILayout.Height(34f * s));
+            GUILayout.Space(4f * s);
+            GUILayout.Label("ESCOLHE O TEU BRAWLER", m_Small);
+            DrawBrawlerCards(s, ref m_Hero, false, profile.width - inset * 2f);
+            GUILayout.EndArea();
+
+            GUILayout.BeginArea(new Rect(lobby.x + inset, lobby.y + 6f * s, lobby.width - inset * 2f, lobby.height - 12f * s));
+            bool busy = NM != null && NM.IsListening;
+            GUI.enabled = !busy;
+            GUILayout.Label("JOGAR COM AMIGOS", m_Small);
+            GUILayout.BeginHorizontal();
+            if (LayoutButton("CRIAR SALA", new Color(0.18f, 0.58f, 0.88f), GUILayout.Height(42f * s)))
+            {
+                SaveMenuPrefs();
+                if (ConnectionManager.Instance != null && ConnectionManager.Instance.Host()) m_PendingBots = m_MenuBots;
+            }
+            if (LayoutButton("TREINO", new Color(0.76f, 0.48f, 0.12f), GUILayout.Height(42f * s)))
+            {
+                SaveMenuPrefs();
+                if (ConnectionManager.Instance != null && ConnectionManager.Instance.Host()) m_PendingBots = Mathf.Max(3, m_MenuBots);
+            }
+            GUILayout.EndHorizontal();
+
+            DrawBotControls(s, false);
+            GUILayout.Space(4f * s);
+            GUILayout.Label("ENTRAR COM IP", m_Tiny);
+            GUILayout.BeginHorizontal();
+            m_Ip = GUILayout.TextField(m_Ip ?? "", 40, m_Field, GUILayout.Height(36f * s));
+            if (LayoutButton("ENTRAR", new Color(0.24f, 0.68f, 0.42f), GUILayout.Width(104f * s), GUILayout.Height(36f * s)))
+            {
+                SaveMenuPrefs();
+                ConnectionManager.Instance?.Join(m_Ip);
+            }
+            GUILayout.EndHorizontal();
+            GUI.enabled = true;
+
+            if (busy && LayoutButton("CANCELAR LIGAÇÃO", new Color(0.72f, 0.25f, 0.23f), GUILayout.Height(34f * s)))
+                ConnectionManager.Instance?.Leave();
+            string status = ConnectionManager.Instance != null ? ConnectionManager.Instance.Status : "";
+            if (!string.IsNullOrEmpty(status))
+                GUILayout.Label(status, m_Tiny);
+            GUILayout.FlexibleSpace();
+            string ips = m_LocalIps != null && m_LocalIps.Count > 0 ? string.Join("  ·  ", m_LocalIps) : "indisponível";
+            GUILayout.Label("IP DESTA REDE  " + ips + "   /   UDP " + ConnectionManager.DefaultPort, m_Tiny);
+            GUILayout.EndArea();
+        }
+
+        void DrawMobileMainMenuCompact(Rect area, float padding, float contentY, float contentHeight, float s)
+        {
+            var content = new Rect(area.x + padding, contentY, area.width - padding * 2f, contentHeight);
+            m_MobileMenuScroll = GUI.BeginScrollView(content, m_MobileMenuScroll,
+                new Rect(0f, 0f, content.width - 14f * s, 680f * s), false, true);
+            GUILayout.BeginArea(new Rect(0f, 0f, content.width - 14f * s, 680f * s));
+            Panel(new Rect(0f, 0f, content.width - 14f * s, 680f * s), new Color(0.1f, 0.12f, 0.21f, 0.94f));
+            GUILayout.BeginArea(new Rect(10f * s, 8f * s, content.width - 34f * s, 660f * s));
+            GUILayout.Label("JOGADOR", m_Tiny);
+            m_Name = GUILayout.TextField(m_Name ?? "", 16, m_Field, GUILayout.Height(38f * s));
+            GUILayout.Space(6f * s);
+            GUILayout.Label("ESCOLHE O TEU BRAWLER", m_Small);
+            DrawBrawlerCards(s, ref m_Hero, false, content.width - 54f * s);
+            GUILayout.Space(8f * s);
+
+            bool busy = NM != null && NM.IsListening;
+            GUI.enabled = !busy;
+            GUILayout.Label("JOGAR COM AMIGOS", m_Small);
+            DrawBotControls(s, false);
+            GUILayout.BeginHorizontal();
+            if (LayoutButton("CRIAR SALA", new Color(0.18f, 0.58f, 0.88f), GUILayout.Height(44f * s)))
+            {
+                SaveMenuPrefs();
+                if (ConnectionManager.Instance != null && ConnectionManager.Instance.Host()) m_PendingBots = m_MenuBots;
+            }
+            if (LayoutButton("TREINO", new Color(0.76f, 0.48f, 0.12f), GUILayout.Height(44f * s)))
+            {
+                SaveMenuPrefs();
+                if (ConnectionManager.Instance != null && ConnectionManager.Instance.Host()) m_PendingBots = Mathf.Max(3, m_MenuBots);
+            }
+            GUILayout.EndHorizontal();
+            GUILayout.Space(6f * s);
+            GUILayout.Label("ENTRAR COM IP · UDP " + ConnectionManager.DefaultPort, m_Tiny);
+            GUILayout.BeginHorizontal();
+            m_Ip = GUILayout.TextField(m_Ip ?? "", 40, m_Field, GUILayout.Height(40f * s));
+            if (LayoutButton("ENTRAR", new Color(0.24f, 0.68f, 0.42f), GUILayout.Width(112f * s), GUILayout.Height(40f * s)))
+            {
+                SaveMenuPrefs();
+                ConnectionManager.Instance?.Join(m_Ip);
+            }
+            GUILayout.EndHorizontal();
+            GUI.enabled = true;
+
+            if (busy && LayoutButton("CANCELAR LIGAÇÃO", new Color(0.72f, 0.25f, 0.23f), GUILayout.Height(38f * s)))
+                ConnectionManager.Instance?.Leave();
+            string status = ConnectionManager.Instance != null ? ConnectionManager.Instance.Status : "";
+            if (!string.IsNullOrEmpty(status)) GUILayout.Label(status, m_Tiny);
+            string ips = m_LocalIps != null && m_LocalIps.Count > 0 ? string.Join("  ·  ", m_LocalIps) : "indisponível";
+            GUILayout.Space(8f * s);
+            GUILayout.Label("IP DESTA REDE  " + ips, m_Tiny);
+            GUILayout.EndArea();
+            GUILayout.EndArea();
+            GUI.EndScrollView();
         }
 
         /// <summary>Lado direito do menu: modelo 3D a rodar + nome, papel e atributos.</summary>
@@ -596,9 +805,11 @@ namespace FPSLAN
             int count = 0;
             foreach (var b in all) if (b != null) count++;
             if (count == 0) return;
-            int perRow = count <= 4 ? count : Mathf.CeilToInt(count / 2f);
-            int rows = Mathf.CeilToInt(count / (float)perRow);
             float gap = 8 * s;
+            int preferredColumns = count <= 4 ? count : Mathf.CeilToInt(count / 2f);
+            int columnsThatFit = Mathf.Max(1, Mathf.FloorToInt((width + gap) / (132f * s + gap)));
+            int perRow = Mathf.Min(preferredColumns, columnsThatFit);
+            int rows = Mathf.CeilToInt(count / (float)perRow);
             float cw = (width - gap * (perRow - 1)) / perRow;
             float ch = 74 * s;
             var block = GUILayoutUtility.GetRect(width, rows * ch + (rows - 1) * gap);
@@ -935,6 +1146,7 @@ namespace FPSLAN
 
         void DrawSuperButton(PlayerNetwork me, float s)
         {
+            if (Application.isMobilePlatform) return;
             float d = 120 * s;
             var r = new Rect(Screen.width - d - 36 * s, Screen.height - d - 30 * s, d, d);
             float sup = Mathf.Clamp01(me.Combat.SuperCharge.Value);
@@ -1030,12 +1242,408 @@ namespace FPSLAN
             DrawScoreboard();
         }
 
+        void OpenSettings()
+        {
+            m_SettingsOpen = true;
+            m_SettingsTab = Application.isMobilePlatform ? SettingsTabHud : SettingsTabControls;
+            m_CapturingBinding = false;
+            m_SettingsMessage = null;
+        }
+
+        void CloseSettings()
+        {
+            m_SettingsOpen = false;
+            m_CapturingBinding = false;
+            m_SettingsMessage = null;
+            PlayerPrefs.Save();
+        }
+
+        static string ActionLabel(GameAction action)
+        {
+            switch (action)
+            {
+                case GameAction.MoveForward: return "Avançar";
+                case GameAction.MoveBackward: return "Recuar";
+                case GameAction.MoveLeft: return "Mover à esquerda";
+                case GameAction.MoveRight: return "Mover à direita";
+                case GameAction.Fire: return "Ataque principal";
+                case GameAction.Super: return "Super";
+                case GameAction.Jump: return "Salto";
+                case GameAction.Sprint: return "Correr";
+                case GameAction.Scoreboard: return "Placar";
+                case GameAction.Pause: return "Pausa";
+                case GameAction.Aim: return "Mirar (Lince)";
+                default: return action.ToString();
+            }
+        }
+
+        void DrawSettingsMenu()
+        {
+            float s = Scale;
+            Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0.02f, 0.03f, 0.08f, Application.isMobilePlatform ? 0.25f : 0.74f));
+
+            if (Application.isMobilePlatform)
+            {
+                DrawMobileSettings(s);
+                if (m_SettingsTab == SettingsTabHud)
+                    MobileControls.DrawHudEditorOverlay();
+                return;
+            }
+
+            float w = Mathf.Min(800f * s, Screen.width - 36f * s);
+            float h = Mathf.Min(720f * s, Screen.height - 36f * s);
+            var area = new Rect((Screen.width - w) * 0.5f, (Screen.height - h) * 0.5f, w, h);
+            InkPanel(area, PanelDark, 4f * s);
+            GUILayout.BeginArea(new Rect(area.x + 24f * s, area.y + 16f * s, area.width - 48f * s, area.height - 32f * s));
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("DEFINIÇÕES", m_Big, GUILayout.ExpandWidth(true), GUILayout.Height(42f * s));
+            if (LayoutButton("VOLTAR", new Color(0.4f, 0.46f, 0.6f), GUILayout.Width(130f * s), GUILayout.Height(40f * s)))
+                CloseSettings();
+            GUILayout.EndHorizontal();
+            GUILayout.Space(8f * s);
+
+            GUILayout.BeginHorizontal();
+            if (LayoutButton("TECLAS", m_SettingsTab == SettingsTabControls ? PanelBlue : new Color(0.22f, 0.24f, 0.34f),
+                GUILayout.Height(40f * s)))
+            {
+                m_SettingsTab = SettingsTabControls;
+                m_CapturingBinding = false;
+            }
+            if (LayoutButton("HUD", m_SettingsTab == SettingsTabHud ? PanelBlue : new Color(0.22f, 0.24f, 0.34f),
+                GUILayout.Height(40f * s)))
+            {
+                m_SettingsTab = SettingsTabHud;
+                m_CapturingBinding = false;
+            }
+            if (LayoutButton("JOGABILIDADE", m_SettingsTab == SettingsTabGameplay ? PanelBlue : new Color(0.22f, 0.24f, 0.34f),
+                GUILayout.Height(40f * s)))
+            {
+                m_SettingsTab = SettingsTabGameplay;
+                m_CapturingBinding = false;
+            }
+            if (LayoutButton("ÁUDIO", m_SettingsTab == SettingsTabAudio ? PanelBlue : new Color(0.22f, 0.24f, 0.34f),
+                GUILayout.Height(40f * s)))
+            {
+                m_SettingsTab = SettingsTabAudio;
+                m_CapturingBinding = false;
+            }
+            GUILayout.EndHorizontal();
+
+            if (m_SettingsTab == SettingsTabControls)
+                DrawKeyboardSettings(s);
+            else if (m_SettingsTab == SettingsTabHud)
+                DrawDesktopHudSettings(s);
+            else if (m_SettingsTab == SettingsTabGameplay)
+                DrawGameplaySettings(s);
+            else if (m_SettingsTab == SettingsTabAudio)
+                DrawAudioSettings(s);
+
+            GUILayout.EndArea();
+            MobileControls.DrawHudEditorOverlay();
+        }
+
+        void DrawKeyboardSettings(float s)
+        {
+            GUILayout.Space(10f * s);
+            GUILayout.Label("Seleciona uma ação e prime a tecla ou botão do rato pretendido. Mira: botão direito.", m_Small);
+            GUILayout.Space(6f * s);
+            m_SettingsScroll = GUILayout.BeginScrollView(m_SettingsScroll, false, true, GUILayout.ExpandHeight(true));
+
+            var actions = new[]
+            {
+                GameAction.MoveForward, GameAction.MoveBackward, GameAction.MoveLeft, GameAction.MoveRight,
+                GameAction.Fire, GameAction.Super, GameAction.Jump, GameAction.Sprint,
+                GameAction.Scoreboard, GameAction.Pause, GameAction.Aim,
+            };
+            foreach (var action in actions)
+            {
+                GUILayout.BeginHorizontal("box", GUILayout.Height(48f * s));
+                GUILayout.Label(ActionLabel(action), m_Label, GUILayout.ExpandWidth(true));
+                string label = m_CapturingBinding && m_CapturingAction == action
+                    ? "PRIME UMA TECLA..."
+                    : GameInputSettings.BindingLabel(action);
+                if (LayoutButton(label, m_CapturingBinding && m_CapturingAction == action
+                        ? new Color(0.86f, 0.61f, 0.15f) : new Color(0.28f, 0.36f, 0.56f),
+                    GUILayout.Width(210f * s), GUILayout.Height(38f * s)))
+                {
+                    m_CapturingAction = action;
+                    m_CapturingBinding = true;
+                    m_CaptureStartFrame = Time.frameCount;
+                    m_SettingsMessage = null;
+                }
+                GUILayout.EndHorizontal();
+            }
+
+            GUILayout.EndScrollView();
+
+            if (!string.IsNullOrEmpty(m_SettingsMessage))
+                GUILayout.Label(m_SettingsMessage, m_Small);
+
+            GUILayout.BeginHorizontal();
+            if (LayoutButton("REPOR TECLAS", new Color(0.75f, 0.45f, 0.2f), GUILayout.Height(40f * s)))
+            {
+                GameInputSettings.ResetBindings();
+                m_CapturingBinding = false;
+                m_SettingsMessage = "Controlos predefinidos restaurados.";
+            }
+            GUILayout.EndHorizontal();
+
+            HandleBindingCapture();
+        }
+
+        void DrawGameplaySettings(float s)
+        {
+            GUILayout.Space(14f * s);
+            GUILayout.Label("SENSIBILIDADE", m_Small);
+            GUILayout.Label("Rato: " + GameSession.Sensitivity.ToString("0.0"), m_Label);
+            float sensitivity = GUILayout.HorizontalSlider(GameSession.Sensitivity, 0.2f, 8f);
+            if (!Mathf.Approximately(sensitivity, GameSession.Sensitivity))
+                GameSession.Sensitivity = sensitivity;
+
+            GUILayout.Space(16f * s);
+            GUILayout.Label("MIRA DE PRECISÃO · LINCE", m_Small);
+            GUILayout.Label("Sensibilidade ao mirar: " + GameSession.AimSensitivity.ToString("0.00"), m_Label);
+            float aimSensitivity = GUILayout.HorizontalSlider(GameSession.AimSensitivity, 0.2f, 1f);
+            if (!Mathf.Approximately(aimSensitivity, GameSession.AimSensitivity))
+                GameSession.AimSensitivity = aimSensitivity;
+            GUILayout.Label("Zoom (campo de visão): " + Mathf.RoundToInt(GameSession.ScopeFieldOfView) + "°", m_Label);
+            float scopeFov = GUILayout.HorizontalSlider(GameSession.ScopeFieldOfView, 20f, 55f);
+            if (!Mathf.Approximately(scopeFov, GameSession.ScopeFieldOfView))
+                GameSession.ScopeFieldOfView = scopeFov;
+            GUILayout.Label("A opção de eixo vertical e a sensibilidade tátil ficam disponíveis na versão mobile.", m_Tiny);
+            if (LayoutButton("REPOR MIRA E SENSIBILIDADE", new Color(0.4f, 0.46f, 0.6f),
+                    GUILayout.Height(38f * s)))
+            {
+                GameSession.Sensitivity = 2f;
+                GameSession.AimSensitivity = 0.5f;
+                GameSession.ScopeFieldOfView = 32f;
+            }
+        }
+
+        void DrawAudioSettings(float s)
+        {
+            GUILayout.Space(14f * s);
+            GUILayout.Label("VOLUME GERAL", m_Small);
+            GUILayout.Label("Volume: " + Mathf.RoundToInt(GameSession.MasterVolume * 100f) + "%", m_Label);
+            float volume = GUILayout.HorizontalSlider(GameSession.MasterVolume, 0f, 1f);
+            if (!Mathf.Approximately(volume, GameSession.MasterVolume))
+                GameSession.MasterVolume = volume;
+            GUILayout.Space(8f * s);
+            GUILayout.Label("A alteração é aplicada imediatamente e guardada neste dispositivo.", m_Tiny);
+            if (LayoutButton("REPOR VOLUME", new Color(0.4f, 0.46f, 0.6f), GUILayout.Height(38f * s)))
+                GameSession.MasterVolume = 1f;
+        }
+
+        void HandleBindingCapture()
+        {
+            if (!m_CapturingBinding || Time.frameCount <= m_CaptureStartFrame) return;
+            var current = Event.current;
+            KeyCode key = KeyCode.None;
+            if (current.type == EventType.KeyDown && current.keyCode != KeyCode.None)
+                key = current.keyCode;
+            else if (current.type == EventType.MouseDown)
+                key = (KeyCode)((int)KeyCode.Mouse0 + current.button);
+
+            if (key == KeyCode.None) return;
+            current.Use();
+            if (GameInputSettings.TrySetBinding(m_CapturingAction, key))
+            {
+                m_SettingsMessage = "Atalho atualizado.";
+                m_CapturingBinding = false;
+            }
+            else
+            {
+                m_SettingsMessage = "Essa tecla já está atribuída a outra ação.";
+            }
+        }
+
+        void DrawDesktopHudSettings(float s)
+        {
+            GUILayout.Space(10f * s);
+            GUILayout.Label("Arrasta cada controlo para ajustar a posição na versão móvel.", m_Small);
+            GUILayout.Label("As alterações são guardadas automaticamente neste dispositivo.", m_Small);
+            GUILayout.FlexibleSpace();
+            GUILayout.BeginHorizontal();
+            if (LayoutButton("REPOR POSIÇÕES", new Color(0.75f, 0.45f, 0.2f), GUILayout.Height(42f * s)))
+                MobileControls.ResetHudLayout();
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+        }
+
+        void DrawMobileSettings(float s)
+        {
+            var safe = Screen.safeArea;
+            if (safe.width <= 0f || safe.height <= 0f)
+                safe = new Rect(0f, 0f, Screen.width, Screen.height);
+            float availableWidth = m_SettingsTab == SettingsTabHud ? safe.width - 250f * s : safe.width - 20f * s;
+            float width = Mathf.Max(0f, Mathf.Min(availableWidth, 620f * s));
+            float height = 174f * s;
+            var area = new Rect(safe.xMin + (safe.width - width) * 0.5f,
+                Screen.height - safe.yMax + 10f * s, width, height);
+            InkPanel(area, PanelDark, 3f * s);
+            var titleRect = new Rect(area.x + 10f * s, area.y + 4f * s, area.width - 20f * s, 30f * s);
+            GUI.Label(titleRect, "DEFINIÇÕES", m_Label);
+
+            float gap = 5f * s;
+            float tabY = area.y + 36f * s;
+            float tabHeight = 34f * s;
+            float tabWidth = (area.width - 20f * s - gap * 2f) / 3f;
+            DrawMobileSettingsTab(new Rect(area.x + 10f * s, tabY, tabWidth, tabHeight), "HUD", SettingsTabHud);
+            DrawMobileSettingsTab(new Rect(area.x + 10f * s + tabWidth + gap, tabY, tabWidth, tabHeight),
+                "JOGABILIDADE", SettingsTabGameplay);
+            DrawMobileSettingsTab(new Rect(area.x + 10f * s + (tabWidth + gap) * 2f, tabY, tabWidth, tabHeight),
+                "ÁUDIO", SettingsTabAudio);
+
+            if (m_SettingsTab == SettingsTabHud)
+            {
+                float rowY = area.y + 78f * s;
+                float resetWidth = Mathf.Min(110f * s, area.width * 0.32f);
+                if (Button(new Rect(area.x + 10f * s, rowY, resetWidth, 34f * s),
+                        "REPOR HUD", new Color(0.75f, 0.45f, 0.2f)))
+                    MobileControls.ResetHudLayout();
+                float menuWidth = Mathf.Min(154f * s, area.width * 0.46f);
+                if (Button(new Rect(area.xMax - menuWidth - 10f * s, rowY, menuWidth, 34f * s),
+                        "MENU INICIAL", new Color(0.64f, 0.25f, 0.24f)))
+                    ReturnToMainMenuFromHudEditor();
+                GUI.Label(new Rect(area.x + 10f * s, area.y + 116f * s, area.width - 20f * s, 20f * s),
+                    "Tamanho dos botões: " + Mathf.RoundToInt(GameSession.MobileButtonScale * 100f) + "%", m_Tiny);
+                float buttonScale = GUI.HorizontalSlider(
+                    new Rect(area.x + 10f * s, area.y + 137f * s, area.width - 20f * s, 20f * s),
+                    GameSession.MobileButtonScale, 0.7f, 1.4f);
+                if (!Mathf.Approximately(buttonScale, GameSession.MobileButtonScale))
+                    GameSession.MobileButtonScale = buttonScale;
+                GUI.Label(new Rect(area.x + 10f * s, area.y + 154f * s, area.width - 20f * s, 18f * s),
+                    "Arrasta os controlos. MIRAR aparece com o Lince.", m_Tiny);
+            }
+            else if (m_SettingsTab == SettingsTabGameplay)
+            {
+                DrawMobileGameplaySettings(safe, s);
+            }
+            else if (m_SettingsTab == SettingsTabAudio)
+            {
+                DrawMobileAudioSettings(safe, s);
+            }
+        }
+
+        void DrawMobileSettingsTab(Rect rect, string label, int tab)
+        {
+            var color = m_SettingsTab == tab ? PanelBlue : new Color(0.22f, 0.24f, 0.34f, 0.96f);
+            if (Button(rect, label, color))
+            {
+                m_SettingsTab = tab;
+                m_CapturingBinding = false;
+            }
+        }
+
+        void DrawMobileGameplaySettings(Rect safe, float s)
+        {
+            float width = Mathf.Max(0f, Mathf.Min(safe.width - 24f * s, 560f * s));
+            var panel = new Rect(safe.xMin + (safe.width - width) * 0.5f,
+                Screen.height - safe.yMax + 194f * s, width, 330f * s);
+            InkPanel(panel, PanelDark, 3f * s);
+
+            float inset = 12f * s;
+            float y = panel.y + 10f * s;
+            var invert = new Rect(panel.x + inset, y, panel.width - inset * 2f, 36f * s);
+            if (Button(invert, "INVERTER EIXO VERTICAL: " + (GameSession.InvertMobileLookY ? "SIM" : "NÃO"),
+                    GameSession.InvertMobileLookY ? new Color(0.35f, 0.48f, 0.72f) : new Color(0.28f, 0.32f, 0.42f)))
+                GameSession.InvertMobileLookY = !GameSession.InvertMobileLookY;
+
+            y += 44f * s;
+            var aimMode = new Rect(panel.x + inset, y, panel.width - inset * 2f, 36f * s);
+            string aimLabel = GameSession.MobileAimToggle
+                ? "MIRA: TOCAR PARA ALTERNAR"
+                : "MIRA: MANTER PREMIDO";
+            if (Button(aimMode, aimLabel, GameSession.MobileAimToggle
+                    ? new Color(0.18f, 0.5f, 0.5f)
+                    : new Color(0.28f, 0.32f, 0.42f)))
+            {
+                GameSession.MobileAimToggle = !GameSession.MobileAimToggle;
+                MobileControls.ResetAimToggleState();
+            }
+
+            y += 44f * s;
+            GUI.Label(new Rect(panel.x + inset, y, panel.width - inset * 2f, 24f * s),
+                "Sensibilidade tátil: " + GameSession.MobileSensitivity.ToString("0.00"), m_Tiny);
+            float mobileSensitivity = GUI.HorizontalSlider(
+                new Rect(panel.x + inset, y + 22f * s, panel.width - inset * 2f, 24f * s),
+                GameSession.MobileSensitivity, 0.25f, 3f);
+            if (!Mathf.Approximately(mobileSensitivity, GameSession.MobileSensitivity))
+                GameSession.MobileSensitivity = mobileSensitivity;
+
+            y += 48f * s;
+            GUI.Label(new Rect(panel.x + inset, y, panel.width - inset * 2f, 24f * s),
+                "Sensibilidade ao mirar: " + GameSession.AimSensitivity.ToString("0.00"), m_Tiny);
+            float aimSensitivity = GUI.HorizontalSlider(
+                new Rect(panel.x + inset, y + 22f * s, panel.width - inset * 2f, 24f * s),
+                GameSession.AimSensitivity, 0.2f, 1f);
+            if (!Mathf.Approximately(aimSensitivity, GameSession.AimSensitivity))
+                GameSession.AimSensitivity = aimSensitivity;
+
+            y += 48f * s;
+            GUI.Label(new Rect(panel.x + inset, y, panel.width - inset * 2f, 24f * s),
+                "Zoom do Lince: " + Mathf.RoundToInt(GameSession.ScopeFieldOfView) + "°", m_Tiny);
+            float scopeFov = GUI.HorizontalSlider(
+                new Rect(panel.x + inset, y + 22f * s, panel.width - inset * 2f, 24f * s),
+                GameSession.ScopeFieldOfView, 20f, 55f);
+            if (!Mathf.Approximately(scopeFov, GameSession.ScopeFieldOfView))
+                GameSession.ScopeFieldOfView = scopeFov;
+            if (Button(new Rect(panel.x + inset, panel.y + 288f * s, panel.width - inset * 2f, 32f * s),
+                    "REPOR MIRA", new Color(0.4f, 0.46f, 0.6f)))
+            {
+                GameSession.MobileSensitivity = 1f;
+                GameSession.AimSensitivity = 0.5f;
+                GameSession.ScopeFieldOfView = 32f;
+                GameSession.InvertMobileLookY = false;
+                GameSession.MobileAimToggle = false;
+                MobileControls.ResetAimToggleState();
+            }
+        }
+
+        void DrawMobileAudioSettings(Rect safe, float s)
+        {
+            float width = Mathf.Max(0f, Mathf.Min(safe.width - 24f * s, 560f * s));
+            var panel = new Rect(safe.xMin + (safe.width - width) * 0.5f,
+                Screen.height - safe.yMax + 194f * s, width, 146f * s);
+            InkPanel(panel, PanelDark, 3f * s);
+
+            float inset = 12f * s;
+            GUI.Label(new Rect(panel.x + inset, panel.y + 12f * s, panel.width - inset * 2f, 26f * s),
+                "VOLUME GERAL: " + Mathf.RoundToInt(GameSession.MasterVolume * 100f) + "%", m_Label);
+            float volume = GUI.HorizontalSlider(
+                new Rect(panel.x + inset, panel.y + 44f * s, panel.width - inset * 2f, 28f * s),
+                GameSession.MasterVolume, 0f, 1f);
+            if (!Mathf.Approximately(volume, GameSession.MasterVolume))
+                GameSession.MasterVolume = volume;
+            if (Button(new Rect(panel.x + inset, panel.y + 82f * s, panel.width - inset * 2f, 34f * s),
+                    "REPOR VOLUME", new Color(0.4f, 0.46f, 0.6f)))
+                GameSession.MasterVolume = 1f;
+        }
+
+        void ReturnToMainMenuFromHudEditor()
+        {
+            m_SettingsOpen = false;
+            m_SettingsTab = SettingsTabControls;
+            m_Paused = false;
+            m_CapturingBinding = false;
+            PlayerPrefs.Save();
+            if (m_InGame)
+                ConnectionManager.Instance?.Leave();
+        }
+
         void DrawPauseMenu()
         {
+            if (Application.isMobilePlatform)
+            {
+                DrawMobilePauseMenu();
+                return;
+            }
+
             float s = Scale;
             bool host = NM != null && NM.IsServer;
             Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0.02f, 0.02f, 0.08f, 0.45f));
-            float w = 600 * s, h = (host ? 600 : 520) * s;
+            float w = 600 * s, h = (host ? 660 : 580) * s;
             var area = new Rect(40 * s, (Screen.height - h) / 2f, w, h);
             InkPanel(area, PanelDark, 4f * s);
             GUILayout.BeginArea(new Rect(area.x + 22 * s, area.y + 14 * s, area.width - 44 * s, area.height - 28 * s));
@@ -1062,6 +1670,8 @@ namespace FPSLAN
             }
 
             GUILayout.FlexibleSpace();
+            if (LayoutButton("Definições", new Color(0.28f, 0.36f, 0.56f), GUILayout.Height(42 * s)))
+                OpenSettings();
             if (LayoutButton("Continuar", new Color(0.4f, 0.85f, 0.45f), GUILayout.Height(46 * s))) m_Paused = false;
             GUILayout.Space(6 * s);
             var leaveLabel = host ? "Terminar partida (host)" : "Sair da partida";
@@ -1074,6 +1684,50 @@ namespace FPSLAN
             GUILayout.EndArea();
 
             DrawBrawlerShowcase(current, new Rect(area.xMax + 30 * s, area.y, Screen.width - area.xMax - 70 * s, h));
+        }
+
+        void DrawMobilePauseMenu()
+        {
+            var safe = Screen.safeArea;
+            float s = Scale;
+            bool host = NM != null && NM.IsServer;
+            Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0.02f, 0.02f, 0.08f, 0.65f));
+            var area = new Rect(safe.xMin + 12 * s, Screen.height - safe.yMax + 10 * s,
+                safe.width - 24 * s, safe.height - 20 * s);
+            InkPanel(area, PanelDark, 3f * s);
+            GUILayout.BeginArea(new Rect(area.x + 12 * s, area.y + 6 * s, area.width - 24 * s, area.height - 12 * s));
+            m_MobileMenuScroll = GUILayout.BeginScrollView(m_MobileMenuScroll, false, true);
+
+            var tr = GUILayoutUtility.GetRect(10, 46 * s);
+            Outlined(tr, "PAUSA", new GUIStyle(m_Big) { alignment = TextAnchor.MiddleCenter }, Gold, 2f);
+            GUILayout.Label("Escolhe o Brawler", m_Small);
+            var me = PlayerNetwork.Local;
+            int current = me != null ? me.HeroId.Value : m_Hero;
+            int selected = current;
+            DrawBrawlerCards(s, ref selected, true, area.width - 48 * s);
+            m_Hero = selected;
+
+            if (LayoutButton("DEFINIÇÕES", new Color(0.28f, 0.36f, 0.56f), GUILayout.Height(40 * s)))
+                OpenSettings();
+
+            if (host)
+            {
+                GUILayout.Space(6 * s);
+                DrawBotControls(s, true);
+            }
+
+            if (LayoutButton("CONTINUAR", new Color(0.4f, 0.85f, 0.45f), GUILayout.Height(48 * s)))
+                m_Paused = false;
+            var leaveLabel = host ? "TERMINAR PARTIDA" : "SAIR DA PARTIDA";
+            if (LayoutButton(leaveLabel, new Color(0.9f, 0.35f, 0.3f), GUILayout.Height(48 * s)))
+            {
+                m_Paused = false;
+                PlayerPrefs.Save();
+                ConnectionManager.Instance?.Leave();
+            }
+
+            GUILayout.EndScrollView();
+            GUILayout.EndArea();
         }
     }
 }

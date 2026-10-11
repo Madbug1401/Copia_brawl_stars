@@ -47,6 +47,17 @@ MonoBehaviour:
     - {x: 0.32, y: 0.02, z: 0.7}
     - {x: -0.32, y: 0.02, z: 0.7}
     bodyColor: {r: 0.95, g: 0.75, b: 0.35, a: 1}
+    look:
+      skin: {r: 1, g: 0.8, b: 0.62, a: 1}
+      outfit: {r: 0.98, g: 0.82, b: 0.3, a: 1}
+      pants: {r: 0.3, g: 0.36, b: 0.6, a: 1}
+      accent: {r: 0.92, g: 0.22, b: 0.2, a: 1}
+      hair: {r: 0.4, g: 0.24, b: 0.12, a: 1}
+      gear: {r: 0.55, g: 0.33, b: 0.18, a: 1}
+      headGear: 1
+      bodyScale: 1
+      headScale: 1
+      bulk: 0.95
   animations:
     animatorController: {fileID: 0}
     attackKick: 0.8
@@ -69,3 +80,4 @@ MonoBehaviour:
     preferredRange: 18
     superUseRange: 30
     aimAtFeet: 0
+    superIsEscape: 0

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: trapper_Super_Delivery
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.PlaceTrapsDelivery
   count: 3
-  spread: 2
+  spread: 1.5
   range: 12
   trap:
     armTime: 0.8

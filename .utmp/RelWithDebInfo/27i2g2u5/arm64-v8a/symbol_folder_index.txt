@@ -1,0 +1,1 @@
+C:\Users\nicol\Desktop\Jogos\FPS-LAN\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\build\intermediates\cxx\RelWithDebInfo\27i2g2u5\obj\arm64-v8a

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
@@ -1034,6 +1035,30 @@ namespace FPSLAN.EditorTools
 
     public static class BuildTools
     {
+        public static void BuildWindowsPlayer()
+        {
+            var outputPath = System.Environment.GetEnvironmentVariable("FPSLAN_WINDOWS_OUTPUT");
+            if (string.IsNullOrWhiteSpace(outputPath))
+                outputPath = Path.Combine(Directory.GetCurrentDirectory(), "build windows", "FPS-LAN.exe");
+
+            var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToArray();
+            if (scenes.Length == 0)
+                throw new UnityEditor.Build.BuildFailedException("Não há cenas ativadas em Build Settings.");
+
+            Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
+            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            {
+                scenes = scenes,
+                locationPathName = outputPath,
+                target = BuildTarget.StandaloneWindows64,
+                options = BuildOptions.None,
+            });
+            if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
+                throw new UnityEditor.Build.BuildFailedException("A build Windows terminou com estado " + report.summary.result + ".");
+
+            Debug.Log("[FPS-LAN] Build Windows x64 pronta: " + outputPath);
+        }
+
         [MenuItem("FPS-LAN/Build Windows (para a LAN)", priority = 20)]
         static void BuildWindows()
         {

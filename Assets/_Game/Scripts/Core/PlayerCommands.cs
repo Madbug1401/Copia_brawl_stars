@@ -20,10 +20,15 @@ namespace FPSLAN
         public static PlayerCommands FromHuman(bool allowed)
         {
             if (!allowed) return default;
+            var local = PlayerNetwork.Local;
+            bool aiming = InputReader.AimHeld && local != null && local.Brawler != null &&
+                local.Brawler.firstPerson.rig == RigStyle.Sniper;
+            float sensitivity = Application.isMobilePlatform ? GameSession.MobileSensitivity : 1f;
+            if (aiming) sensitivity *= GameSession.AimSensitivity;
             return new PlayerCommands
             {
                 move = InputReader.Move,
-                lookDelta = InputReader.Look * GameSession.Sensitivity,
+                lookDelta = InputReader.Look * GameSession.Sensitivity * sensitivity,
                 sprint = InputReader.Sprint,
                 jumpPressed = InputReader.JumpPressed,
                 fire = InputReader.Fire,

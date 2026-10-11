@@ -9,6 +9,13 @@ namespace FPSLAN
         const string KeyHero = "fpslan.hero";
         const string KeySens = "fpslan.sens";
         const string KeyIp = "fpslan.ip";
+        const string KeyInvertMobileLookY = "fpslan.mobile.invertLookY";
+        const string KeyMobileSensitivity = "fpslan.mobile.sensitivity";
+        const string KeyMobileButtonScale = "fpslan.mobile.buttonScale";
+        const string KeyMobileAimToggle = "fpslan.mobile.aimToggle";
+        const string KeyAimSensitivity = "fpslan.aim.sensitivity";
+        const string KeyScopeFov = "fpslan.aim.scopeFov";
+        const string KeyMasterVolume = "fpslan.audio.masterVolume";
 
         public static string LocalName
         {
@@ -27,6 +34,55 @@ namespace FPSLAN
             get => PlayerPrefs.GetFloat(KeySens, 2f);
             set => PlayerPrefs.SetFloat(KeySens, Mathf.Clamp(value, 0.2f, 10f));
         }
+
+        public static bool InvertMobileLookY
+        {
+            get => PlayerPrefs.GetInt(KeyInvertMobileLookY, 0) != 0;
+            set => PlayerPrefs.SetInt(KeyInvertMobileLookY, value ? 1 : 0);
+        }
+
+        public static float MobileSensitivity
+        {
+            get => PlayerPrefs.GetFloat(KeyMobileSensitivity, 1f);
+            set => PlayerPrefs.SetFloat(KeyMobileSensitivity, Mathf.Clamp(value, 0.25f, 3f));
+        }
+
+        public static float MobileButtonScale
+        {
+            get => PlayerPrefs.GetFloat(KeyMobileButtonScale, 1f);
+            set => PlayerPrefs.SetFloat(KeyMobileButtonScale, Mathf.Clamp(value, 0.7f, 1.4f));
+        }
+
+        public static bool MobileAimToggle
+        {
+            get => PlayerPrefs.GetInt(KeyMobileAimToggle, 0) != 0;
+            set => PlayerPrefs.SetInt(KeyMobileAimToggle, value ? 1 : 0);
+        }
+
+        public static float AimSensitivity
+        {
+            get => PlayerPrefs.GetFloat(KeyAimSensitivity, 0.5f);
+            set => PlayerPrefs.SetFloat(KeyAimSensitivity, Mathf.Clamp(value, 0.2f, 1f));
+        }
+
+        public static float ScopeFieldOfView
+        {
+            get => PlayerPrefs.GetFloat(KeyScopeFov, 32f);
+            set => PlayerPrefs.SetFloat(KeyScopeFov, Mathf.Clamp(value, 20f, 55f));
+        }
+
+        public static float MasterVolume
+        {
+            get => PlayerPrefs.GetFloat(KeyMasterVolume, 1f);
+            set
+            {
+                float volume = Mathf.Clamp01(value);
+                PlayerPrefs.SetFloat(KeyMasterVolume, volume);
+                AudioListener.volume = volume;
+            }
+        }
+
+        public static void ApplyAudioSettings() => AudioListener.volume = MasterVolume;
 
         public static string LastIp
         {

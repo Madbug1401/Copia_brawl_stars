@@ -1,0 +1,38 @@
+FPS-LAN — Build Windows
+
+COMO INICIAR
+1. Copie ou extraia a pasta inteira para o computador Windows.
+2. Execute FPS-LAN.exe.
+3. Nao mova o executavel para fora desta pasta: os ficheiros FPS-LAN_Data,
+   UnityPlayer.dll e restantes dependencias devem permanecer junto dele.
+
+JOGAR EM REDE LOCAL (LAN)
+1. Todos os computadores devem estar ligados a mesma rede local.
+2. No computador que vai criar a partida, escolha HOST.
+3. Os restantes jogadores devem escrever o IP mostrado no menu do host em
+   "IP do host" e escolher JOIN.
+4. Se o Windows Firewall perguntar, permita o jogo na rede privada. A ligacao
+   usa UDP na porta 7777.
+
+O host conta como um jogador. O limite da partida e de 4 jogadores.
+TREINO (com bots) inicia uma partida local com bots.
+
+CONTROLOS
+WASD       Mover
+Rato       Olhar
+Shift      Sprint
+Espaco     Saltar
+Botao esquerdo   Ataque principal
+E              Super (quando carregado)
+Botao direito  Mira de precisao do Lince
+Tab        Placar
+Esc        Menu de pausa
+
+DEFINICOES
+No menu principal ou durante a pausa, abre DEFINICOES.
+As abas TECLAS, JOGABILIDADE e AUDIO permitem reatribuir controlos,
+ajustar a mira e o volume. O HUD pode ser reposicionado na aba HUD.
+As alteracoes ficam guardadas localmente. REPOR restaura os valores padrao.
+
+Esta e uma build Windows 64-bit (x64). Para distribuir o jogo, envie a pasta
+"build windows" completa; nao envie apenas FPS-LAN.exe.

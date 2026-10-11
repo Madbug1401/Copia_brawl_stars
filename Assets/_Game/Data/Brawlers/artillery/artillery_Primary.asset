@@ -40,5 +40,6 @@ MonoBehaviour:
   visuals:
     color: {r: 1, g: 0.45, b: 0.2, a: 1}
     scale: 1.8
+    style: 4
     sound: 10
     impactSound: 13

@@ -11,48 +11,55 @@ namespace FPSLAN
     /// </summary>
     public static class InputReader
     {
+        public static Vector2 Move => MobileControls.Available ? MobileControls.Move : ReadMove();
+        public static Vector2 Look => MobileControls.Available ? MobileControls.Look : ReadLook();
+        public static bool Sprint => MobileControls.Available ? MobileControls.Sprint : ReadSprint();
+        public static bool JumpPressed => MobileControls.Available ? MobileControls.JumpPressed : ReadJumpPressed();
+        public static bool Fire => MobileControls.Available ? MobileControls.Fire : ReadFire();
+        public static bool AimHeld => MobileControls.Available ? MobileControls.AimHeld : GameInputSettings.IsHeld(GameAction.Aim);
+        public static bool SuperPressed => MobileControls.Available ? MobileControls.SuperPressed : ReadSuperPressed();
+        public static bool ScoreboardHeld => MobileControls.Available ? MobileControls.ScoreboardHeld : ReadScoreboardHeld();
+        public static bool PausePressed => MobileControls.Available ? MobileControls.PausePressed : ReadPausePressed();
+
 #if FPSLAN_INPUTSYS && ENABLE_INPUT_SYSTEM
-        static Keyboard K => Keyboard.current;
         static Mouse M => Mouse.current;
 
-        public static Vector2 Move
+        static Vector2 ReadMove()
         {
-            get
-            {
-                var k = K;
-                if (k == null) return Vector2.zero;
-                float x = (k.dKey.isPressed ? 1f : 0f) - (k.aKey.isPressed ? 1f : 0f);
-                float y = (k.wKey.isPressed ? 1f : 0f) - (k.sKey.isPressed ? 1f : 0f);
-                return new Vector2(x, y);
-            }
+            float x = (GameInputSettings.IsHeld(GameAction.MoveRight) ? 1f : 0f) -
+                      (GameInputSettings.IsHeld(GameAction.MoveLeft) ? 1f : 0f);
+            float y = (GameInputSettings.IsHeld(GameAction.MoveForward) ? 1f : 0f) -
+                      (GameInputSettings.IsHeld(GameAction.MoveBackward) ? 1f : 0f);
+            return new Vector2(x, y);
         }
 
         // Escala igual ao "Mouse X/Y" do Input Manager antigo (0.1 por pixel).
-        public static Vector2 Look => M == null ? Vector2.zero : M.delta.ReadValue() * 0.1f;
-        public static bool Sprint => K != null && K.leftShiftKey.isPressed;
-        public static bool JumpPressed => K != null && K.spaceKey.wasPressedThisFrame;
-        public static bool Fire => M != null && M.leftButton.isPressed;
-        public static bool SuperPressed => (M != null && M.rightButton.wasPressedThisFrame) || (K != null && K.eKey.wasPressedThisFrame);
-        public static bool ScoreboardHeld => K != null && K.tabKey.isPressed;
-        public static bool PausePressed => K != null && K.escapeKey.wasPressedThisFrame;
+        static Vector2 ReadLook() => M == null ? Vector2.zero : M.delta.ReadValue() * 0.1f;
+        static bool ReadSprint() => GameInputSettings.IsHeld(GameAction.Sprint);
+        static bool ReadJumpPressed() => GameInputSettings.WasPressedThisFrame(GameAction.Jump);
+        static bool ReadFire() => GameInputSettings.IsHeld(GameAction.Fire);
+        static bool ReadSuperPressed() => GameInputSettings.WasPressedThisFrame(GameAction.Super) ||
+            (!GameInputSettings.HasCustomBinding(GameAction.Super) && GameInputSettings.WasPressedThisFrame(KeyCode.E));
+        static bool ReadScoreboardHeld() => GameInputSettings.IsHeld(GameAction.Scoreboard);
+        static bool ReadPausePressed() => GameInputSettings.WasPressedThisFrame(GameAction.Pause);
 #else
-        public static Vector2 Move
+        static Vector2 ReadMove()
         {
-            get
-            {
-                float x = (Input.GetKey(KeyCode.D) ? 1f : 0f) - (Input.GetKey(KeyCode.A) ? 1f : 0f);
-                float y = (Input.GetKey(KeyCode.W) ? 1f : 0f) - (Input.GetKey(KeyCode.S) ? 1f : 0f);
-                return new Vector2(x, y);
-            }
+            float x = (GameInputSettings.IsHeld(GameAction.MoveRight) ? 1f : 0f) -
+                      (GameInputSettings.IsHeld(GameAction.MoveLeft) ? 1f : 0f);
+            float y = (GameInputSettings.IsHeld(GameAction.MoveForward) ? 1f : 0f) -
+                      (GameInputSettings.IsHeld(GameAction.MoveBackward) ? 1f : 0f);
+            return new Vector2(x, y);
         }
 
-        public static Vector2 Look => new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"));
-        public static bool Sprint => Input.GetKey(KeyCode.LeftShift);
-        public static bool JumpPressed => Input.GetKeyDown(KeyCode.Space);
-        public static bool Fire => Input.GetMouseButton(0);
-        public static bool SuperPressed => Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.E);
-        public static bool ScoreboardHeld => Input.GetKey(KeyCode.Tab);
-        public static bool PausePressed => Input.GetKeyDown(KeyCode.Escape);
+        static Vector2 ReadLook() => new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"));
+        static bool ReadSprint() => GameInputSettings.IsHeld(GameAction.Sprint);
+        static bool ReadJumpPressed() => GameInputSettings.WasPressedThisFrame(GameAction.Jump);
+        static bool ReadFire() => GameInputSettings.IsHeld(GameAction.Fire);
+        static bool ReadSuperPressed() => GameInputSettings.WasPressedThisFrame(GameAction.Super) ||
+            (!GameInputSettings.HasCustomBinding(GameAction.Super) && Input.GetKeyDown(KeyCode.E));
+        static bool ReadScoreboardHeld() => GameInputSettings.IsHeld(GameAction.Scoreboard);
+        static bool ReadPausePressed() => GameInputSettings.WasPressedThisFrame(GameAction.Pause);
 #endif
     }
 }
