@@ -9,10 +9,6 @@ namespace FPSLAN
         const string KeyHero = "fpslan.hero";
         const string KeySens = "fpslan.sens";
         const string KeyIp = "fpslan.ip";
-        const string KeyInvertMobileLookY = "fpslan.mobile.invertLookY";
-        const string KeyMobileSensitivity = "fpslan.mobile.sensitivity";
-        const string KeyMobileButtonScale = "fpslan.mobile.buttonScale";
-        const string KeyMobileAimToggle = "fpslan.mobile.aimToggle";
         const string KeyAimSensitivity = "fpslan.aim.sensitivity";
         const string KeyScopeFov = "fpslan.aim.scopeFov";
         const string KeyMasterVolume = "fpslan.audio.masterVolume";
@@ -31,49 +27,25 @@ namespace FPSLAN
 
         public static float Sensitivity
         {
-            get => PlayerPrefs.GetFloat(KeySens, 2f);
+            get => GetClampedFloat(KeySens, 2f, 0.2f, 10f);
             set => PlayerPrefs.SetFloat(KeySens, Mathf.Clamp(value, 0.2f, 10f));
-        }
-
-        public static bool InvertMobileLookY
-        {
-            get => PlayerPrefs.GetInt(KeyInvertMobileLookY, 0) != 0;
-            set => PlayerPrefs.SetInt(KeyInvertMobileLookY, value ? 1 : 0);
-        }
-
-        public static float MobileSensitivity
-        {
-            get => PlayerPrefs.GetFloat(KeyMobileSensitivity, 1f);
-            set => PlayerPrefs.SetFloat(KeyMobileSensitivity, Mathf.Clamp(value, 0.25f, 3f));
-        }
-
-        public static float MobileButtonScale
-        {
-            get => PlayerPrefs.GetFloat(KeyMobileButtonScale, 1f);
-            set => PlayerPrefs.SetFloat(KeyMobileButtonScale, Mathf.Clamp(value, 0.7f, 1.4f));
-        }
-
-        public static bool MobileAimToggle
-        {
-            get => PlayerPrefs.GetInt(KeyMobileAimToggle, 0) != 0;
-            set => PlayerPrefs.SetInt(KeyMobileAimToggle, value ? 1 : 0);
         }
 
         public static float AimSensitivity
         {
-            get => PlayerPrefs.GetFloat(KeyAimSensitivity, 0.5f);
+            get => GetClampedFloat(KeyAimSensitivity, 0.5f, 0.2f, 1f);
             set => PlayerPrefs.SetFloat(KeyAimSensitivity, Mathf.Clamp(value, 0.2f, 1f));
         }
 
         public static float ScopeFieldOfView
         {
-            get => PlayerPrefs.GetFloat(KeyScopeFov, 32f);
+            get => GetClampedFloat(KeyScopeFov, 32f, 20f, 55f);
             set => PlayerPrefs.SetFloat(KeyScopeFov, Mathf.Clamp(value, 20f, 55f));
         }
 
         public static float MasterVolume
         {
-            get => PlayerPrefs.GetFloat(KeyMasterVolume, 1f);
+            get => GetClampedFloat(KeyMasterVolume, 1f, 0f, 1f);
             set
             {
                 float volume = Mathf.Clamp01(value);
@@ -83,6 +55,18 @@ namespace FPSLAN
         }
 
         public static void ApplyAudioSettings() => AudioListener.volume = MasterVolume;
+
+        static float GetClampedFloat(string key, float fallback, float minimum, float maximum)
+        {
+            float value = PlayerPrefs.GetFloat(key, fallback);
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                Debug.LogWarning("Preferência numérica inválida '" + key + "'; será usada a predefinição.");
+                value = fallback;
+                PlayerPrefs.SetFloat(key, fallback);
+            }
+            return Mathf.Clamp(value, minimum, maximum);
+        }
 
         public static string LastIp
         {

@@ -23,8 +23,7 @@ namespace FPSLAN
             var local = PlayerNetwork.Local;
             bool aiming = InputReader.AimHeld && local != null && local.Brawler != null &&
                 local.Brawler.firstPerson.rig == RigStyle.Sniper;
-            float sensitivity = Application.isMobilePlatform ? GameSession.MobileSensitivity : 1f;
-            if (aiming) sensitivity *= GameSession.AimSensitivity;
+            float sensitivity = aiming ? GameSession.AimSensitivity : 1f;
             return new PlayerCommands
             {
                 move = InputReader.Move,

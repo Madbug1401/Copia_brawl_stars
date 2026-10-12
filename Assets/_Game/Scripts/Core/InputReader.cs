@@ -11,15 +11,15 @@ namespace FPSLAN
     /// </summary>
     public static class InputReader
     {
-        public static Vector2 Move => MobileControls.Available ? MobileControls.Move : ReadMove();
-        public static Vector2 Look => MobileControls.Available ? MobileControls.Look : ReadLook();
-        public static bool Sprint => MobileControls.Available ? MobileControls.Sprint : ReadSprint();
-        public static bool JumpPressed => MobileControls.Available ? MobileControls.JumpPressed : ReadJumpPressed();
-        public static bool Fire => MobileControls.Available ? MobileControls.Fire : ReadFire();
-        public static bool AimHeld => MobileControls.Available ? MobileControls.AimHeld : GameInputSettings.IsHeld(GameAction.Aim);
-        public static bool SuperPressed => MobileControls.Available ? MobileControls.SuperPressed : ReadSuperPressed();
-        public static bool ScoreboardHeld => MobileControls.Available ? MobileControls.ScoreboardHeld : ReadScoreboardHeld();
-        public static bool PausePressed => MobileControls.Available ? MobileControls.PausePressed : ReadPausePressed();
+        public static Vector2 Move => ReadMove();
+        public static Vector2 Look => ReadLook();
+        public static bool Sprint => ReadSprint();
+        public static bool JumpPressed => ReadJumpPressed();
+        public static bool Fire => ReadFire();
+        public static bool AimHeld => GameInputSettings.IsHeld(GameAction.Aim);
+        public static bool SuperPressed => ReadSuperPressed();
+        public static bool ScoreboardHeld => ReadScoreboardHeld();
+        public static bool PausePressed => ReadPausePressed();
 
 #if FPSLAN_INPUTSYS && ENABLE_INPUT_SYSTEM
         static Mouse M => Mouse.current;

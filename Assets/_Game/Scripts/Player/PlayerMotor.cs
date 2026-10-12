@@ -126,9 +126,10 @@ namespace FPSLAN
             Vector3 wish = transform.right * cmd.move.x + transform.forward * cmd.move.y;
             if (wish.sqrMagnitude > 1f) wish.Normalize();
 
-            bool sprinting = cmd.sprint && cmd.move.y > 0.1f;
-            m_Sprinting = sprinting && alive;
-            float speed = (sprinting ? move.sprintSpeed : move.walkSpeed) * m_Player.Health.SpeedMultiplier;
+            float sprintAmount = cmd.sprint && cmd.move.y > 0.1f ? 1f : 0f;
+            m_Sprinting = sprintAmount > 0.001f && alive;
+            float speed = Mathf.Lerp(move.walkSpeed, move.sprintSpeed, sprintAmount) *
+                m_Player.Health.SpeedMultiplier;
 
             bool grounded = m_Controller.isGrounded;
             m_CoyoteTimer = grounded ? coyoteTime : m_CoyoteTimer - dt;
