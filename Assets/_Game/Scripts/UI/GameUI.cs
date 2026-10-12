@@ -54,7 +54,6 @@ namespace FPSLAN
         float m_NextVisCheck;
         float m_LastKillTime = -10f;
         int m_Streak;
-        double m_LastMatchEnd = -1;
         MatchPhase m_LastPhase = MatchPhase.Playing;
         bool m_AnnouncedStart;
 

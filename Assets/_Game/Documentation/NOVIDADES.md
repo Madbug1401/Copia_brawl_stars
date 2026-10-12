@@ -104,4 +104,4 @@ cinto de dinamites), **Vigia** (capuz de raposa, aljava), **Névoa** (máscara d
   foram validados (48 variantes) com os includes oficiais do Unity — mas **não foi testado em Play Mode**.
   Se algo não estiver certo no primeiro arranque, a consola indica o ficheiro; os sistemas de rede e combate
   mantêm a mesma lógica autoritativa de antes.
-- O código antigo `ProjectileSystem`/`HeroCatalog` continua no projeto mas já não é usado pela cena nova.
+- Os protótipos antigos `ProjectileSystem`/`HeroCatalog` foram removidos por já não serem usados pela cena nova.

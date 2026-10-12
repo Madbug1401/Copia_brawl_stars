@@ -84,16 +84,6 @@ namespace FPSLAN
             return far;
         }
 
-        /// <summary>[Legado — usado só pelo ProjectileSystem] Velocidade de um arco a partir de AttackSpec.</summary>
-        public static Vector3 LobVelocity(Vector3 from, Vector3 target, AttackSpec spec, out float flightTime)
-        {
-            var delta = target - from;
-            float horizontal = new Vector2(delta.x, delta.z).magnitude;
-            flightTime = Mathf.Clamp(horizontal / Mathf.Max(1f, spec.speed), spec.minFlightTime, spec.maxFlightTime);
-            var g = Vector3.down * spec.gravity;
-            return (delta - 0.5f * g * flightTime * flightTime) / flightTime;
-        }
-
         /// <summary>Velocidade inicial de um arco com gravidade que cai exatamente em 'to'.</summary>
         public static Vector3 ArcVelocity(Vector3 from, Vector3 to, float gravity, float horizontalSpeed, float minTime, float maxTime, out float flightTime)
         {
