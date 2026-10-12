@@ -58,6 +58,8 @@ namespace FPSLAN
         bool m_AnnouncedStart;
 
         GUIStyle m_Title, m_Label, m_Big, m_Small, m_Center, m_Button, m_Field, m_Tiny, m_TinyCenter, m_Panel, m_Card, m_Huge;
+        GUIStyle m_RoleDescription, m_StatValue, m_Initial, m_CardName, m_CardRole;
+        GUIStyle m_OverheadName, m_DamageNumber, m_Toast, m_SuperLabel, m_DeathOverlay, m_BigCenter, m_KillFeedStyle;
         Texture2D m_White, m_Rounded, m_Vignette, m_Circle, m_Ring;
         float m_StylesScale = -1f;
 
@@ -297,6 +299,18 @@ namespace FPSLAN
             m_Tiny = new GUIStyle(m_Label) { fontSize = Mathf.RoundToInt(12 * s) };
             m_TinyCenter = new GUIStyle(m_Tiny) { alignment = TextAnchor.MiddleCenter };
             m_Center = new GUIStyle(m_Label) { alignment = TextAnchor.MiddleCenter };
+            m_RoleDescription = new GUIStyle(m_Small) { wordWrap = true, alignment = TextAnchor.UpperCenter };
+            m_StatValue = new GUIStyle(m_Tiny) { alignment = TextAnchor.MiddleRight };
+            m_Initial = new GUIStyle(m_Big) { alignment = TextAnchor.MiddleCenter };
+            m_CardName = new GUIStyle(m_Label) { alignment = TextAnchor.UpperLeft, clipping = TextClipping.Clip };
+            m_CardRole = new GUIStyle(m_Tiny) { alignment = TextAnchor.UpperLeft, clipping = TextClipping.Clip, wordWrap = false };
+            m_OverheadName = new GUIStyle(m_TinyCenter);
+            m_DamageNumber = new GUIStyle(m_Big) { alignment = TextAnchor.MiddleCenter };
+            m_Toast = new GUIStyle(m_Huge);
+            m_SuperLabel = new GUIStyle(m_Big) { alignment = TextAnchor.MiddleCenter };
+            m_DeathOverlay = new GUIStyle(m_Huge);
+            m_BigCenter = new GUIStyle(m_Big) { alignment = TextAnchor.MiddleCenter };
+            m_KillFeedStyle = new GUIStyle(m_Label) { alignment = TextAnchor.MiddleLeft };
 
             m_Button = new GUIStyle(GUI.skin.button) { fontSize = Mathf.RoundToInt(18 * s), fontStyle = FontStyle.Bold, border = new RectOffset(10, 10, 10, 10) };
             m_Button.normal.background = m_Rounded;
@@ -601,11 +615,10 @@ namespace FPSLAN
             float dps = EstimateBurst(b);
             StatBar(new Rect(bx, y, bw, 22 * s), "DANO", dps / 140f, Mathf.RoundToInt(dps).ToString(), new Color(1f, 0.5f, 0.3f));
             y += 34 * s;
-            var desc = b.role;
+            var desc = b.role ?? "";
             int dash = desc.IndexOf('—');
             if (dash >= 0) desc = desc.Substring(dash + 1).Trim();
-            var wrap = new GUIStyle(m_Small) { wordWrap = true, alignment = TextAnchor.UpperCenter };
-            Outlined(new Rect(bx, y, bw, 60 * s), desc, wrap, new Color(0.9f, 0.92f, 1f), 1.2f);
+            Outlined(new Rect(bx, y, bw, 60 * s), desc, m_RoleDescription, new Color(0.9f, 0.92f, 1f), 1.2f);
         }
 
         static string RoleTitle(BrawlerDefinition b)
@@ -636,8 +649,7 @@ namespace FPSLAN
             var fill = new Rect(r.x, r.y, Mathf.Max(r.height, r.width * Mathf.Clamp01(t)), r.height);
             Panel(fill, c);
             Outlined(new Rect(r.x + 10 * s, r.y - 1 * s, r.width, r.height), label, m_Tiny, Color.white, 1.5f);
-            var right = new GUIStyle(m_Tiny) { alignment = TextAnchor.MiddleRight };
-            Outlined(new Rect(r.x, r.y, r.width - 10 * s, r.height), value, right, Color.white, 1.5f);
+            Outlined(new Rect(r.x, r.y, r.width - 10 * s, r.height), value, m_StatValue, Color.white, 1.5f);
         }
 
         /// <summary>Cartões dos Brawlers (2 linhas). Clicar escolhe; em jogo troca já.</summary>
@@ -675,13 +687,10 @@ namespace FPSLAN
                 var icon = new Rect(r.x + 8 * s, r.y + 11 * s, ic, ic);
                 Tex(new Rect(icon.x - 2 * s, icon.y - 2 * s, icon.width + 4 * s, icon.height + 4 * s), m_Circle, Ink);
                 Tex(icon, m_Circle, Color.Lerp(b.Tint, Color.white, 0.55f));
-                var initial = new GUIStyle(m_Big) { alignment = TextAnchor.MiddleCenter };
-                Outlined(icon, b.displayName.Substring(0, 1).ToUpperInvariant(), initial, Color.white, 1.5f);
+                Outlined(icon, FirstCharacterOrFallback(b.displayName).ToUpperInvariant(), m_Initial, Color.white, 1.5f);
 
-                var nameStyle = new GUIStyle(m_Label) { alignment = TextAnchor.UpperLeft, clipping = TextClipping.Clip };
-                Outlined(new Rect(icon.xMax + 8 * s, r.y + 10 * s, r.width - ic - 22 * s, 24 * s), b.displayName, nameStyle, Color.white, 1.5f);
-                var roleStyle = new GUIStyle(m_Tiny) { alignment = TextAnchor.UpperLeft, clipping = TextClipping.Clip, wordWrap = false };
-                Outlined(new Rect(icon.xMax + 8 * s, r.y + 36 * s, r.width - ic - 22 * s, 20 * s), ShortRole(b), roleStyle, new Color(1f, 1f, 1f, 0.9f), 1f);
+                Outlined(new Rect(icon.xMax + 8 * s, r.y + 10 * s, r.width - ic - 22 * s, 24 * s), b.displayName, m_CardName, Color.white, 1.5f);
+                Outlined(new Rect(icon.xMax + 8 * s, r.y + 36 * s, r.width - ic - 22 * s, 20 * s), ShortRole(b), m_CardRole, new Color(1f, 1f, 1f, 0.9f), 1f);
 
                 if (b.available && GUI.Button(r, GUIContent.none, GUIStyle.none) && !isSel)
                 {
@@ -699,6 +708,9 @@ namespace FPSLAN
             int dash = role.IndexOf('—');
             return dash > 0 ? role.Substring(0, dash).Trim() : role;
         }
+
+        static string FirstCharacterOrFallback(string value) =>
+            string.IsNullOrEmpty(value) ? "?" : value.Substring(0, 1);
 
         void DrawBotControls(float s, bool live)
         {
@@ -787,8 +799,8 @@ namespace FPSLAN
                 Outlined(new Rect(x, y - 1, bw, bh + 2), p.Health.Health.Value.ToString(), m_TinyCenter, Color.white, 1f);
 
                 var label = p.DisplayName;
-                var nameStyle = new GUIStyle(m_TinyCenter) { fontSize = Mathf.RoundToInt(13 * k) };
-                Outlined(new Rect(sp.x - 130, y - 20 * k, 260, 18 * k), label, nameStyle, Color.Lerp(p.Brawler.Tint, Color.white, 0.4f), 1.2f);
+                m_OverheadName.fontSize = Mathf.RoundToInt(13 * k);
+                Outlined(new Rect(sp.x - 130, y - 20 * k, 260, 18 * k), label, m_OverheadName, Color.Lerp(p.Brawler.Tint, Color.white, 0.4f), 1.2f);
 
                 if (p.Combat.SuperReady)
                 {
@@ -797,7 +809,7 @@ namespace FPSLAN
                 }
                 if (p.Health.IsProtected)
                 {
-                    Outlined(new Rect(sp.x - 60, y + bh + 2 * k, 120, 16 * k), "ESCUDO", nameStyle, new Color(0.5f, 0.85f, 1f), 1f);
+                    Outlined(new Rect(sp.x - 60, y + bh + 2 * k, 120, 16 * k), "ESCUDO", m_OverheadName, new Color(0.5f, 0.85f, 1f), 1f);
                 }
             }
         }
@@ -815,12 +827,12 @@ namespace FPSLAN
                 if (sp.z <= 0f) continue;
                 float pop = age < 0.08f ? Mathf.Lerp(1.6f, 1f, age / 0.08f) : 1f;
                 float size = Mathf.Clamp(26f * d.scale * pop * Mathf.Clamp(14f / Mathf.Max(4f, sp.z), 0.65f, 1.3f), 14f, 60f) * s;
-                var style = new GUIStyle(m_Big) { fontSize = Mathf.RoundToInt(size), alignment = TextAnchor.MiddleCenter };
+                m_DamageNumber.fontSize = Mathf.RoundToInt(size);
                 float rise = age * 60f * s;
                 var c = d.color;
                 c.a = Mathf.Clamp01(1.4f - age * 1.6f);
                 var r = new Rect(sp.x - 100 + d.drift.x * age, Screen.height - sp.y - rise - 20, 200, 40 * s);
-                Outlined(r, d.text, style, c, 2f);
+                Outlined(r, d.text, m_DamageNumber, c, 2f);
             }
         }
 
@@ -834,8 +846,8 @@ namespace FPSLAN
                 float pop = age < 0.12f ? Mathf.Lerp(1.8f, 1f, age / 0.12f) : 1f;
                 var c = t.color;
                 c.a = Mathf.Clamp01((1.6f - age) * 2.5f);
-                var style = new GUIStyle(m_Huge) { fontSize = Mathf.RoundToInt(44 * s * pop) };
-                Outlined(new Rect(0, y, Screen.width, 60 * s * pop), t.text, style, c, 3f);
+                m_Toast.fontSize = Mathf.RoundToInt(44 * s * pop);
+                Outlined(new Rect(0, y, Screen.width, 60 * s * pop), t.text, m_Toast, c, 3f);
                 y += 58 * s;
             }
         }
@@ -872,7 +884,7 @@ namespace FPSLAN
             var portrait = new Rect(hpRect.x, hpRect.y - pr - 10 * s, pr, pr);
             Tex(new Rect(portrait.x - 3 * s, portrait.y - 3 * s, pr + 6 * s, pr + 6 * s), m_Circle, Ink);
             Tex(portrait, m_Circle, b != null ? b.Tint : Color.white);
-            Outlined(portrait, b != null ? b.displayName.Substring(0, 1) : "?", new GUIStyle(m_Big) { alignment = TextAnchor.MiddleCenter }, Color.white, 2f);
+            Outlined(portrait, b != null ? FirstCharacterOrFallback(b.displayName) : "?", m_Initial, Color.white, 2f);
             Outlined(new Rect(portrait.xMax + 10 * s, portrait.y + 8 * s, 400 * s, 30 * s), b != null ? b.displayName.ToUpperInvariant() : "", m_Big, Color.white, 2f);
             Outlined(new Rect(portrait.xMax + 12 * s, portrait.y + 40 * s, 400 * s, 22 * s), b != null ? ShortRole(b) : "", m_Small, new Color(0.85f, 0.9f, 1f), 1.2f);
 
@@ -887,7 +899,7 @@ namespace FPSLAN
                 string time = match.Phase.Value == MatchPhase.Playing ? $"{(int)(tr / 60)}:{(int)(tr % 60):00}" : "FIM";
                 var top = new Rect(cx - 110 * s, 12 * s, 220 * s, 52 * s);
                 InkPanel(top, PanelBlue, 3f * s);
-                Outlined(new Rect(top.x, top.y + 2 * s, top.width, 30 * s), time, new GUIStyle(m_Big) { alignment = TextAnchor.MiddleCenter }, Color.white, 2f);
+                Outlined(new Rect(top.x, top.y + 2 * s, top.width, 30 * s), time, m_BigCenter, Color.white, 2f);
                 Outlined(new Rect(top.x, top.y + 30 * s, top.width, 20 * s), $"K {me.Kills.Value}  ·  D {me.Deaths.Value}  ·  meta {match.killLimit}", m_TinyCenter, new Color(1f, 0.9f, 0.6f), 1f);
 
                 PlayerNetwork leader = null;
@@ -902,7 +914,6 @@ namespace FPSLAN
 
             // ---------------- kill feed
             float ky = 14 * s;
-            var feedStyle = new GUIStyle(m_Label) { alignment = TextAnchor.MiddleLeft };
             foreach (var k in m_KillFeed)
             {
                 var r = new Rect(Screen.width - 420 * s, ky, 400 * s, 30 * s);
@@ -912,13 +923,13 @@ namespace FPSLAN
                 float x = r.x + 10 * s;
                 if (!string.IsNullOrEmpty(k.killer))
                 {
-                    var kw = feedStyle.CalcSize(new GUIContent(k.killer)).x;
-                    Outlined(new Rect(x, r.y, kw + 4, r.height), k.killer, feedStyle, Art.WithAlpha(k.killerColor, a), 1.2f);
+                    var kw = m_KillFeedStyle.CalcSize(new GUIContent(k.killer)).x;
+                    Outlined(new Rect(x, r.y, kw + 4, r.height), k.killer, m_KillFeedStyle, Art.WithAlpha(k.killerColor, a), 1.2f);
                     x += kw + 10 * s;
-                    Outlined(new Rect(x, r.y, 40 * s, r.height), "»", feedStyle, new Color(1f, 0.4f, 0.3f, a), 1.2f);
+                    Outlined(new Rect(x, r.y, 40 * s, r.height), "»", m_KillFeedStyle, new Color(1f, 0.4f, 0.3f, a), 1.2f);
                     x += 26 * s;
                 }
-                Outlined(new Rect(x, r.y, 260 * s, r.height), string.IsNullOrEmpty(k.killer) ? k.victim + " caiu" : k.victim, feedStyle, Art.WithAlpha(k.victimColor, a), 1.2f);
+                Outlined(new Rect(x, r.y, 260 * s, r.height), string.IsNullOrEmpty(k.killer) ? k.victim + " caiu" : k.victim, m_KillFeedStyle, Art.WithAlpha(k.victimColor, a), 1.2f);
                 ky += 34 * s;
             }
 
@@ -1015,8 +1026,8 @@ namespace FPSLAN
             }
             Tex(r, m_Ring, new Color(1f, 1f, 1f, ready ? 0.9f : 0.35f));
 
-            var big = new GUIStyle(m_Big) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(24 * s) };
-            Outlined(new Rect(r.x, r.y + d * 0.28f, d, 30 * s), "SUPER", big, ready ? Color.white : new Color(1f, 1f, 1f, 0.7f), 2f);
+            m_SuperLabel.fontSize = Mathf.RoundToInt(24 * s);
+            Outlined(new Rect(r.x, r.y + d * 0.28f, d, 30 * s), "SUPER", m_SuperLabel, ready ? Color.white : new Color(1f, 1f, 1f, 0.7f), 2f);
             Outlined(new Rect(r.x, r.y + d * 0.55f, d, 22 * s), ready ? "Botão dir. / E" : Mathf.RoundToInt(sup * 100) + "%", m_TinyCenter, Color.white, 1f);
         }
 
@@ -1027,7 +1038,8 @@ namespace FPSLAN
             var killer = PlayerNetwork.Find(me.Health.LastKiller.Value);
             string who = killer != null && killer != me ? "ELIMINADO POR " + killer.DisplayName.ToUpperInvariant() : "FOSTE ELIMINADO";
             var r = new Rect(0, Screen.height * 0.28f, Screen.width, 60 * s);
-            Outlined(r, who, new GUIStyle(m_Huge) { fontSize = Mathf.RoundToInt(38 * s) }, new Color(1f, 0.4f, 0.35f), 3f);
+            m_DeathOverlay.fontSize = Mathf.RoundToInt(38 * s);
+            Outlined(r, who, m_DeathOverlay, new Color(1f, 0.4f, 0.35f), 3f);
             if (killer != null && killer != me && killer.Brawler != null)
                 Outlined(new Rect(0, r.yMax, Screen.width, 30 * s), killer.Brawler.displayName + " · " + ShortRole(killer.Brawler), m_Center, Color.Lerp(killer.Brawler.Tint, Color.white, 0.4f), 1.5f);
             if (!MatchManager.IsMatchOver)
@@ -1049,7 +1061,7 @@ namespace FPSLAN
             var area = new Rect((Screen.width - w) / 2f, Screen.height * 0.15f, w, h);
             InkPanel(area, PanelDark, 4f * s);
 
-            Outlined(new Rect(area.x, area.y + 10 * s, w, 40 * s), "PLACAR", new GUIStyle(m_Big) { alignment = TextAnchor.MiddleCenter }, Gold, 2f);
+            Outlined(new Rect(area.x, area.y + 10 * s, w, 40 * s), "PLACAR", m_BigCenter, Gold, 2f);
             float y = area.y + 56 * s;
             DrawRow(area.x, y, w, "Jogador", "Brawler", "K", "D", m_Small, Color.clear, Color.white);
             y += 28 * s;
@@ -1288,7 +1300,7 @@ namespace FPSLAN
             InkPanel(area, PanelDark, 4f * s);
             GUILayout.BeginArea(new Rect(area.x + 22 * s, area.y + 14 * s, area.width - 44 * s, area.height - 28 * s));
             var tr = GUILayoutUtility.GetRect(10, 46 * s);
-            Outlined(tr, "PAUSA", new GUIStyle(m_Big) { alignment = TextAnchor.MiddleCenter }, Gold, 2f);
+            Outlined(tr, "PAUSA", m_BigCenter, Gold, 2f);
             GUILayout.Space(6 * s);
 
             GUILayout.Label("Brawler (troca já)", m_Small);
