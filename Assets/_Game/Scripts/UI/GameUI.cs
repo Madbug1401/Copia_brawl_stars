@@ -46,6 +46,7 @@ namespace FPSLAN
             m_Ip = GameSession.LastIp;
             m_Hero = BrawlerRegistry.Sanitize(GameSession.LocalHeroId);
             m_MenuBots = PlayerPrefs.GetInt("fpslan.bots", 0);
+            MatchManager.MenuSelectedMode = (GameMode)Mathf.Clamp(PlayerPrefs.GetInt("fpslan.mode", 0), 0, 2);
             BotManager.Difficulty = (BotDifficulty)PlayerPrefs.GetInt("fpslan.botdiff", (int)BotDifficulty.Normal);
             m_LocalIps = ConnectionManager.GetLocalIPv4();
         }
@@ -237,6 +238,14 @@ namespace FPSLAN
             DrawHeroPicker(s, ref m_Hero, false);
 
             GUILayout.Space(8 * s);
+            GUILayout.Label("Modo de jogo", m_Small);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("‹", m_Button, GUILayout.Width(48 * s), GUILayout.Height(38 * s))) CycleGameMode(-1);
+            GUILayout.Label(GameModeLabel(MatchManager.MenuSelectedMode), m_Big, GUILayout.Height(38 * s));
+            if (GUILayout.Button("›", m_Button, GUILayout.Width(48 * s), GUILayout.Height(38 * s))) CycleGameMode(1);
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(8 * s);
             bool busy = NM != null && NM.IsListening;
             GUI.enabled = !busy;
 
@@ -286,6 +295,24 @@ namespace FPSLAN
             var ips = m_LocalIps != null && m_LocalIps.Count > 0 ? string.Join("   ", m_LocalIps) : "desconhecido";
             GUILayout.Label("O teu IP na rede: " + ips + "   (porta " + ConnectionManager.DefaultPort + ")", m_Small);
             GUILayout.EndArea();
+        }
+
+        void CycleGameMode(int delta)
+        {
+            int count = 3;
+            int value = ((int)MatchManager.MenuSelectedMode + delta + count) % count;
+            MatchManager.MenuSelectedMode = (GameMode)value;
+            PlayerPrefs.SetInt("fpslan.mode", value);
+        }
+
+        static string GameModeLabel(GameMode mode)
+        {
+            switch (mode)
+            {
+                case GameMode.Wipeout: return "WIPEOUT · Eliminações por equipa";
+                case GameMode.Knockout: return "KNOCKOUT · Melhor de três rondas";
+                default: return "DEATHMATCH · Todos contra todos";
+            }
         }
 
         void SaveMenuPrefs()
@@ -413,7 +440,12 @@ namespace FPSLAN
                 string time = match.Phase.Value == MatchPhase.Playing ? $"{(int)(tr / 60)}:{(int)(tr % 60):00}" : "FIM";
                 var top = new Rect(cx - 170 * s, 12 * s, 340 * s, 44 * s);
                 Fill(top, new Color(0, 0, 0, 0.5f));
-                GUI.Label(top, $"{time}    K {me.Kills.Value}  ·  D {me.Deaths.Value}    (meta {match.killLimit})", m_Center);
+                string modeScore = match.Mode.Value == GameMode.Deathmatch
+                    ? $"K {me.Kills.Value}  ·  D {me.Deaths.Value}    (meta {match.killLimit})"
+                    : $"AZUL {match.BlueScore.Value}  -  {match.RedScore.Value} VERMELHA";
+                string modeName = match.Mode.Value == GameMode.Wipeout ? "WIPEOUT" :
+                    match.Mode.Value == GameMode.Knockout ? $"KNOCKOUT · RONDA {match.RoundNumber.Value}" : "DEATHMATCH";
+                GUI.Label(top, $"{modeName}   {time}   {modeScore}", m_Center);
             }
 
             float ky = 14 * s;
