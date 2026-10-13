@@ -89,7 +89,7 @@ namespace FPSLAN
         public bool ServerApplyDamage(int amount, ulong attackerId)
         {
             if (!IsServer || Dead.Value || amount <= 0) return false;
-            if (MatchManager.IsMatchOver) return false;
+            if (!MatchManager.IsCombatActive || MatchManager.IsMatchOver) return false;
 
             m_LastCombatTime = Time.time;
             Health.Value = Mathf.Max(0, Health.Value - amount);
