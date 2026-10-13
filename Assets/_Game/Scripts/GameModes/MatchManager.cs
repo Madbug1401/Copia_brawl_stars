@@ -10,23 +10,43 @@ namespace FPSLAN
         Ended
     }
 
+    public enum GameMode : byte
+    {
+        Deathmatch,
+        Wipeout,
+        Knockout
+    }
+
     /// <summary>
-    /// Deathmatch (todos contra todos): primeiro a chegar ao limite de kills ou quem tiver mais kills quando o tempo acaba.
-    /// Depois de uns segundos de resultado, a partida recomeça sozinha.
+    /// Autoridade do host para ciclo de partida e modos. Deathmatch mantém as regras originais;
+    /// Wipeout usa pontuação por equipa; Knockout usa rondas sem respawn durante a ronda.
     /// </summary>
     public class MatchManager : NetworkBehaviour
     {
         public static MatchManager Instance { get; private set; }
+        public static GameMode MenuSelectedMode { get; set; } = GameMode.Deathmatch;
 
         public int killLimit = 15;
         public float matchMinutes = 8f;
         public float resultsSeconds = 8f;
+        public int wipeoutTeamKillLimit = 10;
+        public float knockoutRoundSeconds = 90f;
+        public float knockoutIntermissionSeconds = 4f;
 
         public readonly NetworkVariable<MatchPhase> Phase = new NetworkVariable<MatchPhase>(MatchPhase.Playing);
+        public readonly NetworkVariable<GameMode> Mode = new NetworkVariable<GameMode>(GameMode.Deathmatch);
         public readonly NetworkVariable<double> PhaseEndTime = new NetworkVariable<double>(0);
         public readonly NetworkVariable<FixedString64Bytes> WinnerName = new NetworkVariable<FixedString64Bytes>();
+        public readonly NetworkVariable<int> BlueScore = new NetworkVariable<int>(0);
+        public readonly NetworkVariable<int> RedScore = new NetworkVariable<int>(0);
+        public readonly NetworkVariable<int> RoundNumber = new NetworkVariable<int>(1);
+        public readonly NetworkVariable<bool> IsRoundIntermission = new NetworkVariable<bool>(false);
 
         public static bool IsMatchOver => Instance != null && Instance.IsSpawned && Instance.Phase.Value == MatchPhase.Ended;
+        public static bool IsCombatActive => Instance == null || !Instance.IsSpawned ||
+            (Instance.Phase.Value == MatchPhase.Playing && !Instance.IsRoundIntermission.Value);
+
+        public bool CanRespawnDeadPlayers => Mode.Value != GameMode.Knockout;
 
         public float TimeRemaining
         {
@@ -55,18 +75,64 @@ namespace FPSLAN
         {
             if (!IsSpawned || !IsServer) return;
 
+            if (Mode.Value == GameMode.Wipeout || Mode.Value == GameMode.Knockout)
+                ServerAssignMissingTeams();
+
             double now = NetworkManager.ServerTime.Time;
             if (now < PhaseEndTime.Value) return;
 
-            if (Phase.Value == MatchPhase.Playing) ServerEndMatch(TopPlayer());
-            else ServerStartMatch();
+            if (Phase.Value == MatchPhase.Ended)
+            {
+                ServerStartMatch();
+                return;
+            }
+
+            if (Mode.Value == GameMode.Knockout)
+            {
+                if (IsRoundIntermission.Value)
+                {
+                    if (BlueScore.Value >= 2 || RedScore.Value >= 2)
+                    {
+                        ServerEndMatch(BlueScore.Value > RedScore.Value ? 0 : 1);
+                        return;
+                    }
+
+                    if (RoundNumber.Value >= 3)
+                    {
+                        if (BlueScore.Value == RedScore.Value) ServerEndMatch(-1);
+                        else ServerEndMatch(BlueScore.Value > RedScore.Value ? 0 : 1);
+                        return;
+                    }
+
+                    RoundNumber.Value++;
+                    ServerStartKnockoutRound();
+                    return;
+                }
+
+                ServerResolveKnockoutRoundByHealth();
+                return;
+            }
+
+            if (Mode.Value == GameMode.Wipeout)
+            {
+                if (BlueScore.Value == RedScore.Value) ServerEndMatch(null);
+                else ServerEndMatch(BlueScore.Value > RedScore.Value ? 0 : 1);
+            }
+            else
+            {
+                ServerEndMatch(TopPlayer());
+            }
         }
 
         void ServerStartMatch()
         {
+            Mode.Value = MenuSelectedMode;
             Phase.Value = MatchPhase.Playing;
             WinnerName.Value = default;
-            PhaseEndTime.Value = NetworkManager.ServerTime.Time + matchMinutes * 60f;
+            BlueScore.Value = 0;
+            RedScore.Value = 0;
+            RoundNumber.Value = 1;
+            IsRoundIntermission.Value = false;
             DestructibleCover.ServerRestoreAll();
 
             foreach (var p in PlayerNetwork.All)
@@ -74,15 +140,70 @@ namespace FPSLAN
                 if (p == null || !p.IsSpawned) continue;
                 p.Kills.Value = 0;
                 p.Deaths.Value = 0;
+                p.TeamId.Value = -1;
                 p.Combat.ServerResetSuper();
+            }
+
+            if (Mode.Value == GameMode.Knockout)
+                ServerStartKnockoutRound();
+            else
+            {
+                ServerAssignMissingTeams();
+                PhaseEndTime.Value = NetworkManager.ServerTime.Time + matchMinutes * 60f;
+                foreach (var p in PlayerNetwork.All)
+                    if (p != null && p.IsSpawned) p.Health.ServerRespawn();
+            }
+        }
+
+        void ServerStartKnockoutRound()
+        {
+            Phase.Value = MatchPhase.Playing;
+            IsRoundIntermission.Value = false;
+            PhaseEndTime.Value = NetworkManager.ServerTime.Time + knockoutRoundSeconds;
+            DestructibleCover.ServerRestoreAll();
+
+            foreach (var p in PlayerNetwork.All)
+            {
+                if (p == null || !p.IsSpawned) continue;
                 p.Health.ServerRespawn();
+                p.Combat.ServerRefill();
+                p.Combat.ServerResetSuper();
+            }
+        }
+
+        void ServerAssignMissingTeams()
+        {
+            int blue = 0, red = 0;
+            foreach (var p in PlayerNetwork.All)
+            {
+                if (p == null || !p.IsSpawned) continue;
+                if (p.TeamId.Value == 0) blue++;
+                else if (p.TeamId.Value == 1) red++;
+            }
+
+            foreach (var p in PlayerNetwork.All)
+            {
+                if (p == null || !p.IsSpawned || p.TeamId.Value >= 0) continue;
+                p.TeamId.Value = blue <= red ? 0 : 1;
+                if (p.TeamId.Value == 0) blue++;
+                else red++;
             }
         }
 
         void ServerEndMatch(PlayerNetwork winner)
         {
             Phase.Value = MatchPhase.Ended;
+            IsRoundIntermission.Value = false;
             WinnerName.Value = new FixedString64Bytes(winner != null ? winner.DisplayName : "Ninguém");
+            PhaseEndTime.Value = NetworkManager.ServerTime.Time + resultsSeconds;
+        }
+
+        void ServerEndMatch(int winningTeam)
+        {
+            Phase.Value = MatchPhase.Ended;
+            IsRoundIntermission.Value = false;
+            string name = winningTeam == 0 ? "Equipa Azul" : winningTeam == 1 ? "Equipa Vermelha" : "Empate";
+            WinnerName.Value = new FixedString64Bytes(name);
             PhaseEndTime.Value = NetworkManager.ServerTime.Time + resultsSeconds;
         }
 
@@ -99,14 +220,101 @@ namespace FPSLAN
             return best;
         }
 
+        int AliveCountForTeam(int team)
+        {
+            int count = 0;
+            foreach (var p in PlayerNetwork.All)
+                if (p != null && p.IsSpawned && p.TeamId.Value == team && !p.Health.IsDead) count++;
+            return count;
+        }
+
+        int RemainingHealthForTeam(int team)
+        {
+            int total = 0;
+            foreach (var p in PlayerNetwork.All)
+                if (p != null && p.IsSpawned && p.TeamId.Value == team && !p.Health.IsDead)
+                    total += Mathf.Max(0, p.Health.Health.Value);
+            return total;
+        }
+
+        void ServerResolveKnockoutRoundByHealth()
+        {
+            int blueAlive = AliveCountForTeam(0);
+            int redAlive = AliveCountForTeam(1);
+            if (blueAlive > 0 && redAlive == 0) ServerEndKnockoutRound(0);
+            else if (redAlive > 0 && blueAlive == 0) ServerEndKnockoutRound(1);
+            else
+            {
+                int blueHealth = RemainingHealthForTeam(0);
+                int redHealth = RemainingHealthForTeam(1);
+                if (blueHealth > redHealth) ServerEndKnockoutRound(0);
+                else if (redHealth > blueHealth) ServerEndKnockoutRound(1);
+                else ServerEndKnockoutRound(-1);
+            }
+        }
+
+        void ServerCheckKnockoutRoundEnd()
+        {
+            if (Mode.Value != GameMode.Knockout || Phase.Value != MatchPhase.Playing || IsRoundIntermission.Value) return;
+            int blueAlive = AliveCountForTeam(0);
+            int redAlive = AliveCountForTeam(1);
+            if (blueAlive == 0 && redAlive > 0) ServerEndKnockoutRound(1);
+            else if (redAlive == 0 && blueAlive > 0) ServerEndKnockoutRound(0);
+            else if (blueAlive == 0 && redAlive == 0) ServerEndKnockoutRound(-1);
+        }
+
+        void ServerEndKnockoutRound(int winningTeam)
+        {
+            if (IsRoundIntermission.Value || Phase.Value != MatchPhase.Playing) return;
+
+            if (winningTeam == 0) BlueScore.Value++;
+            else if (winningTeam == 1) RedScore.Value++;
+
+            if (BlueScore.Value >= 2 || RedScore.Value >= 2)
+            {
+                ServerEndMatch(BlueScore.Value > RedScore.Value ? 0 : 1);
+                return;
+            }
+
+            if (RoundNumber.Value >= 3)
+            {
+                if (BlueScore.Value == RedScore.Value) ServerEndMatch(-1);
+                else ServerEndMatch(BlueScore.Value > RedScore.Value ? 0 : 1);
+                return;
+            }
+
+            IsRoundIntermission.Value = true;
+            PhaseEndTime.Value = NetworkManager.ServerTime.Time + knockoutIntermissionSeconds;
+        }
+
         /// <summary>Servidor: chamado pelo PlayerHealth quando alguém morre.</summary>
         public void ServerOnKill(PlayerNetwork killer, PlayerNetwork victim)
         {
             var killerName = killer != null && killer != victim ? killer.DisplayName : "";
             KillFeedRpc(new FixedString64Bytes(killerName), new FixedString64Bytes(victim != null ? victim.DisplayName : "?"));
 
-            if (Phase.Value == MatchPhase.Playing && killer != null && killer != victim && killer.Kills.Value >= killLimit)
+            if (Phase.Value != MatchPhase.Playing || IsRoundIntermission.Value || killer == null || killer == victim)
+            {
+                ServerCheckKnockoutRoundEnd();
+                return;
+            }
+
+            if (Mode.Value == GameMode.Wipeout)
+            {
+                if (killer.TeamId.Value == 0) BlueScore.Value++;
+                else if (killer.TeamId.Value == 1) RedScore.Value++;
+
+                if (BlueScore.Value >= wipeoutTeamKillLimit) ServerEndMatch(0);
+                else if (RedScore.Value >= wipeoutTeamKillLimit) ServerEndMatch(1);
+            }
+            else if (Mode.Value == GameMode.Knockout)
+            {
+                ServerCheckKnockoutRoundEnd();
+            }
+            else if (killer.Kills.Value >= killLimit)
+            {
                 ServerEndMatch(killer);
+            }
         }
 
         [Rpc(SendTo.Everyone)]
