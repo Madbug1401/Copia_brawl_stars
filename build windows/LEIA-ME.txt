@@ -17,6 +17,13 @@ JOGAR EM REDE LOCAL (LAN)
 O host conta como um jogador. O limite da partida e de 4 jogadores.
 TREINO (com bots) inicia uma partida local com bots.
 
+MODOS DE JOGO
+Escolha o modo no menu antes de iniciar a partida:
+- DEATHMATCH: cada jogador compete individualmente.
+- WIPEOUT: duas equipas pontuam com eliminacoes; fogo amigo esta desativado.
+- KNOCKOUT: duas equipas disputam rondas; jogadores eliminados nao renascem
+  ate ao inicio da ronda seguinte.
+
 CONTROLOS
 WASD       Mover
 Rato       Olhar
@@ -35,4 +42,6 @@ ajustar a mira e o volume. O HUD pode ser reposicionado na aba HUD.
 As alteracoes ficam guardadas localmente. REPOR restaura os valores padrao.
 
 Esta e uma build Windows 64-bit (x64). Para distribuir o jogo, envie a pasta
-"build windows" completa; nao envie apenas FPS-LAN.exe.
+"build windows" completa; nao envie apenas FPS-LAN.exe. A subpasta
+"FPS-LAN_BackUpThisFolder_ButDontShipItWithYourGame", se existir, e um backup
+do Unity e nao e necessaria para jogar.
