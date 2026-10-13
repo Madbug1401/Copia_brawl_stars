@@ -32,6 +32,9 @@ namespace FPSLAN
         public readonly NetworkVariable<int> Kills = new NetworkVariable<int>(0);
         public readonly NetworkVariable<int> Deaths = new NetworkVariable<int>(0);
 
+        /// <summary>0 = equipa azul, 1 = equipa vermelha, -1 = ainda não atribuída.</summary>
+        public readonly NetworkVariable<int> TeamId = new NetworkVariable<int>(-1);
+
         public PlayerMotor Motor { get; private set; }
         public PlayerHealth Health { get; private set; }
         public PlayerCombat Combat { get; private set; }
@@ -87,6 +90,8 @@ namespace FPSLAN
         public override void OnNetworkSpawn()
         {
             if (!All.Contains(this)) All.Add(this);
+            if (IsServer && MatchManager.Instance != null)
+                MatchManager.Instance.ServerAssignMissingTeams();
 
             if (IsServer && m_PendingBot)
             {

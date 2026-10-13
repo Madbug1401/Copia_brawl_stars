@@ -148,7 +148,7 @@ namespace FPSLAN
         void FireRpc(bool super, Vector3 origin, Vector3 direction, Vector3 target, int seed)
         {
             var b = Brawler;
-            if (b == null || m_Player.Health.IsDead || MatchManager.IsMatchOver) return;
+            if (b == null || m_Player.Health.IsDead || !MatchManager.IsCombatActive || MatchManager.IsMatchOver) return;
             var attack = AttackFor(super);
             if (attack == null) return;
 

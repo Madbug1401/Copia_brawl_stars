@@ -95,7 +95,8 @@ namespace FPSLAN
         public bool ServerApplyDamage(int amount, ulong attackerId)
         {
             if (!IsServer || Dead.Value || amount <= 0) return false;
-            if (MatchManager.IsMatchOver) return false;
+            if (!MatchManager.IsCombatActive || MatchManager.IsMatchOver) return false;
+            if (MatchManager.AreTeammates(PlayerNetwork.Find(attackerId), m_Player)) return false;
             if (IsProtected) return false;
 
             m_LastCombatTime = Time.time;
@@ -130,7 +131,8 @@ namespace FPSLAN
 
             m_Player.Deaths.Value++;
             var killer = PlayerNetwork.Find(attackerId);
-            if (killer != null && killer != m_Player) killer.Kills.Value++;
+            if (killer != null && killer != m_Player && !MatchManager.AreTeammates(killer, m_Player))
+                killer.Kills.Value++;
 
             if (MatchManager.Instance != null) MatchManager.Instance.ServerOnKill(killer, m_Player);
         }
@@ -162,7 +164,9 @@ namespace FPSLAN
 
             if (Dead.Value)
             {
-                if (Time.time >= m_RespawnAt && !MatchManager.IsMatchOver) ServerRespawn();
+                bool knockoutElimination = MatchManager.Instance != null && MatchManager.Instance.IsSpawned &&
+                    MatchManager.Instance.Mode.Value == GameMode.Knockout;
+                if (Time.time >= m_RespawnAt && !MatchManager.IsMatchOver && !knockoutElimination) ServerRespawn();
                 return;
             }
 

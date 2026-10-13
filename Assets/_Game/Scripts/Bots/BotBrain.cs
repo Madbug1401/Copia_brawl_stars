@@ -245,6 +245,7 @@ namespace FPSLAN
             foreach (var p in PlayerNetwork.All)
             {
                 if (p == null || p == m_Self || !p.IsSpawned || p.Health.IsDead) continue;
+                if (MatchManager.AreTeammates(m_Self, p)) continue;
                 float d = Vector3.Distance(m_Self.transform.position, p.transform.position);
                 if (d > 45f) continue;
                 // Escondido num arbusto (e não revelado): o bot não o vê
