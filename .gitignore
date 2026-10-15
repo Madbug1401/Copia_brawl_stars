@@ -4,8 +4,6 @@
 /[Oo]bj/
 /[Bb]uild/
 /[Bb]uilds/
-/build android/
-/build iOS/
 /D3D12/
 /FPS-LAN_BackUpThisFolder_ButDontShipItWithYourGame/
 /FPS-LAN_Data/
