@@ -23,6 +23,8 @@ Escolha o modo no menu antes de iniciar a partida:
 - WIPEOUT: duas equipas pontuam com eliminacoes; fogo amigo esta desativado.
 - KNOCKOUT: duas equipas disputam rondas; jogadores eliminados nao renascem
   ate ao inicio da ronda seguinte.
+- SHOWDOWN: modo individual sem respawn; vence o ultimo jogador vivo.
+  Se o tempo terminar, a vida restante e as eliminacoes decidem o resultado.
 
 CONTROLOS
 WASD       Mover
@@ -30,6 +32,7 @@ Rato       Olhar
 Shift      Sprint
 Espaco     Saltar
 Botao esquerdo   Ataque principal
+Q              Facada de curto alcance
 E              Super (quando carregado)
 Botao direito  Mira de precisao do Lince
 Tab        Placar
