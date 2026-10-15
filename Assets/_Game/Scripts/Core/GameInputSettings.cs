@@ -12,6 +12,7 @@ namespace FPSLAN
         MoveLeft,
         MoveRight,
         Fire,
+        Melee,
         Super,
         Jump,
         Sprint,
@@ -78,6 +79,7 @@ namespace FPSLAN
                 case GameAction.MoveLeft: return KeyCode.A;
                 case GameAction.MoveRight: return KeyCode.D;
                 case GameAction.Fire: return KeyCode.Mouse0;
+                case GameAction.Melee: return KeyCode.Q;
                 case GameAction.Super: return KeyCode.E;
                 case GameAction.Jump: return KeyCode.Space;
                 case GameAction.Sprint: return KeyCode.LeftShift;

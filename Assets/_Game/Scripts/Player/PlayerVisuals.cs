@@ -286,6 +286,18 @@ namespace FPSLAN
             }
         }
 
+        public void OnMeleeStarted()
+        {
+            var b = m_Player.Brawler;
+            float duration = b != null && b.melee != null ? b.melee.animationDuration : 0.3f;
+            m_Rig?.OnAttack(false, duration);
+            m_View?.OnMelee(duration);
+            var color = b != null ? b.vfx.primaryColor : Color.white;
+            Fx.MeleeSlash(m_Player.Motor.EyePosition, m_Player.Motor.AimDirection, color);
+            m_RevealedUntil = Time.time + 1.3f;
+            if (m_Player.IsLocalHuman) m_Player.Motor.AddRecoil(0.45f);
+        }
+
         public void MuzzleFlash(Color color) => MuzzleFlash(color, 0);
 
         public void MuzzleFlash(Color color, int shotIndex)

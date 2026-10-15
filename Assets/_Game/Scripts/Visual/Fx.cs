@@ -233,6 +233,24 @@ namespace FPSLAN
             fx.ApplyTracer(fx.m_Tracers[fx.m_Tracers.Count - 1], 0f);
         }
 
+        public static void MeleeSlash(Vector3 origin, Vector3 direction, Color color)
+        {
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 0.001f) direction = Vector3.forward;
+            direction.Normalize();
+            var right = Vector3.Cross(Vector3.up, direction).normalized;
+            var center = origin + direction * 1.15f + Vector3.up * 0.05f;
+            const int segments = 5;
+            Vector3 previous = center - right * 0.42f + Vector3.up * 0.18f;
+            for (int i = 1; i <= segments; i++)
+            {
+                float t = i / (float)segments;
+                var next = center + Vector3.Lerp(-right * 0.42f + Vector3.up * 0.18f, right * 0.42f - Vector3.up * 0.18f, t);
+                TracerLine(previous, next, i % 2 == 0 ? Color.white : color, 0.045f, 0.11f);
+                previous = next;
+            }
+        }
+
         /// <summary>Luz pontual breve (clarão).</summary>
         public static void Light(Vector3 pos, Color color, float intensity, float range, float life)
         {

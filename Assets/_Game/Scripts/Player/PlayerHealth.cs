@@ -164,9 +164,9 @@ namespace FPSLAN
 
             if (Dead.Value)
             {
-                bool knockoutElimination = MatchManager.Instance != null && MatchManager.Instance.IsSpawned &&
-                    MatchManager.Instance.Mode.Value == GameMode.Knockout;
-                if (Time.time >= m_RespawnAt && !MatchManager.IsMatchOver && !knockoutElimination) ServerRespawn();
+                bool noRespawnMode = MatchManager.Instance != null && MatchManager.Instance.IsSpawned &&
+                    !MatchManager.Instance.CanRespawnDeadPlayers;
+                if (Time.time >= m_RespawnAt && !MatchManager.IsMatchOver && !noRespawnMode) ServerRespawn();
                 return;
             }
 

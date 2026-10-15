@@ -28,6 +28,7 @@ namespace FPSLAN
         Poof,
         Twirl,
         Crate,
+        Melee,
         Count
     }
 
@@ -75,6 +76,7 @@ namespace FPSLAN
             s_Clips[(int)Sound.Poof] = MakeLow("poof", 0.35f, t => Noise() * Env(t, 0.35f, 9f) * 0.5f, t => 1500f);
             s_Clips[(int)Sound.Twirl] = Make("twirl", 0.3f, t => Sq(t, 2000f) * Env(t % 0.06f, 0.012f, 300f) * 0.12f);
             s_Clips[(int)Sound.Crate] = MakeLow("crate", 0.4f, t => (Noise() * 0.9f + Sq(t, 140f - t * 100f) * 0.3f) * Env(t, 0.4f, 9f) * 0.7f, t => 2500f);
+            s_Clips[(int)Sound.Melee] = MakeLow("melee", 0.24f, t => Noise() * Env(t, 0.24f, 15f) * 0.55f + Sin(t, 420f - t * 1100f) * Env(t, 0.2f, 12f) * 0.45f, t => 5000f - t * 16000f);
 
             var go = new GameObject("[Sfx]");
             UnityEngine.Object.DontDestroyOnLoad(go);

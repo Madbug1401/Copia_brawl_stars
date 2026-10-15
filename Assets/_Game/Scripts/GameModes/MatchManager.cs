@@ -14,12 +14,13 @@ namespace FPSLAN
     {
         Deathmatch,
         Wipeout,
-        Knockout
+        Knockout,
+        Showdown
     }
 
     /// <summary>
     /// Autoridade do host para ciclo de partida e modos. Deathmatch mantém as regras originais;
-    /// Wipeout usa pontuação por equipa; Knockout usa rondas sem respawn durante a ronda.
+    /// Wipeout usa pontuação por equipa; Knockout usa rondas; Showdown é último jogador vivo.
     /// </summary>
     public class MatchManager : NetworkBehaviour
     {
@@ -58,7 +59,18 @@ namespace FPSLAN
             return team >= 0 && team == second.TeamId.Value;
         }
 
-        public bool CanRespawnDeadPlayers => Mode.Value != GameMode.Knockout;
+        public bool CanRespawnDeadPlayers => Mode.Value != GameMode.Knockout && Mode.Value != GameMode.Showdown;
+
+        public int AlivePlayerCount
+        {
+            get
+            {
+                int alive = 0;
+                foreach (var p in PlayerNetwork.All)
+                    if (p != null && p.IsSpawned && !p.Health.IsDead) alive++;
+                return alive;
+            }
+        }
 
         public float TimeRemaining
         {
@@ -129,6 +141,10 @@ namespace FPSLAN
             {
                 if (BlueScore.Value == RedScore.Value) ServerEndMatch(null);
                 else ServerEndMatch(BlueScore.Value > RedScore.Value ? 0 : 1);
+            }
+            else if (Mode.Value == GameMode.Showdown)
+            {
+                ServerResolveShowdown();
             }
             else
             {
@@ -238,6 +254,54 @@ namespace FPSLAN
             return best;
         }
 
+        void ServerResolveShowdown()
+        {
+            PlayerNetwork best = null;
+            int bestHealth = -1, bestKills = -1;
+            bool tied = false;
+            foreach (var p in PlayerNetwork.All)
+            {
+                if (p == null || !p.IsSpawned || p.Health.IsDead) continue;
+                int health = p.Health.Health.Value;
+                int kills = p.Kills.Value;
+                if (health > bestHealth || (health == bestHealth && kills > bestKills))
+                {
+                    best = p;
+                    bestHealth = health;
+                    bestKills = kills;
+                    tied = false;
+                }
+                else if (health == bestHealth && kills == bestKills)
+                {
+                    tied = true;
+                }
+            }
+
+            if (best == null) ServerEndDraw();
+            else if (AlivePlayerCount == 1 || !tied) ServerEndMatch(best);
+            else ServerEndDraw();
+        }
+
+        PlayerNetwork LastAlivePlayer()
+        {
+            PlayerNetwork last = null;
+            foreach (var p in PlayerNetwork.All)
+            {
+                if (p == null || !p.IsSpawned || p.Health.IsDead) continue;
+                if (last != null) return null;
+                last = p;
+            }
+            return last;
+        }
+
+        void ServerEndDraw()
+        {
+            Phase.Value = MatchPhase.Ended;
+            IsRoundIntermission.Value = false;
+            WinnerName.Value = new FixedString64Bytes("Empate");
+            PhaseEndTime.Value = NetworkManager.ServerTime.Time + resultsSeconds;
+        }
+
         int AliveCountForTeam(int team)
         {
             int count = 0;
@@ -310,6 +374,13 @@ namespace FPSLAN
         {
             var killerName = killer != null && killer != victim ? killer.DisplayName : "";
             KillFeedRpc(new FixedString64Bytes(killerName), new FixedString64Bytes(victim != null ? victim.DisplayName : "?"));
+
+            if (Mode.Value == GameMode.Showdown && Phase.Value == MatchPhase.Playing && !IsRoundIntermission.Value)
+            {
+                if (AlivePlayerCount == 1) ServerEndMatch(LastAlivePlayer());
+                else if (AlivePlayerCount == 0) ServerEndDraw();
+                return;
+            }
 
             if (AreTeammates(killer, victim))
             {

@@ -25,6 +25,8 @@ namespace FPSLAN
         public RigStyle Style { get; private set; }
 
         Transform m_Sway, m_HandR, m_HandL, m_ArmR, m_ArmL, m_GunR, m_GunL;
+        Transform m_Knife;
+        Vector3 m_KnifeRest;
         WeaponModel m_WeaponR, m_WeaponL;
         Vector3 m_GunRRest, m_GunLRest;
         Quaternion m_GunRRot = Quaternion.identity, m_GunLRot = Quaternion.identity;
@@ -32,7 +34,7 @@ namespace FPSLAN
         Color m_Accent;
 
         float m_Bob, m_KickR, m_KickL, m_Throw = 10f, m_Twirl = -1f, m_TwirlSide, m_Pump = 1f, m_Draw = 1f, m_Spray;
-        float m_Land, m_SuperPulse, m_Raise;
+        float m_Land, m_SuperPulse, m_Raise, m_Melee = -1f, m_MeleeDuration = 0.3f;
         Vector2 m_SwayV;
         bool m_WasGrounded = true;
         bool m_SuperGlowApplied;
@@ -130,6 +132,15 @@ namespace FPSLAN
             if (m_HandR != null) m_ArmR = Forearm(sleeve);
             if (m_HandL != null) m_ArmL = Forearm(sleeve);
 
+            m_Knife = new GameObject("MeleeKnife").transform;
+            m_Knife.SetParent(m_Sway, false);
+            m_KnifeRest = new Vector3(0.42f, -0.46f, 0.38f);
+            Art.Part(PrimitiveType.Cube, m_Knife, new Vector3(0f, 0f, -0.04f), new Vector3(0.055f, 0.075f, 0.16f), Art.Darken(glove, 0.45f), true, default, ShadowCastingMode.Off);
+            Art.Part(PrimitiveType.Cube, m_Knife, new Vector3(0f, 0f, 0.04f), new Vector3(0.1f, 0.035f, 0.035f), m_Accent, true, default, ShadowCastingMode.Off);
+            Art.Part(PrimitiveType.Cube, m_Knife, new Vector3(0f, 0f, 0.18f), new Vector3(0.07f, 0.025f, 0.25f), new Color(0.72f, 0.82f, 0.9f), true, new Vector3(0f, 0f, -8f), ShadowCastingMode.Off);
+            m_Knife.localPosition = m_KnifeRest;
+            m_Knife.gameObject.SetActive(false);
+
             foreach (var w in new[] { m_WeaponR, m_WeaponL })
                 if (w != null) m_WeaponRenderers.AddRange(w.root.GetComponentsInChildren<Renderer>(true));
 
@@ -193,6 +204,14 @@ namespace FPSLAN
             if (super) m_Raise = 1f;
         }
 
+        public void OnMelee(float duration)
+        {
+            if (m_Knife == null) return;
+            m_Knife.gameObject.SetActive(true);
+            m_MeleeDuration = Mathf.Max(0.1f, duration);
+            m_Melee = 0f;
+        }
+
         public void OnShot(int shotIndex)
         {
             bool dual = m_WeaponL != null && m_WeaponR != null;
@@ -243,6 +262,21 @@ namespace FPSLAN
             float idle = Mathf.Sin(time * 1.6f) * 0.004f;
             float sprint = f.sprinting ? 1f : 0f;
             m_Raise = Mathf.MoveTowards(m_Raise, 0f, dt * 2.5f);
+            if (m_Melee >= 0f)
+            {
+                m_Melee += dt;
+                float t = Mathf.Clamp01(m_Melee / m_MeleeDuration);
+                float swing = Mathf.Sin(t * Mathf.PI);
+                m_Knife.localPosition = m_KnifeRest + new Vector3(-0.35f * swing, 0.2f * swing, 0.2f * swing);
+                m_Knife.localRotation = Quaternion.Euler(-35f * swing, 0f, -75f * swing);
+                if (t >= 1f)
+                {
+                    m_Melee = -1f;
+                    m_Knife.localPosition = m_KnifeRest;
+                    m_Knife.localRotation = Quaternion.identity;
+                    m_Knife.gameObject.SetActive(false);
+                }
+            }
 
             m_Sway.localPosition = new Vector3(bobX + m_SwayV.x, bobY + idle + m_SwayV.y - m_Land * 0.03f - sprint * 0.04f + m_Raise * 0.05f, -sprint * 0.03f);
             m_Sway.localRotation = Quaternion.Euler(sprint * 12f - m_Raise * 12f, -sprint * 18f, sprint * 10f + m_SwayV.x * 60f);

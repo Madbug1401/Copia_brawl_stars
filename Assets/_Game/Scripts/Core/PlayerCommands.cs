@@ -15,6 +15,7 @@ namespace FPSLAN
         public bool sprint;
         public bool jumpPressed;
         public bool fire;
+        public bool meleePressed;
         public bool superPressed;
 
         public static PlayerCommands FromHuman(bool allowed)
@@ -31,6 +32,7 @@ namespace FPSLAN
                 sprint = InputReader.Sprint,
                 jumpPressed = InputReader.JumpPressed,
                 fire = InputReader.Fire,
+                meleePressed = InputReader.MeleePressed,
                 superPressed = InputReader.SuperPressed,
             };
         }

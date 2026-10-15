@@ -20,6 +20,7 @@
 | Shift | sprint |
 | Espaço | saltar |
 | Botão esquerdo | ataque principal |
+| Q | **Facada** (curto alcance; bloqueada por paredes) |
 | Botão direito / E | **Super** (quando a barra circular estiver cheia) |
 | Tab | placar |
 | Esc | pausa: trocar de Brawler, sensibilidade, bots |
@@ -75,6 +76,8 @@ cinto de dinamites), **Vigia** (capuz de raposa, aljava), **Névoa** (máscara d
 
 ### Jogabilidade "arcade"
 - **Escudo de spawn** (2,2 s; termina ao atacar).
+- **Facada na tecla Q**: golpe curto com dano, alcance e recarga configuráveis por Brawler; paredes e cobertura bloqueiam o golpe.
+- **Showdown**: modo solo sem reaparecimento; vence o último jogador vivo e, se o tempo acabar, contam vida e eliminações.
 - **Números de dano** a flutuar (somam numa rajada; amarelo = headshot, vermelho = eliminação).
 - Avisos: "LUTEM!", "ELIMINAÇÃO!", "DUPLA!", "SUPER PRONTO!".
 - **Coroa dourada** a flutuar sobre o líder da partida.

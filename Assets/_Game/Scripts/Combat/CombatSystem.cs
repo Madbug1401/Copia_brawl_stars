@@ -187,6 +187,33 @@ namespace FPSLAN
             if (hitSomething) Detonate(ctx, end, false);
         }
 
+        /// <summary>Facada autoritativa: o primeiro jogador ou obstáculo bloqueia o golpe.</summary>
+        public void TraceMelee(PlayerNetwork attacker, Vector3 origin, Vector3 direction, MeleeProfile profile)
+        {
+            if (attacker == null || profile == null || !attacker.IsServer) return;
+            direction = direction.sqrMagnitude > 0.0001f ? direction.normalized : attacker.Motor.AimDirection;
+            int count = Physics.SphereCastNonAlloc(origin, Mathf.Max(0.05f, profile.radius), direction,
+                m_Hits, Mathf.Max(0.5f, profile.range), CombatMath.ShotMask, QueryTriggerInteraction.Ignore);
+            SortHits(count);
+
+            for (int i = 0; i < count; i++)
+            {
+                var hit = m_Hits[i];
+                if (hit.collider == null || hit.collider.GetComponentInParent<PlayerNetwork>() == attacker) continue;
+                var health = hit.collider.GetComponentInParent<PlayerHealth>();
+                if (health != null)
+                {
+                    if (health.IsDead) continue;
+                    EffectResolver.DamageRaw(health, Mathf.Max(1, profile.damage), attacker.NetworkObjectId, false, false);
+                    break;
+                }
+
+                var cover = hit.collider.GetComponentInParent<DestructibleCover>();
+                if (cover != null) cover.ServerDamage(Mathf.Max(1, profile.damage));
+                break;
+            }
+        }
+
         public void LaunchProjectile(AttackContext ctx, Vector3 dir, float speed, float range, float radius, bool pierce, int shotIndex)
         {
             Vector3 start = ctx.origin;

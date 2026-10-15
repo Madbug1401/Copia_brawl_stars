@@ -80,7 +80,7 @@ namespace FPSLAN
             m_Ip = GameSession.LastIp;
             m_Hero = BrawlerRegistry.Sanitize(GameSession.LocalHeroId);
             m_MenuBots = PlayerPrefs.GetInt("fpslan.bots", 0);
-            MatchManager.MenuSelectedMode = (GameMode)Mathf.Clamp(PlayerPrefs.GetInt("fpslan.mode", 0), 0, 2);
+            MatchManager.MenuSelectedMode = (GameMode)Mathf.Clamp(PlayerPrefs.GetInt("fpslan.mode", 0), 0, 3);
             BotManager.Difficulty = (BotDifficulty)PlayerPrefs.GetInt("fpslan.botdiff", (int)BotDifficulty.Normal);
             m_LocalIps = ConnectionManager.GetLocalIPv4();
             m_Preview = new BrawlerPreview();
@@ -748,7 +748,7 @@ namespace FPSLAN
 
         void CycleGameMode(int delta)
         {
-            int count = 3;
+            int count = 4;
             int value = ((int)MatchManager.MenuSelectedMode + delta + count) % count;
             MatchManager.MenuSelectedMode = (GameMode)value;
             PlayerPrefs.SetInt("fpslan.mode", value);
@@ -760,6 +760,7 @@ namespace FPSLAN
             {
                 case GameMode.Wipeout: return "WIPEOUT · Eliminações por equipa";
                 case GameMode.Knockout: return "KNOCKOUT · Melhor de três rondas";
+                case GameMode.Showdown: return "SHOWDOWN · Último Brawler vivo";
                 default: return "DEATHMATCH · Todos contra todos";
             }
         }
@@ -927,10 +928,13 @@ namespace FPSLAN
                 var top = new Rect(cx - 170 * s, 12 * s, 340 * s, 52 * s);
                 InkPanel(top, PanelBlue, 3f * s);
                 string modeName = match.Mode.Value == GameMode.Wipeout ? "WIPEOUT" :
-                    match.Mode.Value == GameMode.Knockout ? $"KNOCKOUT · RONDA {match.RoundNumber.Value}" : "DEATHMATCH";
+                    match.Mode.Value == GameMode.Knockout ? $"KNOCKOUT · RONDA {match.RoundNumber.Value}" :
+                    match.Mode.Value == GameMode.Showdown ? "SHOWDOWN" : "DEATHMATCH";
                 string modeScore = match.Mode.Value == GameMode.Deathmatch
                     ? $"K {me.Kills.Value}  ·  D {me.Deaths.Value}  ·  meta {match.killLimit}"
-                    : $"AZUL {match.BlueScore.Value}  -  {match.RedScore.Value} VERMELHA";
+                    : match.Mode.Value == GameMode.Showdown
+                        ? $"VIVOS {match.AlivePlayerCount}  ·  K {me.Kills.Value}"
+                        : $"AZUL {match.BlueScore.Value}  -  {match.RedScore.Value} VERMELHA";
                 Outlined(new Rect(top.x, top.y + 2 * s, top.width, 25 * s), $"{modeName}   {time}", m_BigCenter, Color.white, 2f);
                 Outlined(new Rect(top.x, top.y + 27 * s, top.width, 22 * s), modeScore, m_TinyCenter, new Color(1f, 0.9f, 0.6f), 1f);
 
@@ -1162,6 +1166,7 @@ namespace FPSLAN
                 case GameAction.MoveLeft: return "Mover à esquerda";
                 case GameAction.MoveRight: return "Mover à direita";
                 case GameAction.Fire: return "Ataque principal";
+                case GameAction.Melee: return "Facada";
                 case GameAction.Super: return "Super";
                 case GameAction.Jump: return "Salto";
                 case GameAction.Sprint: return "Correr";
@@ -1221,7 +1226,7 @@ namespace FPSLAN
             var actions = new[]
             {
                 GameAction.MoveForward, GameAction.MoveBackward, GameAction.MoveLeft, GameAction.MoveRight,
-                GameAction.Fire, GameAction.Super, GameAction.Jump, GameAction.Sprint,
+                GameAction.Fire, GameAction.Melee, GameAction.Super, GameAction.Jump, GameAction.Sprint,
                 GameAction.Scoreboard, GameAction.Pause, GameAction.Aim,
             };
             foreach (var action in actions)

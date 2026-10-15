@@ -42,6 +42,16 @@ namespace FPSLAN
         public float chargeRequired = 200f;
     }
 
+    [Serializable]
+    public class MeleeProfile
+    {
+        [Min(1)] public int damage = 42;
+        [Min(0.5f)] public float range = 2.25f;
+        [Min(0.05f)] public float radius = 0.32f;
+        [Min(0.1f)] public float cooldown = 0.8f;
+        [Min(0.1f)] public float animationDuration = 0.3f;
+    }
+
     public enum RigStyle
     {
         Generic,
@@ -169,6 +179,7 @@ namespace FPSLAN
         public MovementProfile movement = new MovementProfile();
         public PrimaryAttackDefinition primary = new PrimaryAttackDefinition();
         public SuperDefinition super = new SuperDefinition();
+        public MeleeProfile melee = new MeleeProfile();
         public List<AbilityDefinition> abilities = new List<AbilityDefinition>();
 
         [Header("Apresentação")]

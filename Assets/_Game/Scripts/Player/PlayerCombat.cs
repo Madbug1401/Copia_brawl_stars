@@ -25,10 +25,12 @@ namespace FPSLAN
         // Lado do dono (previsão local para resposta imediata)
         float m_Ammo;
         float m_Cooldown;
+        float m_MeleeCooldown;
 
         // Lado do servidor (validação)
         float m_ServerAmmo;
         float m_ServerLastFire = -10f;
+        float m_ServerLastMelee = -10f;
 
         public float Ammo => m_Ammo;
         public bool SuperReady => SuperCharge.Value >= 0.999f;
@@ -57,6 +59,7 @@ namespace FPSLAN
             {
                 m_Ammo = Brawler.primary.maxCharges;
                 m_Cooldown = 0f;
+                m_MeleeCooldown = 0f;
             }
             if (IsServer) m_ServerAmmo = Brawler.primary.maxCharges;
         }
@@ -85,10 +88,20 @@ namespace FPSLAN
             }
 
             m_Cooldown -= dt;
+            m_MeleeCooldown -= dt;
 
-            if (m_Player.Health.IsDead || MatchManager.IsMatchOver || m_Cooldown > 0f) return;
+            if (m_Player.Health.IsDead || !MatchManager.IsCombatActive || MatchManager.IsMatchOver) return;
 
             var cmd = m_Player.ReadCommands();
+
+            if (cmd.meleePressed && m_MeleeCooldown <= 0f)
+            {
+                var melee = b.melee ?? new MeleeProfile();
+                m_MeleeCooldown = Mathf.Max(0.1f, melee.cooldown);
+                MeleeLocal();
+            }
+
+            if (m_Cooldown > 0f) return;
 
             if (cmd.superPressed && SuperReady && b.super.attack != null)
             {
@@ -142,6 +155,41 @@ namespace FPSLAN
             attack.delivery.OnOwnerFire(m_Player, ctx);
             m_Player.Visuals?.OnAttackStarted(attack, super);
             FireRpc(super, origin, dir, target, seed);
+        }
+
+        void MeleeLocal()
+        {
+            var origin = m_Player.Motor.EyePosition;
+            var direction = m_Player.Motor.AimDirection;
+            m_Player.Visuals?.OnMeleeStarted();
+            Sfx.PlayAt(Sound.Melee, origin, m_Player.IsLocalHuman ? 0.75f : 1f);
+            MeleeRpc(origin, direction);
+        }
+
+        [Rpc(SendTo.Server)]
+        void MeleeRpc(Vector3 origin, Vector3 direction)
+        {
+            var b = Brawler;
+            if (b == null || m_Player.Health.IsDead || !MatchManager.IsCombatActive || MatchManager.IsMatchOver) return;
+            var profile = b.melee ?? new MeleeProfile();
+            if (Time.time - m_ServerLastMelee < Mathf.Max(0.1f, profile.cooldown) * 0.65f) return;
+            m_ServerLastMelee = Time.time;
+
+            var serverEye = m_Player.Motor.EyePosition;
+            if (!IsFinite(origin) || (origin - serverEye).sqrMagnitude > MaxOriginError * MaxOriginError) origin = serverEye;
+            if (!IsFinite(direction) || direction.sqrMagnitude < 0.0001f) direction = m_Player.Motor.AimDirection;
+            direction.Normalize();
+
+            m_Player.Health.ServerNotifyAttacked();
+            CombatSystem.Instance.TraceMelee(m_Player, origin, direction, profile);
+            RemoteMeleeRpc();
+        }
+
+        [Rpc(SendTo.NotOwner)]
+        void RemoteMeleeRpc()
+        {
+            m_Player.Visuals?.OnMeleeStarted();
+            Sfx.PlayAt(Sound.Melee, m_Player.Motor.EyePosition, 0.8f);
         }
 
         [Rpc(SendTo.Server)]
