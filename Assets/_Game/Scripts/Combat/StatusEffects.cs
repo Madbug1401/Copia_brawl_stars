@@ -16,6 +16,12 @@ namespace FPSLAN
         public readonly NetworkVariable<double> SlowUntil = new NetworkVariable<double>(0);
         public readonly NetworkVariable<float> SlowFactor = new NetworkVariable<float>(1f);
         public readonly NetworkVariable<bool> HasDot = new NetworkVariable<bool>(false);
+        /// <summary>Hora do servidor até à qual o jogador está imobilizado (armadilha). Bloqueia o movimento, não o ataque.</summary>
+        public readonly NetworkVariable<double> RootedUntil = new NetworkVariable<double>(0);
+        /// <summary>Duração total da imobilização atual (para a barra do HUD).</summary>
+        public readonly NetworkVariable<float> RootDuration = new NetworkVariable<float>(0f);
+
+        double m_RootImmuneUntil;
 
         struct Dot
         {
@@ -30,7 +36,10 @@ namespace FPSLAN
         PlayerNetwork m_Player;
 
         public bool IsSlowed => IsSpawned && NetworkManager != null && NetworkManager.ServerTime.Time < SlowUntil.Value;
-        public float SpeedMultiplier => IsSlowed ? Mathf.Clamp(SlowFactor.Value, 0.1f, 1f) : 1f;
+        public bool IsRooted => IsSpawned && NetworkManager != null && NetworkManager.ServerTime.Time < RootedUntil.Value;
+        public float RootRemaining => IsRooted ? (float)(RootedUntil.Value - NetworkManager.ServerTime.Time) : 0f;
+        /// <summary>Imobilizado = 0 (continua a poder olhar e atacar); abrandado = fator; normal = 1.</summary>
+        public float SpeedMultiplier => IsRooted ? 0f : (IsSlowed ? Mathf.Clamp(SlowFactor.Value, 0.1f, 1f) : 1f);
 
         void Awake() => m_Player = GetComponent<PlayerNetwork>();
 
@@ -61,9 +70,27 @@ namespace FPSLAN
             HasDot.Value = true;
         }
 
+        /// <summary>
+        /// Servidor: imobiliza o jogador. Não renova uma imobilização ativa e respeita a imunidade depois de uma
+        /// imobilização (várias armadilhas não prendem o mesmo jogador indefinidamente). Devolve true se prendeu.
+        /// </summary>
+        public bool ServerApplyRoot(float duration, float immunityAfter)
+        {
+            if (!IsServer || duration <= 0f || m_Player.Health.IsDead || !CanBeRooted) return false;
+            double now = NetworkManager.ServerTime.Time;
+            RootedUntil.Value = now + duration;
+            RootDuration.Value = duration;
+            m_RootImmuneUntil = now + duration + Mathf.Max(0f, immunityAfter);
+            return true;
+        }
+
+        /// <summary>Servidor: pode ser imobilizado agora (não está preso nem imune).</summary>
+        public bool CanBeRooted => IsServer && IsSpawned && !IsRooted && NetworkManager.ServerTime.Time >= m_RootImmuneUntil;
+
         public void ServerApplyKnockback(Vector3 impulse)
         {
             if (!IsServer || m_Player.Health.IsDead) return;
+            if (IsRooted) impulse = new Vector3(0f, Mathf.Min(impulse.y, 2f), 0f); // preso no lugar
             impulse = Vector3.ClampMagnitude(impulse, MaxKnockback);
             KnockbackRpc(impulse);
         }
@@ -81,6 +108,8 @@ namespace FPSLAN
             HasDot.Value = false;
             SlowUntil.Value = 0;
             SlowFactor.Value = 1f;
+            RootedUntil.Value = 0;
+            m_RootImmuneUntil = 0;
         }
 
         void Update()

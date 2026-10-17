@@ -22,6 +22,8 @@ namespace FPSLAN
         public float radius = 0.2f;
         [Tooltip("Segundos no chão antes de explodir. 0 = explode ao aterrar.")]
         public float fuseDelay = 0.5f;
+        [Tooltip("Explode logo ao acertar diretamente num inimigo (em vez de passar por cima dos jogadores).")]
+        public bool explodeOnPlayerContact = false;
 
         public override float Range => range;
         public override int ShotCount => Mathf.Max(1, count);

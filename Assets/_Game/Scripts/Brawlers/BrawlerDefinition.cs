@@ -34,12 +34,42 @@ namespace FPSLAN
         public float cooldown = 0.5f;
     }
 
+    /// <summary>Como o Super é usado depois de carregado.</summary>
+    public enum SuperKind
+    {
+        /// <summary>Dispara logo o ataque do Super (comportamento original).</summary>
+        Instant,
+        /// <summary>Modo temporário: durante X segundos o ataque principal é substituído pelo ataque do Super (ex.: Minigun).</summary>
+        PrimaryOverride,
+        /// <summary>Arma um tiro especial: o próximo disparo usa o ataque do Super (ex.: Tiro fatal).</summary>
+        ArmedShot,
+    }
+
     [Serializable]
     public class SuperDefinition
     {
         public AttackDefinition attack;
         [Tooltip("Dano causado com o ataque principal necessário para carregar o Super.")]
         public float chargeRequired = 200f;
+        public SuperKind kind = SuperKind.Instant;
+        [Tooltip("O Super carrega ao causar dano com o ataque principal.")]
+        public bool chargeFromDamage = true;
+        [Tooltip("Carga automática por segundo (fração 0..1; 0 = desligado). Ex.: 0.04 = 25 s.")]
+        public float autoChargePerSecond = 0f;
+
+        [Header("Modo temporário (PrimaryOverride)")]
+        [Tooltip("Duração máxima do modo, em segundos.")]
+        public float modeDuration = 3.6f;
+        [Tooltip("Tempo entre ataques durante o modo (cadência).")]
+        public float modeFireInterval = 0.3f;
+        [Tooltip("Número máximo de ataques durante o modo: limita o dano total potencial (dano por ataque × orçamento).")]
+        public int modeAttackBudget = 10;
+        [Tooltip("Arma mostrada durante o modo.")]
+        public RigStyle modeRig = RigStyle.Minigun;
+
+        [Header("Tiro armado (ArmedShot)")]
+        [Tooltip("Segundos que o tiro fica armado antes de desarmar sozinho (a carga não se perde).")]
+        public float armedWindow = 8f;
     }
 
     [Serializable]
@@ -61,6 +91,20 @@ namespace FPSLAN
         SprayCan,
         Shotgun,
         Sniper,
+        // Novos estilos (acrescentados no fim: o valor numérico é guardado nos assets)
+        DualSMG,
+        DualSprayCans,
+        Minigun,
+    }
+
+    public static class RigStyles
+    {
+        /// <summary>Estilos com uma arma em cada mão (os disparos alternam entre as duas).</summary>
+        public static bool IsDual(RigStyle style) =>
+            style == RigStyle.DualRevolvers || style == RigStyle.DualExplosives ||
+            style == RigStyle.DualSMG || style == RigStyle.DualSprayCans;
+
+        public static bool IsSpray(RigStyle style) => style == RigStyle.SprayCan || style == RigStyle.DualSprayCans;
     }
 
     /// <summary>Acessório de cabeça do personagem (silhueta reconhecível à distância).</summary>

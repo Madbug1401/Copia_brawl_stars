@@ -18,6 +18,8 @@ namespace FPSLAN
         public readonly NetworkVariable<ulong> LastKiller = new NetworkVariable<ulong>(ulong.MaxValue);
         /// <summary>Hora do servidor até à qual o jogador está protegido (escudo de spawn).</summary>
         public readonly NetworkVariable<double> ProtectedUntil = new NetworkVariable<double>(0);
+        /// <summary>Escudo do pet Porco (pontos atuais; 0 = sem escudo). Decidido no servidor.</summary>
+        public readonly NetworkVariable<int> PetShield = new NetworkVariable<int>(0);
 
         PlayerNetwork m_Player;
         float m_LastCombatTime;
@@ -25,15 +27,36 @@ namespace FPSLAN
         float m_RespawnAt;
         bool m_NeedsInitialSpawn;
         float m_ClientRespawnAt;
+        int m_LastMaxHealth;
+        float m_ShieldReadyAt;
+        EffectiveStats m_Stats;
+        int m_StatsFrame = -1;
 
         public bool IsDead => Dead.Value;
-        public int MaxHealth => m_Player.Brawler != null ? m_Player.Brawler.stats.maxHealth : 100;
+
+        /// <summary>Atributos efetivos (base do Brawler + melhorias + pet, conforme as regras da partida).</summary>
+        public EffectiveStats Stats
+        {
+            get
+            {
+                if (m_StatsFrame != Time.frameCount)
+                {
+                    m_StatsFrame = Time.frameCount;
+                    m_Stats = BrawlerStatsResolver.Resolve(m_Player);
+                }
+                return m_Stats;
+            }
+        }
+
+        public int MaxHealth => m_Player.Brawler != null ? Stats.maxHealth : 100;
         public float RespawnRemaining => Mathf.Max(0f, m_ClientRespawnAt - Time.time);
         public bool IsProtected => IsSpawned && NetworkManager != null && !Dead.Value && NetworkManager.ServerTime.Time < ProtectedUntil.Value;
 
         // Abrandamento vive agora no StatusEffects; mantido aqui por compatibilidade.
         public bool IsSlowed => m_Player.Status != null && m_Player.Status.IsSlowed;
-        public float SpeedMultiplier => m_Player.Status != null ? m_Player.Status.SpeedMultiplier : 1f;
+        public float SpeedMultiplier => (m_Player.Status != null ? m_Player.Status.SpeedMultiplier : 1f) * Stats.speedMultiplier;
+        /// <summary>Bónus extra a correr (pet Coelho).</summary>
+        public float SprintMultiplier => Stats.sprintMultiplier;
 
         void Awake() => m_Player = GetComponent<PlayerNetwork>();
 
@@ -45,6 +68,7 @@ namespace FPSLAN
 
             if (IsServer)
             {
+                m_LastMaxHealth = MaxHealth;
                 Health.Value = MaxHealth;
                 Dead.Value = false;
                 m_NeedsInitialSpawn = true;
@@ -64,6 +88,8 @@ namespace FPSLAN
         {
             if (IsServer && !Dead.Value)
             {
+                m_StatsFrame = -1;
+                m_LastMaxHealth = MaxHealth;
                 Health.Value = MaxHealth;
                 m_Player.Combat.ServerRefill();
                 m_Player.Combat.ServerResetSuper();
@@ -100,6 +126,17 @@ namespace FPSLAN
             if (IsProtected) return false;
 
             m_LastCombatTime = Time.time;
+
+            // Escudo do pet absorve primeiro (e só recarrega depois do intervalo)
+            if (PetShield.Value > 0)
+            {
+                int absorbed = Mathf.Min(PetShield.Value, amount);
+                PetShield.Value -= absorbed;
+                amount -= absorbed;
+                if (PetShield.Value <= 0) m_ShieldReadyAt = Time.time + Mathf.Max(5f, Stats.petShieldCooldown);
+                if (amount <= 0) return false;
+            }
+
             Health.Value = Mathf.Max(0, Health.Value - amount);
 
             if (Health.Value > 0) return false;
@@ -133,6 +170,11 @@ namespace FPSLAN
             var killer = PlayerNetwork.Find(attackerId);
             if (killer != null && killer != m_Player && !MatchManager.AreTeammates(killer, m_Player))
                 killer.Kills.Value++;
+            PetShield.Value = 0;
+            m_ShieldReadyAt = Time.time + Mathf.Max(5f, Stats.petShieldCooldown);
+
+            // Antes do MatchManager: a morte pode terminar a partida e a eliminação tem de contar
+            MatchStatsTracker.ServerOnKill(killer, m_Player);
 
             if (MatchManager.Instance != null) MatchManager.Instance.ServerOnKill(killer, m_Player);
         }
@@ -143,7 +185,10 @@ namespace FPSLAN
 
             SpawnPoint.Pick(m_Player, out var pos, out var yaw);
             m_RegenCarry = 0f;
+            m_StatsFrame = -1;
+            m_LastMaxHealth = MaxHealth;
             Health.Value = MaxHealth;
+            PetShield.Value = Stats.petShield;
             m_Player.Status?.ServerClear();
             m_Player.Motor.TeleportRpc(pos, yaw);
             m_Player.Combat.ServerRefill();
@@ -170,20 +215,36 @@ namespace FPSLAN
                 return;
             }
 
-            var stats = m_Player.Brawler.stats;
-            if (Health.Value < stats.maxHealth && Time.time - m_LastCombatTime > stats.regenDelay)
+            var stats = Stats;
+            int maxHealth = stats.maxHealth;
+
+            // Vida máxima mudou (loadout/regras): mantém a percentagem de vida, sem cura grátis
+            if (m_LastMaxHealth > 0 && maxHealth != m_LastMaxHealth)
             {
-                m_RegenCarry += stats.maxHealth * stats.regenPercentPerSecond * Time.deltaTime;
+                float ratio = Health.Value / (float)m_LastMaxHealth;
+                Health.Value = Mathf.Clamp(Mathf.FloorToInt(ratio * maxHealth), 1, maxHealth);
+            }
+            m_LastMaxHealth = maxHealth;
+
+            // Escudo do pet: recarrega depois do intervalo
+            if (stats.petShield <= 0) { if (PetShield.Value != 0) PetShield.Value = 0; }
+            else if (PetShield.Value < stats.petShield && Time.time >= m_ShieldReadyAt && Time.time - m_LastCombatTime > 3f)
+                PetShield.Value = stats.petShield;
+            else if (PetShield.Value > stats.petShield) PetShield.Value = stats.petShield;
+
+            if (Health.Value < maxHealth && Time.time - m_LastCombatTime > stats.regenDelay)
+            {
+                m_RegenCarry += maxHealth * stats.regenPercentPerSecond * Time.deltaTime;
                 int add = Mathf.FloorToInt(m_RegenCarry);
                 if (add > 0)
                 {
                     m_RegenCarry -= add;
-                    Health.Value = Mathf.Min(stats.maxHealth, Health.Value + add);
+                    Health.Value = Mathf.Min(maxHealth, Health.Value + add);
                 }
             }
-            else if (Health.Value > stats.maxHealth)
+            else if (Health.Value > maxHealth)
             {
-                Health.Value = stats.maxHealth;
+                Health.Value = maxHealth;
             }
         }
     }

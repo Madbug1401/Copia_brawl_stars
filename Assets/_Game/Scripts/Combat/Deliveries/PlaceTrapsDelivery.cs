@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace FPSLAN
 {
-    /// <summary>Coloca armadilhas (minas) à volta do ponto para onde se aponta.</summary>
+    /// <summary>Coloca armadilhas (minas ou laços) à volta do ponto para onde se aponta. Posições inválidas são descartadas.</summary>
     [CreateAssetMenu(menuName = "FPS-LAN/Deliveries/Place Traps")]
     public class PlaceTrapsDelivery : AttackDelivery
     {
@@ -21,7 +21,7 @@ namespace FPSLAN
             {
                 float ang = baseYaw + i * Mathf.PI * 2f / Mathf.Max(1, count);
                 var offset = count > 1 ? new Vector3(Mathf.Sin(ang), 0f, Mathf.Cos(ang)) * spread : Vector3.zero;
-                combat.SpawnTrap(ctx, ctx.target + offset, trap);
+                combat.SpawnTrap(ctx, ctx.target + offset, trap, i);
             }
         }
     }

@@ -29,6 +29,20 @@ namespace FPSLAN
         Twirl,
         Crate,
         Melee,
+        // Novos (acrescentados antes de Count: os valores antigos guardados nos assets não mudam)
+        Snare,
+        Poison,
+        Minigun,
+        MinigunSpin,
+        FatalShot,
+        ShotgunPump,
+        LevelUp,
+        Unlock,
+        QuestComplete,
+        Victory,
+        Coin,
+        PetHappy,
+        Headshot,
         Count
     }
 
@@ -77,6 +91,23 @@ namespace FPSLAN
             s_Clips[(int)Sound.Twirl] = Make("twirl", 0.3f, t => Sq(t, 2000f) * Env(t % 0.06f, 0.012f, 300f) * 0.12f);
             s_Clips[(int)Sound.Crate] = MakeLow("crate", 0.4f, t => (Noise() * 0.9f + Sq(t, 140f - t * 100f) * 0.3f) * Env(t, 0.4f, 9f) * 0.7f, t => 2500f);
             s_Clips[(int)Sound.Melee] = MakeLow("melee", 0.24f, t => Noise() * Env(t, 0.24f, 15f) * 0.55f + Sin(t, 420f - t * 1100f) * Env(t, 0.2f, 12f) * 0.45f, t => 5000f - t * 16000f);
+
+            // Combate (Game Experience)
+            s_Clips[(int)Sound.Snare] = Make("snare", 0.3f, t => (Sq(t, 180f) * Env(t, 0.05f, 60f) * 0.5f + Sin(t, 520f - t * 900f) * Env(t, 0.3f, 10f) * 0.35f + Noise() * Env(t, 0.08f, 40f) * 0.3f));
+            s_Clips[(int)Sound.Poison] = MakeLow("poison", 0.6f, t => (Noise() * 0.5f + Sin(t, 140f + Mathf.Sin(t * 30f) * 40f) * 0.4f) * Env(t, 0.6f, 4f) * 0.55f, t => 900f + Mathf.Sin(t * 20f) * 400f);
+            s_Clips[(int)Sound.Minigun] = MakeLow("minigun", 0.07f, t => (Noise() * 0.8f + Sq(t, 95f) * 0.4f) * Env(t, 0.07f, 45f) * 0.6f, t => 3800f);
+            s_Clips[(int)Sound.MinigunSpin] = Make("minigunspin", 0.7f, t => (Sin(t, 120f + t * 500f) * 0.4f + Sq(t, 60f + t * 260f) * 0.12f) * Mathf.Clamp01(t * 6f) * Env(t, 0.7f, 1.5f) * 0.6f);
+            s_Clips[(int)Sound.FatalShot] = MakeLow("fatalshot", 1.0f, t => (Noise() * Env(t, 1f, 4.5f) * 0.8f + Sin(t, 70f) * Env(t, 0.4f, 7f) * 0.7f + Sin(t, 2600f - t * 2000f) * Env(t, 0.25f, 12f) * 0.25f), t => Mathf.Max(300f, 10000f * Mathf.Exp(-t * 5f)));
+            s_Clips[(int)Sound.ShotgunPump] = Make("pump", 0.32f, t => (Sq(t, 520f) * Env(t, 0.04f, 90f) + Sq(t, 380f) * Env(Mathf.Max(0f, t - 0.16f), 0.05f, 80f) * (t > 0.16f ? 1f : 0f)) * 0.3f + Noise() * Env(t % 0.16f, 0.05f, 60f) * 0.15f);
+            s_Clips[(int)Sound.Headshot] = Make("headshot", 0.25f, t => (Sin(t, 2600f) + Sin(t, 3900f) * 0.6f + Sin(t, 1300f) * 0.4f) * Env(t, 0.25f, 14f) * 0.38f);
+
+            // Progressão e recompensas (fanfarras curtas)
+            s_Clips[(int)Sound.LevelUp] = Make("levelup", 0.8f, t => Arp(t, new[] { 523f, 659f, 784f, 1047f, 1319f }, 0.1f) * Env(t, 0.8f, 3f) * 0.35f);
+            s_Clips[(int)Sound.Unlock] = Make("unlock", 0.6f, t => Arp(t, new[] { 784f, 988f, 1175f, 1568f }, 0.08f) * Env(t, 0.6f, 4f) * 0.33f + Sin(t, 3136f) * Env(t, 0.6f, 6f) * 0.08f);
+            s_Clips[(int)Sound.QuestComplete] = Make("quest", 0.5f, t => Arp(t, new[] { 659f, 880f, 1319f }, 0.09f) * Env(t, 0.5f, 5f) * 0.33f);
+            s_Clips[(int)Sound.Victory] = Make("victory", 1.3f, t => (Arp(t, new[] { 523f, 523f, 659f, 784f, 1047f, 784f, 1047f }, 0.13f) + Sin(t, 261f) * 0.3f) * Env(t, 1.3f, 1.8f) * 0.32f);
+            s_Clips[(int)Sound.Coin] = Make("coin", 0.25f, t => Sin(t, t < 0.06f ? 1319f : 1976f) * Env(t, 0.25f, 12f) * 0.3f);
+            s_Clips[(int)Sound.PetHappy] = Make("pet", 0.3f, t => Sin(t, 700f + Mathf.Sin(t * 40f) * 160f) * Env(t, 0.3f, 9f) * 0.3f);
 
             var go = new GameObject("[Sfx]");
             UnityEngine.Object.DontDestroyOnLoad(go);
@@ -147,6 +178,13 @@ namespace FPSLAN
             var clip = AudioClip.Create(name, n, 1, Rate, false);
             clip.SetData(data, 0);
             return clip;
+        }
+
+        /// <summary>Arpejo: uma nota por passo.</summary>
+        static float Arp(float t, float[] notes, float step)
+        {
+            int i = Mathf.Min(notes.Length - 1, Mathf.FloorToInt(t / step));
+            return Sin(t, notes[i]) + Sin(t, notes[i] * 2f) * 0.25f;
         }
 
         static float Noise() => (float)(s_Rng.NextDouble() * 2.0 - 1.0);

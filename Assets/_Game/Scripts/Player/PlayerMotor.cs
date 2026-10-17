@@ -128,15 +128,16 @@ namespace FPSLAN
 
             float sprintAmount = cmd.sprint && cmd.move.y > 0.1f ? 1f : 0f;
             m_Sprinting = sprintAmount > 0.001f && alive;
-            float speed = Mathf.Lerp(move.walkSpeed, move.sprintSpeed, sprintAmount) *
+            float speed = Mathf.Lerp(move.walkSpeed, move.sprintSpeed * m_Player.Health.SprintMultiplier, sprintAmount) *
                 m_Player.Health.SpeedMultiplier;
+            bool rooted = m_Player.Status != null && m_Player.Status.IsRooted;
 
             bool grounded = m_Controller.isGrounded;
             m_CoyoteTimer = grounded ? coyoteTime : m_CoyoteTimer - dt;
 
             // Plataformas de salto
             m_PadCooldown -= dt;
-            if (grounded && alive && m_PadCooldown <= 0f && !m_Launched)
+            if (grounded && alive && m_PadCooldown <= 0f && !m_Launched && !rooted)
             {
                 var pad = JumpPad.Find(transform.position);
                 if (pad != null)
@@ -164,7 +165,7 @@ namespace FPSLAN
             if (cmd.jumpPressed) m_JumpBuffer = jumpBufferTime;
             else m_JumpBuffer -= dt;
 
-            if (m_JumpBuffer > 0f && m_CoyoteTimer > 0f && !m_Launched)
+            if (m_JumpBuffer > 0f && m_CoyoteTimer > 0f && !m_Launched && !rooted)
             {
                 m_VerticalVelocity = Mathf.Sqrt(2f * gravity * move.jumpHeight);
                 m_JumpBuffer = 0f;

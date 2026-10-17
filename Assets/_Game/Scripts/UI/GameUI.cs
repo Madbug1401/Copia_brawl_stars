@@ -164,6 +164,13 @@ namespace FPSLAN
             if (s_Instance.m_Toasts.Count > 3) s_Instance.m_Toasts.RemoveAt(0);
         }
 
+        /// <summary>Acerto na cabeça confirmado pelo host.</summary>
+        public static void AnnounceHeadshot()
+        {
+            if (s_Instance == null) return;
+            Toast("HEADSHOT!", new Color(1f, 0.3f, 0.25f));
+        }
+
         public static void AnnounceKill()
         {
             if (s_Instance == null) return;

@@ -64,6 +64,21 @@ namespace FPSLAN
             public float age, triggeredAt = -1f;
             public bool ownerView;
             public ProjVisual visual;
+            /// <summary>Identificador determinístico (igual em todas as máquinas) usado nos eventos do host.</summary>
+            public int key;
+            public int serial;
+            /// <summary>Visual: o host mandou explodir/remover.</summary>
+            public byte pendingEvent;
+        }
+
+        /// <summary>Eventos de armadilhas enviados pelo host aos clientes.</summary>
+        public enum TrapEvent : byte
+        {
+            None = 0,
+            Triggered = 1,
+            Exploded = 2,
+            Snared = 3,
+            Destroyed = 4,
         }
 
         class Cone
@@ -94,6 +109,7 @@ namespace FPSLAN
 
         readonly RaycastHit[] m_Hits = new RaycastHit[32];
         readonly List<PlayerHealth> m_HitscanPierced = new List<PlayerHealth>();
+        int m_TrapSerial;
 
         void Awake()
         {
@@ -135,6 +151,7 @@ namespace FPSLAN
             foreach (var t in m_Traps) ProjectileVisuals.ReleaseMine(t.visual);
             m_Traps.Clear();
             m_Cones.Clear();
+            EffectResolver.ResetMatchState();
         }
 
         // ------------------------------------------------------------------ primitivas (usadas pelas deliveries)
@@ -160,7 +177,8 @@ namespace FPSLAN
                 if (health != null)
                 {
                     if (health.IsDead || pierced.Contains(health)) continue;
-                    if (ctx.authoritative) EffectResolver.DirectHit(ctx, health, point, hit.distance);
+                    if (ctx.authoritative)
+                        EffectResolver.DirectHit(ctx, health, point, hit.distance, CombatMath.IsHeadshot(health.transform, origin, dir, point));
                     else Fx.HitStar(point, ctx.attack.visuals.color, 0.9f);
                     pierced.Add(health);
                     if (pierce) continue;
@@ -212,6 +230,9 @@ namespace FPSLAN
                 if (cover != null) cover.ServerDamage(Mathf.Max(1, profile.damage));
                 break;
             }
+
+            // Facada perto de uma armadilha inimiga desativa-a
+            ServerDestroyTraps(origin + direction * Mathf.Max(0.5f, profile.range) * 0.8f, 1.4f, attacker.Id, true);
         }
 
         public void LaunchProjectile(AttackContext ctx, Vector3 dir, float speed, float range, float radius, bool pierce, int shotIndex)
@@ -238,13 +259,17 @@ namespace FPSLAN
 
         public void LaunchArc(AttackContext ctx, ArcProjectileDelivery d, Vector3 target, int shotIndex)
         {
+            // A trajetória autoritativa sai sempre da origem validada; o visual sai da mão e converge para o mesmo alvo
             Vector3 start = ctx.authoritative ? ctx.origin : Muzzle(ctx, shotIndex);
             if (!ctx.authoritative) ctx.shooter?.Visuals?.MuzzleFlash(ctx.attack.visuals.color, shotIndex);
-            LaunchArcFrom(ctx, start, target, d.gravity, d.speed, d.minFlightTime, d.maxFlightTime, d.radius, d.fuseDelay);
+            LaunchArcFrom(ctx, start, target, d.gravity, d.speed, d.minFlightTime, d.maxFlightTime, d.radius, d.fuseDelay, d.explodeOnPlayerContact);
         }
 
-        /// <summary>Projétil em arco genérico (passa por cima de jogadores; explode ao aterrar ou após o fuse).</summary>
-        public void LaunchArcFrom(AttackContext ctx, Vector3 start, Vector3 target, float gravity, float horizontalSpeed, float minTime, float maxTime, float radius, float fuse)
+        /// <summary>
+        /// Projétil em arco genérico: explode ao aterrar ou após o fuse. Por omissão passa por cima dos jogadores;
+        /// com hitPlayers explode logo ao acertar diretamente num inimigo (ex.: TNT).
+        /// </summary>
+        public void LaunchArcFrom(AttackContext ctx, Vector3 start, Vector3 target, float gravity, float horizontalSpeed, float minTime, float maxTime, float radius, float fuse, bool hitPlayers = false)
         {
             var velocity = CombatMath.ArcVelocity(start, target, gravity, horizontalSpeed, minTime, maxTime, out float flight);
             var p = NewProjectile(ctx, start, velocity);
@@ -252,7 +277,7 @@ namespace FPSLAN
             p.remaining = float.MaxValue;
             p.radius = radius;
             p.isArc = true;
-            p.ignorePlayers = true;
+            p.ignorePlayers = !hitPlayers;
             p.fuse = fuse;
             p.maxLife = flight + 1.5f;
             m_Projectiles.Add(p);
@@ -273,24 +298,113 @@ namespace FPSLAN
             if (!ctx.authoritative) ctx.shooter?.Visuals?.MuzzleFlash(ctx.attack.visuals.color, 0);
         }
 
-        public void SpawnTrap(AttackContext ctx, Vector3 position, TrapSettings settings)
+        /// <summary>
+        /// Coloca uma armadilha. Posições inválidas (dentro de paredes, água, fora da arena, sem chão) são ignoradas
+        /// de forma igual em todas as máquinas. A chave (seed + índice) liga a instância visual aos eventos do host.
+        /// </summary>
+        public void SpawnTrap(AttackContext ctx, Vector3 position, TrapSettings settings, int index = 0)
         {
-            if (m_Traps.Count > 48) return;
+            if (m_Traps.Count > 64 || settings == null) return;
+            if (!CombatMath.TryGetTrapPosition(position, out var ground)) return;
+
+            // Limite de armadilhas ativas por dono (as mais antigas desaparecem)
+            if (settings.maxActivePerOwner > 0)
+            {
+                int active = 0;
+                for (int i = 0; i < m_Traps.Count; i++)
+                    if (m_Traps[i].ctx.authoritative == ctx.authoritative && m_Traps[i].ctx.attackerId == ctx.attackerId && m_Traps[i].settings == settings) active++;
+                for (int i = 0; i < m_Traps.Count && active >= settings.maxActivePerOwner; i++)
+                {
+                    var old = m_Traps[i];
+                    if (old.ctx.authoritative != ctx.authoritative || old.ctx.attackerId != ctx.attackerId || old.settings != settings) continue;
+                    if (!old.ctx.authoritative) Fx.Poof(old.position + Vector3.up * 0.2f, settings.color);
+                    ProjectileVisuals.ReleaseMine(old.visual);
+                    m_Traps.RemoveAt(i);
+                    i--;
+                    active--;
+                }
+            }
+
             var t = new Trap
             {
                 ctx = ctx,
                 settings = settings,
-                position = GroundAt(position),
+                position = ground,
                 ownerView = ctx.shooter != null && ctx.shooter.IsLocalHuman,
+                key = TrapKey(ctx.seed, index),
+                serial = ++m_TrapSerial,
             };
             if (!ctx.authoritative)
             {
-                bool discreet = settings.hiddenFromEnemies && !t.ownerView;
-                t.visual = ProjectileVisuals.TakeMine(settings.color, t.position, discreet);
+                bool discreet = settings.hiddenFromEnemies && !t.ownerView && !IsFriendlyToLocal(ctx);
+                t.visual = settings.effect == TrapEffect.Snare
+                    ? ProjectileVisuals.TakeSnare(settings.color, t.position, discreet)
+                    : ProjectileVisuals.TakeMine(settings.color, t.position, discreet);
                 Fx.Ring(t.position, settings.color, 1.6f, 0.35f);
                 Fx.Sparks(t.position + Vector3.up * 0.2f, settings.color, 5, 3f);
             }
             m_Traps.Add(t);
+        }
+
+        public static int TrapKey(int seed, int index) => unchecked(seed * 31 + index * 7919 + 1);
+
+        static bool IsFriendlyToLocal(AttackContext ctx)
+        {
+            var me = PlayerNetwork.Local;
+            return me != null && ctx.shooter != null && (me == ctx.shooter || MatchManager.AreTeammates(me, ctx.shooter));
+        }
+
+        /// <summary>Cliente/host (visual): aplica um evento de armadilha decidido pelo host.</summary>
+        public void ApplyTrapEvent(ulong attackerId, int key, TrapEvent evt, ulong victimId)
+        {
+            for (int i = 0; i < m_Traps.Count; i++)
+            {
+                var t = m_Traps[i];
+                if (t.ctx.authoritative || t.ctx.attackerId != attackerId || t.key != key) continue;
+                switch (evt)
+                {
+                    case TrapEvent.Triggered:
+                        if (t.triggeredAt < 0f)
+                        {
+                            t.triggeredAt = t.age;
+                            Sfx.PlayAt(Sound.MineArm, t.position, 1f);
+                        }
+                        break;
+                    case TrapEvent.Exploded:
+                    case TrapEvent.Snared:
+                    case TrapEvent.Destroyed:
+                        t.pendingEvent = (byte)evt;
+                        if (evt == TrapEvent.Snared)
+                        {
+                            var victim = PlayerNetwork.Find(victimId);
+                            if (victim != null) t.position = victim.transform.position;
+                        }
+                        break;
+                }
+                return;
+            }
+        }
+
+        /// <summary>Host: destrói/desativa armadilhas inimigas num raio (explosões e facadas).</summary>
+        public void ServerDestroyTraps(Vector3 center, float radius, ulong byPlayer, bool melee)
+        {
+            var by = PlayerNetwork.Find(byPlayer);
+            for (int i = m_Traps.Count - 1; i >= 0; i--)
+            {
+                var t = m_Traps[i];
+                if (!t.ctx.authoritative || t.ctx.attackerId == byPlayer) continue;
+                if (melee ? !t.settings.defusedByEnemyMelee : !t.settings.destroyedByEnemyExplosions) continue;
+                if (by != null && t.ctx.shooter != null && MatchManager.AreTeammates(by, t.ctx.shooter)) continue;
+                if ((t.position - center).sqrMagnitude > radius * radius) continue;
+                BroadcastTrapEvent(t, TrapEvent.Destroyed, 0);
+                m_Traps.RemoveAt(i);
+            }
+        }
+
+        void BroadcastTrapEvent(Trap t, TrapEvent evt, ulong victimId)
+        {
+            ApplyTrapEvent(t.ctx.attackerId, t.key, evt, victimId); // instância visual do próprio host
+            if (t.ctx.shooter != null && t.ctx.shooter.IsSpawned) t.ctx.shooter.Combat.ServerSendTrapEvent(t.key, evt, victimId);
         }
 
         public void SpawnZone(AttackContext ctx, Vector3 position, ZoneSettings settings, PlayerNetwork follow)
@@ -303,7 +417,8 @@ namespace FPSLAN
                 z.visual.root.position = position + Vector3.up * 0.04f;
                 Art.SetColor(z.visual.discR, Art.WithAlpha(settings.color, 0.22f));
                 Art.SetColor(z.visual.ringR, Art.WithAlpha(Color.Lerp(settings.color, Color.white, 0.3f), 0.9f));
-                Art.SetColor(z.visual.edgeR, Art.WithAlpha(settings.color, 0.55f));
+                var edge = settings.secondaryColor.a > 0.01f ? settings.secondaryColor : settings.color;
+                Art.SetColor(z.visual.edgeR, Art.WithAlpha(edge, 0.75f));
                 PoseZone(z, 0f);
                 Fx.Ring(position, settings.color, settings.radius * 2.2f, 0.35f);
             }
@@ -448,13 +563,14 @@ namespace FPSLAN
                 {
                     if (p.ignorePlayers || health.IsDead || p.pierced.Contains(health)) continue;
 
-                    if (p.ctx.authoritative) EffectResolver.DirectHit(p.ctx, health, point, p.traveled + hit.distance);
+                    if (p.ctx.authoritative)
+                        EffectResolver.DirectHit(p.ctx, health, point, p.traveled + hit.distance, CombatMath.IsHeadshot(health.transform, p.position, dir, point));
                     else Fx.HitStar(point, p.ctx.attack.visuals.color, Mathf.Clamp(p.ctx.attack.visuals.scale, 0.7f, 1.5f));
 
                     p.pierced.Add(health);
                     if (p.pierce) continue;
 
-                    Impact(p, point, null);
+                    Impact(p, point, null, true);
                     return false;
                 }
 
@@ -474,9 +590,10 @@ namespace FPSLAN
             return alive;
         }
 
-        void Impact(Projectile p, Vector3 point, Collider surface)
+        void Impact(Projectile p, Vector3 point, Collider surface, bool hitPlayer = false)
         {
-            if (p.isArc && p.fuse > 0f)
+            // Acerto direto num jogador: explode já (sem rastilho)
+            if (p.isArc && p.fuse > 0f && !hitPlayer)
             {
                 var f = new Fuse { ctx = p.ctx, position = GroundAt(point), timer = p.fuse, total = p.fuse };
                 if (!p.ctx.authoritative && p.visual != null)
@@ -503,7 +620,11 @@ namespace FPSLAN
             var e = ctx.attack.effect;
             if (e.HasSplash)
             {
-                if (ctx.authoritative) EffectResolver.Explosion(ctx, point);
+                if (ctx.authoritative)
+                {
+                    EffectResolver.Explosion(ctx, point);
+                    ServerDestroyTraps(point, e.splashRadius, ctx.attackerId, false);
+                }
                 else
                 {
                     Fx.Explosion(point, e.splashRadius, ctx.attack.visuals.color, e.splashRadius < 1.6f ? 0.6f : 1f);
@@ -558,7 +679,9 @@ namespace FPSLAN
                 float pitch = (float)(rng.NextDouble() * 2.0 - 1.0) * halfAngle * 0.5f;
                 var dir = Quaternion.LookRotation(ctx.direction) * Quaternion.Euler(pitch, yaw, 0f) * Vector3.forward;
                 bool local = ctx.shooter != null && ctx.shooter.IsLocalHuman;
-                var start = c.visualOrigin + ctx.direction * (local ? 0.9f : 0.2f);
+                // Duas latas: as nuvens alternam entre as duas mãos
+                var from = ctx.shooter != null && ctx.shooter.Visuals != null ? ctx.shooter.Visuals.GetMuzzle(c.puffCount) : c.visualOrigin;
+                var start = from + ctx.direction * (local ? 0.9f : 0.2f);
                 float speed = d.range / Mathf.Max(0.05f, d.expandTime + 0.15f) * 1.25f;
                 var col = Color.Lerp(ctx.attack.visuals.color, Color.white, (float)rng.NextDouble() * 0.35f);
                 col.a = local ? 0.4f : 0.7f;
@@ -605,27 +728,100 @@ namespace FPSLAN
             return z.age < s.duration;
         }
 
+        /// <summary>
+        /// Armadilhas: só a instância autoritativa (host) deteta inimigos e decide; as instâncias visuais seguem os
+        /// eventos que o host envia (aviso, explosão, imobilização, destruição). A expiração é igual em todas.
+        /// </summary>
         bool StepTrap(Trap t, float dt)
         {
             var s = t.settings;
             t.age += dt;
-            if (t.age > s.lifetime || t.ctx.shooter == null) return false; // expirou ou o dono saiu
+            if (t.age > s.lifetime || t.ctx.shooter == null)
+            {
+                if (!t.ctx.authoritative && t.ctx.shooter != null) Fx.Poof(t.position + Vector3.up * 0.2f, s.color);
+                return false; // expirou ou o dono saiu
+            }
 
             bool armed = t.age >= s.armTime;
-            if (armed && t.triggeredAt < 0f && AnyEnemyWithin(t.position, s.triggerRadius, t.ctx.attackerId))
+
+            if (t.ctx.authoritative)
             {
-                t.triggeredAt = t.age;
-                if (!t.ctx.authoritative) Sfx.PlayAt(Sound.MineArm, t.position, 1f);
+                if (armed && t.triggeredAt < 0f)
+                {
+                    var victim = FindTrapVictim(t);
+                    if (victim != null)
+                    {
+                        if (s.effect == TrapEffect.Snare)
+                        {
+                            if (EffectResolver.Snare(t.ctx, victim.Health, s))
+                            {
+                                BroadcastTrapEvent(t, TrapEvent.Snared, victim.Id);
+                                return false; // a armadilha desaparece depois de ativada
+                            }
+                        }
+                        else
+                        {
+                            t.triggeredAt = t.age;
+                            BroadcastTrapEvent(t, TrapEvent.Triggered, victim.Id);
+                        }
+                    }
+                }
+                if (s.effect == TrapEffect.Explode && t.triggeredAt >= 0f && t.age >= t.triggeredAt + s.warningTime)
+                {
+                    BroadcastTrapEvent(t, TrapEvent.Exploded, 0);
+                    Detonate(t.ctx, t.position + Vector3.up * 0.4f, true);
+                    return false;
+                }
+                return true;
             }
 
-            if (t.visual != null) ProjectileVisuals.PoseMine(t.visual, armed, t.triggeredAt >= 0f, t.ownerView, t.age);
-
-            if (t.triggeredAt >= 0f && t.age >= t.triggeredAt + s.warningTime)
+            // ---------------- visual
+            if (t.visual != null)
             {
-                Detonate(t.ctx, t.position + Vector3.up * 0.4f, true);
-                return false;
+                if (s.effect == TrapEffect.Snare) ProjectileVisuals.PoseSnare(t.visual, armed, t.ownerView, t.age);
+                else ProjectileVisuals.PoseMine(t.visual, armed, t.triggeredAt >= 0f, t.ownerView, t.age);
+            }
+
+            switch ((TrapEvent)t.pendingEvent)
+            {
+                case TrapEvent.Exploded:
+                    Detonate(t.ctx, t.position + Vector3.up * 0.4f, true);
+                    return false;
+                case TrapEvent.Snared:
+                    Fx.Ring(t.position, s.color, 2.6f, 0.5f);
+                    Fx.Sparks(t.position + Vector3.up * 0.4f, s.color, 14, 5f);
+                    Fx.Puff(t.position + Vector3.up * 0.5f, Vector3.up, Art.WithAlpha(new Color(0.55f, 0.9f, 0.35f), 0.7f), 1.2f, 0.8f);
+                    Sfx.PlayAt(Sound.Snare, t.position, 1f);
+                    return false;
+                case TrapEvent.Destroyed:
+                    Fx.Poof(t.position + Vector3.up * 0.2f, s.color);
+                    Fx.Sparks(t.position + Vector3.up * 0.2f, s.color, 8, 4f);
+                    Sfx.PlayAt(Sound.Crate, t.position, 0.6f);
+                    return false;
             }
             return true;
+        }
+
+        /// <summary>Host: inimigo mais próximo dentro do raio de deteção (as armadilhas de imobilização ignoram quem está imune).</summary>
+        static PlayerNetwork FindTrapVictim(Trap t)
+        {
+            PlayerNetwork best = null;
+            float bestDist = float.MaxValue;
+            var owner = t.ctx.shooter;
+            foreach (var pl in PlayerNetwork.All)
+            {
+                if (pl == null || !pl.IsSpawned || pl.Id == t.ctx.attackerId || pl.Health.IsDead) continue;
+                if (owner != null && MatchManager.AreTeammates(owner, pl)) continue;
+                if (!Within(t.position, pl.transform.position, t.settings.triggerRadius)) continue;
+                if (t.settings.effect == TrapEffect.Snare && (pl.Status == null || !pl.Status.CanBeRooted || pl.Health.IsProtected)) continue;
+                float d = (pl.transform.position - t.position).sqrMagnitude;
+                if (d < bestDist)
+                {
+                    bestDist = d;
+                    best = pl;
+                }
+            }
+            return best;
         }
 
         // ------------------------------------------------------------------ utilitários
@@ -742,7 +938,8 @@ namespace FPSLAN
             {
                 z.nextPuff = z.age + 0.06f;
                 var r = Random.insideUnitCircle * s.radius * 0.9f;
-                var c = Art.WithAlpha(s.color, 0.55f * fade);
+                var tint = s.secondaryColor.a > 0.01f && Random.value < 0.4f ? s.secondaryColor : s.color;
+                var c = Art.WithAlpha(tint, 0.55f * fade);
                 Fx.Puff(z.position + new Vector3(r.x, 0.2f, r.y), Vector3.up * Random.Range(0.4f, 1.2f), c, Random.Range(0.6f, 1.1f), 0.9f);
                 if (Random.value < 0.5f)
                     Fx.Glow(z.position + new Vector3(-r.y, 0.1f, r.x), Vector3.up * Random.Range(1f, 2.2f), Color.Lerp(s.color, Color.white, 0.4f), 0.1f, 0.7f);
