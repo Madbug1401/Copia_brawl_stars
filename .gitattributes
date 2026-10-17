@@ -28,6 +28,7 @@
 *.mp3   binary
 *.ogg   binary
 *.fbx   binary
+*.glb   binary
 *.obj   binary
 *.blend binary
 *.ttf   binary
