@@ -31,3 +31,14 @@
 .vs/
 .idea/
 crashlytics-build.properties
+
+# --- Builds: partilhar pelo Drive da equipa / GitHub Releases, nunca pelo Git ---
+/[Bb]uild*/
+/build windows/
+
+# --- Gerados pelo Unity/IDE ---
+*.slnx
+
+# --- Capturas temporárias ---
+/Assets/Screenshots/
+/Assets/Screenshots.meta

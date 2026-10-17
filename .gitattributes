@@ -1,0 +1,40 @@
+# ---------------------------------------------------------------------------
+# Better Together / FPS-LAN — regras do Git para Unity
+# ---------------------------------------------------------------------------
+
+# Ficheiros YAML do Unity: juntar com o Smart Merge do Unity (UnityYAMLMerge).
+# Cada membro configura o driver UMA vez no seu PC (ver Docs/GIT_WORKFLOW.md).
+# Sem essa configuração o Git usa o merge de texto normal (não parte nada).
+*.unity              merge=unityyamlmerge
+*.prefab             merge=unityyamlmerge
+*.asset              merge=unityyamlmerge
+*.mat                merge=unityyamlmerge
+*.anim               merge=unityyamlmerge
+*.controller         merge=unityyamlmerge
+*.overrideController merge=unityyamlmerge
+*.physicMaterial     merge=unityyamlmerge
+*.meta               merge=unityyamlmerge
+
+# Binários: nunca tentar diff/merge de texto
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.psd   binary
+*.tga   binary
+*.tif   binary
+*.exr   binary
+*.hdr   binary
+*.wav   binary
+*.mp3   binary
+*.ogg   binary
+*.fbx   binary
+*.obj   binary
+*.blend binary
+*.ttf   binary
+*.otf   binary
+*.pdf   binary
+*.zip   binary
+*.mp4   binary
+*.dll   binary
+*.exe   binary
+*.docx  binary
