@@ -14,17 +14,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.AttackDefinition
   delivery: {fileID: 11400000, guid: 9c2b8bdc83e02b84ebc707296ac41063, type: 2}
   effect:
-    damage: 12
-    nearMultiplier: 0.6
-    farMultiplier: 1.3
+    damage: 14
+    nearMultiplier: 1
+    farMultiplier: 0.9
+    falloffStartFraction: 0
     canHeadshot: 0
     headshotMultiplier: 1.5
+    headshotDamage: 0
+    perShotDamage: 
+    executeOnHeadshot: 0
     splashRadius: 0
     splashDamage: 0
+    splashFullRadiusFraction: 1
+    splashEdgeMultiplier: 1
     slowFactor: 1
     slowDuration: 0
     dotDamagePerSecond: 0
     dotDuration: 0
+    rootDuration: 0
+    rootImmunity: 2.5
     knockback: 0
     knockbackUp: 0
     coverDamage: 0
@@ -37,8 +45,10 @@ MonoBehaviour:
       slowFactor: 1
       slowDuration: 0.6
       color: {r: 0.6, g: 0.9, b: 0.4, a: 1}
+      secondaryColor: {r: 0.75, g: 0.45, b: 1, a: 1}
+      nonStackingPerAttacker: 1
   visuals:
-    color: {r: 0.8, g: 0.55, b: 1, a: 1}
+    color: {r: 0.7, g: 0.45, b: 1, a: 1}
     scale: 1
     style: 6
     sound: 12

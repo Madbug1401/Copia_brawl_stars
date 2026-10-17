@@ -29,6 +29,21 @@ namespace FPSLAN
         Twirl,
         Crate,
         Melee,
+        // Game Experience (acrescentados antes de Count)
+        Smg,
+        Minigun,
+        MinigunSpin,
+        FatalShot,
+        Snare,
+        PoisonHiss,
+        LevelUp,
+        Unlock,
+        Reward,
+        Victory,
+        QuestComplete,
+        PetHappy,
+        PetAlert,
+        Evolve,
         Count
     }
 
@@ -77,6 +92,41 @@ namespace FPSLAN
             s_Clips[(int)Sound.Twirl] = Make("twirl", 0.3f, t => Sq(t, 2000f) * Env(t % 0.06f, 0.012f, 300f) * 0.12f);
             s_Clips[(int)Sound.Crate] = MakeLow("crate", 0.4f, t => (Noise() * 0.9f + Sq(t, 140f - t * 100f) * 0.3f) * Env(t, 0.4f, 9f) * 0.7f, t => 2500f);
             s_Clips[(int)Sound.Melee] = MakeLow("melee", 0.24f, t => Noise() * Env(t, 0.24f, 15f) * 0.55f + Sin(t, 420f - t * 1100f) * Env(t, 0.2f, 12f) * 0.45f, t => 5000f - t * 16000f);
+
+            // Metralhadora compacta: estalo curto e agudo
+            s_Clips[(int)Sound.Smg] = MakeLow("smg", 0.09f, t => (Noise() * 0.8f + Sq(t, 520f) * 0.25f) * Env(t, 0.09f, 55f) * 0.55f + Sin(t, 180f - t * 900f) * Env(t, 0.06f, 50f) * 0.35f, t => 6500f);
+            // Minigun: rajada grave e cheia
+            s_Clips[(int)Sound.Minigun] = MakeLow("minigun", 0.32f, t =>
+                (Noise() * 0.7f + Sin(t, 95f) * 0.5f) * Env(t % 0.08f, 0.06f, 70f) * 0.85f + Sq(t, 60f) * Env(t, 0.32f, 6f) * 0.12f, t => 3800f);
+            // Rotação da Minigun a acelerar
+            s_Clips[(int)Sound.MinigunSpin] = MakeLow("minigunspin", 0.55f, t =>
+                (Sq(t, 70f + t * 260f) * 0.35f + Noise() * 0.25f) * Mathf.Clamp01(t * 6f) * Env(t, 0.55f, 2f) * 0.6f, t => 900f + t * 4000f);
+            // Tiro fatal: estrondo grave + toque metálico
+            s_Clips[(int)Sound.FatalShot] = MakeLow("fatal", 0.9f, t =>
+                (Noise() * Env(t, 0.5f, 7f) * 0.8f + Sin(t, 55f) * Env(t, 0.6f, 4f) * 0.9f + Sin(t, 1760f) * Env(t, 0.9f, 3f) * 0.25f), t => Mathf.Max(500f, 9000f * Mathf.Exp(-t * 5f)));
+            // Armadilha a fechar: estalo metálico duplo
+            s_Clips[(int)Sound.Snare] = Make("snare", 0.25f, t =>
+                (Sq(t, 1300f) * Env(t, 0.04f, 120f) + Sq(t, 900f) * Env(Mathf.Max(0f, t - 0.07f), 0.05f, 90f) * (t > 0.07f ? 1f : 0f)) * 0.3f + Noise() * Env(t, 0.25f, 18f) * 0.2f);
+            // Veneno: sibilar
+            s_Clips[(int)Sound.PoisonHiss] = MakeLow("poison", 0.7f, t => Noise() * Env(t, 0.7f, 3.5f) * 0.4f + Sin(t, 140f + Mathf.Sin(t * 30f) * 20f) * Env(t, 0.5f, 5f) * 0.15f, t => 3000f + Mathf.Sin(t * 12f) * 800f);
+            // Progressão
+            s_Clips[(int)Sound.LevelUp] = Make("levelup", 0.75f, t =>
+            {
+                float f = t < 0.12f ? 523f : t < 0.24f ? 659f : t < 0.36f ? 784f : 1047f;
+                return (Sin(t, f) * 0.6f + Sin(t, f * 2f) * 0.2f + Sin(t, f * 3f) * 0.08f) * Env(t, 0.75f, 3f) * 0.38f;
+            });
+            s_Clips[(int)Sound.Unlock] = Make("unlock", 0.6f, t => (Sin(t, 1319f) * Env(t, 0.6f, 6f) + Sin(t, 1976f) * Env(Mathf.Max(0f, t - 0.08f), 0.5f, 6f) * (t > 0.08f ? 1f : 0f) + Sin(t, 2637f) * Env(Mathf.Max(0f, t - 0.16f), 0.4f, 7f) * (t > 0.16f ? 1f : 0f)) * 0.26f);
+            s_Clips[(int)Sound.Reward] = Make("reward", 0.35f, t => (Sin(t, t < 0.08f ? 1568f : 2093f) + Sin(t, 3136f) * 0.3f) * Env(t % 0.08f + (t > 0.16f ? 0.02f : 0f), 0.2f, 18f) * 0.3f);
+            s_Clips[(int)Sound.Victory] = Make("victory", 1.1f, t =>
+            {
+                float f = t < 0.15f ? 523f : t < 0.3f ? 659f : t < 0.45f ? 784f : 1047f;
+                return (Sq(t, f) * 0.18f + Sin(t, f) * 0.5f + Sin(t, f * 1.5f) * 0.2f) * Env(t, 1.1f, 2.2f) * 0.38f;
+            });
+            s_Clips[(int)Sound.QuestComplete] = Make("quest", 0.5f, t => (Sin(t, t < 0.12f ? 880f : 1320f) * 0.7f + Sin(t, 2640f) * 0.15f) * Env(t, 0.5f, 5f) * 0.35f);
+            s_Clips[(int)Sound.PetHappy] = Make("pethappy", 0.22f, t => Sin(t, 900f + Mathf.Sin(t * 60f) * 250f + t * 900f) * Env(t, 0.22f, 12f) * 0.3f);
+            s_Clips[(int)Sound.PetAlert] = Make("petalert", 0.5f, t =>
+                (Sq(t, t < 0.12f ? 700f : (t < 0.22f ? 1050f : 820f)) * 0.25f + Sin(t, t < 0.22f ? 1400f : 1640f) * 0.3f) * Env(t, 0.5f, 5f) * 0.4f);
+            s_Clips[(int)Sound.Evolve] = MakeLow("evolve", 1.0f, t => (Sin(t, 300f + t * 1200f) * 0.5f + Sin(t, 600f + t * 2400f) * 0.2f + Noise() * 0.1f) * Env(t, 1f, 2.5f) * 0.4f, t => 2000f + t * 6000f);
 
             var go = new GameObject("[Sfx]");
             UnityEngine.Object.DontDestroyOnLoad(go);

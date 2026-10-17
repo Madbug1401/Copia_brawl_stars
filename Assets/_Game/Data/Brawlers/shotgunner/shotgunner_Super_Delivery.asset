@@ -20,3 +20,4 @@ MonoBehaviour:
   range: 15
   radius: 0.2
   pierce: 0
+  gravity: 0

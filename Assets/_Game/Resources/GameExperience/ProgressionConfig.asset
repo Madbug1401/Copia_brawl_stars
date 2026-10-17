@@ -1,0 +1,166 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45fd16eb87883c6428af42a8d1fcf305, type: 3}
+  m_Name: ProgressionConfig
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.ProgressionConfig
+  xpParticipation: 50
+  xpPerKill: 12
+  xpPerAssist: 6
+  xpVictory: 75
+  xpPerObjective: 15
+  xpVsBotsMultiplier: 0.5
+  maxKillsCounted: 30
+  maxAssistsCounted: 30
+  maxObjectivesCounted: 5
+  minParticipationSeconds: 60
+  minParticipationFraction: 0.4
+  minDistanceMoved: 15
+  characterXpShare: 1
+  petXpPerValidMatch: 40
+  petXpPerKill: 4
+  petXpVictoryBonus: 20
+  coinsParticipation: 20
+  coinsVictory: 30
+  coinsPerKill: 2
+  coinsPerObjective: 3
+  playerLevels:
+    maxLevel: 50
+    baseXp: 100
+    linearXp: 25
+    quadraticXp: 0
+  characterLevels:
+    maxLevel: 10
+    baseXp: 80
+    linearXp: 40
+    quadraticXp: 0
+  petLevels:
+    maxLevel: 10
+    baseXp: 60
+    linearXp: 30
+    quadraticXp: 0
+  maxUpgradeLevel: 5
+  upgradeCosts: 64000000c80000005e010000f4010000bc020000i
+  characterLevelsPerUpgradeLevel: 2
+  upgrades:
+  - stat: 0
+    label: "Vida m\xE1xima"
+    bonusPerLevel: 0.03
+    casualCap: 0.12
+  - stat: 1
+    label: Dano
+    bonusPerLevel: 0.02
+    casualCap: 0.08
+  - stat: 2
+    label: "Regenera\xE7\xE3o"
+    bonusPerLevel: 0.06
+    casualCap: 0.25
+  - stat: 3
+    label: Velocidade
+    bonusPerLevel: 0.01
+    casualCap: 0.04
+  - stat: 4
+    label: Recarga
+    bonusPerLevel: 0.025
+    casualCap: 0.1
+  - stat: 5
+    label: "Efici\xEAncia do especial"
+    bonusPerLevel: 0.04
+    casualCap: 0.15
+  competitiveDisablesUpgrades: 1
+  competitiveDisablesPetAbilities: 1
+  levelRewards:
+  - level: 2
+    reward:
+      xp: 0
+      coins: 50
+      skinIds: []
+      petIds: []
+      cosmeticIds: []
+  - level: 3
+    reward:
+      xp: 0
+      coins: 75
+      skinIds: []
+      petIds: []
+      cosmeticIds: []
+  - level: 5
+    reward:
+      xp: 0
+      coins: 150
+      skinIds: []
+      petIds: []
+      cosmeticIds: []
+  - level: 8
+    reward:
+      xp: 0
+      coins: 200
+      skinIds: []
+      petIds: []
+      cosmeticIds: []
+  - level: 10
+    reward:
+      xp: 0
+      coins: 200
+      skinIds:
+      - skin_lm_storm
+      petIds: []
+      cosmeticIds: []
+  - level: 12
+    reward:
+      xp: 0
+      coins: 250
+      skinIds: []
+      petIds: []
+      cosmeticIds: []
+  - level: 15
+    reward:
+      xp: 0
+      coins: 300
+      skinIds: []
+      petIds: []
+      cosmeticIds: []
+  - level: 20
+    reward:
+      xp: 0
+      coins: 400
+      skinIds: []
+      petIds: []
+      cosmeticIds: []
+  - level: 25
+    reward:
+      xp: 0
+      coins: 500
+      skinIds: []
+      petIds: []
+      cosmeticIds: []
+  - level: 30
+    reward:
+      xp: 0
+      coins: 600
+      skinIds: []
+      petIds: []
+      cosmeticIds: []
+  - level: 40
+    reward:
+      xp: 0
+      coins: 800
+      skinIds: []
+      petIds: []
+      cosmeticIds: []
+  - level: 50
+    reward:
+      xp: 0
+      coins: 1500
+      skinIds: []
+      petIds: []
+      cosmeticIds:
+      - titulo_lenda

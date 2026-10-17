@@ -12,18 +12,35 @@ namespace FPSLAN
         static readonly List<PlayerHealth> s_Victims = new List<PlayerHealth>();
         static readonly List<DestructibleCover> s_Covers = new List<DestructibleCover>();
 
-        /// <summary>Impacto direto num jogador (projétil, hitscan).</summary>
-        public static void DirectHit(AttackContext ctx, PlayerHealth victim, Vector3 point, float travelDistance)
+        /// <summary>
+        /// Impacto direto num jogador (projétil, hitscan). shotIndex permite dano exato por disparo (ex.: flechas);
+        /// rayOrigin/rayDir permitem uma deteção fiável de headshots.
+        /// </summary>
+        public static void DirectHit(AttackContext ctx, PlayerHealth victim, Vector3 point, float travelDistance,
+            int shotIndex = -1, Vector3 rayOrigin = default, Vector3 rayDir = default)
         {
             if (victim == null || victim.IsDead || !CanAffectPlayer(ctx, victim)) return;
             var e = ctx.Effect;
 
-            bool headshot = e.canHeadshot && point.y - victim.transform.position.y >= CombatSystem.HeadshotHeight;
-            float mult = e.DistanceMultiplier(travelDistance, ctx.Range) * (headshot ? e.headshotMultiplier : 1f);
-            int dmg = Mathf.RoundToInt(e.damage * mult);
+            bool headshot = e.canHeadshot && CombatMath.IsHeadshot(victim, point, rayOrigin, rayDir);
 
+            // Tiro fatal: headshot válido (linha de visão já garantida pelo traço) elimina de imediato
+            if (headshot && e.executeOnHeadshot)
+            {
+                Execute(ctx, victim);
+                return;
+            }
+
+            int dmg = e.DirectDamage(shotIndex, travelDistance, ctx.Range, headshot);
             Damage(ctx, victim, dmg, headshot);
             ApplyStatuses(ctx, victim, point - ctx.direction);
+        }
+
+        /// <summary>Eliminação imediata validada no host (ignora escudos de pet, respeita a proteção de spawn).</summary>
+        static void Execute(AttackContext ctx, PlayerHealth victim)
+        {
+            int remaining = Mathf.Max(1, victim.Health.Value + victim.Shield.Value);
+            DamageRaw(victim, remaining, ctx.attackerId, ctx.isSuper, true, true);
         }
 
         /// <summary>Impacto no cenário: dano à cobertura atingida.</summary>
@@ -34,11 +51,14 @@ namespace FPSLAN
             if (cover != null) cover.ServerDamage(ctx.Effect.coverDamage);
         }
 
-        /// <summary>Explosão: dano de área, estados, knockback e cobertura no raio.</summary>
+        /// <summary>Explosão: dano de área (com queda pela distância ao centro), estados, knockback e cobertura no raio.</summary>
         public static void Explosion(AttackContext ctx, Vector3 center)
         {
             var e = ctx.Effect;
             if (!MatchManager.IsCombatActive || MatchManager.IsMatchOver || e.splashRadius <= 0.01f) return;
+
+            // Explosões inimigas destroem armadilhas no raio (regras de cada armadilha)
+            if (CombatSystem.Instance != null) CombatSystem.Instance.ServerDestroyTrapsInRadius(center, e.splashRadius, ctx.attackerId);
 
             s_Victims.Clear();
             s_Covers.Clear();
@@ -59,19 +79,34 @@ namespace FPSLAN
 
             foreach (var h in s_Victims)
             {
-                if (e.splashDamage > 0) Damage(ctx, h, e.splashDamage, false);
+                if (e.splashDamage > 0)
+                {
+                    float dist = DistanceToBody(center, h.transform.position);
+                    int dmg = e.SplashDamageAt(dist);
+                    if (dmg > 0) Damage(ctx, h, dmg, false);
+                }
                 ApplyStatuses(ctx, h, center);
             }
             if (e.coverDamage > 0)
                 foreach (var c in s_Covers) c.ServerDamage(e.coverDamage);
         }
 
-        /// <summary>Tick de uma zona/aura.</summary>
+        /// <summary>Distância do centro de uma explosão ao corpo (cápsula de 1,8 m) de um jogador.</summary>
+        public static float DistanceToBody(Vector3 center, Vector3 feet)
+        {
+            const float radius = 0.4f;
+            float y = Mathf.Clamp(center.y, feet.y + radius, feet.y + 1.8f - radius);
+            var axis = new Vector3(feet.x, y, feet.z);
+            return Mathf.Max(0f, Vector3.Distance(center, axis) - radius);
+        }
+
+        /// <summary>Tick de uma zona/aura. Zonas do mesmo atacante não acumulam (um tick por intervalo).</summary>
         public static void ZoneTick(AttackContext ctx, PlayerHealth victim, ZoneSettings zone)
         {
             if (victim == null || victim.IsDead || !CanAffectPlayer(ctx, victim)) return;
-            if (zone.tickDamage > 0) Damage(ctx, victim, zone.tickDamage, false);
             var status = victim.GetComponent<StatusEffects>();
+            if (zone.nonStackingPerAttacker && status != null && !status.ServerTryZoneTick(ctx.attackerId, zone.tickInterval)) return;
+            if (zone.tickDamage > 0) Damage(ctx, victim, zone.tickDamage, false);
             if (status != null && zone.slowFactor < 1f) status.ServerApplySlow(zone.slowFactor, zone.slowDuration);
         }
 
@@ -85,6 +120,14 @@ namespace FPSLAN
             ApplyStatuses(ctx, victim, ctx.origin);
         }
 
+        /// <summary>Armadilha de imobilização: prende o alvo e aplica os estados do ataque (ex.: veneno).</summary>
+        public static void Snare(AttackContext ctx, PlayerHealth victim, Vector3 trapPosition)
+        {
+            if (victim == null || victim.IsDead || !CanAffectPlayer(ctx, victim)) return;
+            if (ctx.Effect.damage > 0) Damage(ctx, victim, ctx.Effect.damage, false);
+            ApplyStatuses(ctx, victim, trapPosition);
+        }
+
         static void ApplyStatuses(AttackContext ctx, PlayerHealth victim, Vector3 from)
         {
             if (!CanAffectPlayer(ctx, victim)) return;
@@ -93,6 +136,7 @@ namespace FPSLAN
             if (status == null || victim.IsDead) return;
 
             if (e.slowFactor < 1f && e.slowDuration > 0f) status.ServerApplySlow(e.slowFactor, e.slowDuration);
+            if (e.rootDuration > 0f) status.ServerApplyRoot(e.rootDuration, e.rootImmunity);
             if (e.dotDamagePerSecond > 0f && e.dotDuration > 0f) status.ServerApplyDot(e.dotDamagePerSecond, e.dotDuration, ctx.attackerId, ctx.isSuper);
 
             if (e.knockback > 0f || e.knockbackUp > 0f)
@@ -106,21 +150,26 @@ namespace FPSLAN
             }
         }
 
-        /// <summary>Dano creditado ao atacante (carrega o Super se não vier do Super).</summary>
+        /// <summary>Dano creditado ao atacante (carrega o Super se não vier do Super). Aplica o multiplicador de dano das melhorias.</summary>
         public static void Damage(AttackContext ctx, PlayerHealth victim, int amount, bool headshot)
         {
+            var attacker = PlayerNetwork.Find(ctx.attackerId);
+            if (attacker != null && amount > 0) amount = Mathf.Max(1, Mathf.RoundToInt(amount * attacker.DamageMultiplier));
             DamageRaw(victim, amount, ctx.attackerId, ctx.isSuper, headshot);
         }
 
-        public static void DamageRaw(PlayerHealth victim, int amount, ulong attackerId, bool fromSuper, bool headshot)
+        public static void DamageRaw(PlayerHealth victim, int amount, ulong attackerId, bool fromSuper, bool headshot, bool execute = false)
         {
             if (victim == null || amount <= 0 || !MatchManager.IsCombatActive || MatchManager.IsMatchOver) return;
             var attacker = PlayerNetwork.Find(attackerId);
-            if (MatchManager.AreTeammates(attacker, victim.GetComponent<PlayerNetwork>())) return;
+            var victimPlayer = victim.GetComponent<PlayerNetwork>();
+            if (MatchManager.AreTeammates(attacker, victimPlayer)) return;
 
-            bool killed = victim.ServerApplyDamage(amount, attackerId);
+            bool killed = victim.ServerApplyDamage(amount, attackerId, execute, out int applied);
+            if (applied <= 0 && !killed) return;
+            MatchStatsTracker.ServerOnDamage(attacker, victimPlayer, applied, headshot);
             if (attacker != null && attacker.IsSpawned && attacker.Health != victim)
-                attacker.Combat.ServerOnDealtDamage(amount, fromSuper, headshot, killed, victim.transform.position);
+                attacker.Combat.ServerOnDealtDamage(applied, fromSuper, headshot, killed, execute, victim.transform.position);
         }
 
         static bool CanAffectPlayer(AttackContext ctx, PlayerHealth victim)

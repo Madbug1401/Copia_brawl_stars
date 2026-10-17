@@ -39,19 +39,34 @@ namespace FPSLAN
         bool m_WasGrounded = true;
         bool m_SuperGlowApplied;
         Vector3 m_ArmAnchorR = new Vector3(0.36f, -0.55f, 0.05f), m_ArmAnchorL = new Vector3(-0.36f, -0.55f, 0.05f);
+        int m_Layer;
 
-        public static ViewModelRig Build(BrawlerDefinition b, Transform camera, int layer)
+        // Especial em modo (Minigun do Ekko / tiro fatal armado da Lince)
+        bool m_SuperMode;
+        float m_Transform;          // 0 = armas normais, 1 = Minigun em posição
+        WeaponModel m_Minigun;
+        Transform m_MinigunHolder;
+        Vector3 m_MinigunRest = new Vector3(0.12f, -0.26f, 0.42f);
+        float m_MinigunSpin;
+
+        // Recarga da caçadeira: mete um cartucho e bombeia
+        float m_ShellReload = -1f;
+        Transform m_Shell;
+
+        public static ViewModelRig Build(BrawlerDefinition b, Transform camera, int layer, SkinDefinition skin = null)
         {
             var vm = new ViewModelRig();
-            vm.Create(b, camera, layer);
+            vm.Create(b, camera, layer, skin);
             return vm;
         }
 
-        void Create(BrawlerDefinition b, Transform camera, int layer)
+        void Create(BrawlerDefinition b, Transform camera, int layer, SkinDefinition skin)
         {
             Style = b != null ? b.firstPerson.rig : RigStyle.Generic;
-            m_Accent = b != null ? b.firstPerson.accentColor : Color.white;
-            var look = b != null && b.thirdPerson.look != null ? b.thirdPerson.look : new CharacterLook();
+            m_Layer = layer;
+            m_Accent = skin != null && skin.overrideWeaponColor ? skin.weaponAccent : (b != null ? b.firstPerson.accentColor : Color.white);
+            var baseLook = b != null && b.thirdPerson.look != null ? b.thirdPerson.look : new CharacterLook();
+            var look = skin != null ? skin.ApplyTo(baseLook) : baseLook;
 
             Root = new GameObject("ViewModel_" + Style).transform;
             Root.SetParent(camera, false);
@@ -73,6 +88,28 @@ namespace FPSLAN
                     m_WeaponL = WeaponModels.Build(Style, m_GunL, m_Accent, 1, s);
                     m_HandR = Hand(m_GunR, new Vector3(0f, -0.05f, -0.03f), glove);
                     m_HandL = Hand(m_GunL, new Vector3(0f, -0.05f, -0.03f), glove);
+                    break;
+
+                case RigStyle.DualSMG:
+                    m_GunRRest = new Vector3(0.19f, -0.2f, 0.38f);
+                    m_GunLRest = new Vector3(-0.19f, -0.2f, 0.38f);
+                    m_GunR = Holder("SmgR", m_GunRRest);
+                    m_GunL = Holder("SmgL", m_GunLRest);
+                    m_WeaponR = WeaponModels.Build(Style, m_GunR, m_Accent, 0, s);
+                    m_WeaponL = WeaponModels.Build(Style, m_GunL, m_Accent, 1, s);
+                    m_HandR = Hand(m_GunR, new Vector3(0f, -0.06f, -0.03f), glove);
+                    m_HandL = Hand(m_GunL, new Vector3(0f, -0.06f, -0.03f), glove);
+                    break;
+
+                case RigStyle.DualSprayCans:
+                    m_GunRRest = new Vector3(0.2f, -0.24f, 0.4f);
+                    m_GunLRest = new Vector3(-0.2f, -0.24f, 0.4f);
+                    m_GunR = Holder("CanR", m_GunRRest);
+                    m_GunL = Holder("CanL", m_GunLRest);
+                    m_WeaponR = WeaponModels.Build(Style, m_GunR, m_Accent, 0, s);
+                    m_WeaponL = WeaponModels.Build(Style, m_GunL, m_Accent, 1, s);
+                    m_HandR = Hand(m_GunR, new Vector3(0f, 0.03f, 0f), glove);
+                    m_HandL = Hand(m_GunL, new Vector3(0f, 0.03f, 0f), glove);
                     break;
 
                 case RigStyle.DualExplosives:
@@ -185,6 +222,7 @@ namespace FPSLAN
 
         public Vector3 GetMuzzle(int shotIndex)
         {
+            if (m_SuperMode && m_Minigun != null) return m_Minigun.Muzzle(0);
             bool dual = m_WeaponL != null && m_WeaponR != null;
             WeaponModel w;
             if (dual) w = (Mathf.Abs(shotIndex) % 2 == 0) ? m_WeaponR : m_WeaponL;
@@ -198,10 +236,39 @@ namespace FPSLAN
             {
                 case RigStyle.DualExplosives: m_Throw = 0f; break;
                 case RigStyle.Bow: m_Draw = 0f; m_KickL = 1f; break;
-                case RigStyle.SprayCan: m_Spray = super ? 1.2f : 0.65f; break;
+                case RigStyle.SprayCan:
+                case RigStyle.DualSprayCans: m_Spray = super ? 1.2f : 0.65f; break;
                 case RigStyle.Shotgun: m_Pump = 0f; break;
             }
-            if (super) m_Raise = 1f;
+            if (super && !m_SuperMode) m_Raise = 1f;
+        }
+
+        /// <summary>Especial em modo: transformação das armas (Ekko) ou mira armada (Lince).</summary>
+        public void SetSuperMode(bool on)
+        {
+            if (on == m_SuperMode || Root == null) return;
+            m_SuperMode = on;
+            if (Style == RigStyle.DualSMG && on && m_Minigun == null)
+            {
+                m_MinigunHolder = Holder("Minigun", m_MinigunRest + new Vector3(0f, -0.45f, 0f));
+                m_Minigun = WeaponModels.BuildMinigun(m_MinigunHolder, m_Accent, ShadowCastingMode.Off);
+                m_MinigunHolder.localScale = Vector3.one * 0.75f;
+                foreach (var t in m_MinigunHolder.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = m_Layer;
+                foreach (var r in m_MinigunHolder.GetComponentsInChildren<Renderer>(true))
+                {
+                    r.shadowCastingMode = ShadowCastingMode.Off;
+                    r.receiveShadows = false;
+                    Art.SetFloat(r, Art.OutlineWidthId, 0.0028f);
+                    m_WeaponRenderers.Add(r);
+                }
+            }
+        }
+
+        /// <summary>Um disparo da Minigun: os canos aceleram e a arma treme.</summary>
+        void OnMinigunShot()
+        {
+            m_MinigunSpin = 1f;
+            m_KickR = 0.5f;
         }
 
         public void OnMelee(float duration)
@@ -214,18 +281,38 @@ namespace FPSLAN
 
         public void OnShot(int shotIndex)
         {
+            if (m_SuperMode && m_Minigun != null)
+            {
+                OnMinigunShot();
+                return;
+            }
             bool dual = m_WeaponL != null && m_WeaponR != null;
             if (dual && Mathf.Abs(shotIndex) % 2 == 1) m_KickL = 1f;
             else m_KickR = 1f;
         }
 
-        /// <summary>Uma carga recarregou: pequena animação (revólver a girar, etc.).</summary>
+        /// <summary>Uma carga recarregou: pequena animação (revólver a girar, cartucho na caçadeira, etc.).</summary>
         public void OnChargeReloaded()
         {
             if (Style == RigStyle.DualRevolvers && m_Twirl < 0f)
             {
                 m_Twirl = 0f;
                 m_TwirlSide = m_TwirlSide > 0.5f ? 0f : 1f;
+            }
+            if (Style == RigStyle.Shotgun && m_ShellReload < 0f && m_WeaponR != null)
+            {
+                m_ShellReload = 0f;
+                if (m_Shell == null)
+                {
+                    m_Shell = new GameObject("Shell").transform;
+                    m_Shell.SetParent(m_GunR, false);
+                    Art.Part(PrimitiveType.Capsule, m_Shell, Vector3.zero, new Vector3(0.035f, 0.045f, 0.035f), new Color(0.95f, 0.25f, 0.2f), true,
+                        new Vector3(90f, 0f, 0f), ShadowCastingMode.Off);
+                    Art.Part(PrimitiveType.Cylinder, m_Shell, new Vector3(0f, 0f, -0.04f), new Vector3(0.038f, 0.012f, 0.038f), new Color(1f, 0.8f, 0.3f), false,
+                        new Vector3(90f, 0f, 0f), ShadowCastingMode.Off);
+                    foreach (var t in m_Shell.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = m_Layer;
+                }
+                m_Shell.gameObject.SetActive(true);
             }
         }
 
@@ -238,6 +325,15 @@ namespace FPSLAN
         {
             if (Root != null) Object.Destroy(Root.gameObject);
             Root = null;
+        }
+
+        void DestroyMinigun()
+        {
+            if (m_MinigunHolder == null) return;
+            foreach (var r in m_MinigunHolder.GetComponentsInChildren<Renderer>(true)) m_WeaponRenderers.Remove(r);
+            Object.Destroy(m_MinigunHolder.gameObject);
+            m_MinigunHolder = null;
+            m_Minigun = null;
         }
 
         // ================================================================== animação
@@ -301,6 +397,56 @@ namespace FPSLAN
                     break;
                 }
 
+                case RigStyle.DualSMG:
+                {
+                    // Transformação: as metralhadoras descem e a Minigun sobe (e o contrário no fim)
+                    float target = m_SuperMode ? 1f : 0f;
+                    m_Transform = Mathf.MoveTowards(m_Transform, target, dt / 0.35f);
+                    float down = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(m_Transform * 2f));
+                    float up = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(m_Transform * 2f - 1f));
+                    var drop = new Vector3(0f, -0.4f * down, -0.08f * down);
+                    PoseGun(m_GunR, m_GunRRest + drop, m_KickR * (1f - down), 0.045f, 9f, 0f);
+                    PoseGun(m_GunL, m_GunLRest + drop, m_KickL * (1f - down), 0.045f, 9f, 0f);
+                    if (m_GunR != null) m_GunR.localRotation *= Quaternion.Euler(down * 40f, 0f, -down * 25f);
+                    if (m_GunL != null) m_GunL.localRotation *= Quaternion.Euler(down * 40f, 0f, down * 25f);
+
+                    if (m_MinigunHolder != null)
+                    {
+                        m_MinigunSpin = Mathf.MoveTowards(m_MinigunSpin, 0f, dt * 1.8f);
+                        var shake = new Vector3(Mathf.Sin(time * 77f), Mathf.Cos(time * 69f), 0f) * 0.008f * m_MinigunSpin;
+                        m_MinigunHolder.localPosition = m_MinigunRest + new Vector3(0f, -0.45f * (1f - up), -0.03f * m_KickR) + shake;
+                        m_MinigunHolder.localRotation = Quaternion.Euler(-25f * (1f - up) - 3f * m_KickR, 0f, 0f);
+                        if (m_Minigun.drum != null) m_Minigun.drum.localRotation *= Quaternion.Euler(0f, 0f, (240f + 2200f * m_MinigunSpin) * dt * up);
+                        // As mãos passam para a Minigun (pega de trás e por baixo dos canos)
+                        if (up > 0.5f && m_HandR != null && m_HandL != null)
+                        {
+                            m_HandR.position = m_MinigunHolder.TransformPoint(new Vector3(0f, -0.13f, -0.06f));
+                            m_HandL.position = m_MinigunHolder.TransformPoint(new Vector3(-0.02f, -0.08f, 0.3f));
+                        }
+                        else
+                        {
+                            if (m_HandR != null) m_HandR.localPosition = new Vector3(0f, -0.06f, -0.03f);
+                            if (m_HandL != null) m_HandL.localPosition = new Vector3(0f, -0.06f, -0.03f);
+                        }
+                        // Fim do modo: quando as metralhadoras voltaram, a Minigun desaparece
+                        if (!m_SuperMode && m_Transform <= 0f) DestroyMinigun();
+                    }
+                    break;
+                }
+
+                case RigStyle.DualSprayCans:
+                {
+                    m_Spray = Mathf.MoveTowards(m_Spray, 0f, dt);
+                    float shake = m_Spray > 0f ? 1f : 0f;
+                    var jitterR = new Vector3(Mathf.Sin(time * 70f), Mathf.Cos(time * 63f), 0f) * 0.006f * shake;
+                    var jitterL = new Vector3(Mathf.Cos(time * 66f), Mathf.Sin(time * 71f), 0f) * 0.006f * shake;
+                    m_GunR.localPosition = m_GunRRest + jitterR + new Vector3(-0.03f, 0.03f, 0.06f) * shake;
+                    m_GunL.localPosition = m_GunLRest + jitterL + new Vector3(0.03f, 0.03f, 0.06f) * shake;
+                    m_GunR.localRotation = Quaternion.Euler(-6f * shake, -8f * shake, Mathf.Sin(time * 50f) * 6f * shake);
+                    m_GunL.localRotation = Quaternion.Euler(-6f * shake, 8f * shake, -Mathf.Sin(time * 47f) * 6f * shake);
+                    break;
+                }
+
                 case RigStyle.DualExplosives:
                 {
                     m_Throw += dt;
@@ -357,8 +503,9 @@ namespace FPSLAN
                 case RigStyle.Shotgun:
                 case RigStyle.Sniper:
                 {
-                    float kickBack = Style == RigStyle.Sniper ? 0.11f : 0.09f;
-                    float kickRot = Style == RigStyle.Sniper ? 18f : 14f;
+                    // Caçadeira com coice mais forte (Riot)
+                    float kickBack = Style == RigStyle.Sniper ? 0.11f : 0.15f;
+                    float kickRot = Style == RigStyle.Sniper ? 18f : 24f;
                     PoseGun(m_GunR, m_GunRRest, m_KickR, kickBack, kickRot, 0f);
                     if (m_WeaponR != null && m_WeaponR.pump != null)
                     {
@@ -374,8 +521,40 @@ namespace FPSLAN
                             : m_GunR.TransformPoint(new Vector3(0f, -0.03f, 0.3f));
                         m_HandL.position = target;
                     }
+                    // Recarga da caçadeira: a mão esquerda mete um cartucho por baixo e depois bombeia
+                    if (Style == RigStyle.Shotgun && m_ShellReload >= 0f)
+                    {
+                        m_ShellReload += dt / 0.6f;
+                        float t = m_ShellReload;
+                        if (t < 0.5f)
+                        {
+                            float k = Mathf.SmoothStep(0f, 1f, t / 0.5f);
+                            var from = m_GunR.TransformPoint(new Vector3(0.02f, -0.22f, 0.05f));
+                            var to = m_GunR.TransformPoint(new Vector3(0f, -0.06f, 0.12f));
+                            if (m_HandL != null) m_HandL.position = Vector3.Lerp(from, to, k);
+                            if (m_Shell != null) m_Shell.position = (m_HandL != null ? m_HandL.position : to) + m_GunR.TransformDirection(new Vector3(0f, 0.03f, 0.02f));
+                            m_GunR.localRotation *= Quaternion.Euler(0f, 0f, -18f * Mathf.Sin(k * Mathf.PI * 0.5f));
+                        }
+                        else
+                        {
+                            if (m_Shell != null && m_Shell.gameObject.activeSelf)
+                            {
+                                m_Shell.gameObject.SetActive(false);
+                                m_Pump = 0f; // bombeia depois de meter o cartucho
+                                Sfx.Play2D(Sound.Reload, 0.5f);
+                            }
+                            m_GunR.localRotation *= Quaternion.Euler(0f, 0f, -18f * Mathf.Clamp01((1f - t) * 2f));
+                        }
+                        if (t >= 1f) m_ShellReload = -1f;
+                    }
                     if (m_WeaponR != null && m_WeaponR.scope != null && Style == RigStyle.Sniper)
-                        foreach (var g in m_WeaponR.glowRenderers) Art.SetEmission(g, m_Accent * (0.4f + 0.3f * Mathf.Sin(time * 3f)));
+                    {
+                        // Tiro fatal armado: a lente brilha a vermelho
+                        var glow = m_SuperMode
+                            ? new Color(1f, 0.12f, 0.08f) * (0.7f + 0.3f * Mathf.Sin(time * 9f))
+                            : m_Accent * (0.4f + 0.3f * Mathf.Sin(time * 3f));
+                        foreach (var g in m_WeaponR.glowRenderers) Art.SetEmission(g, glow);
+                    }
                     break;
                 }
 

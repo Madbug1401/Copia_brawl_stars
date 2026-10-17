@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.HitscanDelivery
   count: 1
   interval: 0
-  spreadDegrees: 0.1
+  spreadDegrees: 0.05
   fanDegrees: 0
-  range: 45
-  radius: 0.06
+  range: 50
+  radius: 0.04
   pierce: 0

@@ -31,7 +31,7 @@
       }
     },
     "com.unity.dt.app-ui": {
-      "version": "2.1.11",
+      "version": "2.2.4",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -118,7 +118,7 @@
     },
     "com.unity.test-framework": {
       "version": "1.8.0",
-      "depth": 1,
+      "depth": 0,
       "source": "builtin",
       "dependencies": {
         "com.unity.ext.nunit": "2.1.0",

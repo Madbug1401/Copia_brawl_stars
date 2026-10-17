@@ -110,7 +110,9 @@ namespace FPSLAN
             float distToTarget = 999f;
             if (m_Target != null)
             {
-                var tp = m_Target.transform.position + Vector3.up * (profile.aimAtFeet ? 0.2f : 1.15f);
+                // Tiro fatal armado (Lince): aponta à cabeça (com o mesmo erro de pontaria da dificuldade)
+                bool aimHead = m_Self.Combat.InSuperMode && brawler.firstPerson.rig == RigStyle.Sniper;
+                var tp = m_Target.transform.position + Vector3.up * (aimHead ? CombatMath.HeadCenterHeight : profile.aimAtFeet ? 0.2f : 1.15f);
                 // Ligeira antecipação do movimento do alvo nos níveis mais altos
                 if (m_Difficulty != BotDifficulty.Facil) tp += EstimateVelocity(m_Target) * 0.12f;
                 lookTarget = tp;
@@ -213,7 +215,8 @@ namespace FPSLAN
                 cmd.meleePressed = distToTarget <= brawler.melee.range * 0.9f && aimErr <= Mathf.Max(m_FireAngle, 25f);
                 if (cmd.meleePressed) cmd.fire = false;
 
-                if (m_Self.Combat.SuperReady)
+                // Supers de modo já ativos (Minigun/tiro fatal) usam-se com o ataque normal; carregar outra vez cancelaria
+                if (m_Self.Combat.SuperReady && !m_Self.Combat.InSuperMode)
                 {
                     float superRange = profile.superUseRange;
                     if (profile.superIsEscape)

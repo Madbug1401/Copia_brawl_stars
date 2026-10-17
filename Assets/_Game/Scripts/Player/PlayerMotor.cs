@@ -123,20 +123,23 @@ namespace FPSLAN
             }
 
             // --- Move ---
-            Vector3 wish = transform.right * cmd.move.x + transform.forward * cmd.move.y;
+            // Imobilizado (armadilha): pode olhar e atacar, mas não anda nem salta
+            bool rooted = m_Player.Health.IsRooted;
+            Vector3 wish = rooted ? Vector3.zero : transform.right * cmd.move.x + transform.forward * cmd.move.y;
             if (wish.sqrMagnitude > 1f) wish.Normalize();
 
-            float sprintAmount = cmd.sprint && cmd.move.y > 0.1f ? 1f : 0f;
+            float sprintAmount = cmd.sprint && cmd.move.y > 0.1f && !rooted ? 1f : 0f;
             m_Sprinting = sprintAmount > 0.001f && alive;
-            float speed = Mathf.Lerp(move.walkSpeed, move.sprintSpeed, sprintAmount) *
-                m_Player.Health.SpeedMultiplier;
+            // Velocidade efetiva = base do Brawler × melhorias/pet (calculados no host) × estados
+            float speed = Mathf.Lerp(move.walkSpeed, move.sprintSpeed * m_Player.SprintMultiplier, sprintAmount) *
+                m_Player.SpeedMultiplier * m_Player.Health.SpeedMultiplier;
 
             bool grounded = m_Controller.isGrounded;
             m_CoyoteTimer = grounded ? coyoteTime : m_CoyoteTimer - dt;
 
             // Plataformas de salto
             m_PadCooldown -= dt;
-            if (grounded && alive && m_PadCooldown <= 0f && !m_Launched)
+            if (grounded && alive && !rooted && m_PadCooldown <= 0f && !m_Launched)
             {
                 var pad = JumpPad.Find(transform.position);
                 if (pad != null)
@@ -164,7 +167,13 @@ namespace FPSLAN
             if (cmd.jumpPressed) m_JumpBuffer = jumpBufferTime;
             else m_JumpBuffer -= dt;
 
-            if (m_JumpBuffer > 0f && m_CoyoteTimer > 0f && !m_Launched)
+            if (rooted)
+            {
+                m_HorizontalVelocity = Vector3.zero;
+                m_ExternalVelocity = Vector3.zero;
+                m_LaunchVelocity = Vector3.zero;
+            }
+            if (m_JumpBuffer > 0f && m_CoyoteTimer > 0f && !m_Launched && !rooted)
             {
                 m_VerticalVelocity = Mathf.Sqrt(2f * gravity * move.jumpHeight);
                 m_JumpBuffer = 0f;

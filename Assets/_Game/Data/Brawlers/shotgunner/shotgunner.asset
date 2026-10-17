@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: shotgunner
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.BrawlerDefinition
   brawlerId: shotgunner
-  displayName: Brasa
-  role: "Ca\xE7adeira \u2014 leque de bagos que arrasa de perto; Super: rajada gigante que empurra e destr\xF3i cobertura"
+  displayName: Riot
+  shortName: 
+  role: "Shotgun / Combate pr\xF3ximo \u2014 6 bagos: 54 de perto, 18 de longe; Especial: rajada que empurra e destr\xF3i cobertura"
   available: 1
   stats:
     maxHealth: 135
@@ -32,6 +33,22 @@ MonoBehaviour:
   super:
     attack: {fileID: 11400000, guid: 21fd8141c6c84044a900de198d6b779f, type: 2}
     chargeRequired: 230
+    passiveChargePerSecond: 0
+    activation: 0
+    mode:
+      label: 
+      duration: 0
+      maxShots: 1
+      shotCooldown: 0.3
+      activationDelay: 0.35
+      consumeOnFirstShot: 0
+      cancellable: 0
+  melee:
+    damage: 42
+    range: 2.25
+    radius: 0.32
+    cooldown: 0.8
+    animationDuration: 0.3
   abilities: []
   firstPerson:
     rig: 5
@@ -58,15 +75,15 @@ MonoBehaviour:
       bulk: 1.08
   animations:
     animatorController: {fileID: 0}
-    attackKick: 1.3
+    attackKick: 2
     attackDuration: 0.45
-    reloadDuration: 0.45
+    reloadDuration: 0.6
     superDuration: 0.6
     bobAmount: 1
   vfx:
     primaryColor: {r: 1, g: 0.6, b: 0.25, a: 1}
     superColor: {r: 1, g: 0.35, b: 0.15, a: 1}
-    muzzleFlashScale: 1.6
+    muzzleFlashScale: 1.8
     impactScale: 1
   sfx:
     primary: 15

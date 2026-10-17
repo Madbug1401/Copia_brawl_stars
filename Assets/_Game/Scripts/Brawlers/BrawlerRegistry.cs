@@ -40,6 +40,29 @@ namespace FPSLAN
         public static IReadOnlyList<BrawlerDefinition> All =>
             Instance != null ? (IReadOnlyList<BrawlerDefinition>)Instance.brawlers : System.Array.Empty<BrawlerDefinition>();
 
+        /// <summary>Como All, mas sem registar erro se a registry não existir (testes, sistemas opcionais).</summary>
+        public static IReadOnlyList<BrawlerDefinition> AllQuiet
+        {
+            get
+            {
+                if (s_Instance == null)
+                {
+                    s_Instance = Resources.Load<BrawlerRegistry>(ResourcePath);
+                    if (s_Instance != null) s_Instance.Index();
+                }
+                return s_Instance != null ? (IReadOnlyList<BrawlerDefinition>)s_Instance.brawlers : System.Array.Empty<BrawlerDefinition>();
+            }
+        }
+
+        /// <summary>Brawler pelo id técnico estável (ex.: "gunslinger"); null se não existir.</summary>
+        public static BrawlerDefinition FindById(string brawlerId)
+        {
+            if (string.IsNullOrEmpty(brawlerId)) return null;
+            foreach (var b in AllQuiet)
+                if (b != null && b.brawlerId == brawlerId) return b;
+            return null;
+        }
+
         void Index()
         {
             for (int i = 0; i < brawlers.Count; i++)

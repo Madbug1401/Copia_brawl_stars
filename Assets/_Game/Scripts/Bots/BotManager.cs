@@ -44,7 +44,8 @@ namespace FPSLAN
 
             int hero = heroId >= 0 ? BrawlerRegistry.Sanitize(heroId) : BrawlerRegistry.RandomAvailableIndex();
             s_Counter++;
-            string botName = "Bot " + BrawlerRegistry.Get(hero).displayName + " " + s_Counter;
+            // Nome curto (os nomes de rede têm no máximo 16 caracteres; ex.: "Bot L.M 3")
+            string botName = "Bot " + BrawlerRegistry.Get(hero).ShortName + " " + s_Counter;
 
             var go = Object.Instantiate(prefab, new Vector3(0f, 4f, 0f), Quaternion.identity);
             go.GetComponent<PlayerNetwork>().ConfigureAsBot(botName, hero, Difficulty);

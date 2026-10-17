@@ -9,16 +9,22 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1c35d026438d5304cbbc4286aa80ebef, type: 3}
+  m_Script: {fileID: 11500000, guid: 0c6733c4dc019854c90496068bb69e18, type: 3}
   m_Name: artillery_Super_Delivery
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.ArcProjectileDelivery
-  count: 1
-  interval: 0.08
-  landingSpread: 1.4
-  speed: 16
-  range: 20
-  gravity: 22
-  minFlightTime: 0.55
-  maxFlightTime: 1.1
-  radius: 0.35
-  fuseDelay: 0.7
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.PlaceTrapsDelivery
+  count: 5
+  spread: 1.6
+  range: 13
+  trap:
+    kind: 0
+    armTime: 0.9
+    triggerRadius: 1.7
+    warningTime: 0.45
+    lifetime: 25
+    hiddenFromEnemies: 1
+    color: {r: 1, g: 0.45, b: 0.2, a: 1}
+    destroyedByEnemyExplosions: 1
+    destroyedByEnemyMelee: 1
+    removeOnOwnerDeath: 0
+    maxActivePerOwner: 10
+    placementClearance: 0.3

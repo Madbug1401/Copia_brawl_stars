@@ -26,6 +26,8 @@ namespace FPSLAN
     {
         public static MatchManager Instance { get; private set; }
         public static GameMode MenuSelectedMode { get; set; } = GameMode.Deathmatch;
+        /// <summary>Partida competitiva (melhorias normalizadas, pets cosméticos) escolhida no menu pelo host.</summary>
+        public static bool MenuSelectedCompetitive { get; set; }
 
         public int killLimit = 15;
         public float matchMinutes = 8f;
@@ -42,6 +44,15 @@ namespace FPSLAN
         public readonly NetworkVariable<int> RedScore = new NetworkVariable<int>(0);
         public readonly NetworkVariable<int> RoundNumber = new NetworkVariable<int>(1);
         public readonly NetworkVariable<bool> IsRoundIntermission = new NetworkVariable<bool>(false);
+        /// <summary>Casual (melhorias limitadas ativas) ou competitiva (atributos normalizados).</summary>
+        public readonly NetworkVariable<bool> Competitive = new NetworkVariable<bool>(false);
+        /// <summary>Id único da partida atual (as recompensas são aplicadas uma vez por id).</summary>
+        public readonly NetworkVariable<FixedString64Bytes> MatchId = new NetworkVariable<FixedString64Bytes>();
+
+        // Servidor: recompensas e objetivos
+        bool m_RewardsSent;
+        float m_NextActivitySample;
+        readonly System.Collections.Generic.List<ulong> m_EliminationOrder = new System.Collections.Generic.List<ulong>();
 
         public static bool IsMatchOver => Instance != null && Instance.IsSpawned && Instance.Phase.Value == MatchPhase.Ended;
         public static bool IsCombatActive => Instance == null || !Instance.IsSpawned ||
@@ -102,6 +113,12 @@ namespace FPSLAN
             if (Mode.Value == GameMode.Wipeout || Mode.Value == GameMode.Knockout)
                 ServerAssignMissingTeams();
 
+            if (Phase.Value == MatchPhase.Playing && Time.time >= m_NextActivitySample)
+            {
+                m_NextActivitySample = Time.time + 1f;
+                MatchStatsTracker.ServerSample();
+            }
+
             double now = NetworkManager.ServerTime.Time;
             if (now < PhaseEndTime.Value) return;
 
@@ -155,21 +172,29 @@ namespace FPSLAN
         void ServerStartMatch()
         {
             Mode.Value = MenuSelectedMode;
+            Competitive.Value = MenuSelectedCompetitive;
+            MatchId.Value = new FixedString64Bytes(System.Guid.NewGuid().ToString("N"));
             Phase.Value = MatchPhase.Playing;
             WinnerName.Value = default;
             BlueScore.Value = 0;
             RedScore.Value = 0;
             RoundNumber.Value = 1;
             IsRoundIntermission.Value = false;
+            m_RewardsSent = false;
+            m_EliminationOrder.Clear();
             DestructibleCover.ServerRestoreAll();
+            MatchStatsTracker.ServerBeginMatch(NetworkManager.ServerTime.Time);
 
             foreach (var p in PlayerNetwork.All)
             {
                 if (p == null || !p.IsSpawned) continue;
                 p.Kills.Value = 0;
                 p.Deaths.Value = 0;
+                p.Assists.Value = 0;
                 p.TeamId.Value = -1;
                 p.Combat.ServerResetSuper();
+                // Casual/competitivo pode ter mudado: os atributos efetivos são recalculados
+                p.ServerRefreshEffectiveStats();
             }
 
             if (Mode.Value == GameMode.Wipeout || Mode.Value == GameMode.Knockout)
@@ -230,6 +255,7 @@ namespace FPSLAN
             IsRoundIntermission.Value = false;
             WinnerName.Value = new FixedString64Bytes(winner != null ? winner.DisplayName : "Ninguém");
             PhaseEndTime.Value = NetworkManager.ServerTime.Time + resultsSeconds;
+            ServerSendRewards(p => winner != null && p == winner, winner == null);
         }
 
         void ServerEndMatch(int winningTeam)
@@ -239,6 +265,57 @@ namespace FPSLAN
             string name = winningTeam == 0 ? "Equipa Azul" : winningTeam == 1 ? "Equipa Vermelha" : "Empate";
             WinnerName.Value = new FixedString64Bytes(name);
             PhaseEndTime.Value = NetworkManager.ServerTime.Time + resultsSeconds;
+            ServerSendRewards(p => winningTeam >= 0 && p.TeamId.Value == winningTeam, winningTeam < 0);
+        }
+
+        // ------------------------------------------------------------------ recompensas (autoridade do host)
+
+        /// <summary>
+        /// Host: calcula o resultado de cada jogador humano (participação, XP, moedas, XP do pet) e envia-o só ao dono.
+        /// Uma vez por partida; o cliente ainda ignora ids de partida repetidos. Bots não recebem progressão.
+        /// </summary>
+        void ServerSendRewards(System.Func<PlayerNetwork, bool> isWinner, bool draw)
+        {
+            if (!IsServer || m_RewardsSent) return;
+            m_RewardsSent = true;
+            double now = NetworkManager.ServerTime.Time;
+            var gx = GameExperience.Current;
+            string matchId = MatchId.Value.ToString();
+            bool showdown = Mode.Value == GameMode.Showdown;
+            var placements = showdown ? ShowdownPlacements() : null;
+
+            foreach (var p in PlayerNetwork.All)
+            {
+                if (p == null || !p.IsSpawned || p.IsBot) continue;
+                int placement = 0;
+                if (placements != null && placements.TryGetValue(p.Id, out var place))
+                {
+                    placement = place;
+                    if (place <= 3) MatchStatsTracker.ServerOnObjective(p); // Showdown: terminar no top 3
+                }
+                var result = MatchStatsTracker.ServerBuildResult(p, matchId, Mode.Value, Competitive.Value, isWinner(p) && !draw, draw,
+                    placement, now, gx.Config, gx.PetCatalog);
+                MatchResultRpc(result, RpcTarget.Single(p.OwnerClientId, RpcTargetUse.Temp));
+            }
+        }
+
+        /// <summary>Showdown: 1 = último vivo; os restantes pela ordem inversa de eliminação.</summary>
+        System.Collections.Generic.Dictionary<ulong, int> ShowdownPlacements()
+        {
+            var map = new System.Collections.Generic.Dictionary<ulong, int>();
+            int place = 1;
+            foreach (var p in PlayerNetwork.All)
+                if (p != null && p.IsSpawned && !p.Health.IsDead) map[p.Id] = place++;
+            for (int i = m_EliminationOrder.Count - 1; i >= 0; i--)
+                if (!map.ContainsKey(m_EliminationOrder[i])) map[m_EliminationOrder[i]] = place++;
+            return map;
+        }
+
+        [Rpc(SendTo.SpecifiedInParams)]
+        void MatchResultRpc(MatchResultData result, RpcParams rpcParams = default)
+        {
+            var report = GameExperience.Current.Progression.ApplyMatchResult(result);
+            ProgressionUI.ShowMatchReport(report);
         }
 
         PlayerNetwork TopPlayer()
@@ -300,6 +377,7 @@ namespace FPSLAN
             IsRoundIntermission.Value = false;
             WinnerName.Value = new FixedString64Bytes("Empate");
             PhaseEndTime.Value = NetworkManager.ServerTime.Time + resultsSeconds;
+            ServerSendRewards(p => false, true);
         }
 
         int AliveCountForTeam(int team)
@@ -352,6 +430,11 @@ namespace FPSLAN
             if (winningTeam == 0) BlueScore.Value++;
             else if (winningTeam == 1) RedScore.Value++;
 
+            // Objetivo: ronda ganha conta para cada membro da equipa vencedora
+            if (winningTeam >= 0)
+                foreach (var p in PlayerNetwork.All)
+                    if (p != null && p.IsSpawned && p.TeamId.Value == winningTeam) MatchStatsTracker.ServerOnObjective(p);
+
             if (BlueScore.Value >= 2 || RedScore.Value >= 2)
             {
                 ServerEndMatch(BlueScore.Value > RedScore.Value ? 0 : 1);
@@ -374,6 +457,15 @@ namespace FPSLAN
         {
             var killerName = killer != null && killer != victim ? killer.DisplayName : "";
             KillFeedRpc(new FixedString64Bytes(killerName), new FixedString64Bytes(victim != null ? victim.DisplayName : "?"));
+
+            if (victim != null && Mode.Value == GameMode.Showdown && !m_EliminationOrder.Contains(victim.Id)) m_EliminationOrder.Add(victim.Id);
+            // Objetivo: primeira eliminação da partida
+            bool validKill = killer != null && killer != victim && !AreTeammates(killer, victim);
+            if (validKill && Phase.Value == MatchPhase.Playing && !IsRoundIntermission.Value && MatchStatsTracker.ServerTryFirstBlood())
+            {
+                MatchStatsTracker.ServerOnObjective(killer);
+                FirstBloodRpc(new FixedString64Bytes(killer.DisplayName));
+            }
 
             if (Mode.Value == GameMode.Showdown && Phase.Value == MatchPhase.Playing && !IsRoundIntermission.Value)
             {
@@ -416,6 +508,12 @@ namespace FPSLAN
         void KillFeedRpc(FixedString64Bytes killer, FixedString64Bytes victim)
         {
             GameUI.AddKillFeed(killer.ToString(), victim.ToString());
+        }
+
+        [Rpc(SendTo.Everyone)]
+        void FirstBloodRpc(FixedString64Bytes killer)
+        {
+            GameUI.Toast("PRIMEIRA ELIMINAÇÃO · " + killer.ToString().ToUpperInvariant(), new Color(1f, 0.45f, 0.3f));
         }
     }
 }

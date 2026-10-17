@@ -13,11 +13,12 @@ MonoBehaviour:
   m_Name: gunslinger
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.BrawlerDefinition
   brawlerId: gunslinger
-  displayName: Dex
-  role: "Pistoleiro \u2014 rajada de 6 tiros de longo alcance; Super: tempestade de balas que destr\xF3i cobertura"
+  displayName: Ekko
+  shortName: 
+  role: "Pistoleiro / Metralhador \u2014 duas metralhadoras autom\xE1ticas, fortes de perto; Especial: Minigun (at\xE9 200 de dano)"
   available: 1
   stats:
-    maxHealth: 100
+    maxHealth: 120
     regenDelay: 3
     regenPercentPerSecond: 0.15
   movement:
@@ -27,21 +28,37 @@ MonoBehaviour:
   primary:
     attack: {fileID: 11400000, guid: 4ca19a1f1fc302f418b3d0612ef5ecf8, type: 2}
     maxCharges: 3
-    reloadTimePerCharge: 1.3
-    cooldown: 0.5
+    reloadTimePerCharge: 1.1
+    cooldown: 0.42
   super:
     attack: {fileID: 11400000, guid: a6ee7bccf2532444097cdc0b010fd261, type: 2}
-    chargeRequired: 216
+    chargeRequired: 300
+    passiveChargePerSecond: 0
+    activation: 1
+    mode:
+      label: Minigun
+      duration: 3.2
+      maxShots: 10
+      shotCooldown: 0.3
+      activationDelay: 0.4
+      consumeOnFirstShot: 0
+      cancellable: 0
+  melee:
+    damage: 42
+    range: 2.25
+    radius: 0.32
+    cooldown: 0.8
+    animationDuration: 0.3
   abilities: []
   firstPerson:
-    rig: 1
+    rig: 7
     prefabOverride: {fileID: 0}
     muzzleOffsets:
-    - {x: 0.2, y: -0.13, z: 0.5}
-    - {x: -0.2, y: -0.13, z: 0.5}
+    - {x: 0.19, y: -0.175, z: 0.68}
+    - {x: -0.19, y: -0.175, z: 0.68}
     accentColor: {r: 0.95, g: 0.75, b: 0.35, a: 1}
   thirdPerson:
-    rig: 1
+    rig: 7
     prefabOverride: {fileID: 0}
     muzzleOffsets:
     - {x: 0.32, y: 0.02, z: 0.7}
@@ -60,24 +77,24 @@ MonoBehaviour:
       bulk: 0.95
   animations:
     animatorController: {fileID: 0}
-    attackKick: 0.8
-    attackDuration: 0.4
+    attackKick: 0.6
+    attackDuration: 0.35
     reloadDuration: 0.35
     superDuration: 0.6
     bobAmount: 1
   vfx:
     primaryColor: {r: 1, g: 0.85, b: 0.35, a: 1}
-    superColor: {r: 1, g: 0.35, b: 0.25, a: 1}
-    muzzleFlashScale: 1
+    superColor: {r: 1, g: 0.45, b: 0.2, a: 1}
+    muzzleFlashScale: 0.8
     impactScale: 1
   sfx:
-    primary: 0
-    super: 1
+    primary: 24
+    super: 25
     impact: 2
     primaryClip: {fileID: 0}
     superClip: {fileID: 0}
   bot:
-    preferredRange: 18
-    superUseRange: 30
+    preferredRange: 12
+    superUseRange: 16
     aimAtFeet: 0
     superIsEscape: 0

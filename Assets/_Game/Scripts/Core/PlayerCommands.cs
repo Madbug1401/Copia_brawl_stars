@@ -106,5 +106,37 @@ namespace FPSLAN
             if (!Raycast(a, d / dist, dist, from, out var hit)) return true;
             return hit.collider.transform.IsChildOf(to.transform);
         }
+
+        // ------------------------------------------------------------------ headshots
+
+        /// <summary>Centro da zona da cabeça acima dos pés (cabeça chibi grande, cápsula de 1,8 m).</summary>
+        public const float HeadCenterHeight = 1.5f;
+        /// <summary>Raio da zona da cabeça.</summary>
+        public const float HeadRadius = 0.3f;
+        /// <summary>Altura mínima do ponto de impacto para contar como cabeça (abaixo disto é tronco/ombros).</summary>
+        public const float HeadMinHitHeight = 1.18f;
+
+        /// <summary>
+        /// Deteção de headshot: o raio do disparo tem de passar pela esfera da cabeça E o ponto de impacto tem de estar
+        /// acima dos ombros. Sem raio (rayDir = 0) usa só a altura do impacto (compatível com o comportamento antigo).
+        /// </summary>
+        public static bool IsHeadshot(PlayerHealth victim, Vector3 hitPoint, Vector3 rayOrigin, Vector3 rayDir)
+        {
+            if (victim == null) return false;
+            return IsHeadshot(victim.transform.position, hitPoint, rayOrigin, rayDir);
+        }
+
+        public static bool IsHeadshot(Vector3 victimFeet, Vector3 hitPoint, Vector3 rayOrigin, Vector3 rayDir)
+        {
+            float hitHeight = hitPoint.y - victimFeet.y;
+            if (rayDir.sqrMagnitude < 0.0001f) return hitHeight >= CombatSystem.HeadshotHeight;
+            if (hitHeight < HeadMinHitHeight) return false;
+            var dir = rayDir.normalized;
+            var head = victimFeet + Vector3.up * HeadCenterHeight;
+            // Distância do centro da cabeça à reta do disparo
+            float along = Vector3.Dot(head - rayOrigin, dir);
+            var closest = rayOrigin + dir * Mathf.Max(0f, along);
+            return (head - closest).sqrMagnitude <= HeadRadius * HeadRadius;
+        }
     }
 }

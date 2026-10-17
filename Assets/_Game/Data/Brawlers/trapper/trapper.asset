@@ -13,11 +13,12 @@ MonoBehaviour:
   m_Name: trapper
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.BrawlerDefinition
   brawlerId: trapper
-  displayName: Vigia
-  role: "Armadilheiro \u2014 tr\xEAs flechas explosivas em leque; Super: tr\xEAs minas escondidas"
+  displayName: N.Cage
+  shortName: 
+  role: "Arqueiro / Controlo \u2014 tr\xEAs flechas por ataque (100 se todas acertarem); Especial: tr\xEAs armadilhas que prendem e envenenam"
   available: 1
   stats:
-    maxHealth: 125
+    maxHealth: 110
     regenDelay: 3
     regenPercentPerSecond: 0.15
   movement:
@@ -27,11 +28,27 @@ MonoBehaviour:
   primary:
     attack: {fileID: 11400000, guid: fb133e11d097e2a4092baa8b32755fb9, type: 2}
     maxCharges: 3
-    reloadTimePerCharge: 1.7
-    cooldown: 0.55
+    reloadTimePerCharge: 1.6
+    cooldown: 0.6
   super:
     attack: {fileID: 11400000, guid: 2a0e2fdde291af144a102d39aee8d55a, type: 2}
-    chargeRequired: 180
+    chargeRequired: 170
+    passiveChargePerSecond: 0
+    activation: 0
+    mode:
+      label: 
+      duration: 0
+      maxShots: 1
+      shotCooldown: 0.3
+      activationDelay: 0.35
+      consumeOnFirstShot: 0
+      cancellable: 0
+  melee:
+    damage: 42
+    range: 2.25
+    radius: 0.32
+    cooldown: 0.8
+    animationDuration: 0.3
   abilities: []
   firstPerson:
     rig: 3
@@ -65,7 +82,7 @@ MonoBehaviour:
     bobAmount: 1
   vfx:
     primaryColor: {r: 0.45, g: 0.75, b: 1, a: 1}
-    superColor: {r: 0.35, g: 0.6, b: 1, a: 1}
+    superColor: {r: 0.45, g: 0.9, b: 0.35, a: 1}
     muzzleFlashScale: 1
     impactScale: 1
   sfx:
@@ -75,7 +92,7 @@ MonoBehaviour:
     primaryClip: {fileID: 0}
     superClip: {fileID: 0}
   bot:
-    preferredRange: 15
+    preferredRange: 14
     superUseRange: 10
     aimAtFeet: 0
     superIsEscape: 0
