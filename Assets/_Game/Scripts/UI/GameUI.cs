@@ -81,6 +81,8 @@ namespace FPSLAN
             m_Hero = BrawlerRegistry.Sanitize(GameSession.LocalHeroId);
             m_MenuBots = PlayerPrefs.GetInt("fpslan.bots", 0);
             MatchManager.MenuSelectedMode = (GameMode)Mathf.Clamp(PlayerPrefs.GetInt("fpslan.mode", 0), 0, 3);
+            MatchManager.MenuSelectedMap = Mathf.Max(0, PlayerPrefs.GetInt("fpslan.map", 0));
+            MapInfo.Activate(MatchManager.MenuSelectedMap);
             BotManager.Difficulty = (BotDifficulty)PlayerPrefs.GetInt("fpslan.botdiff", (int)BotDifficulty.Normal);
             m_LocalIps = ConnectionManager.GetLocalIPv4();
             m_Preview = new BrawlerPreview();
@@ -538,6 +540,13 @@ namespace FPSLAN
             if (GUILayout.Button("›", m_Button, GUILayout.Width(48 * s), GUILayout.Height(38 * s))) CycleGameMode(1);
             GUILayout.EndHorizontal();
 
+            GUILayout.Label("Mapa", m_Small);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("‹", m_Button, GUILayout.Width(48 * s), GUILayout.Height(38 * s))) CycleMap(-1);
+            GUILayout.Label(MapLabel(MatchManager.MenuSelectedMap), m_Big, GUILayout.Height(38 * s));
+            if (GUILayout.Button("›", m_Button, GUILayout.Width(48 * s), GUILayout.Height(38 * s))) CycleMap(1);
+            GUILayout.EndHorizontal();
+
             GUILayout.Space(8 * s);
             bool busy = NM != null && NM.IsListening;
             GUI.enabled = !busy;
@@ -752,6 +761,23 @@ namespace FPSLAN
             int value = ((int)MatchManager.MenuSelectedMode + delta + count) % count;
             MatchManager.MenuSelectedMode = (GameMode)value;
             PlayerPrefs.SetInt("fpslan.mode", value);
+        }
+
+        void CycleMap(int delta)
+        {
+            int count = MapInfo.Count;
+            int value = ((Mathf.Clamp(MatchManager.MenuSelectedMap, 0, count - 1) + delta) % count + count) % count;
+            MatchManager.MenuSelectedMap = value;
+            PlayerPrefs.SetInt("fpslan.map", value);
+            // Fora de jogo, a câmara do menu passa a mostrar o mapa escolhido
+            if (NM == null || !NM.IsListening) MapInfo.Activate(value);
+        }
+
+        static string MapLabel(int index)
+        {
+            var name = MapInfo.NameOf(index).ToUpperInvariant();
+            var tagline = MapInfo.TaglineOf(index);
+            return string.IsNullOrEmpty(tagline) ? name : name + " · " + tagline;
         }
 
         static string GameModeLabel(GameMode mode)

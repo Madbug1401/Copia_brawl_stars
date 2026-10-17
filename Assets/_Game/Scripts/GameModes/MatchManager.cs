@@ -21,11 +21,14 @@ namespace FPSLAN
     /// <summary>
     /// Autoridade do host para ciclo de partida e modos. Deathmatch mantém as regras originais;
     /// Wipeout usa pontuação por equipa; Knockout usa rondas; Showdown é último jogador vivo.
+    /// O mapa (Pradaria, Bosque...) é escolhido pelo host e vale para qualquer modo.
     /// </summary>
     public class MatchManager : NetworkBehaviour
     {
         public static MatchManager Instance { get; private set; }
         public static GameMode MenuSelectedMode { get; set; } = GameMode.Deathmatch;
+        /// <summary>Mapa escolhido no menu do host (índice do MapInfo).</summary>
+        public static int MenuSelectedMap { get; set; }
 
         public int killLimit = 15;
         public float matchMinutes = 8f;
@@ -36,6 +39,7 @@ namespace FPSLAN
 
         public readonly NetworkVariable<MatchPhase> Phase = new NetworkVariable<MatchPhase>(MatchPhase.Playing);
         public readonly NetworkVariable<GameMode> Mode = new NetworkVariable<GameMode>(GameMode.Deathmatch);
+        public readonly NetworkVariable<byte> Map = new NetworkVariable<byte>(0);
         public readonly NetworkVariable<double> PhaseEndTime = new NetworkVariable<double>(0);
         public readonly NetworkVariable<FixedString64Bytes> WinnerName = new NetworkVariable<FixedString64Bytes>();
         public readonly NetworkVariable<int> BlueScore = new NetworkVariable<int>(0);
@@ -92,8 +96,19 @@ namespace FPSLAN
         public override void OnNetworkSpawn()
         {
             Instance = this;
+            Map.OnValueChanged += OnMapChanged;
             if (IsServer) ServerStartMatch();
+            else MapInfo.Activate(Map.Value);
         }
+
+        public override void OnNetworkDespawn()
+        {
+            Map.OnValueChanged -= OnMapChanged;
+            // De volta ao menu: mostra o mapa escolhido localmente
+            MapInfo.Activate(MenuSelectedMap);
+        }
+
+        static void OnMapChanged(byte previous, byte current) => MapInfo.Activate(current);
 
         void Update()
         {
@@ -155,6 +170,8 @@ namespace FPSLAN
         void ServerStartMatch()
         {
             Mode.Value = MenuSelectedMode;
+            Map.Value = (byte)Mathf.Clamp(MenuSelectedMap, 0, MapInfo.Count - 1);
+            MapInfo.Activate(Map.Value);
             Phase.Value = MatchPhase.Playing;
             WinnerName.Value = default;
             BlueScore.Value = 0;

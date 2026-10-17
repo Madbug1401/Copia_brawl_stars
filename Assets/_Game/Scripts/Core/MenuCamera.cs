@@ -26,8 +26,10 @@ namespace FPSLAN
         {
             m_Angle += speed * Time.deltaTime;
             var rad = m_Angle * Mathf.Deg2Rad;
-            transform.position = focus + new Vector3(Mathf.Sin(rad) * radius, height, Mathf.Cos(rad) * radius);
-            transform.LookAt(focus);
+            // Orbita o mapa ativo (cada mapa está noutro sítio da cena)
+            var center = focus + MapInfo.Center;
+            transform.position = center + new Vector3(Mathf.Sin(rad) * radius, height, Mathf.Cos(rad) * radius);
+            transform.LookAt(center);
         }
     }
 }

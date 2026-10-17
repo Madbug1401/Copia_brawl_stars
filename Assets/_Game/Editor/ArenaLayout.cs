@@ -50,7 +50,7 @@ namespace FPSLAN.EditorTools
     /// plataformas de salto para o centro e spawns protegidos nos cantos e nos meios.
     /// É só dados — o ProjectSetup transforma cada peça em geometria.
     /// </summary>
-    public static class ArenaLayout
+    public static partial class ArenaLayout
     {
         public const float Half = 26f;
 
@@ -124,8 +124,11 @@ namespace FPSLAN.EditorTools
                 }
             }
 
-            Scatter(list);
-            Waypoints(list);
+            Scatter(list, Half, 1234);
+            Waypoints(list, Half);
+            // Fundo das rampas (os bots sobem à plataforma a partir daqui)
+            for (int k = 0; k < 4; k++)
+                list.Add(new Piece { kind = PieceKind.Waypoint, center = new Quadrant(list, k).R(new Vector3(0f, 0f, 9.2f)), size = Vector3.one });
             return list;
         }
 
@@ -208,9 +211,9 @@ namespace FPSLAN.EditorTools
             return Mathf.Abs(lx) <= half.x + margin && Mathf.Abs(lz) <= half.y + margin;
         }
 
-        static bool Free(List<Piece> list, Vector3 point, float margin, bool avoidBushes, bool avoidPaths)
+        static bool Free(List<Piece> list, float half, Vector3 point, float margin, bool avoidBushes, bool avoidPaths)
         {
-            if (Mathf.Abs(point.x) > Half - 0.8f || Mathf.Abs(point.z) > Half - 0.8f) return false;
+            if (Mathf.Abs(point.x) > half - 0.8f || Mathf.Abs(point.z) > half - 0.8f) return false;
             foreach (var p in list)
             {
                 if (p.Blocks && Overlaps(p, point, margin)) return false;
@@ -221,13 +224,13 @@ namespace FPSLAN.EditorTools
         }
 
         /// <summary>Flores, tufos de relva e cogumelos espalhados (determinístico, com simetria).</summary>
-        static void Scatter(List<Piece> list)
+        static void Scatter(List<Piece> list, float half, int seed)
         {
-            var rng = new System.Random(1234);
+            var rng = new System.Random(seed);
             var extra = new List<Piece>();
             for (int i = 0; i < 70; i++)
             {
-                var p = new Vector3((float)rng.NextDouble() * Half, 0f, (float)rng.NextDouble() * Half);
+                var p = new Vector3((float)rng.NextDouble() * half, 0f, (float)rng.NextDouble() * half);
                 double roll = rng.NextDouble();
                 var kind = roll < 0.45 ? PieceKind.Grass : (roll < 0.85 ? PieceKind.Flower : PieceKind.Mushroom);
                 int variant = rng.Next(0, 4);
@@ -235,7 +238,7 @@ namespace FPSLAN.EditorTools
                 {
                     var q = new Quadrant(extra, k);
                     var w = q.R(p);
-                    if (!Free(list, w, 0.4f, true, true)) continue;
+                    if (!Free(list, half, w, 0.4f, true, true)) continue;
                     extra.Add(new Piece { kind = kind, center = w, size = Vector3.one, yaw = (float)(i * 47 % 360), variant = variant });
                 }
             }
@@ -243,20 +246,29 @@ namespace FPSLAN.EditorTools
         }
 
         /// <summary>Pontos de patrulha dos bots: grelha com folga para obstáculos.</summary>
-        static void Waypoints(List<Piece> list)
+        static void Waypoints(List<Piece> list, float half)
         {
             var extra = new List<Piece>();
-            for (float x = -Half + 3f; x <= Half - 3f; x += 4f)
-                for (float z = -Half + 3f; z <= Half - 3f; z += 4f)
+            for (float x = -half + 3f; x <= half - 3f; x += 4f)
+                for (float z = -half + 3f; z <= half - 3f; z += 4f)
                 {
                     var p = new Vector3(x, 0f, z);
-                    if (!Free(list, p, 1.1f, false, false)) continue;
+                    if (!Free(list, half, p, 1.1f, false, false)) continue;
                     extra.Add(new Piece { kind = PieceKind.Waypoint, center = p, size = Vector3.one });
                 }
-            // Fundo das rampas (os bots sobem à plataforma a partir daqui)
-            for (int k = 0; k < 4; k++)
-                extra.Add(new Piece { kind = PieceKind.Waypoint, center = new Quadrant(extra, k).R(new Vector3(0f, 0f, 9.2f)), size = Vector3.one });
             list.AddRange(extra);
+        }
+
+        /// <summary>Desloca o mapa inteiro (cada mapa vive na mesma cena, afastado dos outros).</summary>
+        public static void Offset(List<Piece> list, Vector3 offset)
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                var p = list[i];
+                p.center += offset;
+                if (p.kind == PieceKind.JumpPad) p.target += offset;
+                list[i] = p;
+            }
         }
     }
 }

@@ -3,8 +3,8 @@
 ## Como abrir
 
 1. Abre o projeto no Unity (6000.6). Ao compilar, o projeto **regenera sozinho** o conteúdo novo
-   (versão de conteúdo `ProjectSetup.SetupVersion = 2`):
-   dados dos 6 Brawlers, materiais cartoon, prefab `Player` e a cena `Arena` com o mapa **Pradaria**.
+   (versão de conteúdo `ProjectSetup.SetupVersion = 3`):
+   dados dos 6 Brawlers, materiais cartoon, prefab `Player` e a cena `Arena` com os mapas **Pradaria** e **Bosque**.
    - Se por algum motivo não correr: menu **FPS-LAN → Gerar dados dos Brawlers** e depois
      **FPS-LAN → Regenerar Arena + Player**.
 2. Abre a cena `Assets/_Game/Scenes/Arena.unity`, carrega **Play** e escolhe **TREINO (com bots)** ou **HOST**.
@@ -65,6 +65,22 @@
 - **Plataformas de salto**: 4 plataformas que lançam o jogador em arco até à plataforma central.
 - O layout é dados (`Editor/ArenaLayout.cs`); o `ProjectSetup` transforma cada peça em geometria.
 
+### Mapa novo: Bosque (46×46 m)
+- Clareira de floresta ao **fim da tarde** (sol baixo e quente, nevoeiro alaranjado, relva mais escura),
+  com a mesma simetria rotacional de 4 lados e 8 spawns protegidos.
+- **Lago no centro**: corta a linha de tiro a direito pelo meio e obriga a contornar; arbustos e rochedos à volta.
+- **4 torres de madeira** nas diagonais, com rampa e mureta em L virada para o centro (jogo vertical).
+- **Mais arbustos** do que a Pradaria (emboscadas e flancos escondidos), caixotes, vedações, barris e caixotes destrutíveis.
+- **Plataformas de salto** do spawn do meio até ao topo da torre mais próxima.
+- Planta: `Docs/preview/mapa_bosque_planta.png`. Layout em `Editor/ArenaLayoutBosque.cs`.
+
+### Escolher o mapa
+- No menu há uma linha **Mapa** (‹ ›) por baixo do modo de jogo; vale para todos os modos (Deathmatch, Wipeout,
+  Knockout, Showdown) e para o Treino com bots. Quem decide é o **host**; os clientes recebem o mapa ao entrar.
+- Fora de jogo, a câmara do menu passa a mostrar o mapa escolhido.
+- Como funciona: todos os mapas estão na mesma cena, afastados 600 m (a câmara só vê 400 m). O `MatchManager`
+  sincroniza o índice do mapa; `MapInfo` aplica a luz desse mapa e o `SpawnPoint` só usa spawns do mapa ativo.
+
 ### Novos Brawlers
 | Nome | Papel | Principal | Super |
 |---|---|---|---|
@@ -98,7 +114,7 @@ cinto de dinamites), **Vigia** (capuz de raposa, aljava), **Névoa** (máscara d
   `CharacterRig` (boneco 3.ª pessoa), `ViewModelRig` (1.ª pessoa), `WeaponModels`, `ProjectileVisuals`, `MeshMerge`.
 - `Scripts/World/`: `Bush`, `JumpPad`, `MapInfo`, `Spinner`.
 - `Scripts/Combat/Deliveries/LeapDelivery.cs`: Super de salto (movimento do dono + bombas resolvidas no host).
-- `Editor/ArenaLayout.cs` + `Editor/ProjectSetup.cs`: mapa e geração da cena.
+- `Editor/ArenaLayout.cs`, `Editor/ArenaLayoutBosque.cs` + `Editor/ProjectSetup.cs`: mapas e geração da cena.
 
 ## Notas / limitações
 - Tudo é gerado por código com primitivas (sem assets de terceiros): personagens, nomes, sons e efeitos são originais.

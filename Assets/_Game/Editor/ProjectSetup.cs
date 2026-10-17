@@ -13,7 +13,7 @@ using UnityEngine.SceneManagement;
 namespace FPSLAN.EditorTools
 {
     /// <summary>
-    /// Gera o conteúdo do jogo com APIs do Editor: materiais cartoon, cena Arena (mapa "Pradaria"), prefab Player,
+    /// Gera o conteúdo do jogo com APIs do Editor: materiais cartoon, cena Arena (mapas "Pradaria" e "Bosque"), prefab Player,
     /// NetworkManager e iluminação. Corre sozinho na primeira abertura e sempre que a versão do conteúdo sobe
     /// (SetupVersion); depois pode ser repetido pelo menu FPS-LAN.
     /// </summary>
@@ -21,7 +21,7 @@ namespace FPSLAN.EditorTools
     public static class ProjectSetup
     {
         /// <summary>Subir este número faz o projeto regenerar a cena/prefab/dados automaticamente ao abrir.</summary>
-        public const int SetupVersion = 2;
+        public const int SetupVersion = 3;
 
         public const string Root = "Assets/_Game";
         public const string ScenePath = Root + "/Scenes/Arena.unity";
@@ -63,7 +63,7 @@ namespace FPSLAN.EditorTools
 
             Debug.Log(missing
                 ? "[FPS-LAN] Primeira abertura: a gerar cena Arena, prefab Player, materiais e dados..."
-                : "[FPS-LAN] Conteúdo novo (versão " + SetupVersion + "): a regenerar Brawlers, materiais, prefab Player e o mapa Pradaria...");
+                : "[FPS-LAN] Conteúdo novo (versão " + SetupVersion + "): a regenerar Brawlers, materiais, prefab Player e os mapas...");
             BrawlerAssetBuilder.Build();
             BuildAll();
         }
@@ -72,7 +72,7 @@ namespace FPSLAN.EditorTools
         static void RebuildMenu()
         {
             if (!EditorUtility.DisplayDialog("FPS-LAN",
-                    "Isto recria a cena Arena (mapa Pradaria), o prefab Player e os materiais (alterações manuais nesses ficheiros perdem-se). Continuar?",
+                    "Isto recria a cena Arena (mapas Pradaria e Bosque), o prefab Player e os materiais (alterações manuais nesses ficheiros perdem-se). Continuar?",
                     "Regenerar", "Cancelar"))
                 return;
             BuildAll();
@@ -178,7 +178,7 @@ namespace FPSLAN.EditorTools
 
         class Mats
         {
-            public Material grass, path, stone, stoneTop, crateDark, crateLight, bush, bushLight, water, waterFoam, rock, rockLight,
+            public Material grass, grassForest, path, stone, stoneTop, crateDark, crateLight, bush, bushLight, water, waterFoam, rock, rockLight,
                 fence, barrel, metal, pad, padGlow, platform, platformTop, ramp, totem, gem, trunk, leaves, leavesLight, cliff,
                 flowerPink, flowerYellow, flowerWhite, flowerCenter, grassTuft, mushroomCap, mushroomStem, spawn, cloud, lily, hill, mountain, snow;
         }
@@ -211,6 +211,7 @@ namespace FPSLAN.EditorTools
             return new Mats
             {
                 grass = MakeMat(MaterialsPath + "/M_Grass.mat", toon, new Color(0.47f, 0.8f, 0.32f), m => { Set(m, "_Checker", 0.09f); Set(m, "_CheckerScale", 2f); Set(m, "_Noise", 0.1f); Set(m, "_ShadeColor", new Color(0.55f, 0.7f, 0.85f)); }),
+                grassForest = MakeMat(MaterialsPath + "/M_GrassForest.mat", toon, new Color(0.36f, 0.66f, 0.3f), m => { Set(m, "_Checker", 0.08f); Set(m, "_CheckerScale", 2f); Set(m, "_Noise", 0.14f); Set(m, "_ShadeColor", new Color(0.6f, 0.55f, 0.75f)); }),
                 path = MakeMat(MaterialsPath + "/M_Path.mat", toon, new Color(0.95f, 0.82f, 0.56f), m => { Set(m, "_Noise", 0.12f); Set(m, "_Checker", 0.04f); Set(m, "_CheckerScale", 1f); }),
                 stone = MakeMat(MaterialsPath + "/M_Stone.mat", outl, new Color(0.6f, 0.65f, 0.76f), m => { Set(m, "_TopLight", 0.25f); Set(m, "_OutlineWidth", 0.0022f); Set(m, "_OutlineColor", new Color(0.2f, 0.22f, 0.32f)); }),
                 stoneTop = MakeMat(MaterialsPath + "/M_StoneTop.mat", toon, new Color(0.8f, 0.84f, 0.92f), m => { Set(m, "_TopLight", 0.15f); }),
@@ -374,18 +375,18 @@ namespace FPSLAN.EditorTools
             RenderSettings.skybox = CreateSkybox();
             RenderSettings.sun = sun;
 
-            // Mapa
-            var map = new GameObject("Map").transform;
-            var pieces = ArenaLayout.Build();
+            // Mapas: todos na mesma cena, afastados uns dos outros; o host escolhe qual se joga (MatchManager.Map)
             var spawns = new GameObject("SpawnPoints").transform;
-            var waypoints = new List<Vector3>();
-            BuildMap(map, spawns, pieces, mats, waypoints);
-            BuildScenery(map, mats);
-
-            var info = new GameObject("MapInfo").AddComponent<MapInfo>();
-            info.mapName = "Pradaria";
-            info.halfSize = ArenaLayout.Half;
-            info.waypoints = waypoints.ToArray();
+            BuildArenaMap(0, "Pradaria", "Plataforma central e lagos", ArenaLayout.Build(), ArenaLayout.Half, Vector3.zero, spawns, mats);
+            var bosque = BuildArenaMap(1, "Bosque", "Arbustos densos e torres", ArenaLayout.BuildBosque(), ArenaLayout.BosqueHalf, BosqueOffset, spawns, mats);
+            // Fim de tarde: sol baixo e quente, nevoeiro alaranjado
+            bosque.sunColor = new Color(1f, 0.82f, 0.62f);
+            bosque.sunIntensity = 1.1f;
+            bosque.sunEuler = new Vector3(32f, 60f, 0f);
+            bosque.ambientSky = new Color(0.7f, 0.68f, 0.82f);
+            bosque.ambientEquator = new Color(0.64f, 0.56f, 0.5f);
+            bosque.ambientGround = new Color(0.3f, 0.34f, 0.24f);
+            bosque.fogColor = new Color(0.95f, 0.8f, 0.66f);
 
             // Sistemas locais
             var systems = new GameObject("Systems");
@@ -439,6 +440,27 @@ namespace FPSLAN.EditorTools
             EditorSceneManager.SaveScene(reopened);
         }
 
+        /// <summary>Distância entre mapas: maior do que o alcance da câmara (400 m) para nunca se verem uns aos outros.</summary>
+        static readonly Vector3 BosqueOffset = new Vector3(600f, 0f, 0f);
+
+        static MapInfo BuildArenaMap(int index, string name, string tagline, List<Piece> pieces, float half, Vector3 offset, Transform spawns, Mats mats)
+        {
+            ArenaLayout.Offset(pieces, offset);
+            var map = new GameObject("Map_" + name).transform;
+            var waypoints = new List<Vector3>();
+            BuildMap(map, spawns, pieces, mats, waypoints);
+            BuildScenery(map, mats, offset);
+
+            var info = new GameObject("MapInfo_" + name).AddComponent<MapInfo>();
+            info.mapIndex = index;
+            info.mapName = name;
+            info.tagline = tagline;
+            info.center = offset;
+            info.halfSize = half;
+            info.waypoints = waypoints.ToArray();
+            return info;
+        }
+
         static Material CreateSkybox()
         {
             var shader = Shader.Find("Skybox/Procedural");
@@ -477,7 +499,7 @@ namespace FPSLAN.EditorTools
                 switch (p.kind)
                 {
                     case PieceKind.Ground:
-                        Block(Group(p.kind), "Ground", p.center, p.size, rot, m.grass, true);
+                        Block(Group(p.kind), "Ground", p.center, p.size, rot, p.variant == 1 ? m.grassForest : m.grass, true);
                         break;
 
                     case PieceKind.Path:
@@ -981,7 +1003,7 @@ namespace FPSLAN.EditorTools
         }
 
         /// <summary>Paisagem distante: colinas, montanhas com neve e nuvens cartoon.</summary>
-        static void BuildScenery(Transform map, Mats m)
+        static void BuildScenery(Transform map, Mats m, Vector3 offset)
         {
             var root = new GameObject("Scenery").transform;
             root.SetParent(map, false);
@@ -990,7 +1012,7 @@ namespace FPSLAN.EditorTools
             {
                 float a = i / 16f * Mathf.PI * 2f + (float)rng.NextDouble() * 0.2f;
                 float r = 62f + (float)rng.NextDouble() * 10f;
-                var pos = new Vector3(Mathf.Sin(a) * r, -2f, Mathf.Cos(a) * r);
+                var pos = offset + new Vector3(Mathf.Sin(a) * r, -2f, Mathf.Cos(a) * r);
                 float w = 22f + (float)rng.NextDouble() * 14f;
                 Visual(root, PrimitiveType.Sphere, "Hill", pos, new Vector3(w, 12f + (float)rng.NextDouble() * 8f, w * 0.8f), Quaternion.Euler(0f, a * Mathf.Rad2Deg, 0f), m.hill, false);
             }
@@ -999,7 +1021,7 @@ namespace FPSLAN.EditorTools
                 float a = i / 9f * Mathf.PI * 2f + 0.3f;
                 float r = 120f + (float)rng.NextDouble() * 25f;
                 float h = 35f + (float)rng.NextDouble() * 25f;
-                var pos = new Vector3(Mathf.Sin(a) * r, h * 0.2f, Mathf.Cos(a) * r);
+                var pos = offset + new Vector3(Mathf.Sin(a) * r, h * 0.2f, Mathf.Cos(a) * r);
                 var rot = Quaternion.Euler(0f, a * Mathf.Rad2Deg + 45f, 0f) * Quaternion.Euler(45f, 0f, 45f);
                 Visual(root, PrimitiveType.Cube, "Mountain", pos, new Vector3(h, h, h), rot, m.mountain, false);
                 Visual(root, PrimitiveType.Cube, "Snow", pos + Vector3.up * h * 0.52f, new Vector3(h * 0.36f, h * 0.36f, h * 0.36f), rot, m.snow, false);
@@ -1010,7 +1032,7 @@ namespace FPSLAN.EditorTools
                 float r = 50f + (float)rng.NextDouble() * 60f;
                 var c = new GameObject("Cloud").transform;
                 c.SetParent(root, false);
-                c.position = new Vector3(Mathf.Sin(a) * r, 34f + (float)rng.NextDouble() * 14f, Mathf.Cos(a) * r);
+                c.position = offset + new Vector3(Mathf.Sin(a) * r, 34f + (float)rng.NextDouble() * 14f, Mathf.Cos(a) * r);
                 c.rotation = Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
                 int puffs = 3 + rng.Next(0, 3);
                 for (int j = 0; j < puffs; j++)
@@ -1019,7 +1041,9 @@ namespace FPSLAN.EditorTools
                     var puff = Visual(c, PrimitiveType.Sphere, "Puff", new Vector3((j - puffs * 0.5f) * 3.2f, (float)rng.NextDouble() * 1.5f, (float)(rng.NextDouble() - 0.5) * 2f), new Vector3(s, s * 0.6f, s * 0.8f), Quaternion.identity, m.cloud, false, true);
                     puff.isStatic = false; // as nuvens deslizam (Spinner)
                 }
-                c.gameObject.AddComponent<Spinner>().drift = new Vector3(0.6f, 0f, 0.2f);
+                var drift = c.gameObject.AddComponent<Spinner>();
+                drift.drift = new Vector3(0.6f, 0f, 0.2f);
+                drift.wrapCenter = offset;
             }
         }
 

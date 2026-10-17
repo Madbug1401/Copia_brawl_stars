@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace FPSLAN
 {
-    /// <summary>Ponto de spawn. Escolhe-se o mais afastado dos inimigos vivos (com alguma variação).</summary>
+    /// <summary>Ponto de spawn do mapa ativo. Escolhe-se o mais afastado dos inimigos vivos (com alguma variação).</summary>
     public class SpawnPoint : MonoBehaviour
     {
         static readonly List<SpawnPoint> s_All = new List<SpawnPoint>();
@@ -24,9 +24,17 @@ namespace FPSLAN
                 return;
             }
 
+            // Só os spawns do mapa ativo (os outros mapas estão na mesma cena, afastados)
+            var map = MapInfo.Instance;
+            bool anyOnMap = false;
+            if (map != null)
+                foreach (var sp in s_All)
+                    if (map.Contains(sp.transform.position)) { anyOnMap = true; break; }
+
             s_Scored.Clear();
             foreach (var sp in s_All)
             {
+                if (anyOnMap && !map.Contains(sp.transform.position)) continue;
                 float minDist = 999f;
                 foreach (var p in PlayerNetwork.All)
                 {

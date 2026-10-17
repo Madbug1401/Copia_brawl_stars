@@ -8,5 +8,7 @@ nevoeiro e efeitos.
 
 - `mapa_pradaria.png` — vista geral do mapa Pradaria.
 - `mapa_planta.png` — planta (vista de cima) com spawns, plataformas de salto e pontos de patrulha dos bots.
+- `mapa_bosque_planta.png` — planta esquemática do mapa Bosque (spawns, torres, rampas, arbustos, lago, plataformas de salto).
+  Desenhada a partir de uma cópia em Python dos dados de `ArenaLayoutBosque.cs` (sem flores nem pontos de patrulha).
 - `brawlers_3a_pessoa.png` — os 6 Brawlers (da esquerda: Lince, Brasa, Névoa, Vigia, Cardo, Dex).
 - `armas_1a_pessoa.png` — mãos e armas em primeira pessoa (Dex, Cardo, Vigia / Névoa, Brasa, Lince).
