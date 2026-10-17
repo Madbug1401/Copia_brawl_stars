@@ -26,10 +26,12 @@ namespace FPSLAN
     {
         public static MatchManager Instance { get; private set; }
         public static GameMode MenuSelectedMode { get; set; } = GameMode.Deathmatch;
+        /// <summary>Casual (melhorias e passivas de pet contam) ou Competitiva (tudo normalizado). Escolhido no menu do host.</summary>
+        public static MatchRuleset MenuSelectedRuleset { get; set; } = MatchRuleset.Casual;
 
         public int killLimit = 15;
         public float matchMinutes = 8f;
-        public float resultsSeconds = 8f;
+        public float resultsSeconds = 12f;
         public int wipeoutTeamKillLimit = 10;
         public float knockoutRoundSeconds = 90f;
         public float knockoutIntermissionSeconds = 4f;
@@ -42,6 +44,10 @@ namespace FPSLAN
         public readonly NetworkVariable<int> RedScore = new NetworkVariable<int>(0);
         public readonly NetworkVariable<int> RoundNumber = new NetworkVariable<int>(1);
         public readonly NetworkVariable<bool> IsRoundIntermission = new NetworkVariable<bool>(false);
+        public readonly NetworkVariable<MatchRuleset> Ruleset = new NetworkVariable<MatchRuleset>(MatchRuleset.Casual);
+
+        /// <summary>Regras de progressão da partida atual (no menu: as escolhidas).</summary>
+        public static MatchRuleset CurrentRuleset => Instance != null && Instance.IsSpawned ? Instance.Ruleset.Value : MenuSelectedRuleset;
 
         public static bool IsMatchOver => Instance != null && Instance.IsSpawned && Instance.Phase.Value == MatchPhase.Ended;
         public static bool IsCombatActive => Instance == null || !Instance.IsSpawned ||
@@ -92,7 +98,20 @@ namespace FPSLAN
         public override void OnNetworkSpawn()
         {
             Instance = this;
+            Phase.OnValueChanged += OnPhaseChanged;
             if (IsServer) ServerStartMatch();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            Phase.OnValueChanged -= OnPhaseChanged;
+        }
+
+        void OnPhaseChanged(MatchPhase previous, MatchPhase current)
+        {
+            // Nova partida: os clientes também limpam armadilhas/zonas/projéteis da partida anterior
+            if (!IsServer && previous == MatchPhase.Ended && current == MatchPhase.Playing && CombatSystem.Instance != null)
+                CombatSystem.Instance.ClearAll();
         }
 
         void Update()
@@ -155,6 +174,7 @@ namespace FPSLAN
         void ServerStartMatch()
         {
             Mode.Value = MenuSelectedMode;
+            Ruleset.Value = MenuSelectedRuleset;
             Phase.Value = MatchPhase.Playing;
             WinnerName.Value = default;
             BlueScore.Value = 0;
@@ -174,6 +194,10 @@ namespace FPSLAN
 
             if (Mode.Value == GameMode.Wipeout || Mode.Value == GameMode.Knockout)
                 ServerAssignMissingTeams();
+
+            // Nova chave de partida: as recompensas desta partida só podem ser creditadas uma vez
+            MatchStatsTracker.ServerStartMatch();
+            if (CombatSystem.Instance != null) CombatSystem.Instance.ClearAll();
 
             if (Mode.Value == GameMode.Knockout)
                 ServerStartKnockoutRound();
@@ -230,6 +254,7 @@ namespace FPSLAN
             IsRoundIntermission.Value = false;
             WinnerName.Value = new FixedString64Bytes(winner != null ? winner.DisplayName : "Ninguém");
             PhaseEndTime.Value = NetworkManager.ServerTime.Time + resultsSeconds;
+            MatchStatsTracker.ServerFinishMatch(p => winner != null && p == winner, Mode.Value, Ruleset.Value);
         }
 
         void ServerEndMatch(int winningTeam)
@@ -239,6 +264,7 @@ namespace FPSLAN
             string name = winningTeam == 0 ? "Equipa Azul" : winningTeam == 1 ? "Equipa Vermelha" : "Empate";
             WinnerName.Value = new FixedString64Bytes(name);
             PhaseEndTime.Value = NetworkManager.ServerTime.Time + resultsSeconds;
+            MatchStatsTracker.ServerFinishMatch(p => winningTeam >= 0 && p.TeamId.Value == winningTeam, Mode.Value, Ruleset.Value);
         }
 
         PlayerNetwork TopPlayer()
@@ -300,6 +326,7 @@ namespace FPSLAN
             IsRoundIntermission.Value = false;
             WinnerName.Value = new FixedString64Bytes("Empate");
             PhaseEndTime.Value = NetworkManager.ServerTime.Time + resultsSeconds;
+            MatchStatsTracker.ServerFinishMatch(null, Mode.Value, Ruleset.Value);
         }
 
         int AliveCountForTeam(int team)
@@ -352,6 +379,11 @@ namespace FPSLAN
             if (winningTeam == 0) BlueScore.Value++;
             else if (winningTeam == 1) RedScore.Value++;
 
+            // Objetivo: ronda ganha conta para cada jogador da equipa vencedora
+            if (winningTeam >= 0)
+                foreach (var p in PlayerNetwork.All)
+                    if (p != null && p.IsSpawned && p.TeamId.Value == winningTeam) MatchStatsTracker.ServerOnObjective(p);
+
             if (BlueScore.Value >= 2 || RedScore.Value >= 2)
             {
                 ServerEndMatch(BlueScore.Value > RedScore.Value ? 0 : 1);
@@ -377,6 +409,11 @@ namespace FPSLAN
 
             if (Mode.Value == GameMode.Showdown && Phase.Value == MatchPhase.Playing && !IsRoundIntermission.Value)
             {
+                // Objetivo: chegar ao top 2
+                if (AlivePlayerCount <= 2)
+                    foreach (var p in PlayerNetwork.All)
+                        if (p != null && p.IsSpawned && !p.Health.IsDead) MatchStatsTracker.ServerOnShowdownTop(p);
+
                 if (AlivePlayerCount == 1) ServerEndMatch(LastAlivePlayer());
                 else if (AlivePlayerCount == 0) ServerEndDraw();
                 return;

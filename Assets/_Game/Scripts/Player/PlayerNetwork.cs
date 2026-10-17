@@ -35,6 +35,9 @@ namespace FPSLAN
         /// <summary>0 = equipa azul, 1 = equipa vermelha, -1 = ainda não atribuída.</summary>
         public readonly NetworkVariable<int> TeamId = new NetworkVariable<int>(-1);
 
+        /// <summary>Skin, pet e melhorias do jogador (enviados pelo dono, validados e escritos pelo host).</summary>
+        public readonly NetworkVariable<PlayerLoadout> Loadout = new NetworkVariable<PlayerLoadout>(PlayerLoadout.Empty);
+
         public PlayerMotor Motor { get; private set; }
         public PlayerHealth Health { get; private set; }
         public PlayerCombat Combat { get; private set; }
@@ -98,6 +101,7 @@ namespace FPSLAN
                 IsBotVar.Value = true;
                 PlayerName.Value = new FixedString64Bytes(GameSession.Sanitize(m_PendingName));
                 HeroId.Value = BrawlerRegistry.Sanitize(m_PendingHero);
+                Loadout.Value = BotLoadout(HeroId.Value);
                 Bot = gameObject.AddComponent<BotBrain>();
                 Bot.Init(this, m_PendingDifficulty);
             }
@@ -106,13 +110,19 @@ namespace FPSLAN
                 Local = this;
                 PlayerName.Value = new FixedString64Bytes(GameSession.Sanitize(GameSession.LocalName));
                 HeroId.Value = BrawlerRegistry.Sanitize(GameSession.LocalHeroId);
+                SubmitLocalLoadout();
             }
+
+            HeroId.OnValueChanged += OnHeroIdChanged;
+            if (IsServer) MatchStatsTracker.ServerOnJoin(this);
 
             gameObject.name = (IsBot || m_PendingBot ? "Bot_" : "Player_") + Id;
         }
 
         public override void OnNetworkDespawn()
         {
+            HeroId.OnValueChanged -= OnHeroIdChanged;
+            if (IsServer) MatchStatsTracker.ServerOnLeave(this);
             All.Remove(this);
             if (Local == this) Local = null;
         }
@@ -129,6 +139,62 @@ namespace FPSLAN
         {
             if (!IsOwner) return;
             HeroId.Value = BrawlerRegistry.Sanitize(heroId);
+        }
+
+        void OnHeroIdChanged(int previous, int current)
+        {
+            // O loadout (skin/melhorias) é por Brawler: o dono envia o do novo Brawler
+            if (IsLocalHuman) SubmitLocalLoadout();
+            else if (IsServer && IsBot) Loadout.Value = BotLoadout(current);
+        }
+
+        // ------------------------------------------------------------------ loadout (skin, pet, melhorias)
+
+        /// <summary>Dono humano: envia ao host o loadout gravado para o Brawler atual.</summary>
+        public void SubmitLocalLoadout()
+        {
+            if (!IsLocalHuman || !IsSpawned) return;
+            SubmitLoadoutRpc(GameExperience.BuildLoadout(HeroId.Value));
+        }
+
+        [Rpc(SendTo.Server)]
+        void SubmitLoadoutRpc(PlayerLoadout requested)
+        {
+            // Nunca confiar no cliente: tudo é limitado aos dados e às regras do host
+            Loadout.Value = LoadoutValidator.Validate(requested, GameExperienceDatabase.Catalog);
+        }
+
+        /// <summary>Bots: pet e skin aleatórios (só aspeto; sem melhorias, para não desequilibrar).</summary>
+        static PlayerLoadout BotLoadout(int heroIndex)
+        {
+            var catalog = GameExperienceDatabase.Catalog;
+            var l = PlayerLoadout.Empty;
+            l.BrawlerIndex = heroIndex;
+            if (catalog.pets.Count > 0 && Random.value < 0.6f)
+            {
+                l.PetIndex = (short)Random.Range(0, catalog.pets.Count);
+                l.PetLevel = (byte)Random.Range(1, 11);
+            }
+            var skins = catalog.SkinsFor(SkinTarget.Brawler, catalog.BrawlerIdAt(heroIndex));
+            if (skins.Count > 0 && Random.value < 0.5f)
+                l.SkinIndex = (short)catalog.SkinIndex(skins[Random.Range(0, skins.Count)].skinId);
+            return LoadoutValidator.Validate(l, catalog);
+        }
+
+        // ------------------------------------------------------------------ recompensas
+
+        /// <summary>Host: envia a recompensa da partida só ao dono deste jogador.</summary>
+        public void ServerSendMatchReward(MatchRewardMessage msg)
+        {
+            if (!IsServer || IsBot) return;
+            MatchRewardRpc(msg);
+        }
+
+        [Rpc(SendTo.Owner)]
+        void MatchRewardRpc(MatchRewardMessage msg)
+        {
+            if (!IsLocalHuman) return;
+            GameExperience.OnMatchReward(msg);
         }
 
         public static PlayerNetwork Find(ulong id)
