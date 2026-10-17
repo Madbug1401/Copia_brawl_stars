@@ -29,6 +29,8 @@ namespace FPSLAN
     {
         static readonly Dictionary<ProjectileStyle, Stack<ProjVisual>> s_Pools = new Dictionary<ProjectileStyle, Stack<ProjVisual>>();
         static readonly Stack<ProjVisual> s_Mines = new Stack<ProjVisual>();
+        static readonly Stack<ProjVisual> s_Snares = new Stack<ProjVisual>();
+        const ProjectileStyle SnareStyle = (ProjectileStyle)(-2);
         static Transform s_Parent;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -36,6 +38,7 @@ namespace FPSLAN
         {
             s_Pools.Clear();
             s_Mines.Clear();
+            s_Snares.Clear();
             s_Parent = null;
         }
 
@@ -332,7 +335,56 @@ namespace FPSLAN
                 Art.SetFloat(r, Art.FadeId, 1f);
             }
             v.root.gameObject.SetActive(false);
-            s_Mines.Push(v);
+            if (v.style == SnareStyle) s_Snares.Push(v);
+            else s_Mines.Push(v);
+        }
+
+        /// <summary>Armadilha de imobilização: aro com dentes abertos e bolbo de veneno no centro.</summary>
+        public static ProjVisual TakeSnare(Color color, Vector3 pos, bool discreet)
+        {
+            ProjVisual v = null;
+            while (s_Snares.Count > 0 && (v == null || v.root == null)) v = s_Snares.Pop();
+            if (v == null || v.root == null)
+            {
+                v = new ProjVisual { style = SnareStyle };
+                v.root = new GameObject("Snare").transform;
+                v.root.SetParent(Parent, false);
+                v.spin = new GameObject("Jaws").transform;
+                v.spin.SetParent(v.root, false);
+                var metal = new Color(0.35f, 0.33f, 0.3f);
+                Art.Part(PrimitiveType.Cylinder, v.root, new Vector3(0f, 0.02f, 0f), new Vector3(0.75f, 0.02f, 0.75f), Art.Darken(metal, 0.7f), true, default, ShadowCastingMode.On);
+                for (int i = 0; i < 10; i++)
+                {
+                    float a = i * 36f;
+                    var tooth = Art.Part(PrimitiveType.Cube, v.spin, Quaternion.Euler(0f, a, 0f) * new Vector3(0f, 0.08f, 0.33f), new Vector3(0.06f, 0.14f, 0.03f), new Color(0.85f, 0.85f, 0.8f), true, new Vector3(-20f, a, 0f), ShadowCastingMode.Off);
+                    v.tint.Add(tooth.GetComponent<Renderer>());
+                }
+                var bulb = Art.Part(PrimitiveType.Sphere, v.root, new Vector3(0f, 0.07f, 0f), new Vector3(0.2f, 0.12f, 0.2f), Color.white, true, default, ShadowCastingMode.Off);
+                v.tint.Add(bulb.GetComponent<Renderer>());
+                v.root.GetComponentsInChildren(true, v.all);
+            }
+            v.root.gameObject.SetActive(true);
+            v.root.position = pos;
+            v.root.rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+            v.baseScale = discreet ? 0.8f : 1f;
+            v.root.localScale = Vector3.one * v.baseScale;
+            v.color = color;
+            foreach (var r in v.tint) Art.SetColor(r, discreet ? Art.Darken(color, 0.45f) : color);
+            foreach (var r in v.all) Art.SetFloat(r, Art.FadeId, discreet ? 0.4f : 1f);
+            return v;
+        }
+
+        public static void PoseSnare(ProjVisual v, bool armed, bool ownerView, float age)
+        {
+            if (v == null || v.root == null || v.spin == null) return;
+            // Dentes abrem ao armar e "respiram" devagar
+            float open = armed ? 1f : Mathf.Clamp01(age * 2f);
+            v.spin.localScale = new Vector3(1f, 0.6f + 0.4f * open, 1f);
+            if (armed && ownerView)
+            {
+                float pulse = 0.2f + 0.2f * Mathf.Abs(Mathf.Sin(age * 3f));
+                foreach (var r in v.tint) Art.SetEmission(r, v.color * pulse);
+            }
         }
     }
 }

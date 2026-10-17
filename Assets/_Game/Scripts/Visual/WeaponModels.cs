@@ -41,7 +41,10 @@ namespace FPSLAN
                 case RigStyle.DualRevolvers: Revolver(w, accent, shadows); break;
                 case RigStyle.DualExplosives: Dynamite(w, accent, shadows); break;
                 case RigStyle.Bow: Bow(w, accent, shadows); break;
-                case RigStyle.SprayCan: SprayCan(w, accent, shadows); break;
+                case RigStyle.SprayCan:
+                case RigStyle.DualSprayCans: SprayCan(w, accent, shadows); break;
+                case RigStyle.DualSMG: Smg(w, accent, shadows); break;
+                case RigStyle.Minigun: Minigun(w, accent, shadows); break;
                 case RigStyle.Shotgun: Shotgun(w, accent, shadows); break;
                 case RigStyle.Sniper: Sniper(w, accent, shadows); break;
                 default: Blaster(w, accent, shadows); break;
@@ -247,6 +250,50 @@ namespace FPSLAN
             // Ferrolho
             P(w, PrimitiveType.Sphere, new Vector3(0.045f, 0.03f, -0.02f), Vector3.one * 0.03f, Gold, ShadowCastingMode.Off);
             Muzzle(w, new Vector3(0f, 0.025f, 0.68f));
+        }
+
+        // ------------------------------------------------------------------ metralhadora compacta (Ekko)
+
+        static void Smg(WeaponModel w, Color accent, ShadowCastingMode s)
+        {
+            // Pega + carregador comprido + corpo curto + cano com supressor de chama
+            P(w, PrimitiveType.Cube, new Vector3(0f, -0.07f, -0.03f), new Vector3(0.05f, 0.12f, 0.06f), DarkMetal, s, new Vector3(-12f, 0f, 0f));
+            P(w, PrimitiveType.Cube, new Vector3(0f, -0.1f, 0.07f), new Vector3(0.04f, 0.16f, 0.05f), accent, s, new Vector3(8f, 0f, 0f));
+            P(w, PrimitiveType.Cube, new Vector3(0f, 0.015f, 0.05f), new Vector3(0.07f, 0.08f, 0.2f), Metal, s);
+            P(w, PrimitiveType.Cube, new Vector3(0f, 0.065f, 0.03f), new Vector3(0.03f, 0.025f, 0.12f), DarkMetal, ShadowCastingMode.Off);
+            P(w, PrimitiveType.Cylinder, new Vector3(0f, 0.025f, 0.2f), new Vector3(0.034f, 0.06f, 0.034f), DarkMetal, s, new Vector3(90f, 0f, 0f));
+            P(w, PrimitiveType.Cylinder, new Vector3(0f, 0.025f, 0.265f), new Vector3(0.048f, 0.018f, 0.048f), accent, s, new Vector3(90f, 0f, 0f));
+            // Ferrolho (recua a cada disparo)
+            var bolt = new GameObject("Bolt").transform;
+            bolt.SetParent(w.root, false);
+            bolt.localPosition = new Vector3(0.038f, 0.03f, 0.04f);
+            P(w, PrimitiveType.Cube, Vector3.zero, new Vector3(0.012f, 0.02f, 0.05f), Gold, ShadowCastingMode.Off, default, bolt);
+            w.pump = bolt;
+            Muzzle(w, new Vector3(0f, 0.025f, 0.285f));
+        }
+
+        // ------------------------------------------------------------------ minigun (Super do Ekko)
+
+        static void Minigun(WeaponModel w, Color accent, ShadowCastingMode s)
+        {
+            // Caixa de munição + corpo + seis canos que rodam + pega de cima
+            P(w, PrimitiveType.Cube, new Vector3(0f, -0.08f, -0.08f), new Vector3(0.16f, 0.14f, 0.18f), new Color(0.35f, 0.42f, 0.25f), s);
+            P(w, PrimitiveType.Cube, new Vector3(0f, -0.08f, -0.08f), new Vector3(0.165f, 0.03f, 0.185f), Gold, ShadowCastingMode.Off);
+            P(w, PrimitiveType.Cylinder, new Vector3(0f, 0.02f, 0.06f), new Vector3(0.16f, 0.12f, 0.16f), DarkMetal, s, new Vector3(90f, 0f, 0f));
+            P(w, PrimitiveType.Cube, new Vector3(0f, 0.14f, 0.02f), new Vector3(0.03f, 0.03f, 0.16f), Metal, ShadowCastingMode.Off);
+            var barrels = new GameObject("Barrels").transform;
+            barrels.SetParent(w.root, false);
+            barrels.localPosition = new Vector3(0f, 0.02f, 0.2f);
+            for (int i = 0; i < 6; i++)
+            {
+                float a = i * 60f * Mathf.Deg2Rad;
+                var pos = new Vector3(Mathf.Cos(a) * 0.045f, Mathf.Sin(a) * 0.045f, 0.16f);
+                P(w, PrimitiveType.Cylinder, pos, new Vector3(0.03f, 0.18f, 0.03f), Metal, s, new Vector3(90f, 0f, 0f), barrels);
+            }
+            P(w, PrimitiveType.Cylinder, new Vector3(0f, 0f, 0.05f), new Vector3(0.14f, 0.015f, 0.14f), accent, ShadowCastingMode.Off, new Vector3(90f, 0f, 0f), barrels);
+            P(w, PrimitiveType.Cylinder, new Vector3(0f, 0f, 0.3f), new Vector3(0.14f, 0.015f, 0.14f), accent, ShadowCastingMode.Off, new Vector3(90f, 0f, 0f), barrels);
+            w.drum = barrels; // roda continuamente durante o modo
+            Muzzle(w, new Vector3(0f, 0.02f, 0.55f));
         }
 
         // ------------------------------------------------------------------ genérico

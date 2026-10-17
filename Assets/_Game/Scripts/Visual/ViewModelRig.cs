@@ -40,18 +40,23 @@ namespace FPSLAN
         bool m_SuperGlowApplied;
         Vector3 m_ArmAnchorR = new Vector3(0.36f, -0.55f, 0.05f), m_ArmAnchorL = new Vector3(-0.36f, -0.55f, 0.05f);
 
-        public static ViewModelRig Build(BrawlerDefinition b, Transform camera, int layer)
+        float m_Reload = 10f, m_Equip = 1f;
+        bool m_ModeSpin;
+
+        public static ViewModelRig Build(BrawlerDefinition b, Transform camera, int layer, RigOptions options = default)
         {
             var vm = new ViewModelRig();
-            vm.Create(b, camera, layer);
+            vm.Create(b, camera, layer, options);
             return vm;
         }
 
-        void Create(BrawlerDefinition b, Transform camera, int layer)
+        void Create(BrawlerDefinition b, Transform camera, int layer, RigOptions options)
         {
-            Style = b != null ? b.firstPerson.rig : RigStyle.Generic;
-            m_Accent = b != null ? b.firstPerson.accentColor : Color.white;
-            var look = b != null && b.thirdPerson.look != null ? b.thirdPerson.look : new CharacterLook();
+            Style = options.overrideRig ? options.rig : (b != null ? b.firstPerson.rig : RigStyle.Generic);
+            m_Accent = options.accent.a > 0f ? options.accent : (b != null ? b.firstPerson.accentColor : Color.white);
+            var look = options.look ?? (b != null && b.thirdPerson.look != null ? b.thirdPerson.look : new CharacterLook());
+            m_ModeSpin = Style == RigStyle.Minigun;
+            if (options.animateEquip) m_Equip = 0f;
 
             Root = new GameObject("ViewModel_" + Style).transform;
             Root.SetParent(camera, false);
@@ -73,6 +78,36 @@ namespace FPSLAN
                     m_WeaponL = WeaponModels.Build(Style, m_GunL, m_Accent, 1, s);
                     m_HandR = Hand(m_GunR, new Vector3(0f, -0.05f, -0.03f), glove);
                     m_HandL = Hand(m_GunL, new Vector3(0f, -0.05f, -0.03f), glove);
+                    break;
+
+                case RigStyle.DualSMG:
+                    m_GunRRest = new Vector3(0.21f, -0.21f, 0.38f);
+                    m_GunLRest = new Vector3(-0.21f, -0.21f, 0.38f);
+                    m_GunR = Holder("SmgR", m_GunRRest);
+                    m_GunL = Holder("SmgL", m_GunLRest);
+                    m_WeaponR = WeaponModels.Build(Style, m_GunR, m_Accent, 0, s);
+                    m_WeaponL = WeaponModels.Build(Style, m_GunL, m_Accent, 1, s);
+                    m_HandR = Hand(m_GunR, new Vector3(0f, -0.06f, -0.03f), glove);
+                    m_HandL = Hand(m_GunL, new Vector3(0f, -0.06f, -0.03f), glove);
+                    break;
+
+                case RigStyle.DualSprayCans:
+                    m_GunRRest = new Vector3(0.22f, -0.24f, 0.4f);
+                    m_GunLRest = new Vector3(-0.22f, -0.24f, 0.4f);
+                    m_GunR = Holder("CanR", m_GunRRest);
+                    m_GunL = Holder("CanL", m_GunLRest);
+                    m_WeaponR = WeaponModels.Build(Style, m_GunR, m_Accent, 0, s);
+                    m_WeaponL = WeaponModels.Build(Style, m_GunL, Art.Lighten(m_Accent, 0.25f), 1, s);
+                    m_HandR = Hand(m_GunR, new Vector3(0f, 0.03f, 0f), glove);
+                    m_HandL = Hand(m_GunL, new Vector3(0f, 0.03f, 0f), glove);
+                    break;
+
+                case RigStyle.Minigun:
+                    m_GunRRest = new Vector3(0.16f, -0.3f, 0.32f);
+                    m_GunR = Holder("Minigun", m_GunRRest);
+                    m_WeaponR = WeaponModels.Build(Style, m_GunR, m_Accent, 0, s);
+                    m_HandR = Hand(m_GunR, new Vector3(0.06f, -0.08f, -0.1f), glove);
+                    m_HandL = Hand(m_Sway, Vector3.zero, glove);
                     break;
 
                 case RigStyle.DualExplosives:
@@ -198,8 +233,9 @@ namespace FPSLAN
             {
                 case RigStyle.DualExplosives: m_Throw = 0f; break;
                 case RigStyle.Bow: m_Draw = 0f; m_KickL = 1f; break;
-                case RigStyle.SprayCan: m_Spray = super ? 1.2f : 0.65f; break;
-                case RigStyle.Shotgun: m_Pump = 0f; break;
+                case RigStyle.SprayCan:
+                case RigStyle.DualSprayCans: m_Spray = super ? 1.2f : 0.65f; break;
+                case RigStyle.Shotgun: m_Pump = 0f; m_Reload = 10f; break;
             }
             if (super) m_Raise = 1f;
         }
@@ -222,6 +258,8 @@ namespace FPSLAN
         /// <summary>Uma carga recarregou: pequena animação (revólver a girar, etc.).</summary>
         public void OnChargeReloaded()
         {
+            // Caçadeira: animação própria de recarga (inclina a arma e mete um cartucho)
+            if (Style == RigStyle.Shotgun) m_Reload = 0f;
             if (Style == RigStyle.DualRevolvers && m_Twirl < 0f)
             {
                 m_Twirl = 0f;
@@ -285,8 +323,43 @@ namespace FPSLAN
             m_KickR = Mathf.MoveTowards(m_KickR, 0f, dt * 7f);
             m_KickL = Mathf.MoveTowards(m_KickL, 0f, dt * 7f);
 
+            // Arma a entrar (troca de arma / transformação em Minigun)
+            m_Equip = Mathf.MoveTowards(m_Equip, 1f, dt / 0.4f);
+            float equipK = 1f - Mathf.SmoothStep(0f, 1f, m_Equip);
+
             switch (Style)
             {
+                case RigStyle.DualSMG:
+                {
+                    PoseGun(m_GunR, m_GunRRest, m_KickR, 0.045f, 9f, 0f);
+                    PoseGun(m_GunL, m_GunLRest, m_KickL, 0.045f, 9f, 0f);
+                    if (m_WeaponR != null && m_WeaponR.pump != null) m_WeaponR.pump.localPosition = new Vector3(0.038f, 0.03f, 0.04f - 0.04f * m_KickR);
+                    if (m_WeaponL != null && m_WeaponL.pump != null) m_WeaponL.pump.localPosition = new Vector3(0.038f, 0.03f, 0.04f - 0.04f * m_KickL);
+                    break;
+                }
+
+                case RigStyle.DualSprayCans:
+                {
+                    m_Spray = Mathf.MoveTowards(m_Spray, 0f, dt);
+                    float shake = m_Spray > 0f ? 1f : 0f;
+                    var jitter = new Vector3(Mathf.Sin(time * 70f), Mathf.Cos(time * 63f), 0f) * 0.006f * shake;
+                    var jitterL = new Vector3(Mathf.Cos(time * 66f), Mathf.Sin(time * 71f), 0f) * 0.006f * shake;
+                    m_GunR.localPosition = m_GunRRest + jitter + new Vector3(-0.04f, 0.03f, 0.06f) * shake;
+                    m_GunL.localPosition = m_GunLRest + jitterL + new Vector3(0.04f, 0.03f, 0.06f) * shake;
+                    m_GunR.localRotation = Quaternion.Euler(-6f * shake, -8f * shake, Mathf.Sin(time * 50f) * 6f * shake);
+                    m_GunL.localRotation = Quaternion.Euler(-6f * shake, 8f * shake, -Mathf.Sin(time * 50f) * 6f * shake);
+                    break;
+                }
+
+                case RigStyle.Minigun:
+                {
+                    var rumble = new Vector3(Mathf.Sin(time * 80f), Mathf.Cos(time * 73f), 0f) * 0.004f * m_KickR;
+                    PoseGun(m_GunR, m_GunRRest + rumble, m_KickR, 0.03f, 4f, 0f);
+                    if (m_WeaponR != null && m_WeaponR.drum != null) m_WeaponR.drum.localRotation *= Quaternion.Euler(0f, 0f, (500f + 1400f * m_KickR) * dt);
+                    if (m_HandL != null && m_GunR != null) m_HandL.position = m_GunR.TransformPoint(new Vector3(-0.02f, 0.15f, 0.04f));
+                    break;
+                }
+
                 case RigStyle.DualRevolvers:
                 {
                     PoseGun(m_GunR, m_GunRRest, m_KickR, 0.06f, 16f, TwirlAngle(0f));
@@ -360,14 +433,27 @@ namespace FPSLAN
                     float kickBack = Style == RigStyle.Sniper ? 0.11f : 0.09f;
                     float kickRot = Style == RigStyle.Sniper ? 18f : 14f;
                     PoseGun(m_GunR, m_GunRRest, m_KickR, kickBack, kickRot, 0f);
+                    if (Style == RigStyle.Shotgun && m_Reload < 1f)
+                    {
+                        // Recarga: inclina a caçadeira, mete o cartucho e endireita
+                        m_Reload += dt / 0.45f;
+                        float r = Mathf.Sin(Mathf.Clamp01(m_Reload) * Mathf.PI);
+                        m_GunR.localPosition += new Vector3(-0.03f, 0.03f, 0f) * r;
+                        m_GunR.localRotation *= Quaternion.Euler(-10f * r, 0f, 32f * r);
+                    }
                     if (m_WeaponR != null && m_WeaponR.pump != null)
                     {
                         m_Pump = Mathf.MoveTowards(m_Pump, 1f, dt * 2.2f);
                         float pz = m_Pump > 0.2f && m_Pump < 0.8f ? Mathf.Sin((m_Pump - 0.2f) / 0.6f * Mathf.PI) * -0.09f : 0f;
                         m_WeaponR.pump.localPosition = new Vector3(0f, -0.015f, 0.27f + pz);
                     }
-                    // Mão esquerda a segurar o pump/cano
-                    if (m_HandL != null && m_WeaponR != null)
+                    // Mão esquerda a segurar o pump/cano (na recarga desce para meter o cartucho)
+                    if (m_HandL != null && m_WeaponR != null && Style == RigStyle.Shotgun && m_Reload < 1f)
+                    {
+                        float r = Mathf.Sin(Mathf.Clamp01(m_Reload) * Mathf.PI);
+                        m_HandL.position = m_GunR.TransformPoint(new Vector3(0f, -0.09f - 0.06f * r, 0.08f));
+                    }
+                    else if (m_HandL != null && m_WeaponR != null)
                     {
                         var target = m_WeaponR.pump != null
                             ? m_WeaponR.pump.position + m_GunR.TransformDirection(new Vector3(0f, -0.03f, 0f))
@@ -383,6 +469,9 @@ namespace FPSLAN
                     PoseGun(m_GunR, m_GunRRest, m_KickR, 0.06f, 12f, 0f);
                     break;
             }
+
+            Root.localPosition = new Vector3(0f, -0.35f * equipK, -0.05f * equipK);
+            Root.localRotation = Quaternion.Euler(40f * equipK, 0f, -10f * equipK);
 
             // ---------------- antebraços (das mãos para fora do ecrã)
             PlaceForearm(m_ArmR, m_HandR, m_ArmAnchorR);

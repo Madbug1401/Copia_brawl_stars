@@ -19,6 +19,21 @@ namespace FPSLAN
     /// Super, reação a dano, morte e reaparecimento.
     /// Puramente visual: não tem colisores (o hitbox é o CharacterController do jogador).
     /// </summary>
+    /// <summary>Opções de construção das rigs: skin (cores/acessório), arma temporária (modo) e cor de destaque.</summary>
+    public struct RigOptions
+    {
+        /// <summary>Aspeto da skin (null = do Brawler). As proporções vêm sempre do Brawler.</summary>
+        public CharacterLook look;
+        public bool overrideRig;
+        public RigStyle rig;
+        /// <summary>Alfa 0 = cor de destaque do Brawler.</summary>
+        public Color accent;
+        /// <summary>Animação de "sacar" a arma (troca de arma / transformação).</summary>
+        public bool animateEquip;
+        /// <summary>Brilho de skin lendária.</summary>
+        public bool sparkle;
+    }
+
     public class CharacterRig
     {
         const float HipHeight = 0.5f;
@@ -56,20 +71,23 @@ namespace FPSLAN
 
         // ================================================================== construção
 
-        public static CharacterRig Build(BrawlerDefinition b, Transform parent, ShadowCastingMode shadows, int layer)
+        public static CharacterRig Build(BrawlerDefinition b, Transform parent, ShadowCastingMode shadows, int layer, RigOptions options = default)
         {
             var rig = new CharacterRig();
-            rig.Create(b, parent, shadows, layer);
+            rig.Create(b, parent, shadows, layer, options);
             return rig;
         }
 
-        void Create(BrawlerDefinition b, Transform parent, ShadowCastingMode shadows, int layer)
+        public bool Sparkle { get; private set; }
+
+        void Create(BrawlerDefinition b, Transform parent, ShadowCastingMode shadows, int layer, RigOptions options)
         {
             var tp = b != null ? b.thirdPerson : new ThirdPersonPresentation();
-            m_Look = tp.look ?? new CharacterLook();
-            Style = tp.rig;
+            m_Look = options.look ?? tp.look ?? new CharacterLook();
+            Style = options.overrideRig ? options.rig : tp.rig;
+            Sparkle = options.sparkle;
             var L = m_Look;
-            var accentColor = b != null ? b.firstPerson.accentColor : Color.white;
+            var accentColor = options.accent.a > 0f ? options.accent : (b != null ? b.firstPerson.accentColor : Color.white);
             // Proporções chibi: cabeça grande, pernas curtas, tronco largo
             float hs = Mathf.Clamp(L.headScale, 0.6f, 1.6f) * 1.15f;
             float bulk = Mathf.Clamp(L.bulk, 0.6f, 1.8f);
@@ -116,7 +134,7 @@ namespace FPSLAN
             m_SocketR = BuildArm(m_ArmR, L, shadows);
 
             // ---------------- armas
-            bool dual = Style == RigStyle.DualRevolvers || Style == RigStyle.DualExplosives;
+            bool dual = RigStyles.IsDual(Style);
             if (Style == RigStyle.Bow)
             {
                 m_WeaponL = WeaponModels.Build(Style, m_SocketL, accentColor, 1, shadows);
@@ -315,6 +333,7 @@ namespace FPSLAN
                         Part(PrimitiveType.Cylinder, belt, new Vector3(0f, (i - 1) * 0.15f, 0.04f), new Vector3(0.06f, 0.06f, 0.06f), new Color(0.9f, 0.2f, 0.15f), ShadowCastingMode.Off);
                     break;
                 case RigStyle.SprayCan:
+                case RigStyle.DualSprayCans:
                     // Depósito às costas
                     var tank = Node("Tank", spine, new Vector3(0f, 0.32f, -0.28f));
                     Part(PrimitiveType.Capsule, tank, Vector3.zero, new Vector3(0.24f, 0.22f, 0.24f), accent, s);
@@ -368,6 +387,9 @@ namespace FPSLAN
                     m_BodyKick = 1f;
                     m_Pump = 0f;
                     break;
+                case RigStyle.Minigun:
+                    m_BodyKick = 0.4f;
+                    break;
             }
         }
 
@@ -377,6 +399,7 @@ namespace FPSLAN
             if (m_WeaponL != null && m_WeaponR != null && Mathf.Abs(shotIndex) % 2 == 1) m_KickL = 1f;
             else m_KickR = 1f;
             if (Style == RigStyle.Shotgun || Style == RigStyle.Sniper) m_BodyKick = 1f;
+            else if (Style == RigStyle.Minigun) m_BodyKick = Mathf.Max(m_BodyKick, 0.35f);
         }
 
         public void OnHurt()
@@ -512,6 +535,7 @@ namespace FPSLAN
             switch (Style)
             {
                 case RigStyle.DualRevolvers:
+                case RigStyle.DualSMG:
                     m_ArmR.localRotation = Quaternion.Euler(aim - 18f * m_KickR + idleArm + superRaise, -6f, 0f);
                     m_ArmL.localRotation = Quaternion.Euler(aim - 18f * m_KickL - idleArm + superRaise, 6f, 0f);
                     break;
@@ -548,6 +572,27 @@ namespace FPSLAN
                     m_ArmL.localRotation = Quaternion.Euler(swing * 30f * move01 - 8f + m_SuperPose * -120f, 0f, -12f - m_SuperPose * 30f);
                     if (m_WeaponR != null && m_WeaponR.scope != null)
                         m_WeaponR.scope.localRotation = Quaternion.Euler(0f, 0f, attacking ? Mathf.Sin(time * 45f) * 8f : 0f);
+                    break;
+                }
+
+                case RigStyle.DualSprayCans:
+                {
+                    float shake = attacking ? Mathf.Sin(time * 60f) * 4f : 0f;
+                    m_ArmR.localRotation = Quaternion.Euler(aim + shake + idleArm + superRaise, -8f, shake * 0.5f);
+                    m_ArmL.localRotation = Quaternion.Euler(aim - shake - idleArm + superRaise, 8f, -shake * 0.5f);
+                    if (m_WeaponR != null && m_WeaponR.scope != null)
+                        m_WeaponR.scope.localRotation = Quaternion.Euler(0f, 0f, attacking ? Mathf.Sin(time * 45f) * 8f : 0f);
+                    if (m_WeaponL != null && m_WeaponL.scope != null)
+                        m_WeaponL.scope.localRotation = Quaternion.Euler(0f, 0f, attacking ? -Mathf.Sin(time * 45f) * 8f : 0f);
+                    break;
+                }
+
+                case RigStyle.Minigun:
+                {
+                    float kick = 6f * m_BodyKick;
+                    m_ArmR.localRotation = Quaternion.Euler(aim + 12f - kick + idleArm, -10f, 0f);
+                    m_ArmL.localRotation = Quaternion.Euler(aim + 4f - kick - idleArm, 30f, 0f);
+                    if (m_WeaponR != null && m_WeaponR.drum != null) m_WeaponR.drum.localRotation *= Quaternion.Euler(0f, 0f, (400f + 1500f * m_BodyKick) * dt);
                     break;
                 }
 

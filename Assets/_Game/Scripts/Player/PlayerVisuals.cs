@@ -27,6 +27,15 @@ namespace FPSLAN
         CharacterRig m_Rig;
         ViewModelRig m_View;
         int m_BuiltHero = int.MinValue;
+        int m_BuiltSkin = int.MinValue;
+        bool m_BuiltMode;
+        bool m_ModeActive;
+        RigStyle m_ModeRig = RigStyle.Minigun;
+        bool m_Armed;
+        LineRenderer m_Laser;
+        Transform m_RootCage;
+        PetFollower m_Pet;
+        float m_NextSkinSpark;
         int m_ViewLayer = -1;
 
         LineRenderer m_Trajectory;
@@ -143,6 +152,8 @@ namespace FPSLAN
         {
             m_Player.HeroId.OnValueChanged -= OnHeroChanged;
             if (m_Player.IsLocalHuman) MenuCamera.SetActive(true);
+            if (m_Pet != null) m_Pet.Dispose();
+            m_Pet = null;
             m_Rig?.Destroy();
             m_View?.Destroy();
             m_Rig = null;
@@ -151,16 +162,40 @@ namespace FPSLAN
 
         void OnHeroChanged(int previous, int current) => RebuildRigs();
 
+        /// <summary>Skin equipada (só se for deste Brawler; validada pelo host).</summary>
+        SkinDefinition CurrentSkin(BrawlerDefinition b)
+        {
+            var db = GameExperienceDatabase.Instance;
+            var skin = db != null ? db.SkinAt(m_Player.Loadout.Value.SkinIndex) : null;
+            if (skin == null || b == null || skin.target != SkinTarget.Brawler || skin.targetId != b.brawlerId) return null;
+            return skin;
+        }
+
         void RebuildRigs()
         {
             var b = m_Player.Brawler;
             int hero = m_Player.HeroId.Value;
-            if (hero == m_BuiltHero && m_Rig != null) return;
-            bool swap = m_BuiltHero != int.MinValue;
+            int skinIndex = m_Player.Loadout.Value.SkinIndex;
+            if (hero == m_BuiltHero && skinIndex == m_BuiltSkin && m_ModeActive == m_BuiltMode && m_Rig != null) return;
+            bool swap = m_BuiltHero != int.MinValue && hero != m_BuiltHero;
+            bool modeSwap = m_BuiltHero != int.MinValue && m_ModeActive != m_BuiltMode;
             m_BuiltHero = hero;
+            m_BuiltSkin = skinIndex;
+            m_BuiltMode = m_ModeActive;
+
+            var skin = CurrentSkin(b);
+            var options = new RigOptions
+            {
+                look = skin != null && b != null ? skin.ApplyTo(b.thirdPerson.look) : null,
+                accent = skin != null ? skin.weaponAccent : new Color(0f, 0f, 0f, 0f),
+                overrideRig = m_ModeActive,
+                rig = m_ModeRig,
+                animateEquip = modeSwap || swap,
+                sparkle = skin != null && skin.sparkle,
+            };
 
             m_Rig?.Destroy();
-            m_Rig = CharacterRig.Build(b, transform, ShadowCastingMode.On, 0);
+            m_Rig = CharacterRig.Build(b, transform, ShadowCastingMode.On, 0, options);
             if (m_Player.IsLocalHuman) m_Rig.SetShadowsOnly(true);
             m_Rig.SetDead(m_Player.Health.IsDead, true);
             if (m_Player.Health.IsDead) m_Rig.SetVisible(false);
@@ -168,12 +203,124 @@ namespace FPSLAN
             if (m_Player.IsLocalHuman && m_Camera != null)
             {
                 m_View?.Destroy();
-                m_View = ViewModelRig.Build(b, m_Camera.transform, m_ViewLayer >= 0 ? m_ViewLayer : 0);
+                m_View = ViewModelRig.Build(b, m_Camera.transform, m_ViewLayer >= 0 ? m_ViewLayer : 0, options);
                 m_View.SetVisible(!m_Player.Health.IsDead);
             }
 
             // Troca de personagem em jogo: pequeno efeito no sítio
             if (swap && !m_Player.Health.IsDead && IsSpawned) Fx.SpawnBeam(transform.position, b != null ? b.Tint : Color.white);
+            // Transformação (Minigun): anel, luz e faíscas
+            if (modeSwap && !m_Player.Health.IsDead && IsSpawned)
+            {
+                var c = b != null ? b.vfx.superColor : new Color(1f, 0.5f, 0.2f);
+                Fx.Ring(transform.position + Vector3.up * 0.1f, c, 3.5f, 0.4f);
+                Fx.Sparks(transform.position + Vector3.up * 1.2f, c, 14, 5f);
+                if (!m_Player.IsLocalHuman) Fx.Light(transform.position + Vector3.up * 1.2f, c, 3f, 5f, 0.3f);
+            }
+        }
+
+        /// <summary>Modo temporário do Super (ex.: Minigun): troca a arma com animação de transformação.</summary>
+        public void SetModeActive(bool active, RigStyle rig)
+        {
+            m_ModeRig = rig;
+            if (m_ModeActive == active) return;
+            m_ModeActive = active;
+            RebuildRigs();
+        }
+
+        /// <summary>Tiro especial armado (Tiro fatal): mira laser vermelha visível para todos (aviso justo).</summary>
+        public void SetArmed(bool armed)
+        {
+            m_Armed = armed;
+            if (armed && m_Laser == null)
+            {
+                var go = new GameObject("FatalLaser");
+                go.transform.SetParent(transform, false);
+                m_Laser = go.AddComponent<LineRenderer>();
+                m_Laser.positionCount = 2;
+                m_Laser.startWidth = 0.025f;
+                m_Laser.endWidth = 0.012f;
+                m_Laser.shadowCastingMode = ShadowCastingMode.Off;
+                m_Laser.receiveShadows = false;
+                m_Laser.useWorldSpace = true;
+                m_Laser.sharedMaterial = Art.FxBeam;
+                m_Laser.startColor = new Color(1f, 0.15f, 0.15f, 0.9f);
+                m_Laser.endColor = new Color(1f, 0.15f, 0.15f, 0.2f);
+            }
+            if (m_Laser != null) m_Laser.enabled = armed;
+            if (armed) Sfx.PlayAt(Sound.SuperReady, transform.position + Vector3.up, m_Player.IsLocalHuman ? 0.4f : 0.8f);
+        }
+
+        /// <summary>Pet do jogador: criado/recriado quando o loadout muda (pet, fase de evolução, skin).</summary>
+        void UpdatePet()
+        {
+            var db = GameExperienceDatabase.Instance;
+            var l = m_Player.Loadout.Value;
+            var def = db != null && l.HasPet ? db.PetAt(l.PetIndex) : null;
+            if (def == null)
+            {
+                if (m_Pet != null) { m_Pet.Dispose(); m_Pet = null; }
+                return;
+            }
+            var skin = db.SkinAt(l.PetSkinIndex);
+            if (skin != null && (skin.target != SkinTarget.Pet || skin.targetId != def.PetId)) skin = null;
+            string key = def.PetId + ":" + PetDefinition.StageForLevel(l.PetLevel) + ":" + (skin != null ? skin.skinId : "");
+            if (m_Pet != null && m_Pet.Key == key) return;
+            if (m_Pet != null) m_Pet.Dispose();
+            m_Pet = PetFollower.Create(m_Player, def, l.PetLevel, skin);
+        }
+
+        void UpdateStatusVisuals(bool dead)
+        {
+            // Preso (armadilha do N.Cage): anel de espinhos/correntes aos pés
+            bool rooted = !dead && m_Player.Status != null && m_Player.Status.IsRooted && !m_Concealed;
+            if (rooted && m_RootCage == null)
+            {
+                m_RootCage = new GameObject("RootCage").transform;
+                m_RootCage.SetParent(transform, false);
+                var c = new Color(0.45f, 0.95f, 0.35f);
+                for (int i = 0; i < 6; i++)
+                {
+                    float a = i * 60f * Mathf.Deg2Rad;
+                    var pos = new Vector3(Mathf.Sin(a) * 0.55f, 0.35f, Mathf.Cos(a) * 0.55f);
+                    Art.Part(PrimitiveType.Capsule, m_RootCage, pos, new Vector3(0.09f, 0.38f, 0.09f), Art.Darken(c, 0.7f), true, new Vector3(Mathf.Cos(a) * 18f, 0f, -Mathf.Sin(a) * 18f), ShadowCastingMode.Off);
+                }
+                Art.Part(PrimitiveType.Cylinder, m_RootCage, new Vector3(0f, 0.05f, 0f), new Vector3(1.2f, 0.03f, 1.2f), new Color(0.55f, 0.25f, 0.75f), true, default, ShadowCastingMode.Off);
+                foreach (var r in m_RootCage.GetComponentsInChildren<Renderer>()) Art.SetEmission(r, new Color(0.1f, 0.25f, 0.05f));
+            }
+            if (m_RootCage != null)
+            {
+                if (m_RootCage.gameObject.activeSelf != rooted) m_RootCage.gameObject.SetActive(rooted);
+                if (rooted)
+                {
+                    m_RootCage.localRotation = Quaternion.Euler(0f, Time.time * 30f, 0f);
+                    if (Random.value < Time.deltaTime * 6f)
+                        Fx.Glow(transform.position + Random.insideUnitSphere * 0.5f + Vector3.up * 0.5f, Vector3.up * 0.6f, new Color(0.6f, 0.3f, 0.9f), 0.1f, 0.5f);
+                }
+            }
+
+            // Laser do tiro armado
+            if (m_Laser != null && m_Laser.enabled)
+            {
+                bool show = m_Armed && !dead && !m_Concealed;
+                if (!show) m_Laser.SetPosition(0, Vector3.zero);
+                var from = GetMuzzle(0);
+                var dir = m_Player.Motor.AimDirection;
+                float len = 60f;
+                if (CombatMath.Raycast(m_Player.Motor.EyePosition, dir, len, m_Player, out var hit)) len = hit.distance;
+                m_Laser.SetPosition(0, show ? from : transform.position);
+                m_Laser.SetPosition(1, show ? m_Player.Motor.EyePosition + dir * len : transform.position);
+            }
+
+            // Skin lendária: brilho leve
+            var b = m_Player.Brawler;
+            if (!dead && !m_Concealed && m_Rig != null && m_Rig.Sparkle && !m_Player.IsLocalHuman && Time.time >= m_NextSkinSpark)
+            {
+                m_NextSkinSpark = Time.time + 0.25f;
+                var skin = CurrentSkin(b);
+                var c = skin != null ? skin.weaponAccent : Color.yellow;
+                Fx.Glow(m_Rig.ChestPosition + Random.insideUnitSphere * 0.6f, Vector3.up * 0.5f, c, 0.08f, 0.5f);
+            }
         }
 
         // ================================================================== construção
@@ -378,7 +525,9 @@ namespace FPSLAN
             bool dead = m_Player.Health.IsDead;
             var b = m_Player.Brawler;
 
-            if (m_Player.HeroId.Value != m_BuiltHero) RebuildRigs();
+            if (m_Player.HeroId.Value != m_BuiltHero || m_Player.Loadout.Value.SkinIndex != m_BuiltSkin) RebuildRigs();
+            UpdatePet();
+            UpdateStatusVisuals(dead);
 
             // ---------------- velocidade (remotos: pela posição)
             var pos = transform.position;
