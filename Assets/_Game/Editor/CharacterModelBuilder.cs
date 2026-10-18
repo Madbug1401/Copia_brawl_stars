@@ -38,6 +38,85 @@ namespace FPSLAN.EditorTools
             Report(AssetDatabase.DeleteAsset(path) ? "Removido " + path + ": o Lince volta ao boneco de primitivas." : "Não havia " + path);
         }
 
+        [MenuItem("FPS-LAN/Personagens: gerar braços da 1.ª pessoa (Lince)", priority = 32)]
+        static void BuildLinceArmsMenu() => Report(BuildFirstPersonArms(LinceBrawlerId, LinceFolder, "Lince"));
+
+        /// <summary>
+        /// Braços para a vista em 1.ª pessoa: o prefab do modelo com uma malha que só tem os braços e as mãos
+        /// (triângulos cujos vértices pesam sobretudo nos ossos do braço, antebraço, mão e dedos).
+        /// Grava Resources/Characters/&lt;brawlerId&gt;_fparms.prefab, que o ViewModelRig usa automaticamente.
+        /// </summary>
+        public static string BuildFirstPersonArms(string brawlerId, string folder, string prefix)
+        {
+            const string res = "Assets/_Game/Resources/Characters";
+            var srcPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(res + "/" + brawlerId + ".prefab");
+            if (srcPrefab == null) return "Primeiro monta o personagem (falta " + res + "/" + brawlerId + ".prefab).";
+            var inst = (GameObject)PrefabUtility.InstantiatePrefab(srcPrefab);
+            PrefabUtility.UnpackPrefabInstance(inst, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            inst.name = prefix + "_FPArms";
+            var anim = inst.GetComponentInChildren<Animator>();
+            if (anim == null || !anim.isHuman) { Object.DestroyImmediate(inst); return "O modelo não tem Animator humanoide."; }
+
+            // ossos dos braços: braço, antebraço, mão e todos os dedos
+            var arm = new HashSet<Transform>();
+            foreach (var hb in new[] { HumanBodyBones.LeftUpperArm, HumanBodyBones.RightUpperArm })
+            {
+                var t = anim.GetBoneTransform(hb);
+                if (t != null) foreach (var c in t.GetComponentsInChildren<Transform>(true)) arm.Add(c);
+            }
+
+            int kept = 0, total = 0;
+            foreach (var smr in inst.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                var src = smr.sharedMesh;
+                if (src == null) continue;
+                var bones = smr.bones;
+                var isArm = new bool[bones.Length];
+                for (int i = 0; i < bones.Length; i++) isArm[i] = bones[i] != null && arm.Contains(bones[i]);
+                var bw = src.boneWeights;
+                var armW = new float[bw.Length];
+                for (int v = 0; v < bw.Length; v++)
+                {
+                    var w = bw[v];
+                    float a = 0f;
+                    if (isArm[w.boneIndex0]) a += w.weight0;
+                    if (isArm[w.boneIndex1]) a += w.weight1;
+                    if (isArm[w.boneIndex2]) a += w.weight2;
+                    if (isArm[w.boneIndex3]) a += w.weight3;
+                    armW[v] = a;
+                }
+                var mesh = Object.Instantiate(src);
+                mesh.name = prefix + "_FPArms";
+                for (int sm = 0; sm < src.subMeshCount; sm++)
+                {
+                    var tris = src.GetTriangles(sm);
+                    var keep = new List<int>(tris.Length / 4);
+                    for (int t = 0; t < tris.Length; t += 3)
+                    {
+                        total++;
+                        if (armW[tris[t]] >= 0.5f && armW[tris[t + 1]] >= 0.5f && armW[tris[t + 2]] >= 0.5f)
+                        {
+                            keep.Add(tris[t]); keep.Add(tris[t + 1]); keep.Add(tris[t + 2]);
+                            kept++;
+                        }
+                    }
+                    mesh.SetTriangles(keep, sm);
+                }
+                var meshPath = folder + "/" + prefix + "_FPArms.asset";
+                AssetDatabase.DeleteAsset(meshPath);
+                AssetDatabase.CreateAsset(mesh, meshPath);
+                smr.sharedMesh = mesh;
+                smr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                smr.updateWhenOffscreen = true;
+            }
+
+            var path = res + "/" + brawlerId + ViewModelRig.FirstPersonArmsSuffix + ".prefab";
+            PrefabUtility.SaveAsPrefabAsset(inst, path);
+            Object.DestroyImmediate(inst);
+            AssetDatabase.SaveAssets();
+            return "Braços da 1.ª pessoa: " + path + "\nTriângulos: " + kept + " de " + total;
+        }
+
         static void Report(string report)
         {
             Debug.Log("[Personagens] " + report);
@@ -265,10 +344,12 @@ namespace FPSLAN.EditorTools
             PrefabUtility.SaveAsPrefabAsset(inst, prefabPath);
             Object.DestroyImmediate(inst);
             AssetDatabase.SaveAssets();
+            var armsReport = BuildFirstPersonArms(brawlerId, folder, prefix);
 
             return "Pronto: " + prefabPath + "\nModelo: " + Path.GetFileName(modelPath) +
                    "\nAnimações: " + string.Join(", ", clips.Select(kv => kv.Key + "=" + kv.Value.name + "(" + Path.GetFileName(AssetDatabase.GetAssetPath(kv.Value)) + ")")) +
-                   "\nAltura original: " + height.ToString("0.00") + " m → " + CharacterRig.ModelTargetHeight + " m";
+                   "\nAltura original: " + height.ToString("0.00") + " m → " + CharacterRig.ModelTargetHeight + " m" +
+                   "\n" + armsReport;
         }
 
         static void ConfigureClips(ModelImporter mi, string fileName)
