@@ -17,14 +17,22 @@ MonoBehaviour:
     damage: 0
     nearMultiplier: 1
     farMultiplier: 1
+    falloffStartFraction: 0
     canHeadshot: 0
     headshotMultiplier: 1.5
-    splashRadius: 2.2
-    splashDamage: 45
+    headshotDamage: 0
+    perShotDamage: 
+    executeOnHeadshot: 0
+    splashRadius: 2.4
+    splashDamage: 40
+    splashFullRadiusFraction: 0.3
+    splashEdgeMultiplier: 0.35
     slowFactor: 1
     slowDuration: 0
     dotDamagePerSecond: 0
     dotDuration: 0
+    rootDuration: 0
+    rootImmunity: 2.5
     knockback: 0
     knockbackUp: 0
     coverDamage: 35
@@ -37,9 +45,11 @@ MonoBehaviour:
       slowFactor: 1
       slowDuration: 0.6
       color: {r: 0.6, g: 0.9, b: 0.4, a: 1}
+      secondaryColor: {r: 0.75, g: 0.45, b: 1, a: 1}
+      nonStackingPerAttacker: 1
   visuals:
     color: {r: 1, g: 0.45, b: 0.2, a: 1}
-    scale: 1.8
-    style: 4
+    scale: 1
+    style: 8
     sound: 10
     impactSound: 13

@@ -59,47 +59,59 @@ namespace FPSLAN.EditorTools
         }
 
         // =====================================================================================
-        // Pistoleiro — referência de design: Colt. Damage dealer, mira/precisão, rajada de 6.
+        // Ekko (id "gunslinger") — Pistoleiro/Metralhador: duas metralhadoras compactas automáticas.
+        // Dano por bala com queda pela distância; Especial: Minigun temporária (máx. 10 rajadas × 4 balas × 5 = 200).
         // =====================================================================================
         static BrawlerDefinition Gunslinger()
         {
             const string id = "gunslinger";
             var b = Definition(id);
             b.displayName = "Ekko";
-            b.role = "Pistoleiro — rajada de 6 tiros de longo alcance; Super: tempestade de balas que destrói cobertura";
-            b.stats = new BrawlerStats { maxHealth = 100, regenDelay = 3f, regenPercentPerSecond = 0.15f };
+            b.shortName = "";
+            b.role = "Pistoleiro / Metralhador — duas metralhadoras automáticas, fortes de perto; Especial: Minigun (até 200 de dano)";
+            b.stats = new BrawlerStats { maxHealth = 120, regenDelay = 3f, regenPercentPerSecond = 0.15f };
             b.movement = new MovementProfile { walkSpeed = 6.6f, sprintSpeed = 9.6f, jumpHeight = 1.3f };
 
+            // Rajada de 5 balas alternando as mãos: 12 por bala de perto (60/rajada), 7 no alcance máximo
             var main = Attack<ProjectileDelivery>(id, "Primary", d =>
             {
-                d.count = 6; d.interval = 0.065f; d.spreadDegrees = 0.8f; d.fanDegrees = 0f;
-                d.speed = 85f; d.range = 30f; d.radius = 0.13f; d.pierce = false;
+                d.count = 5; d.interval = 0.06f; d.spreadDegrees = 2.2f; d.fanDegrees = 0f;
+                d.speed = 95f; d.range = 26f; d.radius = 0.1f; d.pierce = false; d.gravity = 0f;
             }, e =>
             {
-                e.damage = 18; e.nearMultiplier = 1f; e.farMultiplier = 1f; e.canHeadshot = true; e.headshotMultiplier = 1.5f;
-            }, v => { v.color = new Color(1f, 0.85f, 0.35f); v.scale = 1f; v.style = ProjectileStyle.Bullet; v.sound = Sound.Shot; v.impactSound = Sound.Hit; });
+                e.damage = 12; e.nearMultiplier = 1f; e.farMultiplier = 0.6f; e.falloffStartFraction = 0.2f; e.canHeadshot = true; e.headshotMultiplier = 1.25f;
+            }, v => { v.color = new Color(1f, 0.85f, 0.35f); v.scale = 0.9f; v.style = ProjectileStyle.Bullet; v.sound = Sound.Smg; v.impactSound = Sound.Hit; });
 
+            // Minigun: cada disparo do modo = 4 balas de 5 (sem headshot), máx. 10 disparos → 200 de dano potencial
             var super = Attack<ProjectileDelivery>(id, "Super", d =>
             {
-                d.count = 12; d.interval = 0.045f; d.spreadDegrees = 1.4f;
-                d.speed = 100f; d.range = 40f; d.radius = 0.2f; d.pierce = true;
+                d.count = 4; d.interval = 0.07f; d.spreadDegrees = 3.5f; d.fanDegrees = 0f;
+                d.speed = 110f; d.range = 30f; d.radius = 0.12f; d.pierce = false; d.gravity = 0f;
             }, e =>
             {
-                e.damage = 18; e.canHeadshot = true; e.headshotMultiplier = 1.25f; e.coverDamage = 60;
-            }, v => { v.color = new Color(1f, 0.35f, 0.25f); v.scale = 1.6f; v.style = ProjectileStyle.Bullet; v.sound = Sound.SuperShot; v.impactSound = Sound.Hit; });
+                e.damage = 5; e.nearMultiplier = 1f; e.farMultiplier = 0.7f; e.canHeadshot = false; e.coverDamage = 8;
+            }, v => { v.color = new Color(1f, 0.45f, 0.2f); v.scale = 1.1f; v.style = ProjectileStyle.Bullet; v.sound = Sound.Minigun; v.impactSound = Sound.Hit; });
 
-            b.primary = new PrimaryAttackDefinition { attack = main, maxCharges = 3, reloadTimePerCharge = 1.3f, cooldown = 0.5f };
-            b.super = new SuperDefinition { attack = super, chargeRequired = 216f };
+            b.primary = new PrimaryAttackDefinition { attack = main, maxCharges = 3, reloadTimePerCharge = 1.1f, cooldown = 0.42f };
+            b.super = new SuperDefinition
+            {
+                attack = super, chargeRequired = 300f, activation = SuperActivation.Mode,
+                mode = new SuperModeSettings
+                {
+                    label = "Minigun", duration = 3.2f, maxShots = 10, shotCooldown = 0.3f, activationDelay = 0.4f,
+                    consumeOnFirstShot = false, cancellable = false,
+                },
+            };
 
             b.firstPerson = new FirstPersonPresentation
             {
-                rig = RigStyle.DualRevolvers,
-                muzzleOffsets = new[] { new Vector3(0.2f, -0.13f, 0.5f), new Vector3(-0.2f, -0.13f, 0.5f) },
+                rig = RigStyle.DualSMG,
+                muzzleOffsets = new[] { new Vector3(0.19f, -0.175f, 0.68f), new Vector3(-0.19f, -0.175f, 0.68f) },
                 accentColor = new Color(0.95f, 0.75f, 0.35f),
             };
             b.thirdPerson = new ThirdPersonPresentation
             {
-                rig = RigStyle.DualRevolvers,
+                rig = RigStyle.DualSMG,
                 muzzleOffsets = new[] { new Vector3(0.32f, 0.02f, 0.7f), new Vector3(-0.32f, 0.02f, 0.7f) },
                 bodyColor = new Color(0.95f, 0.75f, 0.35f),
                 look = new CharacterLook
@@ -109,48 +121,59 @@ namespace FPSLAN.EditorTools
                     headGear = HeadGear.WideHat, bodyScale = 1f, headScale = 1f, bulk = 0.95f,
                 },
             };
-            b.animations = new AnimationSet { attackKick = 0.8f, attackDuration = 0.4f, reloadDuration = 0.35f, superDuration = 0.6f };
-            b.vfx = new VFXSet { primaryColor = main.visuals.color, superColor = super.visuals.color };
-            b.sfx = new SFXSet { primary = Sound.Shot, super = Sound.SuperShot, impact = Sound.Hit };
-            b.bot = new BotProfile { preferredRange = 18f, superUseRange = 30f, aimAtFeet = false };
+            b.animations = new AnimationSet { attackKick = 0.6f, attackDuration = 0.35f, reloadDuration = 0.35f, superDuration = 0.6f };
+            b.vfx = new VFXSet { primaryColor = main.visuals.color, superColor = super.visuals.color, muzzleFlashScale = 0.8f };
+            b.sfx = new SFXSet { primary = Sound.Smg, super = Sound.Minigun, impact = Sound.Hit };
+            b.bot = new BotProfile { preferredRange = 12f, superUseRange = 16f, aimAtFeet = false };
             return Save(b);
         }
 
         // =====================================================================================
-        // Artilheiro — referência de design: Dynamike. Duas dinamites em arco, atraso, área.
+        // Lupus Marinus "L.M" (id "artillery") — Artilheiro/TNT: um molho de TNT por ataque, explode no impacto.
+        // 40 de dano no centro (acerto direto) a cair com a distância; Especial: cinco minas com sensor de movimento.
         // =====================================================================================
         static BrawlerDefinition Artillery()
         {
             const string id = "artillery";
             var b = Definition(id);
             b.displayName = "Lupus Marinus";
-            b.role = "Artilheiro — duas cargas em arco que explodem após um atraso; Super: barril com knockback";
-            b.stats = new BrawlerStats { maxHealth = 110, regenDelay = 3f, regenPercentPerSecond = 0.15f };
+            b.shortName = "L.M";
+            b.role = "Artilheiro / TNT — cargas de TNT em arco (40 por acerto direto, menos à distância); Especial: cinco minas com sensor de movimento";
+            b.stats = new BrawlerStats { maxHealth = 100, regenDelay = 3f, regenPercentPerSecond = 0.15f };
             b.movement = new MovementProfile { walkSpeed = 6.6f, sprintSpeed = 9.6f, jumpHeight = 1.3f };
 
+            // TNT: acerto direto/centro = 40 (3 TNT = 120); dano total até 30% do raio, depois desce até 35% na borda
             var main = Attack<ArcProjectileDelivery>(id, "Primary", d =>
             {
-                d.count = 2; d.interval = 0.08f; d.landingSpread = 1.4f;
+                d.count = 1; d.interval = 0f; d.landingSpread = 0f;
                 d.speed = 18f; d.range = 18f; d.gravity = 22f; d.minFlightTime = 0.45f; d.maxFlightTime = 1.0f;
-                d.radius = 0.2f; d.fuseDelay = 0.5f;
+                d.radius = 0.22f; d.fuseDelay = 0f; d.hitsPlayers = true;
             }, e =>
             {
                 e.damage = 0; e.canHeadshot = false;
-                e.splashRadius = 2.2f; e.splashDamage = 45; e.coverDamage = 35;
-            }, v => { v.color = new Color(1f, 0.45f, 0.2f); v.scale = 1.8f; v.style = ProjectileStyle.Dynamite; v.sound = Sound.Lob; v.impactSound = Sound.Explosion; });
+                e.splashRadius = 2.4f; e.splashDamage = 40; e.splashFullRadiusFraction = 0.3f; e.splashEdgeMultiplier = 0.35f; e.coverDamage = 35;
+            }, v => { v.color = new Color(1f, 0.45f, 0.2f); v.scale = 1f; v.style = ProjectileStyle.Tnt; v.sound = Sound.Lob; v.impactSound = Sound.Explosion; });
 
-            var super = Attack<ArcProjectileDelivery>(id, "Super", d =>
+            // Cinco minas: sensor de proximidade, aviso curto, explosão; destruídas por explosões/facadas inimigas
+            var super = Attack<PlaceTrapsDelivery>(id, "Super", d =>
             {
-                d.count = 1; d.speed = 16f; d.range = 20f; d.gravity = 22f; d.minFlightTime = 0.55f; d.maxFlightTime = 1.1f;
-                d.radius = 0.35f; d.fuseDelay = 0.7f;
+                d.count = 5; d.spread = 1.6f; d.range = 13f;
+                d.trap = new TrapSettings
+                {
+                    kind = TrapKind.Explosive, armTime = 0.9f, triggerRadius = 1.7f, warningTime = 0.45f, lifetime = 25f,
+                    hiddenFromEnemies = true, color = new Color(1f, 0.45f, 0.2f),
+                    destroyedByEnemyExplosions = true, destroyedByEnemyMelee = true, removeOnOwnerDeath = false,
+                    maxActivePerOwner = 10, placementClearance = 0.3f,
+                };
             }, e =>
             {
                 e.damage = 0; e.canHeadshot = false;
-                e.splashRadius = 4.5f; e.splashDamage = 110; e.knockback = 12f; e.knockbackUp = 6f; e.coverDamage = 200;
-            }, v => { v.color = new Color(1f, 0.25f, 0.15f); v.scale = 3.4f; v.style = ProjectileStyle.Barrel; v.sound = Sound.Lob; v.impactSound = Sound.Explosion; });
+                e.splashRadius = 2.6f; e.splashDamage = 55; e.splashFullRadiusFraction = 0.35f; e.splashEdgeMultiplier = 0.4f;
+                e.knockback = 5f; e.knockbackUp = 3f; e.coverDamage = 40;
+            }, v => { v.color = new Color(1f, 0.5f, 0.25f); v.scale = 1f; v.sound = Sound.Lob; v.impactSound = Sound.Explosion; });
 
-            b.primary = new PrimaryAttackDefinition { attack = main, maxCharges = 3, reloadTimePerCharge = 1.4f, cooldown = 0.6f };
-            b.super = new SuperDefinition { attack = super, chargeRequired = 180f };
+            b.primary = new PrimaryAttackDefinition { attack = main, maxCharges = 3, reloadTimePerCharge = 1.35f, cooldown = 0.55f };
+            b.super = new SuperDefinition { attack = super, chargeRequired = 160f };
 
             b.firstPerson = new FirstPersonPresentation
             {
@@ -173,44 +196,54 @@ namespace FPSLAN.EditorTools
             b.animations = new AnimationSet { attackKick = 0.6f, attackDuration = 0.5f, reloadDuration = 0.4f, superDuration = 0.7f };
             b.vfx = new VFXSet { primaryColor = main.visuals.color, superColor = super.visuals.color, impactScale = 1.4f };
             b.sfx = new SFXSet { primary = Sound.Lob, super = Sound.Lob, impact = Sound.Explosion };
-            b.bot = new BotProfile { preferredRange = 13f, superUseRange = 16f, aimAtFeet = true };
+            b.bot = new BotProfile { preferredRange = 13f, superUseRange = 12f, aimAtFeet = true };
             return Save(b);
         }
 
         // =====================================================================================
-        // Armadilheiro — referência de design: Bo. Três flechas + minas, controlo de território.
+        // N.Cage (id "trapper") — Arqueiro/Controlo: três flechas por ataque (33+34+33 = 100 se todas acertarem).
+        // Especial: três armadilhas que imobilizam 5 s e envenenam (40 no total).
         // =====================================================================================
         static BrawlerDefinition Trapper()
         {
             const string id = "trapper";
             var b = Definition(id);
             b.displayName = "N.Cage";
-            b.role = "Armadilheiro — três flechas explosivas em leque; Super: três minas escondidas";
-            b.stats = new BrawlerStats { maxHealth = 125, regenDelay = 3f, regenPercentPerSecond = 0.15f };
+            b.shortName = "";
+            b.role = "Arqueiro / Controlo — três flechas por ataque (100 se todas acertarem); Especial: três armadilhas que prendem e envenenam";
+            b.stats = new BrawlerStats { maxHealth = 110, regenDelay = 3f, regenPercentPerSecond = 0.15f };
             b.movement = new MovementProfile { walkSpeed = 6.6f, sprintSpeed = 9.6f, jumpHeight = 1.3f };
 
+            // Três flechas com trajetória (ligeira queda); dano exato por flecha; flechas que falham não contam
             var main = Attack<ProjectileDelivery>(id, "Primary", d =>
             {
-                d.count = 3; d.interval = 0f; d.spreadDegrees = 0f; d.fanDegrees = 12f;
-                d.speed = 50f; d.range = 24f; d.radius = 0.15f; d.pierce = false;
+                d.count = 3; d.interval = 0f; d.spreadDegrees = 0f; d.fanDegrees = 7f;
+                d.speed = 55f; d.range = 24f; d.radius = 0.15f; d.pierce = false; d.gravity = 4f;
             }, e =>
             {
-                e.damage = 30; e.canHeadshot = true; e.headshotMultiplier = 1.25f;
-                e.splashRadius = 1.2f; e.splashDamage = 8; e.coverDamage = 10;
-            }, v => { v.color = new Color(0.45f, 0.75f, 1f); v.scale = 1.2f; v.style = ProjectileStyle.Arrow; v.sound = Sound.Bow; v.impactSound = Sound.Explosion; });
+                e.damage = 33; e.perShotDamage = new[] { 33, 34, 33 }; e.nearMultiplier = 1f; e.farMultiplier = 1f;
+                e.canHeadshot = false; e.splashRadius = 0f; e.splashDamage = 0; e.coverDamage = 10;
+            }, v => { v.color = new Color(0.45f, 0.75f, 1f); v.scale = 1.2f; v.style = ProjectileStyle.Arrow; v.sound = Sound.Bow; v.impactSound = Sound.Hit; });
 
+            // Armadilhas de imobilização: prendem 5 s (pode olhar e atacar), 8/s de veneno = 40; imunidade de 3 s depois
             var super = Attack<PlaceTrapsDelivery>(id, "Super", d =>
             {
-                d.count = 3; d.spread = 1.5f; d.range = 12f;
-                d.trap = new TrapSettings { armTime = 0.8f, triggerRadius = 1.8f, warningTime = 0.35f, lifetime = 30f, hiddenFromEnemies = true, color = new Color(0.3f, 0.55f, 1f) };
+                d.count = 3; d.spread = 1.6f; d.range = 12f;
+                d.trap = new TrapSettings
+                {
+                    kind = TrapKind.Snare, armTime = 0.6f, triggerRadius = 1.1f, warningTime = 0f, lifetime = 30f,
+                    hiddenFromEnemies = true, color = new Color(0.45f, 0.9f, 0.35f),
+                    destroyedByEnemyExplosions = true, destroyedByEnemyMelee = true, removeOnOwnerDeath = false,
+                    maxActivePerOwner = 6, placementClearance = 0.3f,
+                };
             }, e =>
             {
                 e.damage = 0; e.canHeadshot = false;
-                e.splashRadius = 2.8f; e.splashDamage = 60; e.knockback = 5f; e.knockbackUp = 3f; e.coverDamage = 40;
-            }, v => { v.color = new Color(0.35f, 0.6f, 1f); v.scale = 1f; v.sound = Sound.Lob; v.impactSound = Sound.Explosion; });
+                e.rootDuration = 5f; e.rootImmunity = 3f; e.dotDamagePerSecond = 8f; e.dotDuration = 5f;
+            }, v => { v.color = new Color(0.45f, 0.9f, 0.35f); v.scale = 1f; v.sound = Sound.Lob; v.impactSound = Sound.Snare; });
 
-            b.primary = new PrimaryAttackDefinition { attack = main, maxCharges = 3, reloadTimePerCharge = 1.7f, cooldown = 0.55f };
-            b.super = new SuperDefinition { attack = super, chargeRequired = 180f };
+            b.primary = new PrimaryAttackDefinition { attack = main, maxCharges = 3, reloadTimePerCharge = 1.6f, cooldown = 0.6f };
+            b.super = new SuperDefinition { attack = super, chargeRequired = 170f };
 
             b.firstPerson = new FirstPersonPresentation
             {
@@ -233,52 +266,63 @@ namespace FPSLAN.EditorTools
             b.animations = new AnimationSet { attackKick = 0.7f, attackDuration = 0.45f, reloadDuration = 0.45f, superDuration = 0.6f };
             b.vfx = new VFXSet { primaryColor = main.visuals.color, superColor = super.visuals.color };
             b.sfx = new SFXSet { primary = Sound.Bow, super = Sound.Lob, impact = Sound.Explosion };
-            b.bot = new BotProfile { preferredRange = 15f, superUseRange = 10f, aimAtFeet = false };
+            b.bot = new BotProfile { preferredRange = 14f, superUseRange = 10f, aimAtFeet = false };
             return Save(b);
         }
 
         // =====================================================================================
-        // Spray — referência de design: Emz. Cone persistente em ticks, dano por distância; aura de slow.
+        // Mr.S (id "sprayer") — Especialista em spray: duas latas, cone de curto alcance (4 ticks × 14 = 56; 52 na borda).
+        // Especial: duas granadas de veneno que deixam áreas tóxicas durante 12 s (sem acumulação do mesmo atacante).
         // =====================================================================================
         static BrawlerDefinition Sprayer()
         {
             const string id = "sprayer";
             var b = Definition(id);
             b.displayName = "Mr.S";
-            b.role = "Spray — nuvem em cone que causa mais dano à distância; Super: aura que abranda e causa dano";
-            b.stats = new BrawlerStats { maxHealth = 120, regenDelay = 3f, regenPercentPerSecond = 0.15f };
+            b.shortName = "";
+            b.role = "Especialista em spray — duas latas em cone de curto alcance (50–56 por ataque); Especial: granadas de veneno (12 s)";
+            b.stats = new BrawlerStats { maxHealth = 160, regenDelay = 3f, regenPercentPerSecond = 0.15f };
             b.movement = new MovementProfile { walkSpeed = 6.4f, sprintSpeed = 9.4f, jumpHeight = 1.3f };
 
+            // Um só volume de dano (as duas latas são visuais); cada alvo conta uma vez por tick e no máximo 4 ticks
             var main = Attack<ConeVolumeDelivery>(id, "Primary", d =>
             {
-                d.range = 10f; d.angle = 32f; d.duration = 0.6f; d.tickInterval = 0.2f; d.expandTime = 0.25f;
+                d.range = 7.5f; d.angle = 36f; d.duration = 0.6f; d.tickInterval = 0.15f; d.expandTime = 0.12f;
+                d.maxTicksPerTarget = 4; d.dualStream = true;
             }, e =>
             {
-                // Mais dano longe do que perto: recompensa manter distância (controlo de espaço)
-                e.damage = 12; e.nearMultiplier = 0.6f; e.farMultiplier = 1.3f; e.canHeadshot = false;
-            }, v => { v.color = new Color(0.8f, 0.55f, 1f); v.scale = 1f; v.style = ProjectileStyle.Orb; v.sound = Sound.Spray; v.impactSound = Sound.Hit; });
+                e.damage = 14; e.nearMultiplier = 1f; e.farMultiplier = 0.9f; e.canHeadshot = false;
+            }, v => { v.color = new Color(0.7f, 0.45f, 1f); v.scale = 1f; v.style = ProjectileStyle.Orb; v.sound = Sound.Spray; v.impactSound = Sound.Hit; });
 
-            var super = Attack<SelfAuraDelivery>(id, "Super", d =>
+            // Granadas de veneno: zona verde/roxa de 2,8 m durante 12 s, 8 de dano por segundo a quem estiver dentro
+            var super = Attack<ArcProjectileDelivery>(id, "Super", d =>
             {
-                d.zone = new ZoneSettings { enabled = true, radius = 5f, duration = 5f, tickInterval = 0.5f, tickDamage = 8, slowFactor = 0.55f, slowDuration = 0.7f, color = new Color(0.65f, 0.4f, 0.95f) };
+                d.count = 2; d.interval = 0.12f; d.landingSpread = 2.2f;
+                d.speed = 16f; d.range = 16f; d.gravity = 22f; d.minFlightTime = 0.5f; d.maxFlightTime = 1.0f;
+                d.radius = 0.2f; d.fuseDelay = 0.25f; d.hitsPlayers = false;
             }, e =>
             {
-                e.damage = 0; e.canHeadshot = false;
-            }, v => { v.color = new Color(0.7f, 0.4f, 1f); v.scale = 1f; v.sound = Sound.SuperShot; v.impactSound = Sound.Hit; });
+                e.damage = 0; e.canHeadshot = false; e.splashRadius = 0f; e.splashDamage = 0;
+                e.zoneOnImpact = new ZoneSettings
+                {
+                    enabled = true, radius = 2.8f, duration = 12f, tickInterval = 1f, tickDamage = 8, slowFactor = 1f, slowDuration = 0f,
+                    color = new Color(0.45f, 0.95f, 0.3f), secondaryColor = new Color(0.75f, 0.4f, 1f), nonStackingPerAttacker = true,
+                };
+            }, v => { v.color = new Color(0.5f, 1f, 0.35f); v.scale = 1f; v.style = ProjectileStyle.Grenade; v.sound = Sound.Lob; v.impactSound = Sound.PoisonHiss; });
 
-            b.primary = new PrimaryAttackDefinition { attack = main, maxCharges = 3, reloadTimePerCharge = 2.0f, cooldown = 0.65f };
+            b.primary = new PrimaryAttackDefinition { attack = main, maxCharges = 3, reloadTimePerCharge = 1.8f, cooldown = 0.65f };
             b.super = new SuperDefinition { attack = super, chargeRequired = 150f };
 
             b.firstPerson = new FirstPersonPresentation
             {
-                rig = RigStyle.SprayCan,
-                muzzleOffsets = new[] { new Vector3(0.18f, -0.1f, 0.45f) },
+                rig = RigStyle.DualSprayCans,
+                muzzleOffsets = new[] { new Vector3(0.2f, -0.06f, 0.45f), new Vector3(-0.2f, -0.06f, 0.45f) },
                 accentColor = new Color(0.78f, 0.5f, 1f),
             };
             b.thirdPerson = new ThirdPersonPresentation
             {
-                rig = RigStyle.SprayCan,
-                muzzleOffsets = new[] { new Vector3(0.3f, 0.05f, 0.55f) },
+                rig = RigStyle.DualSprayCans,
+                muzzleOffsets = new[] { new Vector3(0.3f, 0.05f, 0.55f), new Vector3(-0.3f, 0.05f, 0.55f) },
                 bodyColor = new Color(0.78f, 0.5f, 1f),
                 look = new CharacterLook
                 {
@@ -289,31 +333,33 @@ namespace FPSLAN.EditorTools
             };
             b.animations = new AnimationSet { attackKick = 0.3f, attackDuration = 0.6f, reloadDuration = 0.5f, superDuration = 0.8f };
             b.vfx = new VFXSet { primaryColor = main.visuals.color, superColor = super.visuals.color };
-            b.sfx = new SFXSet { primary = Sound.Spray, super = Sound.SuperShot, impact = Sound.Hit };
-            b.bot = new BotProfile { preferredRange = 7f, superUseRange = 4.5f, aimAtFeet = false };
+            b.sfx = new SFXSet { primary = Sound.Spray, super = Sound.Lob, impact = Sound.Hit };
+            b.bot = new BotProfile { preferredRange = 5.5f, superUseRange = 14f, aimAtFeet = false };
             return Save(b);
         }
 
         // =====================================================================================
-        // Caçadeira — arquétipo "starter" de curto alcance: leque de bagos, muito forte de perto.
+        // Riot (id "shotgunner") — Shotgun/combate próximo: 6 bagos; total de um disparo 54 de perto e 18 de longe.
+        // Especial: o Super de Brasa preservado (rajada que empurra e destrói cobertura). Vida mantém-se (135).
         // =====================================================================================
         static BrawlerDefinition Shotgunner()
         {
             const string id = "shotgunner";
             var b = Definition(id);
             b.displayName = "Riot";
-            b.role = "Caçadeira — leque de bagos que arrasa de perto; Super: rajada gigante que empurra e destrói cobertura";
+            b.shortName = "";
+            b.role = "Shotgun / Combate próximo — 6 bagos: 54 de perto, 18 de longe; Especial: rajada que empurra e destrói cobertura";
             b.stats = new BrawlerStats { maxHealth = 135, regenDelay = 3f, regenPercentPerSecond = 0.15f };
             b.movement = new MovementProfile { walkSpeed = 6.7f, sprintSpeed = 9.7f, jumpHeight = 1.3f };
 
+            // Valores do disparo completo (não por bago): 6 × 9 = 54 até 1/4 do alcance (curta distância); 6 × 3 = 18 no alcance máximo
             var main = Attack<ProjectileDelivery>(id, "Primary", d =>
             {
                 d.count = 6; d.interval = 0f; d.spreadDegrees = 2f; d.fanDegrees = 26f;
-                d.speed = 60f; d.range = 13f; d.radius = 0.16f; d.pierce = false;
+                d.speed = 60f; d.range = 13f; d.radius = 0.16f; d.pierce = false; d.gravity = 0f;
             }, e =>
             {
-                // Mais dano perto: recompensa encurtar distância
-                e.damage = 15; e.nearMultiplier = 1.2f; e.farMultiplier = 0.55f; e.canHeadshot = true; e.headshotMultiplier = 1.25f; e.coverDamage = 6;
+                e.damage = 9; e.nearMultiplier = 1f; e.farMultiplier = 0.334f; e.falloffStartFraction = 0.25f; e.canHeadshot = false; e.coverDamage = 6;
             }, v => { v.color = new Color(1f, 0.6f, 0.25f); v.scale = 1f; v.style = ProjectileStyle.Pellet; v.sound = Sound.Shotgun; v.impactSound = Sound.Hit; });
 
             var super = Attack<ProjectileDelivery>(id, "Super", d =>
@@ -347,45 +393,56 @@ namespace FPSLAN.EditorTools
                     headGear = HeadGear.Bandana, bodyScale = 1.02f, headScale = 1f, bulk = 1.08f,
                 },
             };
-            b.animations = new AnimationSet { attackKick = 1.3f, attackDuration = 0.45f, reloadDuration = 0.45f, superDuration = 0.6f };
-            b.vfx = new VFXSet { primaryColor = main.visuals.color, superColor = super.visuals.color, muzzleFlashScale = 1.6f };
+            b.animations = new AnimationSet { attackKick = 2.0f, attackDuration = 0.45f, reloadDuration = 0.6f, superDuration = 0.6f };
+            b.vfx = new VFXSet { primaryColor = main.visuals.color, superColor = super.visuals.color, muzzleFlashScale = 1.8f };
             b.sfx = new SFXSet { primary = Sound.Shotgun, super = Sound.Shotgun, impact = Sound.Hit };
             b.bot = new BotProfile { preferredRange = 6f, superUseRange = 7f, aimAtFeet = false };
             return Save(b);
         }
 
         // =====================================================================================
-        // Atiradora — arquétipo sniper: tiro instantâneo que dói mais quanto mais longe; Super: salto de fuga com bombas.
+        // Lince (id "sniper") — Sniper: 38 no corpo, 50 na cabeça; a cadência mais lenta. Vida mantém-se (85).
+        // Especial: Tiro fatal — carrega com o tempo; armado, um headshot validado no host elimina de imediato.
         // =====================================================================================
         static BrawlerDefinition Sniper()
         {
             const string id = "sniper";
             var b = Definition(id);
             b.displayName = "Lince";
-            b.role = "Atiradora — tiro certeiro que causa mais dano ao longe; Super: salto de fuga que deixa bombas para trás";
+            b.shortName = "";
+            b.role = "Sniper — 38 no corpo, 50 na cabeça; Especial: tiro fatal (headshot elimina; carrega com o tempo)";
             b.stats = new BrawlerStats { maxHealth = 85, regenDelay = 3f, regenPercentPerSecond = 0.15f };
             b.movement = new MovementProfile { walkSpeed = 6.5f, sprintSpeed = 9.5f, jumpHeight = 1.35f };
 
             var main = Attack<HitscanDelivery>(id, "Primary", d =>
             {
-                d.count = 1; d.interval = 0f; d.spreadDegrees = 0.1f; d.fanDegrees = 0f;
-                d.range = 45f; d.radius = 0.06f; d.pierce = false;
+                d.count = 1; d.interval = 0f; d.spreadDegrees = 0.05f; d.fanDegrees = 0f;
+                d.range = 50f; d.radius = 0.04f; d.pierce = false;
             }, e =>
             {
-                e.damage = 36; e.nearMultiplier = 0.55f; e.farMultiplier = 1.35f; e.canHeadshot = true; e.headshotMultiplier = 1.5f; e.coverDamage = 15;
+                e.damage = 38; e.nearMultiplier = 1f; e.farMultiplier = 1f; e.canHeadshot = true; e.headshotDamage = 50; e.coverDamage = 15;
             }, v => { v.color = new Color(0.55f, 1f, 0.85f); v.scale = 1.2f; v.style = ProjectileStyle.Bullet; v.sound = Sound.Sniper; v.impactSound = Sound.Hit; });
 
-            var super = Attack<LeapDelivery>(id, "Super", d =>
+            // Tiro fatal: o mesmo traço (respeita paredes e linha de visão, sem mira automática); headshot = eliminação
+            var super = Attack<HitscanDelivery>(id, "Super", d =>
             {
-                d.range = 13f; d.flightTime = 0.8f; d.bombCount = 4; d.bombRing = 1.5f; d.bombGravity = 24f; d.bombFuse = 0.45f; d.bombRadius = 0.2f;
+                d.count = 1; d.interval = 0f; d.spreadDegrees = 0f; d.fanDegrees = 0f;
+                d.range = 60f; d.radius = 0.02f; d.pierce = false;
             }, e =>
             {
-                e.damage = 0; e.canHeadshot = false;
-                e.splashRadius = 2.4f; e.splashDamage = 32; e.knockback = 6f; e.knockbackUp = 3f; e.coverDamage = 30;
-            }, v => { v.color = new Color(0.55f, 1f, 0.75f); v.scale = 1f; v.style = ProjectileStyle.Bomb; v.sound = Sound.Launch; v.impactSound = Sound.Explosion; });
+                e.damage = 38; e.nearMultiplier = 1f; e.farMultiplier = 1f; e.canHeadshot = true; e.headshotDamage = 50; e.executeOnHeadshot = true; e.coverDamage = 30;
+            }, v => { v.color = new Color(1f, 0.2f, 0.2f); v.scale = 1.6f; v.style = ProjectileStyle.Bullet; v.sound = Sound.FatalShot; v.impactSound = Sound.Hit; });
 
-            b.primary = new PrimaryAttackDefinition { attack = main, maxCharges = 3, reloadTimePerCharge = 2.1f, cooldown = 0.8f };
-            b.super = new SuperDefinition { attack = super, chargeRequired = 150f };
+            b.primary = new PrimaryAttackDefinition { attack = main, maxCharges = 3, reloadTimePerCharge = 2.3f, cooldown = 1.1f };
+            b.super = new SuperDefinition
+            {
+                attack = super, chargeRequired = 400f, passiveChargePerSecond = 1f / 30f, activation = SuperActivation.Mode,
+                mode = new SuperModeSettings
+                {
+                    label = "Tiro Fatal", duration = 0f, maxShots = 1, shotCooldown = 0.5f, activationDelay = 0.25f,
+                    consumeOnFirstShot = true, cancellable = true,
+                },
+            };
 
             b.firstPerson = new FirstPersonPresentation
             {
@@ -407,8 +464,8 @@ namespace FPSLAN.EditorTools
             };
             b.animations = new AnimationSet { attackKick = 1.6f, attackDuration = 0.5f, reloadDuration = 0.5f, superDuration = 0.8f };
             b.vfx = new VFXSet { primaryColor = main.visuals.color, superColor = super.visuals.color, muzzleFlashScale = 1.3f };
-            b.sfx = new SFXSet { primary = Sound.Sniper, super = Sound.Launch, impact = Sound.Explosion };
-            b.bot = new BotProfile { preferredRange = 24f, superUseRange = 6f, aimAtFeet = false, superIsEscape = true };
+            b.sfx = new SFXSet { primary = Sound.Sniper, super = Sound.FatalShot, impact = Sound.Hit };
+            b.bot = new BotProfile { preferredRange = 24f, superUseRange = 40f, aimAtFeet = false, superIsEscape = false };
             return Save(b);
         }
 

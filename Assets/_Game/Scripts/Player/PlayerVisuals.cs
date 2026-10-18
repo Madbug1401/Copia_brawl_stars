@@ -27,7 +27,18 @@ namespace FPSLAN
         CharacterRig m_Rig;
         ViewModelRig m_View;
         int m_BuiltHero = int.MinValue;
+        int m_BuiltSkin = int.MinValue;
         int m_ViewLayer = -1;
+        SkinDefinition m_Skin;
+        PetFollower m_Pet;
+
+        // Estados visíveis para os outros
+        Transform m_Cage;
+        Transform m_ShieldBubble;
+        Renderer m_ShieldBubbleR;
+        Transform m_ModeRing;
+        Renderer m_ModeRingR;
+        float m_NextDotPuff;
 
         LineRenderer m_Trajectory;
         Transform m_TargetMarker;
@@ -134,9 +145,11 @@ namespace FPSLAN
             {
                 CreateBubble();
                 CreateCrown();
+                CreateStatusVisuals();
             }
 
             RebuildRigs();
+            RefreshPet();
         }
 
         public override void OnNetworkDespawn()
@@ -147,20 +160,32 @@ namespace FPSLAN
             m_View?.Destroy();
             m_Rig = null;
             m_View = null;
+            if (m_Pet != null) m_Pet.Despawn();
+            m_Pet = null;
         }
 
         void OnHeroChanged(int previous, int current) => RebuildRigs();
+
+        /// <summary>Skin equipada (sincronizada pelo loadout do dono) para o Brawler atual; null = aspeto original.</summary>
+        SkinDefinition ResolveSkin(BrawlerDefinition b)
+        {
+            if (b == null) return null;
+            return SkinManager.Resolve(GameExperience.Current.SkinCatalog, m_Player.Loadout.Value.skinHash, SkinTarget.Brawler, b.brawlerId);
+        }
 
         void RebuildRigs()
         {
             var b = m_Player.Brawler;
             int hero = m_Player.HeroId.Value;
-            if (hero == m_BuiltHero && m_Rig != null) return;
+            int skinHash = m_Player.Loadout.Value.skinHash;
+            if (hero == m_BuiltHero && skinHash == m_BuiltSkin && m_Rig != null) return;
             bool swap = m_BuiltHero != int.MinValue;
             m_BuiltHero = hero;
+            m_BuiltSkin = skinHash;
+            m_Skin = ResolveSkin(b);
 
             m_Rig?.Destroy();
-            m_Rig = CharacterRig.Build(b, transform, ShadowCastingMode.On, 0);
+            m_Rig = CharacterRig.Build(b, transform, ShadowCastingMode.On, 0, m_Skin);
             if (m_Player.IsLocalHuman) m_Rig.SetShadowsOnly(true);
             m_Rig.SetDead(m_Player.Health.IsDead, true);
             if (m_Player.Health.IsDead) m_Rig.SetVisible(false);
@@ -168,12 +193,146 @@ namespace FPSLAN
             if (m_Player.IsLocalHuman && m_Camera != null)
             {
                 m_View?.Destroy();
-                m_View = ViewModelRig.Build(b, m_Camera.transform, m_ViewLayer >= 0 ? m_ViewLayer : 0);
+                m_View = ViewModelRig.Build(b, m_Camera.transform, m_ViewLayer >= 0 ? m_ViewLayer : 0, m_Skin);
                 m_View.SetVisible(!m_Player.Health.IsDead);
             }
 
-            // Troca de personagem em jogo: pequeno efeito no sítio
+            if (m_Player.Combat != null && m_Player.Combat.InSuperMode) OnSuperModeChanged(true);
+
+            // Troca de personagem/skin em jogo: pequeno efeito no sítio
             if (swap && !m_Player.Health.IsDead && IsSpawned) Fx.SpawnBeam(transform.position, b != null ? b.Tint : Color.white);
+        }
+
+        /// <summary>O loadout mudou (skin, pet, nível do pet): reconstrói o que for preciso.</summary>
+        public void OnLoadoutChanged()
+        {
+            if (!IsSpawned) return;
+            RebuildRigs();
+            RefreshPet();
+        }
+
+        /// <summary>Cria/atualiza o pet deste jogador a partir do loadout sincronizado (espécie, nível, skin).</summary>
+        void RefreshPet()
+        {
+            var gx = GameExperience.Current;
+            var l = m_Player.Loadout.Value;
+            var def = gx.PetCatalog.FindByHash(l.petHash);
+            if (def == null)
+            {
+                if (m_Pet != null) m_Pet.Despawn();
+                m_Pet = null;
+                return;
+            }
+            var petSkin = SkinManager.Resolve(gx.SkinCatalog, l.petSkinHash, SkinTarget.Pet, def.petId);
+            int level = Mathf.Clamp(l.petLevel, 1, gx.Config.petLevels.maxLevel);
+            if (m_Pet != null && m_Pet.Matches(def, level, petSkin != null ? petSkin.StableHash : 0)) return;
+            if (m_Pet != null) m_Pet.Despawn();
+            m_Pet = PetFollower.Create(m_Player, def, level, petSkin);
+        }
+
+        /// <summary>Cores dos efeitos dos ataques definidas pela skin (só visual).</summary>
+        public void ApplySkinColors(AttackContext ctx)
+        {
+            if (ctx == null || m_Skin == null || !m_Skin.overrideVfx) return;
+            ctx.hasColorOverride = true;
+            ctx.colorOverride = ctx.isSuper ? m_Skin.superVfx : m_Skin.primaryVfx;
+        }
+
+        /// <summary>Especial em modo ligado/desligado (Minigun, tiro fatal armado).</summary>
+        public void OnSuperModeChanged(bool on)
+        {
+            m_Rig?.SetSuperMode(on);
+            m_View?.SetSuperMode(on);
+            var b = m_Player.Brawler;
+            var c = b != null ? b.vfx.superColor : Color.yellow;
+            if (on)
+            {
+                Fx.Ring(transform.position, c, 3f, 0.4f);
+                Fx.Sparks(transform.position + Vector3.up * 1.2f, c, 10, 4f);
+                if (!m_Player.IsLocalHuman) Sfx.PlayAt(b != null && b.super.attack != null && b.super.attack.visuals.sound == Sound.Minigun ? Sound.MinigunSpin : Sound.SuperReady,
+                    transform.position + Vector3.up, 1f);
+            }
+            else Fx.Smoke(transform.position + Vector3.up * 1.2f, Vector3.up * 0.5f, 0.4f, 0.5f, 0.4f);
+        }
+
+        /// <summary>O dono eliminou alguém: o pet celebra.</summary>
+        public void OnOwnerScored() => m_Pet?.Celebrate();
+
+        /// <summary>Uma habilidade de pet foi ativada (ex.: escudo de lama do Porco).</summary>
+        public void OnPetAbility(PetAbilityType ability)
+        {
+            if (ability == PetAbilityType.Protection)
+            {
+                Fx.Ring(transform.position, new Color(0.65f, 0.45f, 0.3f), 2.4f, 0.4f);
+                Fx.Debris(transform.position + Vector3.up * 0.8f, new Color(0.55f, 0.38f, 0.25f), 8, 3f);
+            }
+            m_Pet?.Celebrate();
+        }
+
+        void CreateStatusVisuals()
+        {
+            // Jaula de imobilização (N.Cage): barras à volta do jogador preso
+            m_Cage = new GameObject("RootCage").transform;
+            m_Cage.SetParent(transform, false);
+            var bar = new Color(0.45f, 0.75f, 0.3f);
+            for (int i = 0; i < 8; i++)
+            {
+                float a = i * 45f * Mathf.Deg2Rad;
+                Art.Part(PrimitiveType.Cylinder, m_Cage, new Vector3(Mathf.Sin(a) * 0.62f, 0.75f, Mathf.Cos(a) * 0.62f), new Vector3(0.05f, 0.75f, 0.05f), bar, true, default, ShadowCastingMode.Off);
+            }
+            Art.Part(PrimitiveType.Cylinder, m_Cage, new Vector3(0f, 0.04f, 0f), new Vector3(1.35f, 0.04f, 1.35f), Art.Darken(bar, 0.7f), true, default, ShadowCastingMode.Off);
+            Art.Part(PrimitiveType.Cylinder, m_Cage, new Vector3(0f, 1.5f, 0f), new Vector3(1.35f, 0.04f, 1.35f), Art.Darken(bar, 0.7f), true, default, ShadowCastingMode.Off);
+            m_Cage.gameObject.SetActive(false);
+
+            // Escudo de lama (pet Porco)
+            m_ShieldBubble = Art.FxPart(PrimitiveType.Sphere, transform, new Vector3(0f, 0.95f, 0f), new Vector3(1.5f, 2f, 1.5f), new Color(0.7f, 0.5f, 0.35f, 0.2f), false);
+            m_ShieldBubble.name = "PetShield";
+            m_ShieldBubbleR = m_ShieldBubble.GetComponent<Renderer>();
+            m_ShieldBubble.gameObject.SetActive(false);
+
+            // Anel no chão enquanto um especial em modo está ativo (Minigun)
+            m_ModeRing = Art.FxQuad(transform, Art.RingTexture, Color.white, true);
+            m_ModeRing.localPosition = Vector3.up * 0.05f;
+            m_ModeRingR = m_ModeRing.GetComponent<Renderer>();
+            m_ModeRing.gameObject.SetActive(false);
+        }
+
+        void UpdateStatusVisuals(bool dead)
+        {
+            if (m_Cage == null) return;
+            bool hide = dead || m_Concealed || m_PendingRespawn;
+
+            bool rooted = !hide && m_Player.Status != null && m_Player.Status.IsRooted;
+            if (m_Cage.gameObject.activeSelf != rooted) m_Cage.gameObject.SetActive(rooted);
+            if (rooted)
+            {
+                float k = Mathf.Clamp01(m_Player.Status.RootRemaining / 0.4f);
+                m_Cage.localScale = new Vector3(1f, Mathf.Lerp(0.2f, 1f, k), 1f);
+                m_Cage.localRotation = Quaternion.Euler(0f, Time.time * 20f, 0f);
+            }
+
+            bool shield = !hide && m_Player.Health.Shield.Value > 0;
+            if (m_ShieldBubble.gameObject.activeSelf != shield) m_ShieldBubble.gameObject.SetActive(shield);
+            if (shield) Art.SetColor(m_ShieldBubbleR, new Color(0.7f, 0.5f, 0.35f, 0.18f + 0.06f * Mathf.Sin(Time.time * 7f)));
+
+            bool mode = !hide && m_Player.Combat.InSuperMode;
+            if (m_ModeRing.gameObject.activeSelf != mode) m_ModeRing.gameObject.SetActive(mode);
+            if (mode)
+            {
+                var b = m_Player.Brawler;
+                var c = b != null ? b.vfx.superColor : Color.yellow;
+                float pulse = 2.2f + Mathf.Sin(Time.time * 8f) * 0.15f;
+                m_ModeRing.localScale = new Vector3(pulse, 1f, pulse);
+                m_ModeRing.localRotation = Quaternion.Euler(0f, Time.time * 140f, 0f);
+                Art.SetColor(m_ModeRingR, Art.WithAlpha(c, 0.8f));
+            }
+
+            // Envenenado: bolhas verdes por cima da cabeça
+            if (!hide && m_Player.Status != null && m_Player.Status.HasDot.Value && Time.time >= m_NextDotPuff)
+            {
+                m_NextDotPuff = Time.time + 0.2f;
+                Fx.Glow(HeadPosition + Vector3.up * 0.3f + Random.insideUnitSphere * 0.3f, Vector3.up * 0.8f, new Color(0.5f, 1f, 0.35f), 0.1f, 0.6f);
+            }
         }
 
         // ================================================================== construção
@@ -275,8 +434,12 @@ namespace FPSLAN
             if (m_Player.IsLocalHuman)
             {
                 float kick = b != null ? b.animations.attackKick : 1f;
-                m_Player.Motor.AddRecoil((super ? 3.5f : 1.8f) * kick);
-                if (super) CameraShake.Add(0.3f);
+                bool modeShot = super && b != null && b.super.IsMode;
+                // Disparos do modo (Minigun) têm recuo próprio por bala; o resto recua no início do ataque
+                if (!modeShot) m_Player.Motor.AddRecoil((super ? 3.5f : 1.8f) * kick);
+                if (super && !modeShot) CameraShake.Add(0.3f);
+                // Caçadeira (Riot): coice forte e visível
+                if (b != null && b.firstPerson.rig == RigStyle.Shotgun) CameraShake.Add(super ? 0.35f : 0.2f);
             }
             if (super)
             {
@@ -310,7 +473,13 @@ namespace FPSLAN
             if (!m_Concealed) Fx.Muzzle(pos, dir, color, size, local);
             m_Rig?.OnShot(shotIndex);
             m_View?.OnShot(shotIndex);
-            if (local) CameraShake.Add(0.04f);
+            if (local)
+            {
+                CameraShake.Add(0.04f);
+                // Armas automáticas: recuo por bala (metralhadoras e Minigun)
+                if (m_Player.Combat.InSuperMode && b != null && b.firstPerson.rig == RigStyle.DualSMG) m_Player.Motor.AddRecoil(0.3f);
+                else if (b != null && b.firstPerson.rig == RigStyle.DualSMG) m_Player.Motor.AddRecoil(0.22f * b.animations.attackKick);
+            }
         }
 
         public void OnChargeReloaded()
@@ -323,6 +492,7 @@ namespace FPSLAN
         public void OnHurt(int amount)
         {
             m_Rig?.OnHurt();
+            m_Pet?.ReactToOwnerHurt();
             m_RevealedUntil = Mathf.Max(m_RevealedUntil, Time.time + 1f);
             if (m_Player.IsLocalHuman) CameraShake.Add(Mathf.Clamp(amount / 120f, 0.08f, 0.35f));
         }
@@ -378,7 +548,7 @@ namespace FPSLAN
             bool dead = m_Player.Health.IsDead;
             var b = m_Player.Brawler;
 
-            if (m_Player.HeroId.Value != m_BuiltHero) RebuildRigs();
+            if (m_Player.HeroId.Value != m_BuiltHero || m_Player.Loadout.Value.skinHash != m_BuiltSkin) RebuildRigs();
 
             // ---------------- velocidade (remotos: pela posição)
             var pos = transform.position;
@@ -471,6 +641,9 @@ namespace FPSLAN
                     Art.SetColor(m_BubbleR, new Color(0.45f, 0.8f, 1f, p));
                 }
             }
+
+            // ---------------- estados (preso, escudo do pet, especial ativo, veneno)
+            UpdateStatusVisuals(dead);
 
             // ---------------- primeira pessoa
             if (local) UpdateFirstPerson(dt, dead);

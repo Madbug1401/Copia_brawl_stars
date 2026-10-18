@@ -34,12 +34,47 @@ namespace FPSLAN
         public float cooldown = 0.5f;
     }
 
+    /// <summary>Como o Super é usado: dispara logo, ou ativa um modo temporário que substitui o ataque principal.</summary>
+    public enum SuperActivation
+    {
+        /// <summary>Carregar no Super dispara o ataque do Super de imediato.</summary>
+        Instant,
+        /// <summary>Carregar no Super ativa um modo: enquanto ativo, o ataque principal usa o ataque do Super.</summary>
+        Mode,
+    }
+
+    /// <summary>Parâmetros de um Super do tipo "modo" (ex.: Minigun do Ekko, tiro fatal da Lince).</summary>
+    [Serializable]
+    public class SuperModeSettings
+    {
+        [Tooltip("Nome mostrado no HUD enquanto o modo está ativo.")]
+        public string label = "";
+        [Tooltip("Duração máxima do modo (s). 0 = sem limite (até gastar os disparos ou cancelar).")]
+        public float duration = 0f;
+        [Tooltip("Número máximo de ataques durante o modo (limita o dano total potencial).")]
+        [Min(1)] public int maxShots = 1;
+        [Tooltip("Tempo mínimo entre ataques do modo.")]
+        public float shotCooldown = 0.3f;
+        [Tooltip("Animação de ativação/transformação antes do primeiro disparo (s).")]
+        public float activationDelay = 0.35f;
+        [Tooltip("true: a carga só é gasta no primeiro disparo. false: é gasta ao ativar.")]
+        public bool consumeOnFirstShot = false;
+        [Tooltip("Carregar outra vez no Super cancela o modo (só antes do primeiro disparo; a carga mantém-se).")]
+        public bool cancellable = false;
+    }
+
     [Serializable]
     public class SuperDefinition
     {
         public AttackDefinition attack;
         [Tooltip("Dano causado com o ataque principal necessário para carregar o Super.")]
         public float chargeRequired = 200f;
+        [Tooltip("Carga automática por segundo (fração 0..1 da barra). 0 = só carrega ao causar dano.")]
+        public float passiveChargePerSecond = 0f;
+        public SuperActivation activation = SuperActivation.Instant;
+        public SuperModeSettings mode = new SuperModeSettings();
+
+        public bool IsMode => activation == SuperActivation.Mode;
     }
 
     [Serializable]
@@ -61,6 +96,9 @@ namespace FPSLAN
         SprayCan,
         Shotgun,
         Sniper,
+        // Acrescentados no fim para não mudar os valores serializados dos anteriores
+        DualSMG,        // duas metralhadoras compactas (Ekko)
+        DualSprayCans,  // uma lata de spray em cada mão (Mr.S)
     }
 
     /// <summary>Acessório de cabeça do personagem (silhueta reconhecível à distância).</summary>
@@ -168,9 +206,11 @@ namespace FPSLAN
     public class BrawlerDefinition : ScriptableObject
     {
         [Header("Identidade")]
-        [Tooltip("Id técnico estável (ex.: gunslinger).")]
+        [Tooltip("Id técnico estável (ex.: gunslinger). Nunca mudar: é usado em saves, skins e progressão.")]
         public string brawlerId = "brawler";
         public string displayName = "Brawler";
+        [Tooltip("Nome curto para espaços pequenos (cartões, kill feed). Vazio = displayName.")]
+        public string shortName = "";
         [TextArea] public string role = "";
         public bool available = true;
 
@@ -197,5 +237,6 @@ namespace FPSLAN
 
         public int MaxHealth => stats.maxHealth;
         public Color Tint => thirdPerson.bodyColor;
+        public string ShortName => string.IsNullOrEmpty(shortName) ? displayName : shortName;
     }
 }

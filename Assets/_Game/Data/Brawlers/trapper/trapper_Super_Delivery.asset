@@ -13,12 +13,18 @@ MonoBehaviour:
   m_Name: trapper_Super_Delivery
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.PlaceTrapsDelivery
   count: 3
-  spread: 1.5
+  spread: 1.6
   range: 12
   trap:
-    armTime: 0.8
-    triggerRadius: 1.8
-    warningTime: 0.35
+    kind: 1
+    armTime: 0.6
+    triggerRadius: 1.1
+    warningTime: 0
     lifetime: 30
     hiddenFromEnemies: 1
-    color: {r: 0.3, g: 0.55, b: 1, a: 1}
+    color: {r: 0.45, g: 0.9, b: 0.35, a: 1}
+    destroyedByEnemyExplosions: 1
+    destroyedByEnemyMelee: 1
+    removeOnOwnerDeath: 0
+    maxActivePerOwner: 6
+    placementClearance: 0.3

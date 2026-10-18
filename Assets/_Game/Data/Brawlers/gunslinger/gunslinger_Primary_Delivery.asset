@@ -12,11 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3eddf18d526d7d54297a457543642fcd, type: 3}
   m_Name: gunslinger_Primary_Delivery
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.ProjectileDelivery
-  count: 6
-  interval: 0.065
-  spreadDegrees: 0.8
+  count: 5
+  interval: 0.06
+  spreadDegrees: 2.2
   fanDegrees: 0
-  speed: 85
-  range: 30
-  radius: 0.13
+  speed: 95
+  range: 26
+  radius: 0.1
   pierce: 0
+  gravity: 0

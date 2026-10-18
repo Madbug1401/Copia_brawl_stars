@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dac4d0d7655ad624db50516db2fa9718, type: 3}
+  m_Name: pet_rooster
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.PetDefinition
+  petId: pet_rooster
+  displayName: Alvorada
+  category: 3
+  description: "Galo vigilante. Canta quando h\xE1 uma amea\xE7a nas costas do dono."
+  species: 3
+  ability: 4
+  abilityBase: 12
+  abilityPerLevel: 0.5
+  abilityMilestoneBonus: 1
+  abilityMax: 18
+  abilityDescription: 
+  primaryColor: {r: 0.98, g: 0.97, b: 0.92, a: 1}
+  secondaryColor: {r: 0.95, g: 0.25, b: 0.2, a: 1}
+  accentColor: {r: 1, g: 0.75, b: 0.2, a: 1}
+  scale: 1
+  unlock:
+    method: 3
+    value: 0
+    refId: ach_assists25
+  milestones:
+  - level: 3
+    type: 0
+    description: Pequena melhoria na habilidade
+  - level: 4
+    type: 2
+    description: "Est\xE1gio Desenvolvido (maior, coleira)"
+  - level: 5
+    type: 1
+    description: "Nova anima\xE7\xE3o de celebra\xE7\xE3o (pirueta)"
+  - level: 8
+    type: 2
+    description: "Est\xE1gio Evolu\xEDdo + acess\xF3rio adicional"
+  - level: 10
+    type: 3
+    description: "Aura especial de n\xEDvel m\xE1ximo"

@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dac4d0d7655ad624db50516db2fa9718, type: 3}
+  m_Name: pet_pig
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.PetDefinition
+  petId: pet_pig
+  displayName: Toucinho
+  category: 2
+  description: "Porco destemido. Quando o dono fica com pouca vida, cria um escudo de lama tempor\xE1rio."
+  species: 2
+  ability: 3
+  abilityBase: 10
+  abilityPerLevel: 1
+  abilityMilestoneBonus: 2
+  abilityMax: 21
+  abilityDescription: 
+  primaryColor: {r: 1, g: 0.68, b: 0.75, a: 1}
+  secondaryColor: {r: 0.95, g: 0.5, b: 0.6, a: 1}
+  accentColor: {r: 0.55, g: 0.35, b: 0.2, a: 1}
+  scale: 1
+  unlock:
+    method: 2
+    value: 3
+    refId: 
+  milestones:
+  - level: 3
+    type: 0
+    description: Pequena melhoria na habilidade
+  - level: 4
+    type: 2
+    description: "Est\xE1gio Desenvolvido (maior, coleira)"
+  - level: 5
+    type: 1
+    description: "Nova anima\xE7\xE3o de celebra\xE7\xE3o (pirueta)"
+  - level: 8
+    type: 2
+    description: "Est\xE1gio Evolu\xEDdo + acess\xF3rio adicional"
+  - level: 10
+    type: 3
+    description: "Aura especial de n\xEDvel m\xE1ximo"

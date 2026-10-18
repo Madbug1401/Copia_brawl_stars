@@ -9,13 +9,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 09508e40fa69c9e4eb447f6b27cc5741, type: 3}
+  m_Script: {fileID: 11500000, guid: 55bfcfd929dd5cd409e27aef991dbd7e, type: 3}
   m_Name: sniper_Super_Delivery
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.LeapDelivery
-  range: 13
-  flightTime: 0.8
-  bombCount: 4
-  bombRing: 1.5
-  bombGravity: 24
-  bombFuse: 0.45
-  bombRadius: 0.2
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.HitscanDelivery
+  count: 1
+  interval: 0
+  spreadDegrees: 0
+  fanDegrees: 0
+  range: 60
+  radius: 0.02
+  pierce: 0

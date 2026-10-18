@@ -223,6 +223,8 @@ namespace FPSLAN
             var deco = new Rect(panel.x + 16 * K, panel.yMax + 34 * K, panel.width - 30 * K, 2 * K);
             DrawTechLine(deco, true);
 
+            DrawProgressionHub();
+
             if (m_MLocalT > 0.001f) DrawMenuLocalPanel(new Rect(panel.xMax + 14 * K, panel.y + 150 * K, 350 * K, 352 * K));
         }
 
@@ -367,6 +369,17 @@ namespace FPSLAN
                 MText(new Rect(info.x + 18 * K, info.y + 34 * K, info.width - 36 * K, 30 * K), m_Ip, m_MT24, MCyan, TextAnchor.MiddleLeft);
                 MText(new Rect(info.x + 18 * K, info.y + 74 * K, info.width - 36 * K, 60 * K),
                     "Quem criou o servidor escolhe o modo e o mapa. Aqui escolhes o teu personagem.", m_MT12, MMuted, TextAnchor.UpperLeft, true);
+            }
+
+            if (!join)
+            {
+                bool competitive = MatchManager.MenuSelectedCompetitive && !MenuCoopSetup;
+                var ranked = VL(83, 406, 324, 40);
+                if (MenuButton(ranked, competitive ? "COMPETITIVO" : "CASUAL", 2098, MBtn.Normal, competitive, m_MT14) == MClick.Clicked && !MenuCoopSetup)
+                {
+                    MatchManager.MenuSelectedCompetitive = !competitive;
+                    PlayerPrefs.SetInt("fpslan.competitive", !competitive ? 1 : 0);
+                }
             }
 
             // ---------------- personagens (direita)
@@ -669,6 +682,7 @@ namespace FPSLAN
             if (ConnectionManager.Instance == null) { MenuNotice("Erro: sistema de rede não encontrado na cena."); return; }
             if (MatchManager.MenuSelectedMode == GameMode.GemGrab && !ConnectionManager.SupportsGemGrab(SelectedMapKey))
             { MenuNotice("GEM GRAB está disponível em Santiago e no Sal. Escolhe uma dessas ilhas."); return; }
+            if (MatchManager.MenuSelectedMode == GameMode.ItTakesTwo) MatchManager.MenuSelectedCompetitive = false;
             SaveMenuPrefs();
             if (MatchManager.MenuSelectedMode == GameMode.ItTakesTwo)
             {
@@ -1420,7 +1434,7 @@ namespace FPSLAN
             return s;
         }
 
-        static Texture2D MakeRoundedFill(int size, int radius)
+        internal static Texture2D MakeRoundedFill(int size, int radius)
         {
             return MakeMenuTex(size, (x, y) =>
             {
@@ -1431,7 +1445,7 @@ namespace FPSLAN
             });
         }
 
-        static Texture2D MakeRoundedStroke(int size, int radius, float width)
+        internal static Texture2D MakeRoundedStroke(int size, int radius, float width)
         {
             return MakeMenuTex(size, (x, y) =>
             {
@@ -1441,7 +1455,7 @@ namespace FPSLAN
             });
         }
 
-        static Texture2D MakeGlow(int size, int falloff)
+        internal static Texture2D MakeGlow(int size, int falloff)
         {
             return MakeMenuTex(size, (x, y) =>
             {

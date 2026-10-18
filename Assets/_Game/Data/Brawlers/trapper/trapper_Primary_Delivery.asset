@@ -15,8 +15,9 @@ MonoBehaviour:
   count: 3
   interval: 0
   spreadDegrees: 0
-  fanDegrees: 12
-  speed: 50
+  fanDegrees: 7
+  speed: 55
   range: 24
   radius: 0.15
   pierce: 0
+  gravity: 4

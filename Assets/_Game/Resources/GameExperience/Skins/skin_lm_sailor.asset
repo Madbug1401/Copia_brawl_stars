@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3592b7cf3a743574cb166a0298c63715, type: 3}
+  m_Name: skin_lm_sailor
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SkinDefinition
+  skinId: skin_lm_sailor
+  displayName: Lobo do Mar
+  target: 0
+  targetId: artillery
+  rarity: 1
+  description: "Rara \xB7 s\xF3 muda a apar\xEAncia"
+  unlock:
+    method: 4
+    value: 300
+    refId: 
+  overrideColors: 1
+  skin: {r: 0.98, g: 0.76, b: 0.6, a: 1}
+  outfit: {r: 0.95, g: 0.95, b: 0.98, a: 1}
+  pants: {r: 0.15, g: 0.22, b: 0.45, a: 1}
+  accent: {r: 0.2, g: 0.4, b: 0.85, a: 1}
+  hair: {r: 0.3, g: 0.25, b: 0.2, a: 1}
+  gear: {r: 0.2, g: 0.25, b: 0.4, a: 1}
+  overrideHeadGear: 0
+  headGear: 0
+  overrideWeaponColor: 1
+  weaponAccent: {r: 0.95, g: 0.3, b: 0.25, a: 1}
+  overrideVfx: 1
+  primaryVfx: {r: 0.4, g: 0.7, b: 1, a: 1}
+  superVfx: {r: 0.3, g: 0.55, b: 1, a: 1}
+  accessory: 4
+  effect: 0
+  animation: 0
+  petPrimary: {r: 1, g: 1, b: 1, a: 1}
+  petSecondary: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  petAccent: {r: 1, g: 0, b: 0, a: 1}

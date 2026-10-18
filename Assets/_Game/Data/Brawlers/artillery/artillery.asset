@@ -14,10 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.BrawlerDefinition
   brawlerId: artillery
   displayName: Lupus Marinus
-  role: "Artilheiro \u2014 duas cargas em arco que explodem ap\xF3s um atraso; Super: barril com knockback"
+  shortName: L.M
+  role: "Artilheiro / TNT \u2014 cargas de TNT em arco (40 por acerto direto, menos \xE0 dist\xE2ncia); Especial: cinco minas com sensor de movimento"
   available: 1
   stats:
-    maxHealth: 110
+    maxHealth: 100
     regenDelay: 3
     regenPercentPerSecond: 0.15
   movement:
@@ -27,11 +28,27 @@ MonoBehaviour:
   primary:
     attack: {fileID: 11400000, guid: d331396606035054592b5f5dbee08bc3, type: 2}
     maxCharges: 3
-    reloadTimePerCharge: 1.4
-    cooldown: 0.6
+    reloadTimePerCharge: 1.35
+    cooldown: 0.55
   super:
     attack: {fileID: 11400000, guid: d43de597ca2ff1e4aa007e1a0538df10, type: 2}
-    chargeRequired: 180
+    chargeRequired: 160
+    passiveChargePerSecond: 0
+    activation: 0
+    mode:
+      label: 
+      duration: 0
+      maxShots: 1
+      shotCooldown: 0.3
+      activationDelay: 0.35
+      consumeOnFirstShot: 0
+      cancellable: 0
+  melee:
+    damage: 42
+    range: 2.25
+    radius: 0.32
+    cooldown: 0.8
+    animationDuration: 0.3
   abilities: []
   firstPerson:
     rig: 2
@@ -67,7 +84,7 @@ MonoBehaviour:
     bobAmount: 1
   vfx:
     primaryColor: {r: 1, g: 0.45, b: 0.2, a: 1}
-    superColor: {r: 1, g: 0.25, b: 0.15, a: 1}
+    superColor: {r: 1, g: 0.5, b: 0.25, a: 1}
     muzzleFlashScale: 1
     impactScale: 1.4
   sfx:
@@ -78,6 +95,6 @@ MonoBehaviour:
     superClip: {fileID: 0}
   bot:
     preferredRange: 13
-    superUseRange: 16
+    superUseRange: 12
     aimAtFeet: 1
     superIsEscape: 0

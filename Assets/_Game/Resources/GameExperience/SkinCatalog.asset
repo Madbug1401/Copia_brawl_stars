@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: SkinCatalog
+  m_EditorClassIdentifier: FPSLAN.Game:FPSLAN:SkinCatalog
+  skins:
+  - {fileID: 11400000, guid: 8fa99d029ad8b0949807d62aedd4e389, type: 2}
+  - {fileID: 11400000, guid: 7099c09b1dba04947b6f071dcc8c929f, type: 2}
+  - {fileID: 11400000, guid: 2347a8dd69fecfd47a65e7fd321acbff, type: 2}
+  - {fileID: 11400000, guid: 463feaff18a850e4092a1f64ecab6ece, type: 2}
+  - {fileID: 11400000, guid: 24d896dff610f6a449b6197dac414a84, type: 2}
+  - {fileID: 11400000, guid: 0988b0b70c741cd4599eb8ac6d5156a5, type: 2}
+  - {fileID: 11400000, guid: 2493663e2f4d18a42977e190647529e3, type: 2}
+  - {fileID: 11400000, guid: 507e6ebc16103174fa396b54642a265e, type: 2}
+  - {fileID: 11400000, guid: 4da7b74ecd140c2499862ce787417977, type: 2}
+  - {fileID: 11400000, guid: 12d59391c719bbc4fb277b84cd5997fb, type: 2}
+  - {fileID: 11400000, guid: a4a992ac82b065945a2cff4b7b5511eb, type: 2}
+  - {fileID: 11400000, guid: d53adb4afab8204429c9fdf4f6e046e0, type: 2}
+  - {fileID: 11400000, guid: 177d013d4883e7246b3bc3f62e4da1d4, type: 2}
+  - {fileID: 11400000, guid: e2ade6dffaf98694187aca4bbaa15e99, type: 2}
+  - {fileID: 11400000, guid: 9829a25ca6d8d9a46a17126ad987fdd6, type: 2}
+  - {fileID: 11400000, guid: 906fd7f20a028864cb3b23e173de407c, type: 2}
+  - {fileID: 11400000, guid: cbea8e91ba0f92644bff2ca09b3b3f41, type: 2}
+  - {fileID: 11400000, guid: a4ba840f59e78ee478a3f68e923ffa0e, type: 2}

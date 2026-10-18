@@ -19,7 +19,7 @@ namespace FPSLAN
         const int SettingsTabProfile = 3;
 
         public static bool GameplayInputAllowed => s_Instance != null && s_Instance.m_InGame &&
-            !s_Instance.m_Paused && !s_Instance.m_SettingsOpen;
+            !s_Instance.m_Paused && !s_Instance.m_SettingsOpen && !ProgressionUI.IsOpen;
 
         bool m_InGame;
         bool m_Paused;
@@ -43,6 +43,8 @@ namespace FPSLAN
         float m_HitMarkerTimer;
         bool m_HitMarkerHead;
         bool m_HitMarkerKill;
+        float m_HeadshotTimer;
+        bool m_HeadshotFatal;
         float m_DamageFlash;
         float m_LastHp = -1f;
 
@@ -60,7 +62,7 @@ namespace FPSLAN
         MatchPhase m_LastPhase = MatchPhase.Playing;
         bool m_AnnouncedStart;
 
-        GUIStyle m_Title, m_Label, m_Big, m_Small, m_Center, m_Button, m_Field, m_Tiny, m_TinyCenter, m_Panel, m_Card, m_Huge;
+        GUIStyle m_Title, m_Label, m_Big, m_Small, m_Center, m_Button, m_ButtonSmall, m_Field, m_Tiny, m_TinyCenter, m_Panel, m_Card, m_Huge;
         GUIStyle m_RoleDescription, m_StatValue, m_Initial, m_CardName, m_CardRole;
         GUIStyle m_OverheadName, m_DamageNumber, m_Toast, m_SuperLabel, m_DeathOverlay, m_BigCenter, m_KillFeedStyle;
         Texture2D m_White, m_Rounded, m_Vignette, m_Circle, m_Ring;
@@ -71,9 +73,9 @@ namespace FPSLAN
         static NetworkManager NM => NetworkManager.Singleton;
 
         // Paleta
-        static readonly Color Gold = new Color(1f, 0.8f, 0.2f);
-        static readonly Color PanelDark = new Color(0.07f, 0.08f, 0.16f, 0.92f);
-        static readonly Color PanelBlue = new Color(0.16f, 0.32f, 0.62f, 0.95f);
+        static readonly Color Gold = MenuTheme.Cyan;
+        static readonly Color PanelDark = MenuTheme.Glass;
+        static readonly Color PanelBlue = MenuTheme.Selected;
         static readonly Color Ink = new Color(0.04f, 0.03f, 0.08f, 1f);
 
         void Awake()
@@ -88,6 +90,9 @@ namespace FPSLAN
             m_LocalIps = ConnectionManager.GetLocalIPv4();
             m_Preview = new BrawlerPreview();
             GameSession.ApplyAudioSettings();
+            MatchManager.MenuSelectedCompetitive = PlayerPrefs.GetInt("fpslan.competitive", 0) == 1;
+            // Ecrãs de progressão (perfil, personagens, skins, pets, missões, recompensas)
+            if (GetComponent<ProgressionUI>() == null) gameObject.AddComponent<ProgressionUI>();
         }
 
         void OnDestroy()
@@ -109,6 +114,14 @@ namespace FPSLAN
         public static void FlashDamage()
         {
             if (s_Instance != null) s_Instance.m_DamageFlash = 0.45f;
+        }
+
+        /// <summary>Indicador especial de headshot (e de tiro fatal) junto à mira.</summary>
+        public static void ShowHeadshot(bool fatal)
+        {
+            if (s_Instance == null) return;
+            s_Instance.m_HeadshotTimer = fatal ? 1.4f : 0.9f;
+            s_Instance.m_HeadshotFatal = fatal;
         }
 
         public static void AddKillFeed(string killer, string victim)
@@ -203,7 +216,9 @@ namespace FPSLAN
             if (!m_InGame) m_Paused = false;
             if (InputReader.PausePressed && !m_CapturingBinding)
             {
-                if (m_SettingsOpen)
+                if (ProgressionUI.IsOpen)
+                    ProgressionUI.Close();
+                else if (m_SettingsOpen)
                     CloseSettings();
                 else
                     m_Paused = !m_Paused;
@@ -224,6 +239,7 @@ namespace FPSLAN
 
             float dt = Time.deltaTime;
             m_HitMarkerTimer -= dt;
+            m_HeadshotTimer -= dt;
             m_DamageFlash -= dt;
             m_KillFeed.RemoveAll(k => Time.time - k.time > 6f);
             m_DamageNumbers.RemoveAll(d => Time.time - d.time > 0.9f);
@@ -231,11 +247,15 @@ namespace FPSLAN
 
             // Pré-visualização 3D: só no menu ou na pausa (troca de personagem)
             // (o menu novo usa retratos 2D; a pré-visualização 3D fica só para a pausa)
-            bool showPreview = UseNewMenu ? (m_InGame && m_Paused) : (!m_InGame || m_Paused);
+            bool showPreview = (UseNewMenu ? (m_InGame && m_Paused) : (!m_InGame || m_Paused)) && !ProgressionUI.IsOpen;
             if (showPreview)
             {
                 int idx = m_InGame && PlayerNetwork.Local != null ? PlayerNetwork.Local.HeroId.Value : m_Hero;
-                m_Preview.Show(idx);
+                var gx = GameExperience.Current;
+                var b = BrawlerRegistry.Get(idx);
+                var pet = gx.Pets.EquippedPet;
+                m_Preview.Show(idx, b != null ? gx.Skins.EquippedSkinFor(SkinTarget.Brawler, b.brawlerId) : null,
+                    pet, pet != null ? gx.PetProgression.Level(pet.petId) : 1, pet != null ? gx.Skins.EquippedSkinFor(SkinTarget.Pet, pet.petId) : null);
                 m_Preview.Tick(dt);
             }
             else m_Preview.Hide();
@@ -283,7 +303,7 @@ namespace FPSLAN
 
         // ================================================================== estilos
 
-        float Scale => Mathf.Clamp(Screen.height / 900f, 0.7f, 2f);
+        float Scale => MenuTheme.Scale;
 
         void EnsureStyles()
         {
@@ -332,6 +352,7 @@ namespace FPSLAN
             m_Button.active.textColor = Gold;
             m_Button.onNormal.textColor = Ink;
             m_Button.onHover.textColor = Ink;
+            m_ButtonSmall = new GUIStyle(m_Button) { fontSize = Mathf.RoundToInt(13 * s) };
 
             m_Field = new GUIStyle(GUI.skin.textField) { fontSize = Mathf.RoundToInt(20 * s), alignment = TextAnchor.MiddleLeft, border = new RectOffset(10, 10, 10, 10), padding = new RectOffset(12, 12, 4, 4) };
             m_Field.normal.background = m_Rounded;
@@ -344,6 +365,10 @@ namespace FPSLAN
             m_Panel = new GUIStyle { border = new RectOffset(10, 10, 10, 10) };
             m_Panel.normal.background = m_Rounded;
             m_Card = new GUIStyle(m_Panel);
+            foreach (var style in new[] { m_Title, m_Huge, m_Label, m_Big, m_Small, m_Tiny, m_TinyCenter, m_Center, m_RoleDescription, m_StatValue, m_Initial, m_CardName, m_CardRole, m_OverheadName, m_DamageNumber, m_Toast, m_SuperLabel, m_DeathOverlay, m_BigCenter, m_KillFeedStyle, m_Button, m_ButtonSmall, m_Field }) style.font = MenuTheme.Font;
+            m_Field.normal.background = MenuTheme.Skin.textField.normal.background;
+            m_Field.focused.background = MenuTheme.Skin.textField.focused.background;
+            m_Field.hover.background = MenuTheme.Skin.textField.hover.background;
         }
 
         static Texture2D MakeRounded(int size, int radius)
@@ -403,11 +428,7 @@ namespace FPSLAN
         }
 
         /// <summary>Painel com contorno escuro (estilo cartoon).</summary>
-        void InkPanel(Rect r, Color c, float border = 3f)
-        {
-            Panel(new Rect(r.x - border, r.y - border, r.width + border * 2f, r.height + border * 2f), Ink);
-            Panel(r, c);
-        }
+        void InkPanel(Rect r, Color c, float border = 3f) => MenuTheme.Panel(r, c == PanelBlue);
 
         void Tex(Rect r, Texture t, Color c)
         {
@@ -418,47 +439,26 @@ namespace FPSLAN
         }
 
         /// <summary>Texto com contorno preto grosso.</summary>
-        void Outlined(Rect r, string text, GUIStyle style, Color color, float thickness = 2f)
-        {
-            var old = style.normal.textColor;
-            style.normal.textColor = new Color(Ink.r, Ink.g, Ink.b, color.a);
-            float t = thickness * Scale;
-            GUI.Label(new Rect(r.x - t, r.y - t, r.width, r.height), text, style);
-            GUI.Label(new Rect(r.x + t, r.y - t, r.width, r.height), text, style);
-            GUI.Label(new Rect(r.x - t, r.y + t, r.width, r.height), text, style);
-            GUI.Label(new Rect(r.x + t, r.y + t, r.width, r.height), text, style);
-            GUI.Label(new Rect(r.x, r.y + t * 1.5f, r.width, r.height), text, style);
-            style.normal.textColor = color;
-            GUI.Label(r, text, style);
-            style.normal.textColor = old;
-        }
+        void Outlined(Rect r, string text, GUIStyle style, Color color, float thickness = 2f) => MenuTheme.Text(r, text, style, color);
 
-        bool Button(Rect r, string text, Color c)
-        {
-            var old = GUI.backgroundColor;
-            GUI.backgroundColor = c;
-            bool clicked = GUI.Button(r, text, m_Button);
-            GUI.backgroundColor = old;
-            return clicked;
-        }
+        bool Button(Rect r, string text, Color c) => MenuTheme.Button(r, text, c, true, m_Button);
 
         bool LayoutButton(string text, Color c, params GUILayoutOption[] opts)
         {
-            var old = GUI.backgroundColor;
-            GUI.backgroundColor = c;
-            bool clicked = GUILayout.Button(text, m_Button, opts);
-            GUI.backgroundColor = old;
-            return clicked;
+            var r = GUILayoutUtility.GetRect(new GUIContent(text), m_Button, opts);
+            return MenuTheme.Button(r, text, c, true, m_Button);
         }
 
         // ================================================================== OnGUI
 
         void OnGUI()
         {
+            GUI.skin = MenuTheme.Skin;
             EnsureStyles();
 
             if (!m_InGame)
             {
+                if (ProgressionUI.IsOpen) return; // os ecrãs de progressão ocupam o ecrã
                 if (UseNewMenu) { DrawNewMainMenu(); return; }   // GameUI.MainMenu.cs
                 if (m_SettingsOpen) DrawSettingsMenu();
                 else DrawMainMenu();
@@ -468,7 +468,7 @@ namespace FPSLAN
             DrawVignettes();
             DrawOverheadBars();
             DrawDamageNumbers();
-            DrawHud();
+            if (!m_Paused && !m_SettingsOpen && !ProgressionUI.IsOpen) DrawHud();
             DrawToasts();
 
             var match = MatchManager.Instance;
@@ -477,7 +477,7 @@ namespace FPSLAN
             else if (InputReader.ScoreboardHeld)
                 DrawScoreboard();
 
-            if (m_Paused) DrawPauseMenu();
+            if (m_Paused && !ProgressionUI.IsOpen) DrawPauseMenu();
             if (m_SettingsOpen) DrawSettingsMenu();
             if (m_InGame && !m_Paused && !m_SettingsOpen && IsScopeActive())
                 DrawScopeOverlay();
@@ -523,13 +523,14 @@ namespace FPSLAN
             InkPanel(area, PanelDark, 4f * s);
 
             GUILayout.BeginArea(new Rect(area.x + 24 * s, area.y + 12 * s, area.width - 48 * s, area.height - 24 * s));
-            var titleRect = GUILayoutUtility.GetRect(10, 70 * s);
+            var titleRect = GUILayoutUtility.GetRect(10, 62 * s);
             Outlined(titleRect, "FPS-LAN", m_Title, Gold, 3f);
-            var subRect = GUILayoutUtility.GetRect(10, 26 * s);
-            Outlined(subRect, "ARENA DE COMBATE  ·  MULTIPLAYER LAN", m_Center, new Color(0.7f, 0.9f, 1f));
-            if (LayoutButton("DEFINIÇÕES  ·  TECLAS", new Color(0.28f, 0.36f, 0.56f), GUILayout.Height(38 * s)))
-                OpenSettings();
-            GUILayout.Space(8 * s);
+            // Nível, XP e moedas do perfil + atalhos para a progressão
+            var statusRect = GUILayoutUtility.GetRect(10, 34 * s);
+            ProgressionUI.DrawHeaderStatus(statusRect);
+            GUILayout.Space(4 * s);
+            DrawProgressionButtons(s, true);
+            GUILayout.Space(6 * s);
 
             GUILayout.Label("PERFIL DO JOGADOR", m_Small);
             m_Name = GUILayout.TextField(m_Name ?? "", 16, m_Field, GUILayout.Height(38 * s));
@@ -542,8 +543,16 @@ namespace FPSLAN
             GUILayout.Label("Modo de jogo", m_Small);
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("‹", m_Button, GUILayout.Width(48 * s), GUILayout.Height(38 * s))) CycleGameMode(-1);
-            GUILayout.Label(GameModeLabel(MatchManager.MenuSelectedMode), m_Big, GUILayout.Height(38 * s));
+            GUILayout.Label(GameModeLabel(MatchManager.MenuSelectedMode), m_Label, GUILayout.Height(38 * s));
             if (GUILayout.Button("›", m_Button, GUILayout.Width(48 * s), GUILayout.Height(38 * s))) CycleGameMode(1);
+            // Casual: melhorias limitadas ativas · Competitiva: atributos normalizados, pets só cosméticos
+            bool comp = MatchManager.MenuSelectedCompetitive;
+            if (LayoutButton(comp ? "COMPETITIVA" : "CASUAL", comp ? new Color(0.85f, 0.35f, 0.3f) : new Color(0.3f, 0.65f, 0.4f),
+                    GUILayout.Width(150 * s), GUILayout.Height(38 * s)))
+            {
+                MatchManager.MenuSelectedCompetitive = !comp;
+                PlayerPrefs.SetInt("fpslan.competitive", comp ? 0 : 1);
+            }
             GUILayout.EndHorizontal();
 
             GUILayout.Space(8 * s);
@@ -653,10 +662,12 @@ namespace FPSLAN
             if (a == null || a.delivery == null) return 0f;
             var e = a.effect;
             int shots = a.delivery.ShotCount;
-            float direct = e.damage * Mathf.Max(e.nearMultiplier, e.farMultiplier);
+            float near = Mathf.Max(e.nearMultiplier, e.farMultiplier);
             if (a.delivery is ArcProjectileDelivery) return e.splashDamage * shots;
-            if (a.delivery is ConeVolumeDelivery cone) return direct * Mathf.Max(1f, cone.duration / Mathf.Max(0.05f, cone.tickInterval));
-            return direct * shots + e.splashDamage * shots * 0.3f;
+            if (a.delivery is ConeVolumeDelivery cone) return e.damage * near * Mathf.Max(1, cone.ScheduledTicks);
+            float direct = 0f;
+            for (int i = 0; i < shots; i++) direct += e.BaseDamageForShot(i) * near;
+            return direct + e.splashDamage * shots * 0.3f;
         }
 
         void StatBar(Rect r, string label, float t, string value, Color c)
@@ -706,8 +717,15 @@ namespace FPSLAN
                 Tex(icon, m_Circle, Color.Lerp(b.Tint, Color.white, 0.55f));
                 Outlined(icon, FirstCharacterOrFallback(b.displayName).ToUpperInvariant(), m_Initial, Color.white, 1.5f);
 
-                Outlined(new Rect(icon.xMax + 8 * s, r.y + 10 * s, r.width - ic - 22 * s, 24 * s), b.displayName, m_CardName, Color.white, 1.5f);
+                Outlined(new Rect(icon.xMax + 8 * s, r.y + 10 * s, r.width - ic - 22 * s, 24 * s), b.ShortName, m_CardName, Color.white, 1.5f);
                 Outlined(new Rect(icon.xMax + 8 * s, r.y + 36 * s, r.width - ic - 22 * s, 20 * s), ShortRole(b), m_CardRole, new Color(1f, 1f, 1f, 0.9f), 1f);
+
+                // Nível da personagem (progressão individual)
+                int charLevel = GameExperience.Current.Progression.CharacterLevel(b.brawlerId);
+                var lvRect = new Rect(r.xMax - 28 * s, r.y + 5 * s, 23 * s, 23 * s);
+                Tex(new Rect(lvRect.x - 2 * s, lvRect.y - 2 * s, lvRect.width + 4 * s, lvRect.height + 4 * s), m_Circle, Ink);
+                Tex(lvRect, m_Circle, new Color(1f, 0.78f, 0.25f));
+                Outlined(lvRect, charLevel.ToString(), m_TinyCenter, Color.white, 1f);
 
                 if (b.available && GUI.Button(r, GUIContent.none, GUIStyle.none) && !isSel)
                 {
@@ -753,6 +771,30 @@ namespace FPSLAN
                 BotManager.ApplyDifficulty();
             }
             GUILayout.EndHorizontal();
+        }
+
+        /// <summary>Atalhos para os ecrãs de progressão (menu principal e pausa).</summary>
+        void DrawProgressionButtons(float s, bool includeSettings)
+        {
+            var c = new Color(0.28f, 0.36f, 0.56f);
+            GUILayout.BeginHorizontal();
+            if (LayoutButtonSmall("PERFIL", c, GUILayout.Height(32 * s))) ProgressionUI.Open(ProgressionScreen.Profile);
+            if (LayoutButtonSmall("PERSONAGENS", c, GUILayout.Height(32 * s))) ProgressionUI.Open(ProgressionScreen.Characters);
+            if (LayoutButtonSmall("NÍVEIS", c, GUILayout.Height(32 * s))) ProgressionUI.Open(ProgressionScreen.Levels);
+            if (LayoutButtonSmall("SKINS", c, GUILayout.Height(32 * s))) ProgressionUI.Open(ProgressionScreen.Skins);
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (LayoutButtonSmall("PETS", new Color(0.35f, 0.55f, 0.35f), GUILayout.Height(32 * s))) ProgressionUI.Open(ProgressionScreen.Pets);
+            if (LayoutButtonSmall("MISSÕES", new Color(0.55f, 0.45f, 0.2f), GUILayout.Height(32 * s))) ProgressionUI.Open(ProgressionScreen.Quests);
+            if (LayoutButtonSmall("RECOMPENSAS", new Color(0.6f, 0.4f, 0.2f), GUILayout.Height(32 * s))) ProgressionUI.Open(ProgressionScreen.Rewards);
+            if (includeSettings && LayoutButtonSmall("DEFINIÇÕES", new Color(0.35f, 0.38f, 0.48f), GUILayout.Height(32 * s))) OpenSettings();
+            GUILayout.EndHorizontal();
+        }
+
+        bool LayoutButtonSmall(string text, Color c, params GUILayoutOption[] opts)
+        {
+            var r = GUILayoutUtility.GetRect(new GUIContent(text), m_ButtonSmall, opts);
+            return MenuTheme.Button(r, text, c, true, m_ButtonSmall);
         }
 
         void CycleGameMode(int delta)
@@ -927,6 +969,16 @@ namespace FPSLAN
             Tex(new Rect(portrait.x - 3 * s, portrait.y - 3 * s, pr + 6 * s, pr + 6 * s), m_Circle, Ink);
             Tex(portrait, m_Circle, b != null ? b.Tint : Color.white);
             Outlined(portrait, b != null ? FirstCharacterOrFallback(b.displayName) : "?", m_Initial, Color.white, 2f);
+            // Pet equipado (miniatura com o nível)
+            var petDef = GameExperience.Current.PetCatalog.FindByHash(me.Loadout.Value.petHash);
+            if (petDef != null)
+            {
+                float pd = pr * 0.48f;
+                var petRect = new Rect(portrait.xMax - pd * 0.55f, portrait.yMax - pd * 0.85f, pd, pd);
+                Tex(new Rect(petRect.x - 2 * s, petRect.y - 2 * s, petRect.width + 4 * s, petRect.height + 4 * s), m_Circle, Ink);
+                Tex(petRect, m_Circle, petDef.primaryColor);
+                Outlined(petRect, me.Loadout.Value.petLevel.ToString(), m_TinyCenter, Color.white, 1f);
+            }
             Outlined(new Rect(portrait.xMax + 10 * s, portrait.y + 8 * s, 400 * s, 30 * s), b != null ? b.displayName.ToUpperInvariant() : "", m_Big, Color.white, 2f);
             Outlined(new Rect(portrait.xMax + 12 * s, portrait.y + 40 * s, 400 * s, 22 * s), b != null ? ShortRole(b) : "", m_Small, new Color(0.85f, 0.9f, 1f), 1.2f);
 
@@ -1002,16 +1054,59 @@ namespace FPSLAN
             float g = 6 * s, l = 9 * s, t = 3 * s;
             var cc = new Color(1f, 1f, 1f, 0.95f);
             var ink = new Color(0f, 0f, 0f, 0.6f);
-            // contorno + traços
-            Fill(new Rect(cx - t / 2 - 1, cy - g - l - 1, t + 2, l + 2), ink);
-            Fill(new Rect(cx - t / 2 - 1, cy + g - 1, t + 2, l + 2), ink);
-            Fill(new Rect(cx - g - l - 1, cy - t / 2 - 1, l + 2, t + 2), ink);
-            Fill(new Rect(cx + g - 1, cy - t / 2 - 1, l + 2, t + 2), ink);
-            Fill(new Rect(cx - t / 2, cy - g - l, t, l), cc);
-            Fill(new Rect(cx - t / 2, cy + g, t, l), cc);
-            Fill(new Rect(cx - g - l, cy - t / 2, l, t), cc);
-            Fill(new Rect(cx + g, cy - t / 2, l, t), cc);
-            Tex(new Rect(cx - 2.5f * s, cy - 2.5f * s, 5 * s, 5 * s), m_Circle, cc);
+            var brawler = me.Brawler;
+            bool sniper = brawler != null && brawler.firstPerson.rig == RigStyle.Sniper;
+            bool armed = me.Combat.InSuperMode;
+            if (sniper)
+            {
+                // Mira própria da sniper: anel fino com ponto central (vermelha com o tiro fatal armado)
+                var rc = armed ? new Color(1f, 0.25f, 0.2f, 0.95f) : cc;
+                float d = 30 * s;
+                Tex(new Rect(cx - d / 2f - 1, cy - d / 2f - 1, d + 2, d + 2), m_Ring, ink);
+                Tex(new Rect(cx - d / 2f, cy - d / 2f, d, d), m_Ring, rc);
+                Fill(new Rect(cx - 0.75f * s, cy - d * 0.9f, 1.5f * s, d * 0.35f), rc);
+                Fill(new Rect(cx - 0.75f * s, cy + d * 0.55f, 1.5f * s, d * 0.35f), rc);
+                Fill(new Rect(cx - d * 0.9f, cy - 0.75f * s, d * 0.35f, 1.5f * s), rc);
+                Fill(new Rect(cx + d * 0.55f, cy - 0.75f * s, d * 0.35f, 1.5f * s), rc);
+                Tex(new Rect(cx - 2f * s, cy - 2f * s, 4 * s, 4 * s), m_Circle, rc);
+                if (armed) Outlined(new Rect(cx - 200, cy - 64 * s, 400, 24 * s), "TIRO FATAL ARMADO · acerta na cabeça", m_TinyCenter, rc, 1.2f);
+            }
+            else
+            {
+                // contorno + traços
+                Fill(new Rect(cx - t / 2 - 1, cy - g - l - 1, t + 2, l + 2), ink);
+                Fill(new Rect(cx - t / 2 - 1, cy + g - 1, t + 2, l + 2), ink);
+                Fill(new Rect(cx - g - l - 1, cy - t / 2 - 1, l + 2, t + 2), ink);
+                Fill(new Rect(cx + g - 1, cy - t / 2 - 1, l + 2, t + 2), ink);
+                Fill(new Rect(cx - t / 2, cy - g - l, t, l), cc);
+                Fill(new Rect(cx - t / 2, cy + g, t, l), cc);
+                Fill(new Rect(cx - g - l, cy - t / 2, l, t), cc);
+                Fill(new Rect(cx + g, cy - t / 2, l, t), cc);
+                Tex(new Rect(cx - 2.5f * s, cy - 2.5f * s, 5 * s, 5 * s), m_Circle, cc);
+            }
+
+            // Headshot / tiro fatal: anel que expande e texto
+            if (m_HeadshotTimer > 0f)
+            {
+                float k = Mathf.Clamp01(m_HeadshotTimer / (m_HeadshotFatal ? 1.4f : 0.9f));
+                float size = (m_HeadshotFatal ? 100f : 64f) * s * (1f + (1f - k) * 0.5f);
+                var hc = m_HeadshotFatal ? new Color(1f, 0.2f, 0.15f, k) : new Color(1f, 0.85f, 0.2f, k);
+                Tex(new Rect(cx - size / 2f, cy - size / 2f, size, size), m_Ring, hc);
+                Outlined(new Rect(cx - 220, cy - 104 * s, 440, 36 * s), m_HeadshotFatal ? "TIRO FATAL!" : "NA CABEÇA!", m_BigCenter, hc, 2.5f);
+            }
+
+            // Pet: direção de adversários detetados (Cão) ou ameaças nas costas (Galo)
+            foreach (var ind in PetFollower.LocalIndicators)
+            {
+                float a = ind.angle * Mathf.Deg2Rad;
+                float rad = 120 * s;
+                var p = new Vector2(cx + Mathf.Sin(a) * rad, cy - Mathf.Cos(a) * rad);
+                float d = (ind.alert ? 22f : 14f + 8f * ind.strength) * s;
+                var col = ind.alert ? new Color(1f, 0.25f, 0.2f, 0.95f) : new Color(1f, 0.7f, 0.3f, 0.5f + 0.5f * ind.strength);
+                Tex(new Rect(p.x - d / 2f - 2, p.y - d / 2f - 2, d + 4, d + 4), m_Circle, ink);
+                Tex(new Rect(p.x - d / 2f, p.y - d / 2f, d, d), m_Circle, col);
+                if (ind.alert) Outlined(new Rect(p.x - d / 2f, p.y - d / 2f, d, d), "!", m_TinyCenter, Color.white, 1f);
+            }
 
             if (m_HitMarkerTimer > 0f)
             {
@@ -1054,6 +1149,21 @@ namespace FPSLAN
                 Outlined(new Rect(cx - 150, ly, 300, 20 * s), "ABRANDADO", m_TinyCenter, new Color(0.8f, 0.6f, 1f), 1f);
                 ly += 18 * s;
             }
+            if (me.Health.IsRooted)
+            {
+                Outlined(new Rect(cx - 200, ly, 400, 24 * s), "PRESO! " + me.Status.RootRemaining.ToString("0.0") + "s · podes olhar e atacar", m_TinyCenter, new Color(0.55f, 1f, 0.45f), 1.2f);
+                ly += 20 * s;
+            }
+            if (me.Status != null && me.Status.HasDot.Value)
+            {
+                Outlined(new Rect(cx - 150, ly, 300, 20 * s), "ENVENENADO", m_TinyCenter, new Color(0.55f, 1f, 0.35f), 1f);
+                ly += 18 * s;
+            }
+            if (me.Health.Shield.Value > 0)
+            {
+                Outlined(new Rect(cx - 150, ly, 300, 20 * s), "ESCUDO DE LAMA · " + me.Health.Shield.Value, m_TinyCenter, new Color(1f, 0.75f, 0.6f), 1f);
+                ly += 18 * s;
+            }
             if (me.Visuals != null && me.Visuals.InBush)
                 Outlined(new Rect(cx - 150, ly, 300, 20 * s), "ESCONDIDO NO ARBUSTO", m_TinyCenter, new Color(0.55f, 1f, 0.55f), 1f);
         }
@@ -1087,8 +1197,36 @@ namespace FPSLAN
             }
             Tex(r, m_Ring, new Color(1f, 1f, 1f, ready ? 0.9f : 0.35f));
 
+            // Especial em modo: indicador de duração (Minigun) ou de "armado" (tiro fatal)
+            var combat = me.Combat;
+            if (combat.InSuperMode && b != null)
+            {
+                var mode = b.super.mode;
+                float frac = mode.duration > 0f ? Mathf.Clamp01(combat.ModeRemaining / Mathf.Max(0.01f, mode.duration))
+                    : combat.ModeShotsRemaining / (float)Mathf.Max(1, mode.maxShots);
+                float pulse = 1f + 0.06f * Mathf.Sin(Time.time * 10f);
+                var ring = new Rect(r.center.x - d * 0.62f * pulse, r.center.y - d * 0.62f * pulse, d * 1.24f * pulse, d * 1.24f * pulse);
+                Tex(ring, m_Ring, Art.WithAlpha(superCol, 0.9f));
+                // Barra de duração por cima do botão
+                var bar = new Rect(r.x - 10 * s, r.y - 26 * s, d + 20 * s, 14 * s);
+                Panel(bar, new Color(0.1f, 0.1f, 0.18f, 0.95f));
+                if (frac > 0f) Panel(new Rect(bar.x, bar.y, Mathf.Max(bar.height, bar.width * frac), bar.height), superCol);
+                string modeLabel = string.IsNullOrEmpty(mode.label) ? "ESPECIAL" : mode.label.ToUpperInvariant();
+                m_SuperLabel.fontSize = Mathf.RoundToInt(20 * s);
+                Outlined(new Rect(r.x - 20 * s, r.y + d * 0.26f, d + 40 * s, 30 * s), modeLabel, m_SuperLabel, Color.white, 2f);
+                string sub = mode.duration > 0f
+                    ? combat.ModeRemaining.ToString("0.0") + "s · " + combat.ModeShotsRemaining + " rajadas"
+                    : (mode.cancellable ? "ARMADO · E cancela" : "ARMADO");
+                Outlined(new Rect(r.x - 30 * s, r.y + d * 0.55f, d + 60 * s, 22 * s), sub, m_TinyCenter, Color.white, 1f);
+                if (combat.ModeActivation01 < 1f)
+                    Outlined(new Rect(r.x - 40 * s, r.y - 52 * s, d + 80 * s, 22 * s), "A TRANSFORMAR...", m_TinyCenter, superCol, 1.2f);
+                return;
+            }
+
             m_SuperLabel.fontSize = Mathf.RoundToInt(24 * s);
-            Outlined(new Rect(r.x, r.y + d * 0.28f, d, 30 * s), "SUPER", m_SuperLabel, ready ? Color.white : new Color(1f, 1f, 1f, 0.7f), 2f);
+            string title = b != null && b.super.IsMode && !string.IsNullOrEmpty(b.super.mode.label) ? b.super.mode.label.ToUpperInvariant() : "SUPER";
+            if (title.Length > 8) m_SuperLabel.fontSize = Mathf.RoundToInt(18 * s);
+            Outlined(new Rect(r.x - 20 * s, r.y + d * 0.28f, d + 40 * s, 30 * s), title, m_SuperLabel, ready ? Color.white : new Color(1f, 1f, 1f, 0.7f), 2f);
             Outlined(new Rect(r.x, r.y + d * 0.55f, d, 22 * s), ready ? "Botão dir. / E" : Mathf.RoundToInt(sup * 100) + "%", m_TinyCenter, Color.white, 1f);
         }
 
@@ -1225,20 +1363,22 @@ namespace FPSLAN
             }
         }
 
-        void DrawScoreboard()
+        void DrawScoreboard() => DrawScoreboard(Screen.width / 2f);
+
+        void DrawScoreboard(float centerX)
         {
             float s = Scale;
             var players = PlayerNetwork.All.Where(p => p != null && p.IsSpawned)
                 .OrderByDescending(p => p.Kills.Value).ThenBy(p => p.Deaths.Value).ToList();
 
-            float w = 660 * s, rowH = 42 * s;
+            float w = 680 * s, rowH = 42 * s;
             float h = 100 * s + rowH * players.Count;
-            var area = new Rect((Screen.width - w) / 2f, Screen.height * 0.15f, w, h);
+            var area = new Rect(centerX - w / 2f, Screen.height * 0.15f, w, h);
             InkPanel(area, PanelDark, 4f * s);
 
             Outlined(new Rect(area.x, area.y + 10 * s, w, 40 * s), "PLACAR", m_BigCenter, Gold, 2f);
             float y = area.y + 56 * s;
-            DrawRow(area.x, y, w, "Jogador", "Brawler", "K", "D", m_Small, Color.clear, Color.white);
+            DrawRow(area.x, y, w, "Jogador", "Brawler", "K", "A", "D", m_Small, Color.clear, Color.white);
             y += 28 * s;
             int rank = 1;
             foreach (var p in players)
@@ -1246,19 +1386,21 @@ namespace FPSLAN
                 var bg = p == PlayerNetwork.Local ? new Color(1f, 0.8f, 0.3f, 0.28f) : new Color(1f, 1f, 1f, 0.06f);
                 var name = (rank++) + ". " + (p.IsBot ? p.DisplayName + " (bot)" : p.DisplayName);
                 var tint = p.Brawler != null ? Color.Lerp(p.Brawler.Tint, Color.white, 0.35f) : Color.white;
-                DrawRow(area.x, y, w, name, p.Brawler != null ? p.Brawler.displayName : "?", p.Kills.Value.ToString(), p.Deaths.Value.ToString(), m_Label, bg, tint);
+                DrawRow(area.x, y, w, name, p.Brawler != null ? p.Brawler.displayName : "?", p.Kills.Value.ToString(), p.Assists.Value.ToString(),
+                    p.Deaths.Value.ToString(), m_Label, bg, tint);
                 y += rowH;
             }
         }
 
-        void DrawRow(float x, float y, float w, string a, string b, string k, string d, GUIStyle style, Color bg, Color tint)
+        void DrawRow(float x, float y, float w, string a, string b, string k, string assists, string d, GUIStyle style, Color bg, Color tint)
         {
             float s = Scale;
             if (bg.a > 0f) Panel(new Rect(x + 12 * s, y, w - 24 * s, 36 * s), bg);
-            Outlined(new Rect(x + 26 * s, y + 5 * s, w * 0.46f, 30 * s), a, style, Color.white, 1.2f);
-            Outlined(new Rect(x + w * 0.5f, y + 5 * s, w * 0.28f, 30 * s), b, style, tint, 1.2f);
-            Outlined(new Rect(x + w * 0.8f, y + 5 * s, 60 * s, 30 * s), k, style, new Color(0.6f, 1f, 0.6f), 1.2f);
-            Outlined(new Rect(x + w * 0.9f, y + 5 * s, 60 * s, 30 * s), d, style, new Color(1f, 0.6f, 0.6f), 1.2f);
+            Outlined(new Rect(x + 26 * s, y + 5 * s, w * 0.44f, 30 * s), a, style, Color.white, 1.2f);
+            Outlined(new Rect(x + w * 0.47f, y + 5 * s, w * 0.28f, 30 * s), b, style, tint, 1.2f);
+            Outlined(new Rect(x + w * 0.76f, y + 5 * s, 60 * s, 30 * s), k, style, new Color(0.6f, 1f, 0.6f), 1.2f);
+            Outlined(new Rect(x + w * 0.84f, y + 5 * s, 60 * s, 30 * s), assists, style, new Color(0.6f, 0.85f, 1f), 1.2f);
+            Outlined(new Rect(x + w * 0.92f, y + 5 * s, 60 * s, 30 * s), d, style, new Color(1f, 0.6f, 0.6f), 1.2f);
         }
 
         void DrawMatchResults(MatchManager match)
@@ -1272,7 +1414,24 @@ namespace FPSLAN
             }
             Outlined(new Rect(0, Screen.height * 0.03f, Screen.width, 70 * s), "VENCEDOR: " + match.WinnerName.Value.ToString().ToUpperInvariant(), m_Title, Gold, 3f);
             Outlined(new Rect(0, Screen.height * 0.03f + 64 * s, Screen.width, 30 * s), "Nova partida em " + Mathf.CeilToInt(match.TimeRemaining) + "s", m_Center, Color.white, 1.5f);
-            DrawScoreboard();
+
+            // Resultados de progressão (XP, níveis, desbloqueios) ao lado do placar
+            if (ProgressionUI.HasReportFor(match.MatchId.Value.ToString()) && Screen.width > 1100 * s)
+            {
+                float panelW = Mathf.Min(520 * s, Screen.width * 0.4f);
+                float boardW = 680 * s;
+                float total = boardW + panelW + 30 * s;
+                float left = (Screen.width - total) / 2f;
+                DrawScoreboard(left + boardW / 2f);
+                ProgressionUI.DrawReportPanel(new Rect(left + boardW + 30 * s, Screen.height * 0.15f, panelW, Mathf.Min(620 * s, Screen.height * 0.8f)));
+            }
+            else if (ProgressionUI.HasReportFor(match.MatchId.Value.ToString()))
+            {
+                // Ecrãs estreitos: só os resultados de progressão
+                float panelW = Mathf.Min(520 * s, Screen.width - 40 * s);
+                ProgressionUI.DrawReportPanel(new Rect((Screen.width - panelW) / 2f, Screen.height * 0.15f, panelW, Mathf.Min(620 * s, Screen.height * 0.8f)));
+            }
+            else DrawScoreboard();
         }
 
         void OpenSettings()
@@ -1524,15 +1683,19 @@ namespace FPSLAN
 
         void DrawPauseMenu()
         {
+            DrawSharedMenuBackground();
             float s = Scale;
             bool host = NM != null && NM.IsServer;
             Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0.02f, 0.02f, 0.08f, 0.45f));
-            float w = 600 * s, h = (host ? 660 : 580) * s;
+            float w = 600 * s, h = Mathf.Min(Screen.height - 20 * s, (host ? 740 : 660) * s);
             var area = new Rect(40 * s, (Screen.height - h) / 2f, w, h);
             InkPanel(area, PanelDark, 4f * s);
             GUILayout.BeginArea(new Rect(area.x + 22 * s, area.y + 14 * s, area.width - 44 * s, area.height - 28 * s));
             var tr = GUILayoutUtility.GetRect(10, 46 * s);
             Outlined(tr, "PAUSA", m_BigCenter, Gold, 2f);
+            GUILayout.Space(4 * s);
+            // Skins, pets e atributos também podem ser mudados em jogo (a skin/pet muda já; atributos no próximo spawn)
+            DrawProgressionButtons(s, false);
             GUILayout.Space(6 * s);
 
             GUILayout.Label(MatchManager.IsCoopActive ? "The Pelourinho Heist · Lince & Riot" : "Brawler (troca já)", m_Small);

@@ -29,6 +29,7 @@ namespace FPSLAN
     {
         static readonly Dictionary<ProjectileStyle, Stack<ProjVisual>> s_Pools = new Dictionary<ProjectileStyle, Stack<ProjVisual>>();
         static readonly Stack<ProjVisual> s_Mines = new Stack<ProjVisual>();
+        static readonly Stack<ProjVisual> s_Snares = new Stack<ProjVisual>();
         static Transform s_Parent;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -36,6 +37,7 @@ namespace FPSLAN
         {
             s_Pools.Clear();
             s_Mines.Clear();
+            s_Snares.Clear();
             s_Parent = null;
         }
 
@@ -106,7 +108,11 @@ namespace FPSLAN
             if (v.fuseTip != null && v.age >= v.nextSpark)
             {
                 v.nextSpark = v.age + 0.03f;
-                FPSLAN.Fx.Glow(v.fuseTip.position, Random.insideUnitSphere * 0.6f, new Color(1f, 0.75f, 0.3f), 0.12f, 0.22f);
+                // A granada de veneno larga gás verde/roxo em vez de faíscas
+                var spark = v.style == ProjectileStyle.Grenade
+                    ? (Random.value < 0.5f ? new Color(0.45f, 1f, 0.35f) : new Color(0.75f, 0.4f, 1f))
+                    : new Color(1f, 0.75f, 0.3f);
+                FPSLAN.Fx.Glow(v.fuseTip.position, Random.insideUnitSphere * 0.6f, spark, 0.12f, 0.22f);
             }
         }
 
@@ -151,6 +157,7 @@ namespace FPSLAN
             }
             v.root.gameObject.SetActive(false);
             if (v.style == (ProjectileStyle)(-1)) { s_Mines.Push(v); return; }
+            if (v.style == (ProjectileStyle)(-2)) { s_Snares.Push(v); return; }
             if (!s_Pools.TryGetValue(v.style, out var pool)) s_Pools[v.style] = pool = new Stack<ProjVisual>();
             pool.Push(v);
         }
@@ -247,6 +254,45 @@ namespace FPSLAN
                     trailTime = 0.2f;
                     break;
 
+                case ProjectileStyle.Tnt:
+                {
+                    // Molho de três paus de TNT atados com fita, rastilho aceso
+                    var bundle = new GameObject("Tnt").transform;
+                    bundle.SetParent(v.spin, false);
+                    for (int i = 0; i < 3; i++)
+                    {
+                        float a = i * 120f * Mathf.Deg2Rad;
+                        Art.Part(PrimitiveType.Cylinder, bundle, new Vector3(Mathf.Cos(a) * 0.075f, 0f, Mathf.Sin(a) * 0.075f), new Vector3(0.12f, 0.17f, 0.12f),
+                            new Color(0.88f, 0.16f, 0.14f), true, default, ShadowCastingMode.On);
+                    }
+                    var tape = Art.Part(PrimitiveType.Cylinder, bundle, Vector3.zero, new Vector3(0.27f, 0.035f, 0.27f), Color.white, false, default, s);
+                    v.tint.Add(tape.GetComponent<Renderer>());
+                    Art.Part(PrimitiveType.Cube, bundle, new Vector3(0f, 0f, 0.14f), new Vector3(0.1f, 0.08f, 0.02f), new Color(1f, 0.92f, 0.6f), false, default, s);
+                    Art.Part(PrimitiveType.Cylinder, bundle, new Vector3(0f, 0.22f, 0f), new Vector3(0.018f, 0.06f, 0.018f), new Color(0.15f, 0.12f, 0.1f), false, new Vector3(0f, 0f, 18f), s);
+                    var tip = new GameObject("FuseTip").transform;
+                    tip.SetParent(bundle, false);
+                    tip.localPosition = new Vector3(0.02f, 0.28f, 0f);
+                    v.fuseTip = tip;
+                    trailTime = 0.22f;
+                    break;
+                }
+
+                case ProjectileStyle.Grenade:
+                {
+                    // Granada de veneno: lata com faixa colorida e válvula
+                    Art.Part(PrimitiveType.Cylinder, v.spin, Vector3.zero, new Vector3(0.16f, 0.13f, 0.16f), new Color(0.25f, 0.27f, 0.3f), true, default, ShadowCastingMode.On);
+                    var band = Art.Part(PrimitiveType.Cylinder, v.spin, Vector3.zero, new Vector3(0.165f, 0.05f, 0.165f), Color.white, false, default, s);
+                    v.tint.Add(band.GetComponent<Renderer>());
+                    Art.Part(PrimitiveType.Sphere, v.spin, new Vector3(0f, 0.13f, 0f), new Vector3(0.12f, 0.07f, 0.12f), new Color(0.55f, 0.58f, 0.62f), false, default, s);
+                    Art.Part(PrimitiveType.Cube, v.spin, new Vector3(0.05f, 0.16f, 0f), new Vector3(0.08f, 0.02f, 0.03f), new Color(0.75f, 0.4f, 1f), false, new Vector3(0f, 0f, -20f), s);
+                    var tip = new GameObject("FuseTip").transform;
+                    tip.SetParent(v.spin, false);
+                    tip.localPosition = new Vector3(0f, 0.18f, 0f);
+                    v.fuseTip = tip;
+                    trailTime = 0.18f;
+                    break;
+                }
+
                 default: // Bullet
                     v.tint.Add(R(Art.FxPart(PrimitiveType.Capsule, v.spin, Vector3.zero, new Vector3(0.1f, 0.22f, 0.1f), Color.white, true, new Vector3(90f, 0f, 0f))));
                     Art.FxPart(PrimitiveType.Capsule, v.spin, Vector3.zero, new Vector3(0.05f, 0.16f, 0.05f), Color.white, true, new Vector3(90f, 0f, 0f));
@@ -333,6 +379,78 @@ namespace FPSLAN
             }
             v.root.gameObject.SetActive(false);
             s_Mines.Push(v);
+        }
+
+        // ================================================================== armadilhas de imobilização
+
+        /// <summary>Armadilha de mandíbulas: aro com dentes abertos e placa central que brilha quando armada.</summary>
+        public static ProjVisual TakeSnare(Color color, Vector3 pos, bool discreet)
+        {
+            ProjVisual v = null;
+            while (s_Snares.Count > 0 && (v == null || v.root == null)) v = s_Snares.Pop();
+            if (v == null || v.root == null)
+            {
+                v = new ProjVisual { style = (ProjectileStyle)(-2) };
+                v.root = new GameObject("Snare").transform;
+                v.root.SetParent(Parent, false);
+                var metal = new Color(0.4f, 0.42f, 0.48f);
+                Art.Part(PrimitiveType.Cylinder, v.root, new Vector3(0f, 0.025f, 0f), new Vector3(0.75f, 0.025f, 0.75f), Art.Darken(metal, 0.7f), true, default, ShadowCastingMode.On);
+                var plate = Art.Part(PrimitiveType.Cylinder, v.root, new Vector3(0f, 0.05f, 0f), new Vector3(0.28f, 0.02f, 0.28f), Color.white, false, default, ShadowCastingMode.Off);
+                v.tint.Add(plate.GetComponent<Renderer>());
+                // Duas mandíbulas (metades do aro) com dentes, que fecham ao disparar
+                for (int side = -1; side <= 1; side += 2)
+                {
+                    var jaw = new GameObject(side < 0 ? "JawL" : "JawR").transform;
+                    jaw.SetParent(v.root, false);
+                    jaw.localPosition = new Vector3(0f, 0.04f, 0f);
+                    for (int i = 0; i < 5; i++)
+                    {
+                        float a = (i - 2) * 28f * Mathf.Deg2Rad;
+                        var p = new Vector3(Mathf.Sin(a) * 0.33f, 0.06f, side * Mathf.Cos(a) * 0.33f);
+                        Art.Part(PrimitiveType.Cube, jaw, p, new Vector3(0.05f, 0.12f, 0.04f), metal, true, new Vector3(side * -20f, (i - 2) * 28f, 0f), ShadowCastingMode.Off);
+                    }
+                    if (side < 0) v.spin = jaw;
+                    else v.fuseTip = jaw;
+                }
+                v.root.GetComponentsInChildren(true, v.all);
+            }
+            v.root.gameObject.SetActive(true);
+            v.root.position = pos;
+            v.root.rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+            v.baseScale = discreet ? 0.8f : 1f;
+            v.root.localScale = Vector3.one * v.baseScale;
+            v.color = color;
+            if (v.spin != null) v.spin.localRotation = Quaternion.identity;
+            if (v.fuseTip != null) v.fuseTip.localRotation = Quaternion.identity;
+            foreach (var r in v.tint) Art.SetColor(r, discreet ? Art.Darken(color, 0.4f) : color);
+            foreach (var r in v.all) Art.SetFloat(r, Art.FadeId, discreet ? 0.45f : 1f);
+            return v;
+        }
+
+        /// <summary>Armada: os dentes abrem e a placa pulsa (para o dono e colegas).</summary>
+        public static void PoseSnare(ProjVisual v, bool armed, bool ownerView, float age)
+        {
+            if (v == null || v.root == null) return;
+            float open = armed ? 1f : Mathf.Clamp01(age / 0.4f);
+            if (v.spin != null) v.spin.localRotation = Quaternion.Euler(-25f * open, 0f, 0f);
+            if (v.fuseTip != null) v.fuseTip.localRotation = Quaternion.Euler(25f * open, 0f, 0f);
+            if (armed && ownerView)
+            {
+                float pulse = 0.25f + 0.25f * Mathf.Abs(Mathf.Sin(age * 4f));
+                foreach (var r in v.tint) Art.SetEmission(r, v.color * pulse);
+            }
+        }
+
+        public static void ReleaseSnare(ProjVisual v)
+        {
+            if (v == null || v.root == null) return;
+            foreach (var r in v.all)
+            {
+                Art.SetEmission(r, Color.black);
+                Art.SetFloat(r, Art.FadeId, 1f);
+            }
+            v.root.gameObject.SetActive(false);
+            s_Snares.Push(v);
         }
     }
 }

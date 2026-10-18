@@ -31,6 +31,18 @@ namespace FPSLAN
         readonly List<Renderer> m_Renderers = new List<Renderer>();
         CharacterLook m_Look;
         float m_Scale = 1f;
+        Color m_Accent = Color.white;
+        ShadowCastingMode m_Shadows;
+
+        // Skin (só visual) e especial em modo
+        SkinEffect m_Effect;
+        SkinAnimation m_AnimStyle;
+        Color m_EffectColor = Color.white;
+        float m_NextEffect;
+        bool m_SuperMode;
+        WeaponModel m_Minigun;
+        readonly List<Renderer> m_MinigunRenderers = new List<Renderer>();
+        float m_MinigunSpin;
 
         // Estado de animação
         float m_Phase, m_Speed, m_Air;
@@ -58,13 +70,13 @@ namespace FPSLAN
 
         // ================================================================== construção
 
-        public static CharacterRig Build(BrawlerDefinition b, Transform parent, ShadowCastingMode shadows, int layer)
+        public static CharacterRig Build(BrawlerDefinition b, Transform parent, ShadowCastingMode shadows, int layer, SkinDefinition skin = null)
         {
             var rig = new CharacterRig();
             // Modelo final (FBX com rig humanoide) se existir Resources/Characters/<brawlerId>; senão, personagem de primitivas.
             var model = b != null ? Resources.Load<GameObject>(ModelResourceFolder + b.brawlerId) : null;
-            if (model != null && model.GetComponentInChildren<Animator>() != null) rig.CreateFromModel(b, model, parent, shadows, layer);
-            else rig.Create(b, parent, shadows, layer);
+            if (model != null && model.GetComponentInChildren<Animator>() != null) rig.CreateFromModel(b, model, parent, shadows, layer, skin);
+            else rig.Create(b, parent, shadows, layer, skin);
             return rig;
         }
 
@@ -88,13 +100,18 @@ namespace FPSLAN
         static readonly int AnimSuper = Animator.StringToHash("Super");
         static readonly int AnimHurt = Animator.StringToHash("Hurt");
 
-        void CreateFromModel(BrawlerDefinition b, GameObject prefab, Transform parent, ShadowCastingMode shadows, int layer)
+        void CreateFromModel(BrawlerDefinition b, GameObject prefab, Transform parent, ShadowCastingMode shadows, int layer, SkinDefinition skin)
         {
             var tp = b.thirdPerson ?? new ThirdPersonPresentation();
-            m_Look = tp.look ?? new CharacterLook();
+            m_Look = skin != null ? skin.ApplyTo(tp.look) : (tp.look ?? new CharacterLook());
             Style = tp.rig;
             m_IsModel = true;
-            var accentColor = b.firstPerson.accentColor;
+            var accentColor = skin != null && skin.overrideWeaponColor ? skin.weaponAccent : b.firstPerson.accentColor;
+            m_Accent = accentColor;
+            m_Shadows = shadows;
+            m_Effect = skin != null ? skin.effect : SkinEffect.None;
+            m_AnimStyle = skin != null ? skin.animation : SkinAnimation.Default;
+            m_EffectColor = skin != null ? Color.Lerp(skin.primaryVfx, Color.white, 0.25f) : Color.white;
 
             Root = new GameObject("Rig_" + b.brawlerId + "_model").transform;
             Root.SetParent(parent, false);
@@ -116,8 +133,14 @@ namespace FPSLAN
             }
             m_Scale = 1f;
 
+            if (skin != null && skin.overrideColors)
+                foreach (var renderer in m_Body.GetComponentsInChildren<Renderer>(true))
+                    Art.SetColor(renderer, skin.outfit);
+            if (skin != null && skin.accessory != SkinAccessory.None && m_Head != null)
+                WeaponModels.BuildAccessory(skin.accessory, m_Head, m_Spine, 0.12f, m_Look.accent, m_Look.gear, shadows);
+
             // ---------------- armas: as mesmas do boneco de primitivas, seguradas pelas mãos do modelo (IK)
-            bool dual = Style == RigStyle.DualRevolvers || Style == RigStyle.DualExplosives;
+            bool dual = WeaponModels.IsDual(Style);
             bool leftOnly = Style == RigStyle.Bow;
             if (!leftOnly)
             {
@@ -187,6 +210,12 @@ namespace FPSLAN
             }
             else Root.localScale = Vector3.one;
 
+            if (m_SuperMode && m_Minigun != null)
+            {
+                m_MinigunSpin = Mathf.MoveTowards(m_MinigunSpin, 0f, dt * 1.5f);
+                if (m_Minigun.drum != null) m_Minigun.drum.localRotation *= Quaternion.Euler(0f, 0f, (200f + 1600f * m_MinigunSpin) * dt);
+            }
+
             // dano e coice: o corpo todo inclina-se para trás (a arma e as mãos acompanham)
             m_Hurt = Mathf.MoveTowards(m_Hurt, 0f, dt * 4f);
             m_BodyKick = Mathf.MoveTowards(m_BodyKick, 0f, dt * 6f);
@@ -199,13 +228,19 @@ namespace FPSLAN
             SetHeldVisible(m_WeaponL, held);
         }
 
-        void Create(BrawlerDefinition b, Transform parent, ShadowCastingMode shadows, int layer)
+        void Create(BrawlerDefinition b, Transform parent, ShadowCastingMode shadows, int layer, SkinDefinition skin)
         {
             var tp = b != null ? b.thirdPerson : new ThirdPersonPresentation();
-            m_Look = tp.look ?? new CharacterLook();
+            // A skin só muda o aspeto: cores, acessórios, arma, partículas e estilo de animação
+            m_Look = skin != null ? skin.ApplyTo(tp.look) : (tp.look ?? new CharacterLook());
             Style = tp.rig;
             var L = m_Look;
-            var accentColor = b != null ? b.firstPerson.accentColor : Color.white;
+            var accentColor = skin != null && skin.overrideWeaponColor ? skin.weaponAccent : (b != null ? b.firstPerson.accentColor : Color.white);
+            m_Accent = accentColor;
+            m_Shadows = shadows;
+            m_Effect = skin != null ? skin.effect : SkinEffect.None;
+            m_AnimStyle = skin != null ? skin.animation : SkinAnimation.Default;
+            m_EffectColor = skin != null ? Color.Lerp(skin.primaryVfx, Color.white, 0.25f) : Color.white;
             // Proporções chibi: cabeça grande, pernas curtas, tronco largo
             float hs = Mathf.Clamp(L.headScale, 0.6f, 1.6f) * 1.15f;
             float bulk = Mathf.Clamp(L.bulk, 0.6f, 1.8f);
@@ -244,6 +279,8 @@ namespace FPSLAN
             Part(PrimitiveType.Sphere, m_Head, new Vector3(0f, 0.28f * hs, 0f), Vector3.one * 0.6f * hs, L.skin, shadows);
             BuildFace(m_Head, L, hs, shadows);
             BuildHeadGear(m_Head, L, hs, shadows);
+            if (skin != null && skin.accessory != SkinAccessory.None)
+                WeaponModels.BuildAccessory(skin.accessory, m_Head, m_Spine, 0.5f * hs, L.accent, L.gear, shadows);
 
             // ---------------- braços
             m_ArmL = Node("ArmL", m_Spine, new Vector3(-0.36f * bulk, 0.42f, 0f));
@@ -252,7 +289,7 @@ namespace FPSLAN
             m_SocketR = BuildArm(m_ArmR, L, shadows);
 
             // ---------------- armas
-            bool dual = Style == RigStyle.DualRevolvers || Style == RigStyle.DualExplosives;
+            bool dual = WeaponModels.IsDual(Style);
             if (Style == RigStyle.Bow)
             {
                 m_WeaponL = WeaponModels.Build(Style, m_SocketL, accentColor, 1, shadows);
@@ -451,6 +488,7 @@ namespace FPSLAN
                         Part(PrimitiveType.Cylinder, belt, new Vector3(0f, (i - 1) * 0.15f, 0.04f), new Vector3(0.06f, 0.06f, 0.06f), new Color(0.9f, 0.2f, 0.15f), ShadowCastingMode.Off);
                     break;
                 case RigStyle.SprayCan:
+                case RigStyle.DualSprayCans:
                     // Depósito às costas
                     var tank = Node("Tank", spine, new Vector3(0f, 0.32f, -0.28f));
                     Part(PrimitiveType.Capsule, tank, Vector3.zero, new Vector3(0.24f, 0.22f, 0.24f), accent, s);
@@ -475,6 +513,7 @@ namespace FPSLAN
 
         public Vector3 GetMuzzle(int shotIndex)
         {
+            if (m_SuperMode && m_Minigun != null) return m_Minigun.Muzzle(0);
             bool dual = m_WeaponL != null && m_WeaponR != null;
             WeaponModel w;
             if (dual) w = (Mathf.Abs(shotIndex) % 2 == 0) ? m_WeaponR : m_WeaponL;
@@ -520,11 +559,63 @@ namespace FPSLAN
         /// <summary>Cada disparo de uma rajada (alterna as mãos nos estilos duplos).</summary>
         public void OnShot(int shotIndex)
         {
+            if (m_SuperMode && m_Minigun != null)
+            {
+                m_KickR = 0.6f;
+                m_MinigunSpin = 1f;
+                return;
+            }
             bool leftShot = m_WeaponL != null && m_WeaponR != null && Mathf.Abs(shotIndex) % 2 == 1;
             if (leftShot) m_KickL = 1f;
             else m_KickR = 1f;
             if (m_Holder != null) m_Holder.Kick(0.8f, leftShot ? 1 : 0);
             if (Style == RigStyle.Shotgun || Style == RigStyle.Sniper) m_BodyKick = 1f;
+        }
+
+        /// <summary>
+        /// Especial em modo: o Ekko troca as duas metralhadoras pela Minigun (segura com as duas mãos); a Lince mostra a
+        /// mira a brilhar enquanto o tiro fatal está armado.
+        /// </summary>
+        public void SetSuperMode(bool on)
+        {
+            if (on == m_SuperMode || Root == null) return;
+            m_SuperMode = on;
+            if (Style == RigStyle.DualSMG)
+            {
+                if (on)
+                {
+                    m_Minigun = WeaponModels.BuildMinigun(m_SocketR, m_Accent, m_Shadows);
+                    m_Minigun.root.localPosition = new Vector3(0.06f, 0.02f, 0.05f);
+                    m_Minigun.root.localScale = Vector3.one * 0.85f;
+                    foreach (var t in m_Minigun.root.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = Root.gameObject.layer;
+                    m_Minigun.root.GetComponentsInChildren(true, m_MinigunRenderers);
+                    foreach (var r in m_MinigunRenderers)
+                    {
+                        r.shadowCastingMode = m_Renderers.Count > 0 && m_Renderers[0] != null ? m_Renderers[0].shadowCastingMode : m_Shadows;
+                        r.enabled = m_Visible;
+                    }
+                    m_Renderers.AddRange(m_MinigunRenderers);
+                    m_SuperPose = 1f;
+                }
+                else if (m_Minigun != null)
+                {
+                    foreach (var r in m_MinigunRenderers) m_Renderers.Remove(r);
+                    m_MinigunRenderers.Clear();
+                    Object.Destroy(m_Minigun.root.gameObject);
+                    m_Minigun = null;
+                }
+                SetWeaponVisible(m_WeaponL, !on);
+                SetWeaponVisible(m_WeaponR, !on);
+            }
+            else if (Style == RigStyle.Sniper && m_WeaponR != null)
+            {
+                foreach (var g in m_WeaponR.glowRenderers) Art.SetEmission(g, on ? new Color(1f, 0.15f, 0.1f) : Color.black);
+            }
+        }
+
+        static void SetWeaponVisible(WeaponModel w, bool visible)
+        {
+            if (w != null && w.root != null && w.root.gameObject.activeSelf != visible) w.root.gameObject.SetActive(visible);
         }
 
         public void OnHurt()
@@ -585,6 +676,34 @@ namespace FPSLAN
             if (m_IsModel) ModelPose(dt, f);
             else Pose(dt, f);
             ApplyMaterialState(dt);
+            EmitSkinEffect(dt);
+        }
+
+        /// <summary>Partículas contínuas da skin (brilhos, brasas, neve, folhas, bolhas) — poucas e só quando visível.</summary>
+        void EmitSkinEffect(float dt)
+        {
+            if (m_Effect == SkinEffect.None || dt <= 0f || !m_Visible || m_Fade < 0.5f || m_Dead) return;
+            if (Time.time < m_NextEffect) return;
+            m_NextEffect = Time.time + 0.16f;
+            var p = ChestPosition + Random.insideUnitSphere * 0.45f * m_Scale;
+            switch (m_Effect)
+            {
+                case SkinEffect.Sparkles:
+                    Fx.Glow(p, Random.insideUnitSphere * 0.3f, Color.Lerp(m_EffectColor, Color.white, 0.4f), 0.07f, 0.5f);
+                    break;
+                case SkinEffect.Embers:
+                    Fx.Glow(p - Vector3.up * 0.3f, Vector3.up * Random.Range(0.6f, 1.4f), new Color(1f, 0.5f, 0.15f), 0.08f, 0.6f);
+                    break;
+                case SkinEffect.Snowflakes:
+                    Fx.Glow(p + Vector3.up * 0.6f, Vector3.down * 0.4f + Random.insideUnitSphere * 0.2f, new Color(0.9f, 0.95f, 1f), 0.06f, 0.9f);
+                    break;
+                case SkinEffect.Leaves:
+                    Fx.Puff(p, Vector3.down * 0.3f + Random.insideUnitSphere * 0.3f, new Color(0.45f, 0.8f, 0.3f, 0.8f), 0.12f, 0.7f);
+                    break;
+                case SkinEffect.Bubbles:
+                    Fx.Glow(p - Vector3.up * 0.2f, Vector3.up * Random.Range(0.4f, 0.9f), Color.Lerp(m_EffectColor, new Color(0.6f, 1f, 0.9f), 0.5f), 0.09f, 0.8f);
+                    break;
+            }
         }
 
         void Pose(float dt, RigFrame f)
@@ -645,6 +764,11 @@ namespace FPSLAN
             float breathe = Mathf.Sin(time * 2.2f) * 0.012f * (1f - move01);
             m_Hips.localPosition = new Vector3(0f, HipHeight + bob * 0.045f * move01 + breathe + m_Air * 0.04f, 0f);
             m_Hips.localRotation = Quaternion.Euler(0f, swing * 8f * move01, 0f);
+            // Estilo de animação da skin (só amplitude/ritmo)
+            if (m_AnimStyle == SkinAnimation.Bouncy)
+                m_Hips.localPosition += Vector3.up * (Mathf.Abs(Mathf.Sin(time * 5f)) * 0.035f * (1f - move01) + bob * 0.03f * move01);
+            else if (m_AnimStyle == SkinAnimation.Floaty)
+                m_Body.localPosition = Vector3.up * (0.06f + Mathf.Sin(time * 2f) * 0.03f) * (1f - m_Air);
 
             // ---------------- tronco e cabeça (seguem a pontaria)
             float pitch = Mathf.Clamp(f.pitch, -70f, 70f);
@@ -654,6 +778,8 @@ namespace FPSLAN
             float lean = 9f * move01 * Mathf.Max(0f, fwd) - m_Hurt * 14f - m_BodyKick * 7f;
             float spinePitch = lean + pitch * 0.25f;
             m_Spine.localRotation = Quaternion.Euler(spinePitch, -swing * 6f * move01, -side * 5f * move01 + m_Hurt * 6f);
+            if (m_AnimStyle == SkinAnimation.Swagger)
+                m_Spine.localRotation *= Quaternion.Euler(0f, Mathf.Sin(time * 2.4f) * 7f * (1f - move01 * 0.5f), Mathf.Sin(time * 1.2f) * 3f);
             m_Head.localRotation = Quaternion.Euler(pitch * 0.45f - m_Hurt * 10f, 0f, Mathf.Sin(time * 1.3f) * 2f * (1f - move01));
 
             // ---------------- braços por estilo
@@ -667,12 +793,37 @@ namespace FPSLAN
             float idleArm = Mathf.Sin(time * 2f) * 2f;
             float superRaise = -45f * m_SuperPose * (1f - atk);
 
+            if (m_SuperMode && m_Minigun != null)
+            {
+                // Minigun às duas mãos: braço esquerdo a apoiar por baixo, tremer ao disparar
+                m_MinigunSpin = Mathf.MoveTowards(m_MinigunSpin, 0f, dt * 1.5f);
+                float shake = m_MinigunSpin > 0f ? Mathf.Sin(time * 70f) * 2.5f * m_MinigunSpin : 0f;
+                m_ArmR.localRotation = Quaternion.Euler(aim + 12f - 8f * m_KickR + shake, -20f, 0f);
+                m_ArmL.localRotation = Quaternion.Euler(aim + 22f + shake, 42f, 0f);
+                if (m_Minigun.drum != null) m_Minigun.drum.localRotation *= Quaternion.Euler(0f, 0f, (200f + 1600f * m_MinigunSpin) * dt);
+                return;
+            }
+
             switch (Style)
             {
                 case RigStyle.DualRevolvers:
+                case RigStyle.DualSMG:
                     m_ArmR.localRotation = Quaternion.Euler(aim - 18f * m_KickR + idleArm + superRaise, -6f, 0f);
                     m_ArmL.localRotation = Quaternion.Euler(aim - 18f * m_KickL - idleArm + superRaise, 6f, 0f);
                     break;
+
+                case RigStyle.DualSprayCans:
+                {
+                    // As duas latas a apontar e a tremer durante o spray
+                    float shakeR = attacking ? Mathf.Sin(time * 60f) * 4f : 0f;
+                    float shakeL = attacking ? Mathf.Sin(time * 57f + 1.3f) * 4f : 0f;
+                    m_ArmR.localRotation = Quaternion.Euler(aim + shakeR + idleArm + superRaise, -10f, shakeR * 0.5f);
+                    m_ArmL.localRotation = Quaternion.Euler(aim + shakeL - idleArm + superRaise, 10f, shakeL * 0.5f);
+                    foreach (var w in new[] { m_WeaponR, m_WeaponL })
+                        if (w != null && w.scope != null)
+                            w.scope.localRotation = Quaternion.Euler(0f, 0f, attacking ? Mathf.Sin(time * 45f) * 8f : 0f);
+                    break;
+                }
 
                 case RigStyle.DualExplosives:
                 {

@@ -12,13 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c35d026438d5304cbbc4286aa80ebef, type: 3}
   m_Name: artillery_Primary_Delivery
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.ArcProjectileDelivery
-  count: 2
-  interval: 0.08
-  landingSpread: 1.4
+  count: 1
+  interval: 0
+  landingSpread: 0
   speed: 18
   range: 18
   gravity: 22
   minFlightTime: 0.45
   maxFlightTime: 1
-  radius: 0.2
-  fuseDelay: 0.5
+  radius: 0.22
+  fuseDelay: 0
+  hitsPlayers: 1

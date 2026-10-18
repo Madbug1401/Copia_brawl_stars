@@ -48,6 +48,8 @@ namespace FPSLAN
                 case RigStyle.SprayCan: SprayCan(w, accent, shadows); break;
                 case RigStyle.Shotgun: Shotgun(w, accent, shadows); break;
                 case RigStyle.Sniper: Sniper(w, accent, shadows); break;
+                case RigStyle.DualSMG: Smg(w, accent, shadows); break;
+                case RigStyle.DualSprayCans: SprayCan(w, accent, shadows); break;
                 default: Blaster(w, accent, shadows); break;
             }
             return w;
@@ -71,6 +73,116 @@ namespace FPSLAN
                 if (t.name == "Muzzle") w.muzzles.Add(t);
             if (w.muzzles.Count == 0) Muzzle(w, new Vector3(0f, 0.05f, 0.6f));
             return true;
+        }
+
+        /// <summary>Estilos com uma arma em cada mão.</summary>
+        public static bool IsDual(RigStyle style) =>
+            style == RigStyle.DualRevolvers || style == RigStyle.DualExplosives || style == RigStyle.DualSMG || style == RigStyle.DualSprayCans;
+
+        // ------------------------------------------------------------------ metralhadora compacta (Ekko)
+
+        static void Smg(WeaponModel w, Color accent, ShadowCastingMode s)
+        {
+            // Punho + carregador vertical comprido + corpo quadrado + cano curto com supressor de chamas
+            P(w, PrimitiveType.Cube, new Vector3(0f, -0.07f, -0.03f), new Vector3(0.05f, 0.12f, 0.06f), DarkMetal, s, new Vector3(-14f, 0f, 0f));
+            P(w, PrimitiveType.Cube, new Vector3(0f, -0.1f, 0.07f), new Vector3(0.045f, 0.16f, 0.05f), accent, s, new Vector3(8f, 0f, 0f));
+            P(w, PrimitiveType.Cube, new Vector3(0f, 0.02f, 0.05f), new Vector3(0.075f, 0.085f, 0.22f), Metal, s);
+            P(w, PrimitiveType.Cube, new Vector3(0f, 0.07f, 0.03f), new Vector3(0.05f, 0.025f, 0.14f), DarkMetal, ShadowCastingMode.Off);
+            P(w, PrimitiveType.Cylinder, new Vector3(0f, 0.025f, 0.2f), new Vector3(0.035f, 0.06f, 0.035f), DarkMetal, s, new Vector3(90f, 0f, 0f));
+            P(w, PrimitiveType.Cylinder, new Vector3(0f, 0.025f, 0.27f), new Vector3(0.05f, 0.025f, 0.05f), accent, s, new Vector3(90f, 0f, 0f));
+            // Coronha curta
+            P(w, PrimitiveType.Cube, new Vector3(0f, 0.01f, -0.1f), new Vector3(0.03f, 0.05f, 0.08f), DarkMetal, ShadowCastingMode.Off);
+            P(w, PrimitiveType.Cube, new Vector3(0.04f, 0.035f, 0.05f), new Vector3(0.012f, 0.02f, 0.06f), Gold, ShadowCastingMode.Off);
+            Muzzle(w, new Vector3(0f, 0.025f, 0.3f));
+        }
+
+        // ------------------------------------------------------------------ Minigun (especial do Ekko)
+
+        /// <summary>Minigun segura com as duas mãos: 'drum' é o conjunto de canos que roda ao disparar.</summary>
+        public static WeaponModel BuildMinigun(Transform parent, Color accent, ShadowCastingMode s)
+        {
+            var w = new WeaponModel();
+            var root = new GameObject("Weapon_Minigun").transform;
+            root.SetParent(parent, false);
+            w.root = root;
+            // Corpo e caixa de munições
+            P(w, PrimitiveType.Cube, new Vector3(0f, 0f, 0.02f), new Vector3(0.16f, 0.15f, 0.26f), DarkMetal, s);
+            P(w, PrimitiveType.Cube, new Vector3(-0.14f, -0.06f, 0f), new Vector3(0.12f, 0.14f, 0.18f), accent, s);
+            P(w, PrimitiveType.Cube, new Vector3(-0.14f, 0.02f, 0f), new Vector3(0.125f, 0.02f, 0.185f), Gold, ShadowCastingMode.Off);
+            // Pegas (traseira e de cima)
+            P(w, PrimitiveType.Cylinder, new Vector3(0f, -0.12f, -0.06f), new Vector3(0.035f, 0.06f, 0.035f), Wood, s);
+            P(w, PrimitiveType.Cube, new Vector3(0f, 0.12f, 0.02f), new Vector3(0.03f, 0.05f, 0.14f), Metal, s);
+            // Canos rotativos
+            var barrels = new GameObject("Barrels").transform;
+            barrels.SetParent(root, false);
+            barrels.localPosition = new Vector3(0f, 0f, 0.36f);
+            for (int i = 0; i < 6; i++)
+            {
+                float a = i * 60f * Mathf.Deg2Rad;
+                var off = new Vector3(Mathf.Cos(a) * 0.045f, Mathf.Sin(a) * 0.045f, 0f);
+                P(w, PrimitiveType.Cylinder, off, new Vector3(0.028f, 0.2f, 0.028f), Metal, s, new Vector3(90f, 0f, 0f), barrels);
+            }
+            P(w, PrimitiveType.Cylinder, new Vector3(0f, 0f, 0.12f), new Vector3(0.14f, 0.02f, 0.14f), accent, ShadowCastingMode.Off, new Vector3(90f, 0f, 0f), barrels);
+            P(w, PrimitiveType.Cylinder, new Vector3(0f, 0f, -0.14f), new Vector3(0.15f, 0.025f, 0.15f), DarkMetal, ShadowCastingMode.Off, new Vector3(90f, 0f, 0f), barrels);
+            w.drum = barrels;
+            Muzzle(w, new Vector3(0f, 0f, 0.58f));
+            return w;
+        }
+
+        // ------------------------------------------------------------------ acessórios de skin (só visuais)
+
+        /// <summary>Acessório de uma skin na cabeça/costas (coroa, auréola, capa, lenço, cornos, antenas).</summary>
+        public static void BuildAccessory(SkinAccessory accessory, Transform head, Transform spine, float headTop, Color accent, Color gear, ShadowCastingMode s)
+        {
+            switch (accessory)
+            {
+                case SkinAccessory.Crown:
+                {
+                    var c = new GameObject("Crown").transform;
+                    c.SetParent(head, false);
+                    c.localPosition = new Vector3(0f, headTop + 0.12f, 0f);
+                    var gold = new Color(1f, 0.82f, 0.25f);
+                    Art.Part(PrimitiveType.Cylinder, c, Vector3.zero, new Vector3(0.32f, 0.05f, 0.32f), gold, true, default, s);
+                    for (int i = 0; i < 5; i++)
+                    {
+                        float a = i * 72f * Mathf.Deg2Rad;
+                        var pos = new Vector3(Mathf.Sin(a) * 0.13f, 0.08f, Mathf.Cos(a) * 0.13f);
+                        Art.Part(PrimitiveType.Cube, c, pos, new Vector3(0.05f, 0.1f, 0.05f), gold, true, new Vector3(0f, i * 72f, 45f), ShadowCastingMode.Off);
+                    }
+                    break;
+                }
+                case SkinAccessory.Halo:
+                {
+                    var h = Art.Part(PrimitiveType.Cylinder, head, new Vector3(0f, headTop + 0.32f, 0f), new Vector3(0.42f, 0.015f, 0.42f), Color.Lerp(accent, Color.white, 0.5f), false, default, ShadowCastingMode.Off);
+                    Art.SetEmission(h.GetComponent<Renderer>(), accent * 0.6f);
+                    break;
+                }
+                case SkinAccessory.Horns:
+                    for (int side = -1; side <= 1; side += 2)
+                        Art.Part(PrimitiveType.Capsule, head, new Vector3(side * 0.18f, headTop + 0.1f, 0.04f), new Vector3(0.07f, 0.12f, 0.07f), Art.Darken(accent, 0.7f), true,
+                            new Vector3(0f, 0f, side * -28f), s);
+                    break;
+                case SkinAccessory.Antenna:
+                    for (int side = -1; side <= 1; side += 2)
+                    {
+                        Art.Part(PrimitiveType.Cylinder, head, new Vector3(side * 0.1f, headTop + 0.18f, 0f), new Vector3(0.015f, 0.12f, 0.015f), Art.Darken(gear, 0.6f), false,
+                            new Vector3(0f, 0f, side * -15f), ShadowCastingMode.Off);
+                        var tip = Art.Part(PrimitiveType.Sphere, head, new Vector3(side * 0.14f, headTop + 0.31f, 0f), Vector3.one * 0.06f, accent, false, default, ShadowCastingMode.Off);
+                        Art.SetEmission(tip.GetComponent<Renderer>(), accent * 0.5f);
+                    }
+                    break;
+                case SkinAccessory.Scarf:
+                    if (spine != null)
+                    {
+                        Art.Part(PrimitiveType.Sphere, spine, new Vector3(0f, 0.56f, 0.04f), new Vector3(0.46f, 0.15f, 0.42f), accent, true, default, s);
+                        Art.Part(PrimitiveType.Cube, spine, new Vector3(0.12f, 0.42f, -0.2f), new Vector3(0.1f, 0.22f, 0.04f), accent, true, new Vector3(-20f, 0f, 10f), s);
+                    }
+                    break;
+                case SkinAccessory.Cape:
+                    if (spine != null)
+                        Art.Part(PrimitiveType.Cube, spine, new Vector3(0f, 0.22f, -0.27f), new Vector3(0.6f, 0.62f, 0.03f), accent, true, new Vector3(12f, 0f, 0f), s);
+                    break;
+            }
         }
 
         static Transform P(WeaponModel w, PrimitiveType t, Vector3 pos, Vector3 scale, Color c, ShadowCastingMode s, Vector3 euler = default, Transform parent = null)

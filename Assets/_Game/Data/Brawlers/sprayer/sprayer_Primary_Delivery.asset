@@ -12,8 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4e03b7e4ac16b14892b869ff424c6b8, type: 3}
   m_Name: sprayer_Primary_Delivery
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.ConeVolumeDelivery
-  range: 10
-  angle: 32
+  range: 7.5
+  angle: 36
   duration: 0.6
-  tickInterval: 0.2
-  expandTime: 0.25
+  tickInterval: 0.15
+  expandTime: 0.12
+  maxTicksPerTarget: 4
+  dualStream: 1

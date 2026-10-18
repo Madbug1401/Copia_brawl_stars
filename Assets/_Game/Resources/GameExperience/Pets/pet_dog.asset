@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dac4d0d7655ad624db50516db2fa9718, type: 3}
+  m_Name: pet_dog
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.PetDefinition
+  petId: pet_dog
+  displayName: Faro
+  category: 0
+  description: "C\xE3o de faro apurado. Fareja advers\xE1rios pr\xF3ximos e mostra de onde v\xEAm."
+  species: 0
+  ability: 1
+  abilityBase: 6
+  abilityPerLevel: 0.3
+  abilityMilestoneBonus: 0.5
+  abilityMax: 9.5
+  abilityDescription: 
+  primaryColor: {r: 0.72, g: 0.5, b: 0.3, a: 1}
+  secondaryColor: {r: 0.98, g: 0.9, b: 0.75, a: 1}
+  accentColor: {r: 0.9, g: 0.2, b: 0.2, a: 1}
+  scale: 1
+  unlock:
+    method: 0
+    value: 0
+    refId: 
+  milestones:
+  - level: 3
+    type: 0
+    description: Pequena melhoria na habilidade
+  - level: 4
+    type: 2
+    description: "Est\xE1gio Desenvolvido (maior, coleira)"
+  - level: 5
+    type: 1
+    description: "Nova anima\xE7\xE3o de celebra\xE7\xE3o (pirueta)"
+  - level: 8
+    type: 2
+    description: "Est\xE1gio Evolu\xEDdo + acess\xF3rio adicional"
+  - level: 10
+    type: 3
+    description: "Aura especial de n\xEDvel m\xE1ximo"

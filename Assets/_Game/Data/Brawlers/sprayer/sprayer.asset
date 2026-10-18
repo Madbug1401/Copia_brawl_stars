@@ -14,10 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.BrawlerDefinition
   brawlerId: sprayer
   displayName: Mr.S
-  role: "Spray \u2014 nuvem em cone que causa mais dano \xE0 dist\xE2ncia; Super: aura que abranda e causa dano"
+  shortName: 
+  role: "Especialista em spray \u2014 duas latas em cone de curto alcance (50\u201356 por ataque); Especial: granadas de veneno (12 s)"
   available: 1
   stats:
-    maxHealth: 120
+    maxHealth: 160
     regenDelay: 3
     regenPercentPerSecond: 0.15
   movement:
@@ -27,23 +28,41 @@ MonoBehaviour:
   primary:
     attack: {fileID: 11400000, guid: 1a588f9b44b001c4ab61e8ca42e6b146, type: 2}
     maxCharges: 3
-    reloadTimePerCharge: 2
+    reloadTimePerCharge: 1.8
     cooldown: 0.65
   super:
     attack: {fileID: 11400000, guid: 172ea680203a2f640814c89e7a0f0778, type: 2}
     chargeRequired: 150
+    passiveChargePerSecond: 0
+    activation: 0
+    mode:
+      label: 
+      duration: 0
+      maxShots: 1
+      shotCooldown: 0.3
+      activationDelay: 0.35
+      consumeOnFirstShot: 0
+      cancellable: 0
+  melee:
+    damage: 42
+    range: 2.25
+    radius: 0.32
+    cooldown: 0.8
+    animationDuration: 0.3
   abilities: []
   firstPerson:
-    rig: 4
+    rig: 8
     prefabOverride: {fileID: 0}
     muzzleOffsets:
-    - {x: 0.18, y: -0.1, z: 0.45}
+    - {x: 0.2, y: -0.06, z: 0.45}
+    - {x: -0.2, y: -0.06, z: 0.45}
     accentColor: {r: 0.78, g: 0.5, b: 1, a: 1}
   thirdPerson:
-    rig: 4
+    rig: 8
     prefabOverride: {fileID: 0}
     muzzleOffsets:
     - {x: 0.3, y: 0.05, z: 0.55}
+    - {x: -0.3, y: 0.05, z: 0.55}
     bodyColor: {r: 0.78, g: 0.5, b: 1, a: 1}
     look:
       skin: {r: 0.85, g: 0.95, b: 0.8, a: 1}
@@ -64,18 +83,18 @@ MonoBehaviour:
     superDuration: 0.8
     bobAmount: 1
   vfx:
-    primaryColor: {r: 0.8, g: 0.55, b: 1, a: 1}
-    superColor: {r: 0.7, g: 0.4, b: 1, a: 1}
+    primaryColor: {r: 0.7, g: 0.45, b: 1, a: 1}
+    superColor: {r: 0.5, g: 1, b: 0.35, a: 1}
     muzzleFlashScale: 1
     impactScale: 1
   sfx:
     primary: 12
-    super: 1
+    super: 10
     impact: 2
     primaryClip: {fileID: 0}
     superClip: {fileID: 0}
   bot:
-    preferredRange: 7
-    superUseRange: 4.5
+    preferredRange: 5.5
+    superUseRange: 14
     aimAtFeet: 0
     superIsEscape: 0

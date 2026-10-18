@@ -9,15 +9,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9951090800a5e1b41ac72ba2b971874a, type: 3}
+  m_Script: {fileID: 11500000, guid: 1c35d026438d5304cbbc4286aa80ebef, type: 3}
   m_Name: sprayer_Super_Delivery
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SelfAuraDelivery
-  zone:
-    enabled: 1
-    radius: 5
-    duration: 5
-    tickInterval: 0.5
-    tickDamage: 8
-    slowFactor: 0.55
-    slowDuration: 0.7
-    color: {r: 0.65, g: 0.4, b: 0.95, a: 1}
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.ArcProjectileDelivery
+  count: 2
+  interval: 0.12
+  landingSpread: 2.2
+  speed: 16
+  range: 16
+  gravity: 22
+  minFlightTime: 0.5
+  maxFlightTime: 1
+  radius: 0.2
+  fuseDelay: 0.25
+  hitsPlayers: 0

@@ -45,6 +45,8 @@ namespace FPSLAN
             m_WeaponL = weaponL;
             switch (style)
             {
+                case RigStyle.DualSMG:
+                case RigStyle.DualSprayCans:
                 case RigStyle.DualRevolvers:
                 case RigStyle.DualExplosives: m_Grip = Grip.Dual; break;
                 case RigStyle.Bow: m_Grip = Grip.OneHandedLeft; break;

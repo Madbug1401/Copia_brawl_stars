@@ -215,6 +215,8 @@ namespace FPSLAN
         void ServerCoopEnd(bool victory)
         {
             CoopVictory.Value = victory;
+            if (victory) foreach (var p in PlayerNetwork.All) if (IsCoopTeam(p)) MatchStatsTracker.ServerOnObjective(p);
+            ServerSendRewards(p => victory && IsCoopTeam(p), false);
             Phase.Value = MatchPhase.Ended;
             IsRoundIntermission.Value = false;
             WinnerName.Value = new FixedString64Bytes(victory ? "Vitória a dois" : "Derrota");

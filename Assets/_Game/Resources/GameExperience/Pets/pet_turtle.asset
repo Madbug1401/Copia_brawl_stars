@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dac4d0d7655ad624db50516db2fa9718, type: 3}
+  m_Name: pet_turtle
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.PetDefinition
+  petId: pet_turtle
+  displayName: "Carapa\xE7a"
+  category: 5
+  description: Tartaruga paciente. O dono recupera vida mais depressa.
+  species: 5
+  ability: 6
+  abilityBase: 0.1
+  abilityPerLevel: 0.01
+  abilityMilestoneBonus: 0.02
+  abilityMax: 0.21
+  abilityDescription: 
+  primaryColor: {r: 0.45, g: 0.75, b: 0.35, a: 1}
+  secondaryColor: {r: 0.55, g: 0.38, b: 0.2, a: 1}
+  accentColor: {r: 0.95, g: 0.85, b: 0.35, a: 1}
+  scale: 1
+  unlock:
+    method: 5
+    value: 0
+    refId: chal_flawless
+  milestones:
+  - level: 3
+    type: 0
+    description: Pequena melhoria na habilidade
+  - level: 4
+    type: 2
+    description: "Est\xE1gio Desenvolvido (maior, coleira)"
+  - level: 5
+    type: 1
+    description: "Nova anima\xE7\xE3o de celebra\xE7\xE3o (pirueta)"
+  - level: 8
+    type: 2
+    description: "Est\xE1gio Evolu\xEDdo + acess\xF3rio adicional"
+  - level: 10
+    type: 3
+    description: "Aura especial de n\xEDvel m\xE1ximo"

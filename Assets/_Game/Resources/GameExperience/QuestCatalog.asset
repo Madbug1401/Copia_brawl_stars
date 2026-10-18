@@ -1,0 +1,216 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: QuestCatalog
+  m_EditorClassIdentifier: FPSLAN.Game:FPSLAN:QuestCatalog
+  quests:
+  - questId: daily_play3
+    title: "Participar em tr\xEAs partidas"
+    period: 0
+    metric: 0
+    target: 3
+    reward:
+      xp: 40
+      coins: 30
+      skinIds: []
+      petIds: []
+      cosmeticIds: []
+  - questId: daily_elim10
+    title: "Eliminar dez advers\xE1rios"
+    period: 0
+    metric: 1
+    target: 10
+    reward:
+      xp: 50
+      coins: 40
+      skinIds: []
+      petIds: []
+      cosmeticIds: []
+  - questId: daily_pet2
+    title: Jogar duas partidas com um pet equipado
+    period: 0
+    metric: 2
+    target: 2
+    reward:
+      xp: 30
+      coins: 30
+      skinIds: []
+      petIds: []
+      cosmeticIds: []
+  - questId: weekly_elim50
+    title: "Conseguir 50 elimina\xE7\xF5es"
+    period: 1
+    metric: 1
+    target: 50
+    reward:
+      xp: 150
+      coins: 150
+      skinIds: []
+      petIds: []
+      cosmeticIds: []
+  - questId: weekly_win10
+    title: Vencer dez partidas
+    period: 1
+    metric: 3
+    target: 10
+    reward:
+      xp: 200
+      coins: 150
+      skinIds: []
+      petIds: []
+      cosmeticIds:
+      - emote_vitoria
+  - questId: weekly_brawlers3
+    title: "Utilizar tr\xEAs personagens diferentes"
+    period: 1
+    metric: 4
+    target: 3
+    reward:
+      xp: 120
+      coins: 100
+      skinIds:
+      - skin_mrs_graffiti
+      petIds: []
+      cosmeticIds: []
+  achievements:
+  - achievementId: ach_first_blood
+    title: "Primeira elimina\xE7\xE3o"
+    description: "Elimina o teu primeiro advers\xE1rio."
+    isChallenge: 0
+    metric: 1
+    target: 1
+    reward:
+      xp: 0
+      coins: 25
+      skinIds: []
+      petIds: []
+      cosmeticIds: []
+  - achievementId: ach_hunter100
+    title: "Ca\xE7ador"
+    description: "Soma 100 elimina\xE7\xF5es."
+    isChallenge: 0
+    metric: 1
+    target: 100
+    reward:
+      xp: 0
+      coins: 300
+      skinIds: []
+      petIds: []
+      cosmeticIds:
+      - titulo_cacador
+  - achievementId: ach_assists25
+    title: "Esp\xEDrito de equipa"
+    description: "Soma 25 assist\xEAncias (desbloqueia o galo Alvorada)."
+    isChallenge: 0
+    metric: 5
+    target: 25
+    reward:
+      xp: 0
+      coins: 100
+      skinIds: []
+      petIds:
+      - pet_rooster
+      cosmeticIds: []
+  - achievementId: ach_headshots25
+    title: Olho de lince
+    description: "Soma 25 tiros na cabe\xE7a (desbloqueia a skin Lince Sombra)."
+    isChallenge: 0
+    metric: 6
+    target: 25
+    reward:
+      xp: 0
+      coins: 100
+      skinIds:
+      - skin_lince_shadow
+      petIds: []
+      cosmeticIds: []
+  - achievementId: ach_winner10
+    title: Vencedor
+    description: Vence 10 partidas.
+    isChallenge: 0
+    metric: 3
+    target: 10
+    reward:
+      xp: 0
+      coins: 200
+      skinIds: []
+      petIds: []
+      cosmeticIds: []
+  - achievementId: ach_level10
+    title: Veterano
+    description: "Chega ao n\xEDvel 10 de jogador."
+    isChallenge: 0
+    metric: 10
+    target: 10
+    reward:
+      xp: 0
+      coins: 150
+      skinIds: []
+      petIds: []
+      cosmeticIds: []
+  - achievementId: chal_flawless
+    title: "Sem um arranh\xE3o"
+    description: "Desafio: termina uma partida v\xE1lida sem ser eliminado (desbloqueia a tartaruga Carapa\xE7a)."
+    isChallenge: 1
+    metric: 9
+    target: 1
+    reward:
+      xp: 0
+      coins: 50
+      skinIds: []
+      petIds:
+      - pet_turtle
+      cosmeticIds: []
+  - achievementId: chal_objectives10
+    title: Estratega
+    description: 'Desafio: conclui 10 objetivos de partida.'
+    isChallenge: 1
+    metric: 7
+    target: 10
+    reward:
+      xp: 0
+      coins: 150
+      skinIds: []
+      petIds: []
+      cosmeticIds:
+      - titulo_estratega
+  characterUnlocks:
+  - brawlerId: gunslinger
+    unlock:
+      method: 0
+      value: 0
+      refId: 
+  - brawlerId: artillery
+    unlock:
+      method: 0
+      value: 0
+      refId: 
+  - brawlerId: trapper
+    unlock:
+      method: 0
+      value: 0
+      refId: 
+  - brawlerId: sprayer
+    unlock:
+      method: 0
+      value: 0
+      refId: 
+  - brawlerId: shotgunner
+    unlock:
+      method: 0
+      value: 0
+      refId: 
+  - brawlerId: sniper
+    unlock:
+      method: 0
+      value: 0
+      refId: 

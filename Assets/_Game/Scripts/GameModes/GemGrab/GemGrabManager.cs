@@ -132,8 +132,7 @@ namespace FPSLAN
 
         void Start()
         {
-            // Mapa dedicado: o menu mostra Pique-Gemas (a partida usa-o via MatchManager.overrideMenuMode)
-            MatchManager.MenuSelectedMode = GameMode.GemGrab;
+            // O modo pertence ao menu/host; este componente pode existir noutros modos.
         }
 
         public override void OnDestroy()
@@ -402,6 +401,7 @@ namespace FPSLAN
                 if (best == null) continue;
                 Gems.RemoveAt(i);
                 AddCarried(best.Id, 1);
+                MatchStatsTracker.ServerOnObjective(best);
                 CollectedRpc(g.To, best.Id, best.TeamId.Value);
             }
         }

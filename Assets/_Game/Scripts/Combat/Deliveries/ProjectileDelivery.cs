@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace FPSLAN
 {
-    /// <summary>Projéteis em linha reta (rajadas sequenciais ou leque simultâneo).</summary>
+    /// <summary>Projéteis em linha reta (rajadas sequenciais ou leque simultâneo), com queda opcional (flechas).</summary>
     [CreateAssetMenu(menuName = "FPS-LAN/Deliveries/Projectile")]
     public class ProjectileDelivery : AttackDelivery
     {
@@ -16,6 +16,8 @@ namespace FPSLAN
         public float radius = 0.14f;
         [Tooltip("Atravessa jogadores.")]
         public bool pierce = false;
+        [Tooltip("Gravidade aplicada ao projétil (m/s²). 0 = linha reta. Dá uma trajetória visível (flechas).")]
+        public float gravity = 0f;
 
         public override float Range => range;
         public override int ShotCount => Mathf.Max(1, count);
@@ -24,7 +26,7 @@ namespace FPSLAN
         public override void FireShot(CombatSystem combat, AttackContext ctx, int shotIndex)
         {
             var dir = SpreadDirection(ctx, shotIndex, ShotCount, spreadDegrees, fanDegrees);
-            combat.LaunchProjectile(ctx, dir, speed, range, radius, pierce, shotIndex);
+            combat.LaunchProjectile(ctx, dir, speed, range, radius, pierce, shotIndex, gravity);
         }
     }
 }

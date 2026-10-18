@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cffd1bf659d222b47a9c7beaa6ed2d4c, type: 3}
+  m_Name: PetCatalog
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.PetCatalog
+  pets:
+  - {fileID: 11400000, guid: d133fcf511d8a7f4cbffeb4f815daf94, type: 2}
+  - {fileID: 11400000, guid: a698f173e11bbf14ab3aee6375024476, type: 2}
+  - {fileID: 11400000, guid: 265874cb412e4664d917b0b582a678e5, type: 2}
+  - {fileID: 11400000, guid: 393304a671153e1439ace5296258de0c, type: 2}
+  - {fileID: 11400000, guid: 2fb7d106c1495be4bb77e875ed6bdc00, type: 2}
+  - {fileID: 11400000, guid: 62832ebf88f5614459f89eef3cecf9ac, type: 2}
