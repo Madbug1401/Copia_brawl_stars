@@ -15,7 +15,7 @@ MonoBehaviour:
   brawlerId: trapper
   displayName: N.Cage
   shortName: 
-  role: "Arqueiro / Controlo \u2014 tr\xEAs flechas por ataque (100 se todas acertarem); Especial: tr\xEAs armadilhas que prendem e envenenam"
+  role: "The Saboteur · Traps, sabotage and battlefield control."
   available: 1
   stats:
     maxHealth: 110

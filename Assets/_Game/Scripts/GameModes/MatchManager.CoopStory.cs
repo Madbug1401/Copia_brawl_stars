@@ -34,10 +34,10 @@ namespace FPSLAN
             CoopStage.Value == CoopMissionStage.Puzzle ? "THE PUZZLE" : "THE DISCOVERY";
 
         public string CoopObjective => CoopStage.Value <= CoopMissionStage.Resistance
-            ? "Abram caminho até à Gem. Protejam-se e eliminem os guardas."
+            ? "Reach the Gem together. Eliminate the guards and protect each other."
             : CoopStage.Value == CoopMissionStage.Puzzle
-                ? "Uma pessoa em cada placa. Mantenham as duas ativas para libertar a Gem."
-                : "Recolham a Gem dourada com o parceiro por perto.";
+                ? "One person on each plate. Hold both to release the Gem."
+                : "Collect the golden Gem with your partner nearby.";
 
         public static bool IsCoopStoryHero(BrawlerDefinition b) => b != null &&
             (b.brawlerId == "sniper" || b.brawlerId == "shotgunner");
@@ -179,14 +179,14 @@ namespace FPSLAN
                 switch (CoopStoryBeat.Value)
                 {
                     case 0: return "RIOT: Uma Gem rara, guardas por todo o lado... o encontro perfeito.\nLINCE: Fica perto. Desta vez seguimos o plano.";
-                    case 1: return "RIOT: Viste? Eu conseguia fazer isto sozinha.\nLINCE: Claro. Eu só estava a salvar o teu plano.";
-                    case 2: return "LINCE: A segurança está a apertar. Usa as coberturas; eu cubro-te.\nRIOT: Tu tratas da pontaria. Eu abro caminho.";
-                    case 3: return "RIOT: Alguém quer mesmo manter-nos longe daquela Gem.\nLINCE: Ou quer que cheguemos até ela. Ainda não percebi porquê.";
-                    case 4: return "LINCE: Última linha de defesa. Sem aventuras a solo.\nRIOT: Juntos, então. Tenta acompanhar-me, handsome.";
-                    case 6: return "LINCE: Duas placas. Uma pessoa em cada uma, ao mesmo tempo.\nRIOT: Está bem, estratega. Vamos fazer isto à tua maneira.";
-                    case 7: return "RIOT: See? We're unstoppable.\nLINCE: A Gem está livre. Aproxima-te; levamo-la juntos.";
-                    case 8: return "GEM RECUPERADA\nLINCE: Estas marcas... há mais Gems. Alguém queria que encontrássemos esta.\nRIOT: Então este foi só o primeiro encontro.";
-                    case 9: return "RIOT: Da próxima vez, ninguém fica para trás.\nLINCE: Recomeçamos. Juntos.";
+                    case 1: return "RIOT: See? I could do this alone.\nLINCE: Sure. I was just saving your plan.";
+                    case 2: return "LINCE: Security is closing in. Use cover; I've got you.\nRIOT: You do the aiming. I'll clear a path.";
+                    case 3: return "RIOT: Someone really wants us away from that Gem.\nLINCE: Or wants us to reach it. I don't know why yet.";
+                    case 4: return "LINCE: Last line of defense. No solo heroics.\nRIOT: Together, then. Keep up, handsome.";
+                    case 6: return "LINCE: Two plates. One person on each, at the same time.\nRIOT: Fine, strategist. We'll do it your way.";
+                    case 7: return "RIOT: See? We're unstoppable.\nLINCE: The Gem is free. Come closer; we take it together.";
+                    case 8: return "GEM RECOVERED\nLINCE: These markings... there are more Gems. Someone wanted us to find this one.\nRIOT: Then this was just our first encounter.";
+                    case 9: return "RIOT: Next time, no one gets left behind.\nLINCE: We start again. Together.";
                     case 10: return "LINCE: Stay with me, babe. I've got you.";
                     case 11: return "RIOT: Took you long enough, handsome.";
                     case 12: return "RIOT: You're not leaving me here alone!";

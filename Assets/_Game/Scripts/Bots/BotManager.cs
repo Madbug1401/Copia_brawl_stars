@@ -91,8 +91,8 @@ namespace FPSLAN
         {
             switch (d)
             {
-                case BotDifficulty.Facil: return "Fácil";
-                case BotDifficulty.Dificil: return "Difícil";
+                case BotDifficulty.Facil: return "Easy";
+                case BotDifficulty.Dificil: return "Hard";
                 default: return "Normal";
             }
         }

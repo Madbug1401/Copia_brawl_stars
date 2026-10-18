@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: skin_riot_swat
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SkinDefinition
   skinId: skin_riot_swat
-  displayName: Riot Tropa de Choque
+  displayName: "Riot Squad"
   target: 0
   targetId: shotgunner
   rarity: 1

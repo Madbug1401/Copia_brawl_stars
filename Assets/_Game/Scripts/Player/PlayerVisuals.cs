@@ -121,6 +121,7 @@ namespace FPSLAN
         void Awake()
         {
             m_Player = GetComponent<PlayerNetwork>();
+            if (GetComponent<TeamPresentation>() == null) gameObject.AddComponent<TeamPresentation>();
             m_Controller = GetComponent<CharacterController>();
             m_ViewLayer = LayerMask.NameToLayer(ViewModelLayerName);
         }

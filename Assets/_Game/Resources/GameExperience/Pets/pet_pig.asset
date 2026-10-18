@@ -15,7 +15,7 @@ MonoBehaviour:
   petId: pet_pig
   displayName: Toucinho
   category: 2
-  description: "Porco destemido. Quando o dono fica com pouca vida, cria um escudo de lama tempor\xE1rio."
+  description: "A fearless pig. Creates a temporary mud shield when its owner's health is low."
   species: 2
   ability: 3
   abilityBase: 10
@@ -34,16 +34,16 @@ MonoBehaviour:
   milestones:
   - level: 3
     type: 0
-    description: Pequena melhoria na habilidade
+    description: "Small ability upgrade"
   - level: 4
     type: 2
-    description: "Est\xE1gio Desenvolvido (maior, coleira)"
+    description: "Developed stage (larger, collar)"
   - level: 5
     type: 1
-    description: "Nova anima\xE7\xE3o de celebra\xE7\xE3o (pirueta)"
+    description: "New celebration animation (spin)"
   - level: 8
     type: 2
-    description: "Est\xE1gio Evolu\xEDdo + acess\xF3rio adicional"
+    description: "Evolved stage + extra accessory"
   - level: 10
     type: 3
-    description: "Aura especial de n\xEDvel m\xE1ximo"
+    description: "Special max-level aura"

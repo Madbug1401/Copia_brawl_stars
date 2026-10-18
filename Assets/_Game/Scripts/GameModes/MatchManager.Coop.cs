@@ -184,7 +184,7 @@ namespace FPSLAN
             CoopEnemiesLeft.Value = spawned;
             IsRoundIntermission.Value = false;
             PhaseEndTime.Value = NetworkManager.ServerTime.Time;
-            CoopAnnounceRpc(new FixedString64Bytes("ONDA " + wave + " — " + spawned + " inimigos!"), false);
+            CoopAnnounceRpc(new FixedString64Bytes("WAVE " + wave + " — " + spawned + " inimigos!"), false);
         }
 
         void ServerCoopWaveCleared()
@@ -209,7 +209,7 @@ namespace FPSLAN
             IsRoundIntermission.Value = true;
             PhaseEndTime.Value = NetworkManager.ServerTime.Time + coopIntermissionSeconds;
             ServerCoopSetStory(Mathf.Clamp(CoopWave.Value, 1, 4));
-            CoopAnnounceRpc(new FixedString64Bytes("ONDA " + CoopWave.Value + " LIMPA!"), true);
+            CoopAnnounceRpc(new FixedString64Bytes("WAVE " + CoopWave.Value + " LIMPA!"), true);
         }
 
         void ServerCoopEnd(bool victory)
@@ -219,7 +219,7 @@ namespace FPSLAN
             ServerSendRewards(p => victory && IsCoopTeam(p), false);
             Phase.Value = MatchPhase.Ended;
             IsRoundIntermission.Value = false;
-            WinnerName.Value = new FixedString64Bytes(victory ? "Vitória a dois" : "Derrota");
+            WinnerName.Value = new FixedString64Bytes(victory ? "Victory together" : "Derrota");
             ServerCoopSetStory(victory ? 8 : 9);
             PhaseEndTime.Value = NetworkManager.ServerTime.Time + Mathf.Max(resultsSeconds, 14f);
         }
@@ -245,7 +245,7 @@ namespace FPSLAN
             }
             else if (humans == 1 && ally == null)
             {
-                var bot = BotManager.SpawnBot(CoopPartnerHero(), BotDifficulty.Normal, "Parceiro");
+                var bot = BotManager.SpawnBot(CoopPartnerHero(), BotDifficulty.Normal, "Partner");
                 if (bot != null)
                 {
                     m_CoopAllyId = bot.Id;

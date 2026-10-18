@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: skin_lince_snow
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SkinDefinition
   skinId: skin_lince_snow
-  displayName: Lince das Neves
+  displayName: "Snow Lince"
   target: 0
   targetId: sniper
   rarity: 1

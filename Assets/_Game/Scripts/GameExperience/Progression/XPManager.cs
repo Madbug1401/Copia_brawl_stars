@@ -78,7 +78,7 @@ namespace FPSLAN
                 var reward = Cfg.RewardForLevel(l);
                 if (reward != null && !reward.IsEmpty && !m_Ctx.Rewards.IsClaimed("level:" + l) && !m_Ctx.Profile.pendingLevelRewards.Contains(l))
                     m_Ctx.Profile.pendingLevelRewards.Add(l);
-                m_Ctx.Emit(FeedbackType.LevelUp, "NÍVEL " + l + "!", reward != null && !reward.IsEmpty ? "Recompensa disponível" : "Subiste de nível", new Color(1f, 0.85f, 0.25f));
+                m_Ctx.Emit(FeedbackType.LevelUp, "LEVEL " + l + "!", reward != null && !reward.IsEmpty ? "Reward available" : "Level up", new Color(1f, 0.85f, 0.25f));
             }
             if (after > before)
             {
@@ -108,8 +108,8 @@ namespace FPSLAN
             if (after > before)
             {
                 var b = BrawlerRegistry.FindById(brawlerId);
-                m_Ctx.Emit(FeedbackType.CharacterLevelUp, (b != null ? b.displayName.ToUpperInvariant() : brawlerId) + " · NÍVEL " + after,
-                    "Novas melhorias disponíveis", b != null ? Color.Lerp(b.Tint, Color.white, 0.3f) : Color.white);
+                m_Ctx.Emit(FeedbackType.CharacterLevelUp, (b != null ? b.displayName.ToUpperInvariant() : brawlerId) + " · LEVEL " + after,
+                    "New upgrades available", b != null ? Color.Lerp(b.Tint, Color.white, 0.3f) : Color.white);
             }
             return after - before;
         }

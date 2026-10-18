@@ -464,7 +464,7 @@ namespace FPSLAN
             if ((TrapEvent)evt == TrapEvent.Sprung)
             {
                 var victim = PlayerNetwork.Find(victimId);
-                if (victim != null && victim.IsLocalHuman) GameUI.Toast("PRESO!", new Color(0.55f, 1f, 0.45f));
+                if (victim != null && victim.IsLocalHuman) GameUI.Toast("ROOTED!", new Color(0.55f, 1f, 0.45f));
             }
         }
 

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: skin_turtle_coral
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SkinDefinition
   skinId: skin_turtle_coral
-  displayName: "Carapa\xE7a Coral"
+  displayName: "Coral Carapaça"
   target: 1
   targetId: pet_turtle
   rarity: 1

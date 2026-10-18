@@ -5,7 +5,7 @@ namespace FPSLAN
     /// <summary>HUD inspirado na referência: retrato/munição/vida, topo ciano e Super circular.</summary>
     public partial class GameUI
     {
-        static readonly Color HudCyan = new Color(0.35f, 0.88f, 0.96f);
+        static readonly Color HudCyan = new Color(73f / 255f, 176f / 255f, 182f / 255f);
         static readonly Color HudGlass = new Color(0.035f, 0.09f, 0.14f, 0.78f);
         static readonly Color HudLime = new Color(0.65f, 0.95f, 0.12f);
         GUIStyle m_HudTitle, m_HudNumber, m_HudSmall, m_HudName, m_HudFeed;
@@ -21,7 +21,10 @@ namespace FPSLAN
             m_HudNumber = HudStyle(26, s, TextAnchor.MiddleCenter);
             m_HudSmall = HudStyle(13, s, TextAnchor.MiddleCenter);
             m_HudName = HudStyle(19, s, TextAnchor.MiddleCenter);
-            m_HudFeed = HudStyle(15, s, TextAnchor.MiddleLeft);
+            m_HudFeed = HudStyle(12, s, TextAnchor.MiddleLeft);
+            m_HudTitle.font = GameTypography.Title;
+            m_HudNumber.font = GameTypography.Numbers;
+            m_HudName.font = GameTypography.Body;
         }
 
         static GUIStyle HudStyle(int size, float s, TextAnchor anchor) => new GUIStyle(GUI.skin.label)
@@ -36,6 +39,8 @@ namespace FPSLAN
         {
             var old = GUI.color;
             int oldSize = style.fontSize;
+            var oldFont = style.font;
+            if (GameTypography.IsNumber(text)) style.font = GameTypography.Numbers;
             // Nomes como LUPUS MARINUS cabem no retrato sem perder o fim do texto.
             if (!string.IsNullOrEmpty(text) && (style == m_HudName || style == m_HudTitle))
             {
@@ -49,6 +54,7 @@ namespace FPSLAN
             style.normal.textColor = color;
             GUI.Label(rect, text, style);
             style.fontSize = oldSize;
+            style.font = oldFont;
             GUI.color = old;
         }
 
@@ -143,7 +149,7 @@ namespace FPSLAN
         }
 
         // Espaço partilhado com GemGrabHud: os objetivos ficam abaixo do cabeçalho e das estatísticas.
-        public static float HudObjectiveTop(float s) => 190 * s;
+        public static float HudObjectiveTop(float s) => 118 * s;
 
         void DrawHudHeader(PlayerNetwork me, float s)
         {
@@ -154,9 +160,9 @@ namespace FPSLAN
             HudPlate(top, new Color(0.13f, 0.27f, 0.4f, 0.68f), HudCyan, 4 * s);
             string mode = match.IsCoop ? "IT TAKES TWO" : match.Mode.Value == GameMode.GemGrab ? "GEM RUSH" :
                 match.Mode.Value == GameMode.Wipeout ? "WIPEOUT" : match.Mode.Value == GameMode.Knockout ?
-                "KNOCKOUT · RONDA " + match.RoundNumber.Value : match.Mode.Value == GameMode.Showdown ? "SHOWDOWN" : "DEATHMATCH";
+                "KNOCKOUT · ROUND " + match.RoundNumber.Value : match.Mode.Value == GameMode.Showdown ? "SHOWDOWN" : "DEATHMATCH";
             float remaining = Mathf.Max(0, match.TimeRemaining);
-            string timer = match.Phase.Value == MatchPhase.Playing ? $"{(int)(remaining / 60)}:{(int)(remaining % 60):00}" : "FIM";
+            string timer = match.Phase.Value == MatchPhase.Playing ? $"{(int)(remaining / 60)}:{(int)(remaining % 60):00}" : "FINISHED";
             if (match.IsCoop && match.Phase.Value == MatchPhase.Playing)
                 timer = match.IsRoundIntermission.Value ? $"0:{Mathf.CeilToInt(remaining):00}" : "";
             HudLabel(new Rect(top.x + 10 * s, top.y + 8 * s, top.width - 20 * s, 32 * s), mode, m_HudTitle, Color.white);
@@ -165,12 +171,13 @@ namespace FPSLAN
             if (match.IsCoop)
             {
                 string wave = match.CoopStage.Value >= CoopMissionStage.Puzzle ? match.CoopStageTitle :
-                    $"ONDA {Mathf.Max(1, match.CoopWave.Value)}/{match.coopTotalWaves} · INIMIGOS {match.CoopEnemiesLeft.Value}";
+                    $"WAVE {Mathf.Max(1, match.CoopWave.Value)}/{match.coopTotalWaves} · ENEMIES {match.CoopEnemiesLeft.Value}";
                 HudLabel(new Rect(top.x + 8 * s, top.yMax - 26 * s, top.width - 16 * s, 20 * s), wave, m_HudSmall, Color.white);
                 DrawCoopHud(me, match, top, s);
                 return;
             }
 
+            if (match.Mode.Value == GameMode.GemGrab) return;
             PlayerNetwork leader = null;
             foreach (var p in PlayerNetwork.All)
                 if (p != null && p.IsSpawned && (leader == null || p.Kills.Value > leader.Kills.Value)) leader = p;
@@ -179,10 +186,10 @@ namespace FPSLAN
             DrawHudStat(new Rect(cx - 49 * s, y, 98 * s, 34 * s), 1, me.Deaths.Value.ToString(), Color.white, s);
             DrawHudStat(new Rect(cx + 61 * s, y, 98 * s, 34 * s), 2,
                 (leader != null ? leader.Kills.Value : 0).ToString(), new Color(1f, 0.85f, 0.4f), s);
-            string detail = match.Mode.Value == GameMode.Deathmatch ? "META " + match.killLimit +
-                (leader != null && leader.Kills.Value > 0 ? " · LÍDER " + leader.DisplayName : "") :
-                match.Mode.Value == GameMode.Showdown ? "VIVOS " + match.AlivePlayerCount :
-                match.Mode.Value == GameMode.GemGrab ? "" : $"AZUL {match.BlueScore.Value}  —  {match.RedScore.Value} VERMELHA";
+            string detail = match.Mode.Value == GameMode.Deathmatch ? "TARGET " + match.killLimit +
+                (leader != null && leader.Kills.Value > 0 ? " · LEADER " + leader.DisplayName : "") :
+                match.Mode.Value == GameMode.Showdown ? "ALIVE " + match.AlivePlayerCount :
+                match.Mode.Value == GameMode.GemGrab ? "" : $"BLUE {match.BlueScore.Value} — {match.RedScore.Value} RED";
             HudLabel(new Rect(top.x - 15 * s, y + 37 * s, top.width + 30 * s, 20 * s), detail, m_HudSmall, Color.white);
         }
 
@@ -194,9 +201,9 @@ namespace FPSLAN
 
         void DrawHudFeed(float s)
         {
-            float width = Mathf.Min(390 * s, Screen.width * 0.36f);
+            float width = Mathf.Min(270 * s, Screen.width * 0.25f);
             float x = Screen.width - width - 22 * s;
-            float y = x > Screen.width / 2f + 220 * s ? 76 * s : HudObjectiveTop(s) + 100 * s;
+            float y = 20 * s;
             foreach (var item in m_KillFeed)
             {
                 float alpha = Mathf.Clamp01((6f - (Time.time - item.time)) * 2f);
@@ -209,7 +216,7 @@ namespace FPSLAN
                 HudLabel(new Rect(x + half + 15 * s, y, 26 * s, row.height), string.IsNullOrEmpty(item.killer) ? "·" : "»",
                     m_HudName, new Color(HudCyan.r, HudCyan.g, HudCyan.b, alpha));
                 HudLabel(new Rect(x + half + 42 * s, y, half, row.height),
-                    item.victim + (string.IsNullOrEmpty(item.killer) ? " caiu" : ""), m_HudFeed, Art.WithAlpha(item.victimColor, alpha));
+                    item.victim + (string.IsNullOrEmpty(item.killer) ? " fell" : ""), m_HudFeed, Art.WithAlpha(item.victimColor, alpha));
                 y += 42 * s;
             }
         }

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: skin_mrs_toxic
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SkinDefinition
   skinId: skin_mrs_toxic
-  displayName: "Mr.S T\xF3xico"
+  displayName: "Toxic Mr.S"
   target: 0
   targetId: sprayer
   rarity: 2

@@ -7,7 +7,7 @@ namespace FPSLAN
     {
         public static readonly Color Deep = new Color(0.02f, 0.05f, 0.1f, 1f);
         public static readonly Color Glass = new Color(0.16f, 0.27f, 0.45f, 0.62f);
-        public static readonly Color Cyan = new Color(0.25f, 0.88f, 0.82f, 1f);
+        public static readonly Color Cyan = new Color(73f / 255f, 176f / 255f, 182f / 255f, 1f);
         public static readonly Color CyanDim = new Color(0.25f, 0.75f, 0.78f, 0.55f);
         public static readonly Color Coral = new Color(0.9f, 0.43f, 0.37f, 1f);
         public static readonly Color White = new Color(0.9f, 0.94f, 1f, 1f);
@@ -26,7 +26,7 @@ namespace FPSLAN
         {
             if (s_Fill == null)
             {
-                try { Font = UnityEngine.Font.CreateDynamicFontFromOSFont(new[] { "Bahnschrift", "Segoe UI", "Arial" }, 32); }
+                try { Font = GameTypography.Body; }
                 catch { Font = null; }
                 s_Fill = Slice(GameUI.MakeRoundedFill(64, 14), 16);
                 s_Line = Slice(GameUI.MakeRoundedStroke(64, 14, 2.2f), 16);
@@ -122,13 +122,18 @@ namespace FPSLAN
                 }
                 s_TextStyles[style] = clean;
             }
-            clean.font = style.font;
+            clean.font = GameTypography.IsNumber(text) ? GameTypography.Numbers : style.font;
             clean.fontSize = style.fontSize;
             clean.fontStyle = style.fontStyle;
             clean.alignment = style.alignment;
             clean.wordWrap = style.wordWrap;
-            clean.clipping = style.clipping;
-            clean.normal.textColor = color;
+            clean.clipping = TextClipping.Clip;
+            if (!clean.wordWrap && !string.IsNullOrEmpty(text))
+            {
+                float preferred = clean.CalcSize(new GUIContent(text)).x;
+                if (preferred > r.width) clean.fontSize = Mathf.Max(8, Mathf.FloorToInt(clean.fontSize * r.width / preferred));
+            }
+            clean.normal.textColor = clean.hover.textColor = color;
             GUI.Label(r, text, clean);
         }
         public static bool Button(Rect r, string text, Color intent, bool enabled, GUIStyle style)

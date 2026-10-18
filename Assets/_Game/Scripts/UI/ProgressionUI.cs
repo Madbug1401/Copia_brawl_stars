@@ -61,7 +61,7 @@ namespace FPSLAN
         float m_LastSound = -10f;
         GameExperienceContext m_Ctx;
 
-        static readonly string[] TabLabels = { "PERFIL", "PERSONAGENS", "NÍVEIS", "SKINS", "PETS", "MISSÕES", "RECOMPENSAS" };
+        static readonly string[] TabLabels = { "PROFILE", "CHARACTERS", "LEVELS", "SKINS", "PETS", "QUESTS", "REWARDS" };
         static readonly ProgressionScreen[] Tabs =
         {
             ProgressionScreen.Profile, ProgressionScreen.Characters, ProgressionScreen.Levels, ProgressionScreen.Skins,
@@ -239,7 +239,7 @@ namespace FPSLAN
 
             Outlined(new Rect(area.x + 20 * s, area.y + 8 * s, 420 * s, 46 * s), ScreenTitle(m_Screen), Big, MenuTheme.White, 2f);
             DrawHeaderStatus(new Rect(area.xMax - 560 * s, area.y + 12 * s, 400 * s, 40 * s));
-            if (Btn(new Rect(area.xMax - 140 * s, area.y + 12 * s, 122 * s, 40 * s), "VOLTAR", new Color(0.4f, 0.46f, 0.6f))) Close();
+            if (Btn(new Rect(area.xMax - 140 * s, area.y + 12 * s, 122 * s, 40 * s), "BACK", new Color(0.4f, 0.46f, 0.6f))) Close();
 
             // Separadores (com contadores de recompensas por reclamar)
             float tabW = (area.width - 40 * s - 6 * 6 * s) / Tabs.Length;
@@ -278,13 +278,13 @@ namespace FPSLAN
         {
             switch (s)
             {
-                case ProgressionScreen.Profile: return "PERFIL DO JOGADOR";
-                case ProgressionScreen.Characters: return "PERSONAGENS · ATRIBUTOS";
-                case ProgressionScreen.Levels: return "PROGRESSÃO DE NÍVEIS";
-                case ProgressionScreen.Skins: return "INVENTÁRIO DE SKINS";
-                case ProgressionScreen.Pets: return "ANIMAIS DE COMPANHIA";
-                case ProgressionScreen.Quests: return "MISSÕES";
-                case ProgressionScreen.Rewards: return "RECOMPENSAS";
+                case ProgressionScreen.Profile: return "PLAYER PROFILE";
+                case ProgressionScreen.Characters: return "CHARACTERS · STATS";
+                case ProgressionScreen.Levels: return "LEVEL PROGRESSION";
+                case ProgressionScreen.Skins: return "SKIN COLLECTION";
+                case ProgressionScreen.Pets: return "COMPANIONS";
+                case ProgressionScreen.Quests: return "QUESTS";
+                case ProgressionScreen.Rewards: return "REWARDS";
                 default: return "";
             }
         }
@@ -312,7 +312,7 @@ namespace FPSLAN
             var curve = ctx.Config.playerLevels;
             curve.Progress(ctx.Profile.playerXp, out _, out int into, out int span);
             var barRect = new Rect(r.x + r.height + 8 * s, r.y + r.height * 0.22f, Mathf.Max(50 * s, r.width - r.height - 112 * s), r.height * 0.56f);
-            Bar(barRect, span > 0 ? into / (float)span : 1f, new Color(0.35f, 0.8f, 1f), span > 0 ? into + " / " + span + " XP" : "NÍVEL MÁXIMO");
+            Bar(barRect, span > 0 ? into / (float)span : 1f, new Color(0.35f, 0.8f, 1f), span > 0 ? into + " / " + span + " XP" : "MAX LEVEL");
             var coinRect = new Rect(barRect.xMax + 14 * s, r.y + r.height * 0.18f, r.height * 0.64f, r.height * 0.64f);
             Tex(coinRect, Art.CircleTexture, Ink);
             Tex(new Rect(coinRect.x + 2 * s, coinRect.y + 2 * s, coinRect.width - 4 * s, coinRect.height - 4 * s), Art.CircleTexture, Gold);
@@ -331,26 +331,26 @@ namespace FPSLAN
             float y = left.y + 14 * s;
             Outlined(new Rect(left.x + 16 * s, y, left.width - 32 * s, 34 * s), GameSession.LocalName.ToUpperInvariant(), Big, Color.white, 2f);
             y += 36 * s;
-            Outlined(new Rect(left.x + 16 * s, y, left.width - 32 * s, 20 * s), "ID " + (p.playerId.Length > 8 ? p.playerId.Substring(0, 8) : p.playerId) + " · perfil local", Tiny, Muted, 1f);
+            Outlined(new Rect(left.x + 16 * s, y, left.width - 32 * s, 20 * s), "ID " + (p.playerId.Length > 8 ? p.playerId.Substring(0, 8) : p.playerId) + " · local profile", Tiny, Muted, 1f);
             y += 28 * s;
             int level = ctx.Progression.PlayerLevel;
             Badge(new Rect(left.x + 16 * s, y, 70 * s, 70 * s), level.ToString(), new Color(0.35f, 0.55f, 1f));
             var curve = ctx.Config.playerLevels;
             curve.Progress(p.playerXp, out _, out int into, out int span);
-            Outlined(new Rect(left.x + 100 * s, y + 2 * s, 300 * s, 24 * s), level >= curve.maxLevel ? "NÍVEL MÁXIMO" : "NÍVEL " + level + " → " + (level + 1), Label, Color.white, 1.5f);
+            Outlined(new Rect(left.x + 100 * s, y + 2 * s, 300 * s, 24 * s), level >= curve.maxLevel ? "MAX LEVEL" : "LEVEL " + level + " → " + (level + 1), Label, Color.white, 1.5f);
             Bar(new Rect(left.x + 100 * s, y + 32 * s, left.width - 120 * s, 22 * s), span > 0 ? into / (float)span : 1f, new Color(0.35f, 0.8f, 1f),
                 span > 0 ? into + " / " + span + " XP" : p.playerXp + " XP");
             y += 84 * s;
-            Outlined(new Rect(left.x + 16 * s, y, 400 * s, 22 * s), "XP total: " + p.playerXp + "   ·   Moedas: " + p.coins, Small, Gold, 1f);
+            Outlined(new Rect(left.x + 16 * s, y, 400 * s, 22 * s), "Total XP: " + p.playerXp + "   ·   Coins: " + p.coins, Small, Gold, 1f);
             y += 34 * s;
 
             var st = p.stats;
             string[,] rows =
             {
-                { "Partidas", st.matches.ToString() }, { "Partidas válidas", st.validMatches.ToString() }, { "Vitórias", st.wins.ToString() },
-                { "Eliminações", st.kills.ToString() }, { "Assistências", st.assists.ToString() }, { "Mortes", st.deaths.ToString() },
-                { "Tiros na cabeça", st.headshots.ToString() }, { "Objetivos", st.objectives.ToString() }, { "Dano total", st.damageDealt.ToString() },
-                { "Partidas competitivas", st.competitiveMatches.ToString() }, { "Missões concluídas", p.questsCompletedTotal.ToString() },
+                { "Matches", st.matches.ToString() }, { "Valid matches", st.validMatches.ToString() }, { "Wins", st.wins.ToString() },
+                { "Eliminations", st.kills.ToString() }, { "Assists", st.assists.ToString() }, { "Deaths", st.deaths.ToString() },
+                { "Headshots", st.headshots.ToString() }, { "Objectives", st.objectives.ToString() }, { "Total damage", st.damageDealt.ToString() },
+                { "Competitive matches", st.competitiveMatches.ToString() }, { "Quests completed", p.questsCompletedTotal.ToString() },
             };
             for (int i = 0; i < rows.GetLength(0); i++)
             {
@@ -363,7 +363,7 @@ namespace FPSLAN
 
             y = left.yMax - 50 * s;
             float bw = (left.width - 48 * s) / 2f;
-            if (Btn(new Rect(left.x + 16 * s, y, bw, 36 * s), "ÚLTIMA PARTIDA", PanelBlue, ctx.Progression.LastReport != null, ButtonSmall))
+            if (Btn(new Rect(left.x + 16 * s, y, bw, 36 * s), "LAST MATCH", PanelBlue, ctx.Progression.LastReport != null, ButtonSmall))
             {
                 m_Report = ctx.Progression.LastReport;
                 m_ReportShownAt = Time.realtimeSinceStartup;
@@ -372,19 +372,19 @@ namespace FPSLAN
             }
             if (!m_ConfirmReset)
             {
-                if (Btn(new Rect(left.x + 32 * s + bw, y, bw, 36 * s), "APAGAR PROGRESSO", new Color(0.55f, 0.25f, 0.25f), true, ButtonSmall)) m_ConfirmReset = true;
+                if (Btn(new Rect(left.x + 32 * s + bw, y, bw, 36 * s), "RESET PROGRESS", new Color(0.55f, 0.25f, 0.25f), true, ButtonSmall)) m_ConfirmReset = true;
             }
-            else if (Btn(new Rect(left.x + 32 * s + bw, y, bw, 36 * s), "CONFIRMAR APAGAR", Bad, true, ButtonSmall))
+            else if (Btn(new Rect(left.x + 32 * s + bw, y, bw, 36 * s), "CONFIRM RESET", Bad, true, ButtonSmall))
             {
                 ctx.ResetProfile();
                 m_ConfirmReset = false;
-                Say("Progresso apagado. Perfil novo criado.");
+                Say("Progress reset. New profile created.");
             }
 
             // Conquistas e desafios
             var right = new Rect(left.xMax + 16 * s, c.y, c.width - left.width - 16 * s, c.height);
             InkPanel(right, PanelMid, 2f);
-            Outlined(new Rect(right.x + 16 * s, right.y + 10 * s, right.width, 28 * s), "CONQUISTAS E DESAFIOS", Label, Gold, 1.5f);
+            Outlined(new Rect(right.x + 16 * s, right.y + 10 * s, right.width, 28 * s), "ACHIEVEMENTS & CHALLENGES", Label, Gold, 1.5f);
             var list = ctx.QuestCatalog.achievements;
             var view = new Rect(right.x + 10 * s, right.y + 44 * s, right.width - 20 * s, right.height - 54 * s);
             float rowH = 64 * s;
@@ -396,7 +396,7 @@ namespace FPSLAN
                 var rr = new Rect(0, i * (rowH + 6 * s), view.width - 20 * s, rowH);
                 bool done = ctx.Quests.IsAchieved(a);
                 Panel(rr, done ? new Color(0.25f, 0.45f, 0.25f, 0.9f) : new Color(1f, 1f, 1f, 0.06f));
-                Outlined(new Rect(rr.x + 10 * s, rr.y + 4 * s, rr.width * 0.65f, 22 * s), (a.isChallenge ? "DESAFIO · " : "") + a.title, Label, done ? Gold : Color.white, 1.2f);
+                Outlined(new Rect(rr.x + 10 * s, rr.y + 4 * s, rr.width * 0.65f, 22 * s), (a.isChallenge ? "CHALLENGE · " : "") + a.title, Label, done ? Gold : Color.white, 1.2f);
                 Outlined(new Rect(rr.x + 10 * s, rr.y + 26 * s, rr.width * 0.62f, 34 * s), a.description, Tiny, Muted, 1f);
                 int prog = Mathf.Min(ctx.Quests.AchievementProgress(a), a.target);
                 Bar(new Rect(rr.xMax - rr.width * 0.33f, rr.y + 8 * s, rr.width * 0.31f, 20 * s), prog / (float)a.target, done ? Good : new Color(0.95f, 0.7f, 0.25f), prog + "/" + a.target);
@@ -428,7 +428,7 @@ namespace FPSLAN
                 int lvl = ctx.Progression.CharacterLevel(b.brawlerId);
                 Badge(new Rect(r.x + 8 * s, r.y + (cardH - 44 * s) / 2f, 44 * s, 44 * s), lvl.ToString(), Art.Darken(b.Tint, 0.75f));
                 Outlined(new Rect(r.x + 60 * s, r.y + 6 * s, r.width - 66 * s, 24 * s), b.displayName, Label, Color.white, 1.5f);
-                Outlined(new Rect(r.x + 60 * s, r.y + 28 * s, r.width - 66 * s, 18 * s), unlocked ? ShortRole(b) : "BLOQUEADA", Tiny, new Color(1f, 1f, 1f, 0.85f), 1f);
+                Outlined(new Rect(r.x + 60 * s, r.y + 28 * s, r.width - 66 * s, 18 * s), unlocked ? ShortRole(b) : "LOCKED", Tiny, new Color(1f, 1f, 1f, 0.85f), 1f);
                 var cp = ctx.Profile.Character(b.brawlerId, false);
                 Bar(new Rect(r.x + 60 * s, r.yMax - 18 * s, r.width - 72 * s, 10 * s), ctx.Config.characterLevels.Progress01(cp != null ? cp.xp : 0), Gold, "");
                 if (Hit(r)) m_Brawler = b.runtimeIndex;
@@ -448,17 +448,18 @@ namespace FPSLAN
             var skin = ctx.Skins.EquippedSkinFor(SkinTarget.Brawler, id);
             var pet = ctx.Pets.EquippedPet;
             Outlined(new Rect(pv.x + 10 * s, pv.yMax - 140 * s, pv.width - 20 * s, 20 * s), "Skin: " + (skin != null ? skin.displayName : "Original"), Small, Color.white, 1f);
-            Outlined(new Rect(pv.x + 10 * s, pv.yMax - 118 * s, pv.width - 20 * s, 20 * s), "Pet: " + (pet != null ? pet.displayName + " (nv " + ctx.PetProgression.Level(pet.petId) + ")" : "nenhum"), Small, Color.white, 1f);
+            Outlined(new Rect(pv.x + 10 * s, pv.yMax - 118 * s, pv.width - 20 * s, 20 * s), "Pet: " + (pet != null ? pet.displayName + " (lv " + ctx.PetProgression.Level(pet.petId) + ")" : "none"), Small, Color.white, 1f);
             var me = PlayerNetwork.Local;
             bool current = me != null ? me.HeroId.Value == selected : GameSession.LocalHeroId == selected;
-            if (Btn(new Rect(pv.x + 10 * s, pv.yMax - 90 * s, pv.width - 20 * s, 36 * s), current ? "SELECIONADA" : "SELECIONAR PARA JOGAR", current ? new Color(0.3f, 0.5f, 0.3f) : Good,
-                    !current && ctx.Inventory.IsCharacterUnlocked(id)))
+            bool locked = me != null && MatchManager.Instance != null && (MatchManager.Instance.IsCoop || MatchManager.Instance.Mode.Value == GameMode.GemGrab);
+            if (Btn(new Rect(pv.x + 10 * s, pv.yMax - 90 * s, pv.width - 20 * s, 36 * s), current ? "SELECTED" : locked ? "LOCKED DURING MATCH" : "SELECT TO PLAY", current ? new Color(0.3f, 0.5f, 0.3f) : Good,
+                    !locked && !current && ctx.Inventory.IsCharacterUnlocked(id)))
             {
                 GameSession.LocalHeroId = selected;
                 if (me != null) me.ChangeHero(selected);
                 PlayerPrefs.Save();
             }
-            if (Btn(new Rect(pv.x + 10 * s, pv.yMax - 46 * s, pv.width - 20 * s, 34 * s), "SKINS DESTA PERSONAGEM", PanelBlue, true, ButtonSmall))
+            if (Btn(new Rect(pv.x + 10 * s, pv.yMax - 46 * s, pv.width - 20 * s, 34 * s), "CHARACTER SKINS", PanelBlue, true, ButtonSmall))
             {
                 m_SkinsForPets = false;
                 m_SkinTarget = id;
@@ -477,19 +478,19 @@ namespace FPSLAN
             var cpSel = ctx.Profile.Character(id, false);
             int clvl = ctx.Progression.CharacterLevel(id);
             ctx.Config.characterLevels.Progress(cpSel != null ? cpSel.xp : 0, out _, out int into, out int span);
-            Outlined(new Rect(d.x + 16 * s, y, 220 * s, 24 * s), "NÍVEL " + clvl + " / " + ctx.Config.characterLevels.maxLevel, Label, Gold, 1.5f);
-            Bar(new Rect(d.x + 200 * s, y + 2 * s, d.width - 216 * s, 20 * s), span > 0 ? into / (float)span : 1f, Gold, span > 0 ? into + " / " + span + " XP" : "NÍVEL MÁXIMO");
+            Outlined(new Rect(d.x + 16 * s, y, 220 * s, 24 * s), "LEVEL " + clvl + " / " + ctx.Config.characterLevels.maxLevel, Label, Gold, 1.5f);
+            Bar(new Rect(d.x + 200 * s, y + 2 * s, d.width - 216 * s, 20 * s), span > 0 ? into / (float)span : 1f, Gold, span > 0 ? into + " / " + span + " XP" : "MAX LEVEL");
             y += 34 * s;
 
             var casual = ctx.Upgrades.Preview(id, false);
             var comp = ctx.Upgrades.Preview(id, true);
             // Cabeçalho da tabela
             float colLabel = d.x + 16 * s, colBase = d.x + d.width * 0.3f, colCasual = d.x + d.width * 0.44f, colComp = d.x + d.width * 0.58f, colPips = d.x + d.width * 0.71f;
-            Outlined(new Rect(colLabel, y, 200 * s, 20 * s), "ATRIBUTO", Tiny, Muted, 1f);
-            Outlined(new Rect(colBase, y, 120 * s, 20 * s), "BASE", Tiny, Muted, 1f);
-            Outlined(new Rect(colCasual, y, 120 * s, 20 * s), "CASUAL", Tiny, Muted, 1f);
-            Outlined(new Rect(colComp, y, 120 * s, 20 * s), "COMPETITIVO", Tiny, Muted, 1f);
-            Outlined(new Rect(colPips, y, 200 * s, 20 * s), "MELHORIA", Tiny, Muted, 1f);
+            Outlined(new Rect(colLabel, y, 200 * s, 20 * s), "STAT", Tiny, Muted, 1f);
+            Outlined(new Rect(colBase, y, colCasual - colBase - 8*s, 20 * s), "BASE", Tiny, Muted, 1f);
+            Outlined(new Rect(colCasual, y, colComp - colCasual - 8*s, 20 * s), "CASUAL", Tiny, Muted, 1f);
+            Outlined(new Rect(colComp, y, colPips - colComp - 8*s, 20 * s), "COMPETITIVE", Tiny, Muted, 1f);
+            Outlined(new Rect(colPips, y, 200 * s, 20 * s), "UPGRADE", Tiny, Muted, 1f);
             y += 22 * s;
 
             foreach (UpgradeStat stat in Enum.GetValues(typeof(UpgradeStat)))
@@ -498,7 +499,7 @@ namespace FPSLAN
                 Panel(rr, new Color(1f, 1f, 1f, 0.05f));
                 var tuning = ctx.Config.Tuning(stat);
                 Outlined(new Rect(colLabel, y + 4 * s, colBase - colLabel, 22 * s), tuning.label, Small, Color.white, 1f);
-                Outlined(new Rect(colLabel, y + 24 * s, colBase - colLabel, 20 * s), "+" + (tuning.bonusPerLevel * 100f).ToString("0.#") + "%/nível · máx " + (tuning.casualCap * 100f).ToString("0") + "%",
+                Outlined(new Rect(colLabel, y + 24 * s, colBase - colLabel, 20 * s), "+" + (tuning.bonusPerLevel * 100f).ToString("0.#") + "%/level · max " + (tuning.casualCap * 100f).ToString("0") + "%",
                     Tiny, Muted, 1f);
                 Outlined(new Rect(colBase, y + 12 * s, 120 * s, 24 * s), FormatStat(brawler, stat, EffectiveModifiers.Neutral), Small, Color.white, 1f);
                 Outlined(new Rect(colCasual, y + 12 * s, 120 * s, 24 * s), FormatStat(brawler, stat, casual), Small, Good, 1f);
@@ -512,26 +513,27 @@ namespace FPSLAN
                 }
                 var check = ctx.Upgrades.CanUpgrade(id, stat);
                 int cost = ctx.Upgrades.NextCost(id, stat);
-                string label = check == UpgradeResult.Ok ? "MELHORAR · " + cost : (check == UpgradeResult.NotEnoughCoins ? cost + " moedas" : CharacterUpgradeManager.Describe(check));
+                string label = check == UpgradeResult.Ok ? "UPGRADE · " + cost : (check == UpgradeResult.NotEnoughCoins ? cost + " coins" : CharacterUpgradeManager.Describe(check));
                 if (check == UpgradeResult.CharacterLevelTooLow)
-                    label = "Requer nível " + ctx.Config.CharacterLevelRequired(lv + 1);
+                    label = "Requires level " + ctx.Config.CharacterLevelRequired(lv + 1);
                 if (Btn(new Rect(colPips, y + 24 * s, rr.xMax - colPips - 6 * s, 22 * s), label, check == UpgradeResult.Ok ? new Color(0.3f, 0.65f, 1f) : new Color(0.3f, 0.3f, 0.38f),
                         check == UpgradeResult.Ok, ButtonSmall))
                 {
                     var res = ctx.Upgrades.TryUpgrade(id, stat);
-                    Say(res == UpgradeResult.Ok ? tuning.label + " melhorada!" : CharacterUpgradeManager.Describe(res));
+                    Say(res == UpgradeResult.Ok ? tuning.label + " upgraded!" : CharacterUpgradeManager.Describe(res));
                 }
                 y += 54 * s;
             }
             Outlined(new Rect(d.x + 16 * s, d.yMax - 52 * s, d.width - 32 * s, 46 * s),
-                "Os atributos efetivos = valores base + melhorias (e pet). Partidas competitivas normalizam tudo para os valores base. " +
-                "As melhorias aplicam-se no próximo (re)aparecimento.", Wrap, Muted, 1f);
+                "Effective stats include upgrades and pets. Competitive matches use base stats. " +
+                "Upgrades apply at your next spawn.", Wrap, Muted, 1f);
         }
 
         static string ShortRole(BrawlerDefinition b)
         {
             var role = b.role ?? "";
             int dash = role.IndexOf('—');
+            if (dash < 0) dash = role.IndexOf('·');
             return dash > 0 ? role.Substring(0, dash).Trim() : role;
         }
 
@@ -574,15 +576,15 @@ namespace FPSLAN
                 Outlined(new Rect(r.x, r.y + 4 * s, r.width, 26 * s), l.ToString(), BigCenter, Color.white, 1.5f);
                 if (reward != null && !reward.IsEmpty)
                 {
-                    string txt = reward.skinIds != null && reward.skinIds.Length > 0 ? "SKIN" : reward.cosmeticIds != null && reward.cosmeticIds.Length > 0 ? "TÍTULO" : "+" + reward.coins;
+                    string txt = reward.skinIds != null && reward.skinIds.Length > 0 ? "SKIN" : reward.cosmeticIds != null && reward.cosmeticIds.Length > 0 ? "TITLE" : "+" + reward.coins;
                     Outlined(new Rect(r.x, r.yMax - 26 * s, r.width, 20 * s), txt, TinyCenter, pending ? new Color(1f, 0.4f, 0.35f) : Gold, 1f);
                     if (pending && Hit(r)) Open(ProgressionScreen.Rewards);
                 }
             }
             float y = c.y + rows * (ch + gap) + 10 * s;
             curve.Progress(ctx.Profile.playerXp, out _, out int into, out int span);
-            Outlined(new Rect(c.x, y, c.width, 26 * s), level >= curve.maxLevel ? "NÍVEL MÁXIMO ATINGIDO" :
-                "NÍVEL " + level + " · faltam " + (span - into) + " XP para o nível " + (level + 1), Label, Color.white, 1.5f);
+            Outlined(new Rect(c.x, y, c.width, 26 * s), level >= curve.maxLevel ? "MAX LEVEL REACHED" :
+                "LEVEL " + level + " · need " + (span - into) + " XP to level " + (level + 1), Label, Color.white, 1.5f);
             Bar(new Rect(c.x, y + 30 * s, c.width, 24 * s), span > 0 ? into / (float)span : 1f, new Color(0.35f, 0.8f, 1f), span > 0 ? into + " / " + span + " XP" : "");
             int next = -1;
             for (int l = level + 1; l <= curve.maxLevel; l++)
@@ -591,7 +593,7 @@ namespace FPSLAN
                 if (rw != null && !rw.IsEmpty) { next = l; break; }
             }
             if (next > 0)
-                Outlined(new Rect(c.x, y + 60 * s, c.width, 24 * s), "Próxima recompensa: nível " + next + " — " + ctx.Config.RewardForLevel(next).Describe(ctx.SkinCatalog, ctx.PetCatalog), Small, Gold, 1f);
+                Outlined(new Rect(c.x, y + 60 * s, c.width, 24 * s), "Next reward: level " + next + " — " + ctx.Config.RewardForLevel(next).Describe(ctx.SkinCatalog, ctx.PetCatalog), Small, Gold, 1f);
         }
 
         // ================================================================== SKINS
@@ -601,7 +603,7 @@ namespace FPSLAN
             float s = Scale;
             var ctx = m_Ctx;
             // Personagens / pets
-            if (Btn(new Rect(c.x, c.y, 200 * s, 34 * s), "PERSONAGENS", !m_SkinsForPets ? PanelBlue : new Color(0.22f, 0.24f, 0.34f), true, ButtonSmall))
+            if (Btn(new Rect(c.x, c.y, 200 * s, 34 * s), "CHARACTERS", !m_SkinsForPets ? PanelBlue : new Color(0.22f, 0.24f, 0.34f), true, ButtonSmall))
             {
                 m_SkinsForPets = false;
                 m_SkinTarget = "";
@@ -654,14 +656,14 @@ namespace FPSLAN
                 InkPanel(r, sel ? Color.Lerp(PanelBlue, rarity, 0.25f) : PanelMid, sel ? 3f : 2f);
                 Fill(new Rect(r.x, r.y, 8 * s, r.height), rarity);
                 Outlined(new Rect(r.x + 18 * s, r.y + 8 * s, r.width - 30 * s, 26 * s), skin != null ? skin.displayName : "Original", Label, Color.white, 1.5f);
-                Outlined(new Rect(r.x + 18 * s, r.y + 34 * s, r.width - 30 * s, 20 * s), skin != null ? RarityStyle.LabelOf(skin.rarity).ToUpperInvariant() : "PREDEFINIDA", Tiny, rarity, 1f);
+                Outlined(new Rect(r.x + 18 * s, r.y + 34 * s, r.width - 30 * s, 20 * s), skin != null ? RarityStyle.LabelOf(skin.rarity).ToUpperInvariant() : "DEFAULT", Tiny, rarity, 1f);
                 string state;
                 Color stateColor;
-                if (skin == null) { state = equipped == null ? "EQUIPADA" : "DISPONÍVEL"; stateColor = equipped == null ? Gold : Good; }
+                if (skin == null) { state = equipped == null ? "EQUIPPED" : "AVAILABLE"; stateColor = equipped == null ? Gold : Good; }
                 else
                 {
                     var st = ctx.Skins.StateOf(skin);
-                    state = st == SkinState.Equipped ? "EQUIPADA" : st == SkinState.Unlocked ? "DESBLOQUEADA" : "BLOQUEADA · " + ctx.Skins.UnlockText(skin);
+                    state = st == SkinState.Equipped ? "EQUIPPED" : st == SkinState.Unlocked ? "UNLOCKED" : "LOCKED · " + ctx.Skins.UnlockText(skin);
                     stateColor = st == SkinState.Equipped ? Gold : st == SkinState.Unlocked ? Good : Muted;
                 }
                 Outlined(new Rect(r.x + 18 * s, r.y + 56 * s, r.width - 30 * s, 22 * s), state, Small, stateColor, 1f);
@@ -675,14 +677,14 @@ namespace FPSLAN
             if (m_Preview.Texture != null) GUI.DrawTexture(tex, m_Preview.Texture, ScaleMode.ScaleToFit, true);
             var selSkin = ctx.SkinCatalog.Find(m_SelectedSkin);
             float y = pv.yMax - 160 * s;
-            Outlined(new Rect(pv.x + 14 * s, y, pv.width - 28 * s, 30 * s), selSkin != null ? selSkin.displayName.ToUpperInvariant() : "ASPETO ORIGINAL", Big, selSkin != null ? RarityStyle.ColorOf(selSkin.rarity) : Color.white, 2f);
+            Outlined(new Rect(pv.x + 14 * s, y, pv.width - 28 * s, 30 * s), selSkin != null ? selSkin.displayName.ToUpperInvariant() : "ORIGINAL LOOK", Big, selSkin != null ? RarityStyle.ColorOf(selSkin.rarity) : Color.white, 2f);
             y += 32 * s;
-            Outlined(new Rect(pv.x + 14 * s, y, pv.width - 28 * s, 22 * s), selSkin != null ? selSkin.description : "O aspeto base. As skins nunca alteram dano, vida ou velocidade.", Small, Muted, 1f);
+            Outlined(new Rect(pv.x + 14 * s, y, pv.width - 28 * s, 22 * s), selSkin != null ? selSkin.description : "The original look. Skins never change damage, health or speed.", Small, Muted, 1f);
             y += 30 * s;
             float bw = (pv.width - 40 * s) / 2f;
             if (selSkin == null)
             {
-                if (Btn(new Rect(pv.x + 14 * s, y, pv.width - 28 * s, 40 * s), equipped == null ? "EQUIPADA" : "USAR ORIGINAL", Good, equipped != null))
+                if (Btn(new Rect(pv.x + 14 * s, y, pv.width - 28 * s, 40 * s), equipped == null ? "EQUIPPED" : "USE ORIGINAL", Good, equipped != null))
                     ctx.Skins.Equip(target, m_SkinTarget, "");
             }
             else
@@ -692,19 +694,19 @@ namespace FPSLAN
                 {
                     bool canBuy = selSkin.unlock.IsPurchasable;
                     bool affordable = canBuy && ctx.Inventory.Coins >= selSkin.unlock.value;
-                    if (Btn(new Rect(pv.x + 14 * s, y, pv.width - 28 * s, 40 * s), canBuy ? "COMPRAR · " + selSkin.unlock.value + " MOEDAS" : ctx.Skins.UnlockText(selSkin), Gold, affordable))
+                    if (Btn(new Rect(pv.x + 14 * s, y, pv.width - 28 * s, 40 * s), canBuy ? "BUY · " + selSkin.unlock.value + " COINS" : ctx.Skins.UnlockText(selSkin), Gold, affordable))
                     {
-                        if (ctx.Skins.TryPurchase(selSkin.skinId)) Say("Skin desbloqueada: " + selSkin.displayName);
-                        else Say("Moedas insuficientes.");
+                        if (ctx.Skins.TryPurchase(selSkin.skinId)) Say("Skin unlocked: " + selSkin.displayName);
+                        else Say("Not enough coins.");
                     }
                 }
-                else if (Btn(new Rect(pv.x + 14 * s, y, pv.width - 28 * s, 40 * s), st == SkinState.Equipped ? "EQUIPADA" : "EQUIPAR", Good, st != SkinState.Equipped))
+                else if (Btn(new Rect(pv.x + 14 * s, y, pv.width - 28 * s, 40 * s), st == SkinState.Equipped ? "EQUIPPED" : "EQUIP", Good, st != SkinState.Equipped))
                 {
                     ctx.Skins.Equip(target, m_SkinTarget, selSkin.skinId);
-                    Say("Skin equipada. Os outros jogadores veem-na de imediato.");
+                    Say("Skin equipped. Other players see it immediately.");
                 }
             }
-            Outlined(new Rect(pv.x + 14 * s, pv.yMax - 40 * s, pv.width - 28 * s, 34 * s), "Rara · Épica · Lendária: cores, acessórios, arma, partículas e animação. Sem vantagens de jogo.", Wrap, Muted, 1f);
+            Outlined(new Rect(pv.x + 14 * s, pv.yMax - 40 * s, pv.width - 28 * s, 34 * s), "Rare · Epic · Legendary: colors, accessories, weapons, effects and animations. Cosmetic only.", Wrap, Muted, 1f);
         }
 
         // ================================================================== PETS
@@ -721,8 +723,8 @@ namespace FPSLAN
                 m_SelectedPet = eq != null ? eq.petId : pets[0].petId;
             }
 
-            if (Btn(new Rect(c.x, c.y, 200 * s, 34 * s), "SELEÇÃO", !m_PetEvolution ? PanelBlue : new Color(0.22f, 0.24f, 0.34f), true, ButtonSmall)) m_PetEvolution = false;
-            if (Btn(new Rect(c.x + 208 * s, c.y, 200 * s, 34 * s), "EVOLUÇÃO", m_PetEvolution ? PanelBlue : new Color(0.22f, 0.24f, 0.34f), true, ButtonSmall)) m_PetEvolution = true;
+            if (Btn(new Rect(c.x, c.y, 200 * s, 34 * s), "SELECTION", !m_PetEvolution ? PanelBlue : new Color(0.22f, 0.24f, 0.34f), true, ButtonSmall)) m_PetEvolution = false;
+            if (Btn(new Rect(c.x + 208 * s, c.y, 200 * s, 34 * s), "EVOLUTION", m_PetEvolution ? PanelBlue : new Color(0.22f, 0.24f, 0.34f), true, ButtonSmall)) m_PetEvolution = true;
 
             // Grelha de pets
             var grid = new Rect(c.x, c.y + 44 * s, c.width * 0.42f, c.height - 44 * s);
@@ -750,7 +752,7 @@ namespace FPSLAN
                 {
                     int lv = ctx.PetProgression.Level(def.petId);
                     Bar(new Rect(r.x + 10 * s, r.yMax - 30 * s, r.width - 20 * s, 18 * s), ctx.Config.petLevels.Progress01(ctx.PetProgression.Xp(def.petId)), def.accentColor,
-                        "NV " + lv + " · " + PetDefinition.StageName(PetDefinition.StageFor(lv)).ToUpperInvariant());
+                        "LV " + lv + " · " + PetDefinition.StageName(PetDefinition.StageFor(lv)).ToUpperInvariant());
                 }
                 if (Hit(r)) m_SelectedPet = def.petId;
             }
@@ -779,49 +781,49 @@ namespace FPSLAN
             y += 28 * s;
             Outlined(new Rect(x, y, w, 60 * s), pet.description, Wrap, Muted, 1f);
             y += 64 * s;
-            Outlined(new Rect(x, y, w, 20 * s), "HABILIDADE (NV " + lv + ")", Tiny, Muted, 1f);
+            Outlined(new Rect(x, y, w, 20 * s), "ABILITY (LV " + lv + ")", Tiny, Muted, 1f);
             y += 20 * s;
             Outlined(new Rect(x, y, w, 44 * s), pet.AbilityText(lv), Wrap, Color.white, 1f);
             y += 46 * s;
             if (lv < 10)
             {
-                Outlined(new Rect(x, y, w, 40 * s), "Nv " + (lv + 1) + ": " + pet.AbilityText(lv + 1), Wrap, Good, 1f);
+                Outlined(new Rect(x, y, w, 40 * s), "Lv " + (lv + 1) + ": " + pet.AbilityText(lv + 1), Wrap, Good, 1f);
                 y += 42 * s;
             }
-            Outlined(new Rect(x, y, w, 36 * s), "Partidas competitivas: só cosmético.", Wrap, Muted, 1f);
+            Outlined(new Rect(x, y, w, 36 * s), "Competitive matches: cosmetic only.", Wrap, Muted, 1f);
 
             float by = r.yMax - 128 * s;
             if (state != PetState.Locked)
             {
                 ctx.Config.petLevels.Progress(ctx.PetProgression.Xp(pet.petId), out _, out int into, out int span);
                 Bar(new Rect(r.x + 14 * s, by, r.width - 28 * s, 22 * s), span > 0 ? into / (float)span : 1f, pet.accentColor,
-                    "NÍVEL " + lv + " · " + (span > 0 ? into + " / " + span + " XP" : "NÍVEL MÁXIMO"));
+                    "LEVEL " + lv + " · " + (span > 0 ? into + " / " + span + " XP" : "MAX LEVEL"));
             }
-            else Outlined(new Rect(r.x + 14 * s, by, r.width - 28 * s, 24 * s), "Como desbloquear: " + ctx.PetUnlocks.ProgressText(pet), Small, Gold, 1f);
+            else Outlined(new Rect(r.x + 14 * s, by, r.width - 28 * s, 24 * s), "How to unlock: " + ctx.PetUnlocks.ProgressText(pet), Small, Gold, 1f);
 
             var btn = new Rect(r.x + 14 * s, r.yMax - 92 * s, r.width - 28 * s, 42 * s);
             if (state == PetState.Locked)
             {
                 bool buy = pet.unlock.IsPurchasable;
-                if (Btn(btn, buy ? "COMPRAR · " + pet.unlock.value + " MOEDAS" : "BLOQUEADO", Gold, buy && ctx.Inventory.Coins >= pet.unlock.value))
+                if (Btn(btn, buy ? "BUY · " + pet.unlock.value + " COINS" : "LOCKED", Gold, buy && ctx.Inventory.Coins >= pet.unlock.value))
                 {
-                    if (ctx.PetUnlocks.TryPurchase(pet.petId)) Say(pet.displayName + " desbloqueado!");
+                    if (ctx.PetUnlocks.TryPurchase(pet.petId)) Say(pet.displayName + " unlocked!");
                 }
             }
             else if (state == PetState.Unlocked)
             {
-                if (Btn(btn, "EQUIPAR", Good))
+                if (Btn(btn, "EQUIP", Good))
                 {
                     ctx.Pets.Equip(pet.petId);
-                    Say(pet.displayName + " vai contigo para a arena.");
+                    Say(pet.displayName + " joins you in the arena.");
                 }
             }
-            else if (Btn(btn, "RETIRAR PET", new Color(0.55f, 0.35f, 0.3f)))
+            else if (Btn(btn, "UNEQUIP PET", new Color(0.55f, 0.35f, 0.3f)))
             {
                 ctx.Pets.Unequip();
-                Say("Sem pet equipado.");
+                Say("No pet equipped.");
             }
-            if (Btn(new Rect(r.x + 14 * s, r.yMax - 44 * s, r.width - 28 * s, 34 * s), "SKINS DESTE PET", PanelBlue, true, ButtonSmall))
+            if (Btn(new Rect(r.x + 14 * s, r.yMax - 44 * s, r.width - 28 * s, 34 * s), "PET SKINS", PanelBlue, true, ButtonSmall))
             {
                 m_SkinsForPets = true;
                 m_SkinTarget = pet.petId;
@@ -836,14 +838,14 @@ namespace FPSLAN
             float s = Scale;
             var ctx = m_Ctx;
             int lv = ctx.Inventory.IsPetUnlocked(pet.petId) ? Mathf.Max(1, ctx.PetProgression.Level(pet.petId)) : 0;
-            Outlined(new Rect(r.x + 16 * s, r.y + 10 * s, r.width, 32 * s), "EVOLUÇÃO DE " + pet.displayName.ToUpperInvariant(), Big, Gold, 2f);
+            Outlined(new Rect(r.x + 16 * s, r.y + 10 * s, r.width, 32 * s), "EVOLUTION OF " + pet.displayName.ToUpperInvariant(), Big, Gold, 2f);
             var tex = new Rect(r.xMax - r.width * 0.36f, r.y + 40 * s, r.width * 0.34f, r.height * 0.42f);
             if (m_Preview.Texture != null) GUI.DrawTexture(tex, m_Preview.Texture, ScaleMode.ScaleToFit, true);
 
             // Faixas dos estágios + nós dos níveis
             float x0 = r.x + 24 * s, x1 = tex.x - 20 * s;
             float ty = r.y + 120 * s;
-            string[] stages = { "JOVEM (1–3)", "DESENVOLVIDO (4–7)", "EVOLUÍDO (8–10)" };
+            string[] stages = { "YOUNG (1–3)", "DEVELOPED (4–7)", "EVOLVED (8–10)" };
             int[] stageStart = { 1, 4, 8 };
             int[] stageEnd = { 3, 7, 10 };
             Color[] stageColors = { new Color(0.4f, 0.7f, 0.95f), new Color(0.5f, 0.85f, 0.45f), new Color(1f, 0.75f, 0.3f) };
@@ -871,7 +873,7 @@ namespace FPSLAN
                 bool reached = lv >= m.level;
                 var row = new Rect(r.x + 16 * s, y, x1 - r.x - 16 * s, 36 * s);
                 Panel(row, reached ? new Color(0.25f, 0.45f, 0.25f, 0.9f) : new Color(1f, 1f, 1f, 0.05f));
-                Outlined(new Rect(row.x + 10 * s, row.y, 80 * s, row.height), "NV " + m.level, Label, reached ? Gold : Muted, 1.2f);
+                Outlined(new Rect(row.x + 10 * s, row.y, 80 * s, row.height), "LV " + m.level, Label, reached ? Gold : Muted, 1.2f);
                 Outlined(new Rect(row.x + 90 * s, row.y, row.width - 100 * s, row.height), MilestoneLabel(m.type) + " · " + m.description, Small, Color.white, 1f);
                 y += 42 * s;
             }
@@ -880,19 +882,19 @@ namespace FPSLAN
             {
                 ctx.Config.petLevels.Progress(ctx.PetProgression.Xp(pet.petId), out _, out int into, out int span);
                 Bar(new Rect(r.x + 16 * s, r.yMax - 44 * s, r.width - 32 * s, 24 * s), span > 0 ? into / (float)span : 1f, pet.accentColor,
-                    span > 0 ? "NÍVEL " + lv + " · " + into + " / " + span + " XP · ganha XP em partidas válidas com o pet equipado" : "NÍVEL MÁXIMO");
+                    span > 0 ? "LEVEL " + lv + " · " + into + " / " + span + " XP · earn XP in valid matches with this pet equipped" : "MAX LEVEL");
             }
-            else Outlined(new Rect(r.x + 16 * s, r.yMax - 44 * s, r.width - 32 * s, 24 * s), "Bloqueado · " + ctx.PetUnlocks.ProgressText(pet), Small, Gold, 1f);
+            else Outlined(new Rect(r.x + 16 * s, r.yMax - 44 * s, r.width - 32 * s, 24 * s), "Locked · " + ctx.PetUnlocks.ProgressText(pet), Small, Gold, 1f);
         }
 
         static string MilestoneLabel(PetMilestoneType t)
         {
             switch (t)
             {
-                case PetMilestoneType.AbilityBoost: return "Habilidade";
-                case PetMilestoneType.Animation: return "Animação";
+                case PetMilestoneType.AbilityBoost: return "Ability";
+                case PetMilestoneType.Animation: return "Animation";
                 case PetMilestoneType.Visual: return "Visual";
-                default: return "Cosmético";
+                default: return "Cosmetic";
             }
         }
 
@@ -900,12 +902,12 @@ namespace FPSLAN
         {
             switch (s)
             {
-                case PetSpecies.Dog: return "Cão";
-                case PetSpecies.Cat: return "Gato";
-                case PetSpecies.Pig: return "Porco";
-                case PetSpecies.Rooster: return "Galo";
-                case PetSpecies.Rabbit: return "Coelho";
-                default: return "Tartaruga";
+                case PetSpecies.Dog: return "Dog";
+                case PetSpecies.Cat: return "Cat";
+                case PetSpecies.Pig: return "Pig";
+                case PetSpecies.Rooster: return "Rooster";
+                case PetSpecies.Rabbit: return "Rabbit";
+                default: return "Turtle";
             }
         }
 
@@ -917,13 +919,13 @@ namespace FPSLAN
             var ctx = m_Ctx;
             var now = ctx.Clock.UtcNow;
             float colW = (c.width - 16 * s) / 2f;
-            DrawQuestColumn(new Rect(c.x, c.y, colW, c.height * 0.62f), QuestPeriod.Daily, "DIÁRIAS · renovam em " + Duration(QuestManager.TimeUntilReset(QuestPeriod.Daily, now)));
-            DrawQuestColumn(new Rect(c.x + colW + 16 * s, c.y, colW, c.height * 0.62f), QuestPeriod.Weekly, "SEMANAIS · renovam em " + Duration(QuestManager.TimeUntilReset(QuestPeriod.Weekly, now)));
+            DrawQuestColumn(new Rect(c.x, c.y, colW, c.height * 0.62f), QuestPeriod.Daily, "DAILY · reset in " + Duration(QuestManager.TimeUntilReset(QuestPeriod.Daily, now)));
+            DrawQuestColumn(new Rect(c.x + colW + 16 * s, c.y, colW, c.height * 0.62f), QuestPeriod.Weekly, "WEEKLY · reset in " + Duration(QuestManager.TimeUntilReset(QuestPeriod.Weekly, now)));
 
             // Desafios especiais
             var ch = new Rect(c.x, c.y + c.height * 0.62f + 14 * s, c.width, c.height * 0.38f - 14 * s);
             InkPanel(ch, PanelMid, 2f);
-            Outlined(new Rect(ch.x + 14 * s, ch.y + 8 * s, ch.width, 26 * s), "DESAFIOS ESPECIAIS", Label, Gold, 1.5f);
+            Outlined(new Rect(ch.x + 14 * s, ch.y + 8 * s, ch.width, 26 * s), "SPECIAL CHALLENGES", Label, Gold, 1.5f);
             float y = ch.y + 40 * s;
             foreach (var a in ctx.QuestCatalog.achievements)
             {
@@ -935,7 +937,7 @@ namespace FPSLAN
                 Outlined(new Rect(row.x + 10 * s, row.y + 2 * s, row.width * 0.6f, 22 * s), a.title, Label, done ? Gold : Color.white, 1.2f);
                 Outlined(new Rect(row.x + 10 * s, row.y + 22 * s, row.width * 0.6f, 20 * s), a.description, Tiny, Muted, 1f);
                 int prog = Mathf.Min(ctx.Quests.AchievementProgress(a), a.target);
-                Bar(new Rect(row.xMax - row.width * 0.36f, row.y + 10 * s, row.width * 0.34f, 22 * s), prog / (float)a.target, done ? Good : Gold, done ? "CONCLUÍDO" : prog + "/" + a.target);
+                Bar(new Rect(row.xMax - row.width * 0.36f, row.y + 10 * s, row.width * 0.34f, 22 * s), prog / (float)a.target, done ? Good : Gold, done ? "COMPLETED" : prog + "/" + a.target);
                 y += 50 * s;
             }
         }
@@ -958,10 +960,10 @@ namespace FPSLAN
                     Mathf.Min(p.progress, q.target) + " / " + q.target);
                 Outlined(new Rect(row.x + 10 * s, row.y + 56 * s, row.width * 0.62f, 22 * s), q.reward.Describe(ctx.SkinCatalog, ctx.PetCatalog), Tiny, Gold, 1f);
                 var btn = new Rect(row.xMax - row.width * 0.33f, row.y + 30 * s, row.width * 0.31f, 40 * s);
-                if (p.claimed) Outlined(btn, "RECEBIDA ✓", Center, Good, 1.2f);
-                else if (Btn(btn, p.completed ? "RECLAMAR" : "EM CURSO", p.completed ? Gold : new Color(0.3f, 0.3f, 0.38f), p.completed, ButtonSmall))
+                if (p.claimed) Outlined(btn, "CLAIMED ✓", Center, Good, 1.2f);
+                else if (Btn(btn, p.completed ? "CLAIM" : "IN PROGRESS", p.completed ? Gold : new Color(0.3f, 0.3f, 0.38f), p.completed, ButtonSmall))
                 {
-                    if (ctx.Quests.Claim(q)) Say("Recompensa recebida: " + q.reward.Describe(ctx.SkinCatalog, ctx.PetCatalog));
+                    if (ctx.Quests.Claim(q)) Say("Reward claimed: " + q.reward.Describe(ctx.SkinCatalog, ctx.PetCatalog));
                 }
                 y += 92 * s;
             }
@@ -975,29 +977,29 @@ namespace FPSLAN
             var ctx = m_Ctx;
             var left = new Rect(c.x, c.y, c.width * 0.5f - 8 * s, c.height);
             InkPanel(left, PanelMid, 2f);
-            Outlined(new Rect(left.x + 14 * s, left.y + 8 * s, left.width, 26 * s), "RECOMPENSAS DE NÍVEL POR RECLAMAR", Label, Gold, 1.5f);
+            Outlined(new Rect(left.x + 14 * s, left.y + 8 * s, left.width, 26 * s), "UNCLAIMED LEVEL REWARDS", Label, Gold, 1.5f);
             var pending = new List<int>(ctx.Profile.pendingLevelRewards);
             pending.Sort();
             float y = left.y + 44 * s;
             if (pending.Count == 0)
-                Outlined(new Rect(left.x + 14 * s, y, left.width - 28 * s, 60 * s), "Nada por reclamar. Sobe de nível nas partidas para ganhares moedas, skins e títulos.", Wrap, Muted, 1f);
+                Outlined(new Rect(left.x + 14 * s, y, left.width - 28 * s, 60 * s), "No rewards to claim. Level up to earn coins, skins and titles.", Wrap, Muted, 1f);
             foreach (int level in pending)
             {
                 var row = new Rect(left.x + 10 * s, y, left.width - 20 * s, 52 * s);
                 if (row.yMax > left.yMax - 56 * s) break;
                 Panel(row, new Color(0.35f, 0.3f, 0.15f, 0.9f));
                 var rw = ctx.Config.RewardForLevel(level);
-                Outlined(new Rect(row.x + 10 * s, row.y, 120 * s, row.height), "NÍVEL " + level, Label, Gold, 1.5f);
+                Outlined(new Rect(row.x + 10 * s, row.y, 120 * s, row.height), "LEVEL " + level, Label, Gold, 1.5f);
                 Outlined(new Rect(row.x + 120 * s, row.y, row.width - 260 * s, row.height), rw != null ? rw.Describe(ctx.SkinCatalog, ctx.PetCatalog) : "", Small, Color.white, 1f);
-                if (Btn(new Rect(row.xMax - 130 * s, row.y + 8 * s, 120 * s, 36 * s), "RECLAMAR", Gold, true, ButtonSmall)) ctx.Rewards.ClaimLevelReward(level);
+                if (Btn(new Rect(row.xMax - 130 * s, row.y + 8 * s, 120 * s, 36 * s), "CLAIM", Gold, true, ButtonSmall)) ctx.Rewards.ClaimLevelReward(level);
                 y += 58 * s;
             }
-            if (Btn(new Rect(left.x + 14 * s, left.yMax - 50 * s, left.width - 28 * s, 40 * s), "RECLAMAR TUDO", Good, pending.Count > 0))
-                Say(ctx.Rewards.ClaimAllLevelRewards() + " recompensas recebidas.");
+            if (Btn(new Rect(left.x + 14 * s, left.yMax - 50 * s, left.width - 28 * s, 40 * s), "CLAIM ALL", Good, pending.Count > 0))
+                Say(ctx.Rewards.ClaimAllLevelRewards() + " rewards claimed.");
 
             var right = new Rect(left.xMax + 16 * s, c.y, c.width - left.width - 16 * s, c.height);
             InkPanel(right, PanelMid, 2f);
-            Outlined(new Rect(right.x + 14 * s, right.y + 8 * s, right.width, 26 * s), "HISTÓRICO", Label, Gold, 1.5f);
+            Outlined(new Rect(right.x + 14 * s, right.y + 8 * s, right.width, 26 * s), "HISTORY", Label, Gold, 1.5f);
             var log = ctx.Profile.rewardLog;
             var view = new Rect(right.x + 10 * s, right.y + 40 * s, right.width - 20 * s, right.height * 0.62f - 40 * s);
             float rowH = 42 * s;
@@ -1007,16 +1009,16 @@ namespace FPSLAN
                 var e = log[log.Count - 1 - i];
                 var row = new Rect(0, i * rowH, view.width - 20 * s, rowH - 4 * s);
                 Panel(row, new Color(1f, 1f, 1f, 0.05f));
-                Outlined(new Rect(row.x + 8 * s, row.y + 1 * s, row.width, 20 * s), e.source, Small, Gold, 1f);
-                Outlined(new Rect(row.x + 8 * s, row.y + 19 * s, row.width, 20 * s), e.text, Tiny, Color.white, 1f);
+                Outlined(new Rect(row.x + 8 * s, row.y + 1 * s, row.width, 20 * s), LegacyProfileText.English(e.source), Small, Gold, 1f);
+                Outlined(new Rect(row.x + 8 * s, row.y + 19 * s, row.width, 20 * s), LegacyProfileText.English(e.text), Tiny, Color.white, 1f);
             }
             GUI.EndScrollView();
 
             float cy = right.y + right.height * 0.62f + 8 * s;
-            Outlined(new Rect(right.x + 14 * s, cy, right.width, 24 * s), "COSMÉTICOS E TÍTULOS", Label, Gold, 1.5f);
+            Outlined(new Rect(right.x + 14 * s, cy, right.width, 24 * s), "COSMETICS & TITLES", Label, Gold, 1.5f);
             var cos = ctx.Profile.unlockedCosmetics;
             Outlined(new Rect(right.x + 14 * s, cy + 28 * s, right.width - 28 * s, right.yMax - cy - 36 * s),
-                cos.Count == 0 ? "Ainda nenhum. Missões semanais, conquistas e o nível 50 dão cosméticos." : string.Join("  ·  ", cos.ToArray()), Wrap, Color.white, 1f);
+                cos.Count == 0 ? "None yet. Weekly quests, achievements and level 50 award cosmetics." : LegacyProfileText.English(string.Join("  ·  ", cos.ToArray())), Wrap, Color.white, 1f);
         }
 
         // ================================================================== RESULTADOS PÓS-PARTIDA
@@ -1028,7 +1030,7 @@ namespace FPSLAN
             float w = Mathf.Min(560 * s, UnityEngine.Screen.width - 30 * s), h = Mathf.Min(640 * s, UnityEngine.Screen.height - 30 * s);
             var r = new Rect((UnityEngine.Screen.width - w) / 2f, (UnityEngine.Screen.height - h) / 2f, w, h);
             DrawReport(r, m_Report);
-            if (Btn(new Rect(r.x + r.width / 2f - 80 * s, r.yMax + 6 * s - 50 * s, 160 * s, 38 * s), "FECHAR", new Color(0.4f, 0.46f, 0.6f))) m_ShowReport = false;
+            if (Btn(new Rect(r.x + r.width / 2f - 80 * s, r.yMax + 6 * s - 50 * s, 160 * s, 38 * s), "CLOSE", new Color(0.4f, 0.46f, 0.6f))) m_ShowReport = false;
         }
 
         void DrawReport(Rect r, MatchRewardReport rep)
@@ -1038,16 +1040,16 @@ namespace FPSLAN
             var ctx = m_Ctx;
             InkPanel(r, PanelDark, 3f);
             float y = r.y + 10 * s;
-            Outlined(new Rect(r.x, y, r.width, 34 * s), rep.won && !rep.draw ? "VITÓRIA!" : rep.draw ? "EMPATE" : "PARTIDA TERMINADA", BigCenter, rep.won ? Gold : Color.white, 2f);
+            Outlined(new Rect(r.x, y, r.width, 34 * s), rep.won && !rep.draw ? "VICTORY!" : rep.draw ? "DRAW" : "MATCH FINISHED", BigCenter, rep.won ? Gold : Color.white, 2f);
             y += 34 * s;
             var b = BrawlerRegistry.FindById(rep.brawlerId);
-            Outlined(new Rect(r.x, y, r.width, 22 * s), (b != null ? b.displayName : rep.brawlerId) + (rep.competitive ? " · COMPETITIVA" : " · CASUAL"), SmallCenter,
+            Outlined(new Rect(r.x, y, r.width, 22 * s), (b != null ? b.displayName : rep.brawlerId) + (rep.competitive ? " · COMPETITIVE" : " · CASUAL"), SmallCenter,
                 b != null ? Color.Lerp(b.Tint, Color.white, 0.4f) : Color.white, 1f);
             y += 28 * s;
 
             if (!rep.participated)
             {
-                Outlined(new Rect(r.x + 20 * s, y, r.width - 40 * s, 60 * s), "Participação insuficiente (tempo mínimo ou sem atividade): sem XP nesta partida.", Wrap, new Color(1f, 0.6f, 0.5f), 1f);
+                Outlined(new Rect(r.x + 20 * s, y, r.width - 40 * s, 60 * s), "Not enough participation: no XP awarded this match.", Wrap, new Color(1f, 0.6f, 0.5f), 1f);
                 return;
             }
 
@@ -1055,8 +1057,8 @@ namespace FPSLAN
             Outlined(new Rect(r.x, y, r.width, 40 * s), "+" + rep.xpGained + " XP", Title, new Color(0.45f, 0.85f, 1f), 2.5f);
             y += 42 * s;
             var d = rep.data;
-            string breakdown = "Participação " + d.xpParticipation + " · Eliminações " + d.xpKills + " · Assistências " + d.xpAssists +
-                               " · Vitória " + d.xpVictory + " · Objetivos " + d.xpObjectives;
+            string breakdown = "Participation " + d.xpParticipation + " · Eliminations " + d.xpKills + " · Assists " + d.xpAssists +
+                               " · Victory " + d.xpVictory + " · Objectives " + d.xpObjectives;
             Outlined(new Rect(r.x + 12 * s, y, r.width - 24 * s, 20 * s), breakdown, TinyCenter, Muted, 1f);
             y += 26 * s;
 
@@ -1070,33 +1072,33 @@ namespace FPSLAN
             Badge(new Rect(r.x + 16 * s, y, 48 * s, 48 * s), lvl.ToString(), new Color(0.35f, 0.55f, 1f));
             Badge(new Rect(r.xMax - 64 * s, y, 48 * s, 48 * s), Mathf.Min(lvl + 1, curve.maxLevel).ToString(), new Color(0.3f, 0.32f, 0.42f));
             Bar(new Rect(r.x + 74 * s, y + 12 * s, r.width - 148 * s, 24 * s), span > 0 ? into / (float)span : 1f, new Color(0.35f, 0.8f, 1f),
-                span > 0 ? into + " / " + span + " XP" : "NÍVEL MÁXIMO");
+                span > 0 ? into + " / " + span + " XP" : "MAX LEVEL");
             y += 54 * s;
-            Outlined(new Rect(r.x, y, r.width, 20 * s), "XP acumulado: " + animXp + (rep.levelAfter > rep.levelBefore ? "   ·   SUBISTE PARA O NÍVEL " + rep.levelAfter + "!" : ""), SmallCenter,
+            Outlined(new Rect(r.x, y, r.width, 20 * s), "Total XP: " + animXp + (rep.levelAfter > rep.levelBefore ? "   ·   REACHED LEVEL " + rep.levelAfter + "!" : ""), SmallCenter,
                 rep.levelAfter > rep.levelBefore ? Gold : Color.white, 1f);
             y += 28 * s;
 
             // Personagem e pet
             long charAnim = rep.characterXpBefore + (long)((rep.characterXpAfter - rep.characterXpBefore) * t);
             ctx.Config.characterLevels.Progress(charAnim, out int clv, out int cin, out int cspan);
-            Outlined(new Rect(r.x + 16 * s, y, 200 * s, 22 * s), (b != null ? b.ShortName : "Personagem") + " · NV " + clv, Small, Color.white, 1f);
-            Bar(new Rect(r.x + 200 * s, y + 2 * s, r.width - 216 * s, 18 * s), cspan > 0 ? cin / (float)cspan : 1f, Gold, cspan > 0 ? cin + " / " + cspan : "MÁX");
+            Outlined(new Rect(r.x + 16 * s, y, 200 * s, 22 * s), (b != null ? b.ShortName : "Character") + " · LV " + clv, Small, Color.white, 1f);
+            Bar(new Rect(r.x + 200 * s, y + 2 * s, r.width - 216 * s, 18 * s), cspan > 0 ? cin / (float)cspan : 1f, Gold, cspan > 0 ? cin + " / " + cspan : "MAX");
             y += 26 * s;
             if (!string.IsNullOrEmpty(rep.petId))
             {
                 var pet = ctx.PetCatalog.Find(rep.petId);
-                string petText = (pet != null ? pet.displayName : rep.petId) + " +" + rep.petXp + " XP · NV " + rep.petLevelBefore +
+                string petText = (pet != null ? pet.displayName : rep.petId) + " +" + rep.petXp + " XP · LV " + rep.petLevelBefore +
                                  (rep.petLevelAfter > rep.petLevelBefore ? " → " + rep.petLevelAfter : "") +
-                                 (rep.petStageAfter > rep.petStageBefore ? " · EVOLUIU: " + PetDefinition.StageName(rep.petStageAfter).ToUpperInvariant() : "");
+                                 (rep.petStageAfter > rep.petStageBefore ? " · EVOLVED: " + PetDefinition.StageName(rep.petStageAfter).ToUpperInvariant() : "");
                 Outlined(new Rect(r.x + 16 * s, y, r.width - 32 * s, 22 * s), "Pet: " + petText, Small, new Color(0.7f, 1f, 0.7f), 1f);
                 y += 26 * s;
             }
-            Outlined(new Rect(r.x + 16 * s, y, r.width - 32 * s, 22 * s), "Moedas: +" + rep.coins, Small, Gold, 1f);
+            Outlined(new Rect(r.x + 16 * s, y, r.width - 32 * s, 22 * s), "Coins: +" + rep.coins, Small, Gold, 1f);
             y += 28 * s;
 
             // Estatísticas da partida
-            string stats = "Elim. " + d.kills + "  ·  Assist. " + d.assists + "  ·  Mortes " + d.deaths + "  ·  Dano " + d.damageDealt +
-                           "  ·  Cabeça " + d.headshots + "  ·  Objetivos " + d.objectives + (d.placement > 0 ? "  ·  Posição " + d.placement + "º" : "");
+            string stats = "Elim. " + d.kills + "  ·  Assists " + d.assists + "  ·  Deaths " + d.deaths + "  ·  Damage " + d.damageDealt +
+                           "  ·  Headshots " + d.headshots + "  ·  Objectives " + d.objectives + (d.placement > 0 ? "  ·  Placement " + d.placement + "º" : "");
             Panel(new Rect(r.x + 12 * s, y, r.width - 24 * s, 28 * s), new Color(1f, 1f, 1f, 0.06f));
             Outlined(new Rect(r.x + 12 * s, y, r.width - 24 * s, 28 * s), stats, TinyCenter, Color.white, 1f);
             y += 36 * s;
@@ -1104,7 +1106,7 @@ namespace FPSLAN
             // Desbloqueios
             if (rep.unlocks.Count > 0)
             {
-                Outlined(new Rect(r.x + 16 * s, y, r.width, 22 * s), "DESBLOQUEADO NESTA PARTIDA", Small, Gold, 1f);
+                Outlined(new Rect(r.x + 16 * s, y, r.width, 22 * s), "UNLOCKED THIS MATCH", Small, Gold, 1f);
                 y += 24 * s;
                 foreach (var u in rep.unlocks)
                 {

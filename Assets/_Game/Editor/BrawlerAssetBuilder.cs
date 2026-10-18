@@ -30,7 +30,7 @@ namespace FPSLAN.EditorTools
         {
             if (File.Exists(RegistryPath) && !EditorUtility.DisplayDialog("FPS-LAN",
                     "Voltar a gerar os dados dos 4 Brawlers com os valores iniciais da especificação? Ajustes feitos no Inspector serão substituídos.",
-                    "Gerar", "Cancelar"))
+                    "Gerar", "Cancel"))
                 return;
             Build();
         }
@@ -68,7 +68,7 @@ namespace FPSLAN.EditorTools
             var b = Definition(id);
             b.displayName = "Ekko";
             b.shortName = "";
-            b.role = "Pistoleiro / Metralhador — duas metralhadoras automáticas, fortes de perto; Especial: Minigun (até 200 de dano)";
+            b.role = "The Gunslinger · Dual pistols and rapid-fire minigun.";
             b.stats = new BrawlerStats { maxHealth = 120, regenDelay = 3f, regenPercentPerSecond = 0.15f };
             b.movement = new MovementProfile { walkSpeed = 6.6f, sprintSpeed = 9.6f, jumpHeight = 1.3f };
 
@@ -138,7 +138,7 @@ namespace FPSLAN.EditorTools
             var b = Definition(id);
             b.displayName = "Lupus Marinus";
             b.shortName = "L.M";
-            b.role = "Artilheiro / TNT — cargas de TNT em arco (40 por acerto direto, menos à distância); Especial: cinco minas com sensor de movimento";
+            b.role = "The Demolitionist · Arcing TNT and proximity mines.";
             b.stats = new BrawlerStats { maxHealth = 100, regenDelay = 3f, regenPercentPerSecond = 0.15f };
             b.movement = new MovementProfile { walkSpeed = 6.6f, sprintSpeed = 9.6f, jumpHeight = 1.3f };
 
@@ -210,7 +210,7 @@ namespace FPSLAN.EditorTools
             var b = Definition(id);
             b.displayName = "N.Cage";
             b.shortName = "";
-            b.role = "Arqueiro / Controlo — três flechas por ataque (100 se todas acertarem); Especial: três armadilhas que prendem e envenenam";
+            b.role = "The Saboteur · Arrows, traps and poison.";
             b.stats = new BrawlerStats { maxHealth = 110, regenDelay = 3f, regenPercentPerSecond = 0.15f };
             b.movement = new MovementProfile { walkSpeed = 6.6f, sprintSpeed = 9.6f, jumpHeight = 1.3f };
 
@@ -280,7 +280,7 @@ namespace FPSLAN.EditorTools
             var b = Definition(id);
             b.displayName = "Mr.S";
             b.shortName = "";
-            b.role = "Especialista em spray — duas latas em cone de curto alcance (50–56 por ataque); Especial: granadas de veneno (12 s)";
+            b.role = "The Street Artist · Close-range spray and poison grenades.";
             b.stats = new BrawlerStats { maxHealth = 160, regenDelay = 3f, regenPercentPerSecond = 0.15f };
             b.movement = new MovementProfile { walkSpeed = 6.4f, sprintSpeed = 9.4f, jumpHeight = 1.3f };
 
@@ -348,7 +348,7 @@ namespace FPSLAN.EditorTools
             var b = Definition(id);
             b.displayName = "Riot";
             b.shortName = "";
-            b.role = "Shotgun / Combate próximo — 6 bagos: 54 de perto, 18 de longe; Especial: rajada que empurra e destrói cobertura";
+            b.role = "The Breacher · Close-range shotgun and a powerful blast.";
             b.stats = new BrawlerStats { maxHealth = 135, regenDelay = 3f, regenPercentPerSecond = 0.15f };
             b.movement = new MovementProfile { walkSpeed = 6.7f, sprintSpeed = 9.7f, jumpHeight = 1.3f };
 
@@ -410,7 +410,7 @@ namespace FPSLAN.EditorTools
             var b = Definition(id);
             b.displayName = "Lince";
             b.shortName = "";
-            b.role = "Sniper — 38 no corpo, 50 na cabeça; Especial: tiro fatal (headshot elimina; carrega com o tempo)";
+            b.role = "The Sharpshooter · Precise shots and a lethal charged shot.";
             b.stats = new BrawlerStats { maxHealth = 85, regenDelay = 3f, regenPercentPerSecond = 0.15f };
             b.movement = new MovementProfile { walkSpeed = 6.5f, sprintSpeed = 9.5f, jumpHeight = 1.35f };
 
@@ -439,7 +439,7 @@ namespace FPSLAN.EditorTools
                 attack = super, chargeRequired = 400f, passiveChargePerSecond = 1f / 30f, activation = SuperActivation.Mode,
                 mode = new SuperModeSettings
                 {
-                    label = "Tiro Fatal", duration = 0f, maxShots = 1, shotCooldown = 0.5f, activationDelay = 0.25f,
+                    label = "Fatal Shot", duration = 0f, maxShots = 1, shotCooldown = 0.5f, activationDelay = 0.25f,
                     consumeOnFirstShot = true, cancellable = true,
                 },
             };

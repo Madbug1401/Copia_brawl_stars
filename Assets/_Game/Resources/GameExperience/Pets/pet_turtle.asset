@@ -15,7 +15,7 @@ MonoBehaviour:
   petId: pet_turtle
   displayName: "Carapa\xE7a"
   category: 5
-  description: Tartaruga paciente. O dono recupera vida mais depressa.
+  description: "A patient turtle. Helps its owner regenerate health faster."
   species: 5
   ability: 6
   abilityBase: 0.1
@@ -34,16 +34,16 @@ MonoBehaviour:
   milestones:
   - level: 3
     type: 0
-    description: Pequena melhoria na habilidade
+    description: "Small ability upgrade"
   - level: 4
     type: 2
-    description: "Est\xE1gio Desenvolvido (maior, coleira)"
+    description: "Developed stage (larger, collar)"
   - level: 5
     type: 1
-    description: "Nova anima\xE7\xE3o de celebra\xE7\xE3o (pirueta)"
+    description: "New celebration animation (spin)"
   - level: 8
     type: 2
-    description: "Est\xE1gio Evolu\xEDdo + acess\xF3rio adicional"
+    description: "Evolved stage + extra accessory"
   - level: 10
     type: 3
-    description: "Aura especial de n\xEDvel m\xE1ximo"
+    description: "Special max-level aura"

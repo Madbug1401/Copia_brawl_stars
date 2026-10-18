@@ -71,7 +71,7 @@ namespace FPSLAN
                 sb.Append(s);
             }
             if (xp > 0) Add("+" + xp + " XP");
-            if (coins > 0) Add("+" + coins + " moedas");
+            if (coins > 0) Add("+" + coins + " coins");
             if (petIds != null)
                 foreach (var p in petIds)
                 {
@@ -85,7 +85,7 @@ namespace FPSLAN
                     Add("Skin: " + (def != null ? def.displayName : s));
                 }
             if (cosmeticIds != null)
-                foreach (var c in cosmeticIds) Add("Cosmético: " + c);
+                foreach (var c in cosmeticIds) Add("Cosmetic: " + c);
             return sb.Length == 0 ? "—" : sb.ToString();
         }
     }
@@ -127,10 +127,10 @@ namespace FPSLAN
         {
             switch (r)
             {
-                case Rarity.Rare: return "Rara";
-                case Rarity.Epic: return "Épica";
-                case Rarity.Legendary: return "Lendária";
-                default: return "Comum";
+                case Rarity.Rare: return "Rare";
+                case Rarity.Epic: return "Epic";
+                case Rarity.Legendary: return "Legendary";
+                default: return "Common";
             }
         }
     }

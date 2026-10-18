@@ -56,18 +56,18 @@ namespace FPSLAN
                 case "pradaria": scene = "Arena"; break;
                 case "santiago": scene = "CidadeVelha"; break;
                 case "sal": scene = "Buracona"; break;
-                default: Status = "Este mapa ainda não está disponível."; return false;
+                default: Status = "This map is not available yet."; return false;
             }
             if (MatchManager.MenuSelectedMode == GameMode.GemGrab && !SupportsGemGrab(mapKey))
             {
-                Status = "O Pique-Gemas está disponível em Santiago e no Sal.";
+                Status = "GEM RUSH is available in Santiago and Sal.";
                 return false;
             }
             if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == scene)
                 return Host(port);
             if (!Application.CanStreamedLevelBeLoaded(scene))
             {
-                Status = "Cena indisponível: " + scene;
+                Status = "Scene unavailable: " + scene;
                 return false;
             }
             s_HostMode = MatchManager.MenuSelectedMode;
@@ -92,7 +92,7 @@ namespace FPSLAN
         {
             if (NM == null)
             {
-                Status = "Erro: NetworkManager não encontrado na cena.";
+                Status = "NetworkManager not found in this scene.";
                 return;
             }
 
@@ -117,7 +117,7 @@ namespace FPSLAN
         {
             if (IsConnecting && NM != null && !NM.IsServer && !NM.IsConnectedClient && Time.time - m_ConnectStartedAt > 10f)
             {
-                Status = "Não foi possível ligar. Confirma o IP, se o host está aberto e a firewall.";
+                Status = "Connection failed. Check the IP, host and firewall.";
                 IsConnecting = false;
                 NM.Shutdown();
             }
@@ -131,7 +131,7 @@ namespace FPSLAN
                 return HostMap("santiago", port);
             if (MatchManager.MenuSelectedMode == GameMode.GemGrab && GemGrabManager.Instance == null)
             {
-                Status = "O Pique-Gemas requer um mapa com gerador de gemas (Santiago ou Sal).";
+                Status = "GEM RUSH requires a map with a gem emitter (Santiago or Sal).";
                 return false;
             }
 
@@ -139,7 +139,7 @@ namespace FPSLAN
             utp.SetConnectionData("127.0.0.1", port, "0.0.0.0");
 
             bool ok = NM.StartHost();
-            Status = ok ? "" : "Falhou a criar o servidor (a porta " + port + " está ocupada?).";
+            Status = ok ? "" : "Could not create server (UDP port " + port + " is already in use?).";
             return ok;
         }
 
@@ -154,7 +154,7 @@ namespace FPSLAN
             bool ok = NM.StartClient();
             IsConnecting = ok;
             m_ConnectStartedAt = Time.time;
-            Status = ok ? "A ligar a " + ip + "..." : "Endereço inválido.";
+            Status = ok ? "Connecting to " + ip + "..." : "Invalid address.";
             return ok;
         }
 
@@ -177,7 +177,7 @@ namespace FPSLAN
             if (!full && PlayerNetwork.All.Count >= BotManager.MaxTotalPlayers) BotManager.RemoveBot();
             response.Approved = !full;
             response.CreatePlayerObject = true;
-            response.Reason = full ? "Servidor cheio (máx. " + limit + " jogadores)." : "";
+            response.Reason = full ? "Server full (max. " + limit + " players)." : "";
             response.Pending = false;
         }
 
@@ -197,7 +197,7 @@ namespace FPSLAN
             // Este cliente perdeu a ligação ao host
             IsConnecting = false;
             var reason = NM.DisconnectReason;
-            Status = string.IsNullOrEmpty(reason) ? "Ligação ao host terminada." : reason;
+            Status = string.IsNullOrEmpty(reason) ? "Disconnected from host." : reason;
             if (CombatSystem.Instance != null) CombatSystem.Instance.ClearAll();
             MenuCamera.SetActive(true);
         }

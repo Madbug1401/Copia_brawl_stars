@@ -6,13 +6,13 @@ namespace FPSLAN
     {
         void DrawCoopStory(PlayerNetwork me, MatchManager match, Rect top, float s)
         {
-            float w = Mathf.Min(790 * s, Screen.width - 32 * s);
-            float x = (Screen.width - w) / 2f;
-            var objective = new Rect(x, top.yMax + 36 * s, w, 68 * s);
+            float w = Mathf.Min(310 * s, Screen.width * 0.27f);
+            float x = 22 * s;
+            var objective = new Rect(x, 64 * s, w, 100 * s);
             InkPanel(objective, new Color(0.03f, 0.07f, 0.14f, 0.88f), 2 * s);
-            Outlined(new Rect(x, objective.y + 4 * s, w, 23 * s), match.CoopStageTitle + "  ·  PELOURINHO", m_TinyCenter, Gold, 1f);
-            var wrap = new GUIStyle(m_Center) { wordWrap = true, fontSize = Mathf.RoundToInt(16 * s), alignment = TextAnchor.MiddleCenter };
-            GUI.Label(new Rect(x + 12 * s, objective.y + 26 * s, w - 24 * s, 38 * s), match.CoopObjective, wrap);
+            Outlined(new Rect(x, objective.y + 4 * s, w, 23 * s), match.CoopStageTitle, m_TinyCenter, Gold, 1f);
+            var wrap = new GUIStyle(m_Center) { wordWrap = true, fontSize = Mathf.RoundToInt(13 * s), alignment = TextAnchor.MiddleCenter };
+            GUI.Label(new Rect(x + 12 * s, objective.y + 26 * s, w - 24 * s, 64 * s), match.CoopObjective, wrap);
 
             if (match.CoopStage.Value == CoopMissionStage.Puzzle)
             {
@@ -21,15 +21,15 @@ namespace FPSLAN
                 if (match.CoopPuzzleProgress.Value > 0f)
                     Panel(new Rect(bar.x, bar.y, bar.width * match.CoopPuzzleProgress.Value, bar.height), CoopGreen);
                 int active = ((match.CoopPlates.Value & 1) != 0 ? 1 : 0) + ((match.CoopPlates.Value & 2) != 0 ? 1 : 0);
-                Outlined(bar, $"PLACAS {active}/2  ·  {Mathf.RoundToInt(match.CoopPuzzleProgress.Value * 100)}%", m_TinyCenter, Color.white, 1f);
+                Outlined(bar, $"PLATES {active}/2 · {Mathf.RoundToInt(match.CoopPuzzleProgress.Value * 100)}%", m_TinyCenter, Color.white, 1f);
             }
 
             bool storyVisible = match.NetworkManager != null && match.NetworkManager.ServerTime.Time < match.CoopStoryUntil.Value;
             if (storyVisible)
             {
-                var caption = new Rect(x, Screen.height * 0.73f, w, 100 * s);
+                var caption = new Rect(Screen.width / 2f - 200 * s, Screen.height - 118 * s, 400 * s, 76 * s);
                 InkPanel(caption, new Color(0.025f, 0.035f, 0.07f, 0.94f), 2 * s);
-                GUI.Label(new Rect(x + 18 * s, caption.y + 8 * s, w - 36 * s, caption.height - 16 * s), match.CoopStoryText, wrap);
+                GUI.Label(new Rect(caption.x + 14 * s, caption.y + 8 * s, caption.width - 28 * s, caption.height - 16 * s), match.CoopStoryText, wrap);
             }
 
             if (me.Health.IsDead || match.CoopStage.Value < CoopMissionStage.Puzzle) return;
@@ -37,10 +37,10 @@ namespace FPSLAN
             if (cam == null) return;
             if (match.CoopStage.Value == CoopMissionStage.Puzzle)
             {
-                DrawCoopObjectiveMarker(cam, me, match.coopPlateA, "PLACA A", (match.CoopPlates.Value & 1) != 0 ? CoopGreen : Color.cyan, s);
-                DrawCoopObjectiveMarker(cam, me, match.coopPlateB, "PLACA B", (match.CoopPlates.Value & 2) != 0 ? CoopGreen : Color.cyan, s);
+                DrawCoopObjectiveMarker(cam, me, match.coopPlateA, "PLATE A", (match.CoopPlates.Value & 1) != 0 ? CoopGreen : Color.cyan, s);
+                DrawCoopObjectiveMarker(cam, me, match.coopPlateB, "PLATE B", (match.CoopPlates.Value & 2) != 0 ? CoopGreen : Color.cyan, s);
             }
-            else DrawCoopObjectiveMarker(cam, me, match.coopGemPosition, "GEM DOURADA", Gold, s);
+            else DrawCoopObjectiveMarker(cam, me, match.coopGemPosition, "GOLDEN GEM", Gold, s);
         }
 
         void DrawCoopObjectiveMarker(Camera cam, PlayerNetwork me, Vector3 point, string title, Color tint, float s)
@@ -50,6 +50,7 @@ namespace FPSLAN
             float y = Mathf.Clamp(sp.z > 0 ? Screen.height - sp.y : Screen.height - 190 * s, 220 * s, Screen.height - 190 * s);
             int distance = Mathf.RoundToInt(Vector3.Distance(me.transform.position, point));
             var box = new Rect(x - 102 * s, y - 20 * s, 204 * s, 40 * s);
+            if (!HudLabels.Place("objective:" + title, box, out box)) return;
             InkPanel(box, new Color(0.02f, 0.06f, 0.12f, 0.85f), 2 * s);
             Outlined(box, title + "  ·  " + distance + " m", m_TinyCenter, tint, 1f);
         }
@@ -60,12 +61,12 @@ namespace FPSLAN
             float w = Mathf.Min(860 * s, Screen.width - 32 * s);
             var panel = new Rect((Screen.width - w) / 2f, Screen.height * 0.21f, w, 330 * s);
             InkPanel(panel, PanelDark, 3 * s);
-            Outlined(new Rect(panel.x, panel.y + 18 * s, w, 48 * s), win ? "GEM RECUPERADA!" : "NINGUÉM FICA PARA TRÁS", m_BigCenter, win ? Gold : new Color(1f, 0.5f, 0.4f), 2f);
+            Outlined(new Rect(panel.x, panel.y + 18 * s, w, 48 * s), win ? "GEM RECOVERED!" : "NO ONE LEFT BEHIND", m_BigCenter, win ? Gold : new Color(1f, 0.5f, 0.4f), 2f);
             Outlined(new Rect(panel.x, panel.y + 68 * s, w, 30 * s), MatchManager.CoopMissionTitle, m_Center, CoopGreen, 1f);
             var wrap = new GUIStyle(m_Center) { wordWrap = true, alignment = TextAnchor.MiddleCenter };
             GUI.Label(new Rect(panel.x + 28 * s, panel.y + 108 * s, w - 56 * s, 126 * s), match.CoopStoryText, wrap);
-            Outlined(new Rect(panel.x, panel.y + 242 * s, w, 30 * s), win ? "Two players. One mission. Better Together." : "Protege o parceiro e mantém a interação para o reanimar.", m_Center, Color.white, 1f);
-            Outlined(new Rect(panel.x, panel.y + 286 * s, w, 26 * s), "Nova tentativa em " + Mathf.CeilToInt(match.TimeRemaining) + "s  ·  Esc para sair", m_TinyCenter, Color.white, 1f);
+            Outlined(new Rect(panel.x, panel.y + 242 * s, w, 30 * s), win ? "Two players. One mission. Better Together." : "Protect your partner. Hold interact to revive them.", m_Center, Color.white, 1f);
+            Outlined(new Rect(panel.x, panel.y + 286 * s, w, 26 * s), "Next attempt in " + Mathf.CeilToInt(match.TimeRemaining) + "s · Esc to leave", m_TinyCenter, Color.white, 1f);
         }
     }
 }

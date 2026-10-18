@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: skin_lm_sailor
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SkinDefinition
   skinId: skin_lm_sailor
-  displayName: Lobo do Mar
+  displayName: "Sea Wolf"
   target: 0
   targetId: artillery
   rarity: 1

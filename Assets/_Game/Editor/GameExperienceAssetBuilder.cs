@@ -36,7 +36,7 @@ namespace FPSLAN.EditorTools
         {
             if (File.Exists(ConfigPath) && !EditorUtility.DisplayDialog("FPS-LAN",
                     "Voltar a gerar a configuração de progressão, pets, skins e missões com os valores iniciais? Ajustes feitos no Inspector serão substituídos.",
-                    "Gerar", "Cancelar"))
+                    "Gerar", "Cancel"))
                 return;
             Build();
         }

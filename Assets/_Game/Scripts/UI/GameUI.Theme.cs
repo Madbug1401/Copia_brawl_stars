@@ -18,20 +18,15 @@ namespace FPSLAN
 
         void DrawProgressionHub()
         {
-            var panel = VR(940, 104, 430, 502);
-            DrawTechPanel(panel, true);
-            MText(new Rect(panel.x + 24 * K, panel.y + 20 * K, panel.width - 48 * K, 36 * K), "PROGRESSÃO", m_MT24, MWhite, TextAnchor.MiddleLeft);
-            ProgressionUI.DrawHeaderStatus(new Rect(panel.x + 24 * K, panel.y + 66 * K, panel.width - 48 * K, 34 * K));
-            DrawTechLine(new Rect(panel.x + 24 * K, panel.y + 116 * K, panel.width - 48 * K, 2 * K), true);
-            var labels = new[] { "PERFIL", "PERSONAGENS", "NÍVEIS", "SKINS", "PETS", "MISSÕES", "RECOMPENSAS", "DEFINIÇÕES" };
-            var screens = new[] { ProgressionScreen.Profile, ProgressionScreen.Characters, ProgressionScreen.Levels, ProgressionScreen.Skins, ProgressionScreen.Pets, ProgressionScreen.Quests, ProgressionScreen.Rewards };
-            float w = (panel.width - 60 * K) / 2f;
-            for (int i = 0; i < labels.Length; i++)
-            {
-                var r = new Rect(panel.x + 24 * K + (i % 2) * (w + 12 * K), panel.y + 146 * K + (i / 2) * 78 * K, w, 58 * K);
-                if (MenuButton(r, labels[i], 7200 + i, MBtn.Normal, false, m_MT14) != MClick.Clicked) continue;
-                if (i == 7) OpenSettings(); else ProgressionUI.Open(screens[i]);
-            }
+            var panel = VR(1020, 106, 350, 106);
+            if (MenuButton(panel, "", 7200, MBtn.Normal, false, m_MT17) == MClick.Clicked)
+                ProgressionUI.Open(ProgressionScreen.Profile);
+            MText(new Rect(panel.x + 22 * K, panel.y + 14 * K, panel.width - 44 * K, 30 * K), m_Name, m_MT20, MWhite, TextAnchor.MiddleLeft);
+            var ctx = GameExperience.Current;
+            ctx.Config.playerLevels.Progress(ctx.Profile.playerXp, out _, out int into, out int span);
+            var bar = new Rect(panel.x + 22 * K, panel.y + 64 * K, panel.width - 44 * K, 12 * K);
+            MFill(bar, new Color(0.02f, 0.05f, 0.1f, 0.9f));
+            MFill(new Rect(bar.x, bar.y, bar.width * (span > 0 ? into / (float)span : 1f), bar.height), MCyan);
         }
     }
 }

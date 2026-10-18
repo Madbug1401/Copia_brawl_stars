@@ -15,7 +15,7 @@ MonoBehaviour:
   brawlerId: sprayer
   displayName: Mr.S
   shortName: 
-  role: "Especialista em spray \u2014 duas latas em cone de curto alcance (50\u201356 por ataque); Especial: granadas de veneno (12 s)"
+  role: "The Street Artist · Paint sprays, poison and zone control."
   available: 1
   stats:
     maxHealth: 160

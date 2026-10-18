@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.QuestCatalog
   quests:
   - questId: daily_play3
-    title: "Participar em tr\xEAs partidas"
+    title: "Play three matches"
     period: 0
     metric: 0
     target: 3
@@ -25,7 +25,7 @@ MonoBehaviour:
       petIds: []
       cosmeticIds: []
   - questId: daily_elim10
-    title: "Eliminar dez advers\xE1rios"
+    title: "Eliminate ten enemies"
     period: 0
     metric: 1
     target: 10
@@ -36,7 +36,7 @@ MonoBehaviour:
       petIds: []
       cosmeticIds: []
   - questId: daily_pet2
-    title: Jogar duas partidas com um pet equipado
+    title: "Play two matches with a pet equipped"
     period: 0
     metric: 2
     target: 2
@@ -47,7 +47,7 @@ MonoBehaviour:
       petIds: []
       cosmeticIds: []
   - questId: weekly_elim50
-    title: "Conseguir 50 elimina\xE7\xF5es"
+    title: "Get 50 eliminations"
     period: 1
     metric: 1
     target: 50
@@ -58,7 +58,7 @@ MonoBehaviour:
       petIds: []
       cosmeticIds: []
   - questId: weekly_win10
-    title: Vencer dez partidas
+    title: "Win ten matches"
     period: 1
     metric: 3
     target: 10
@@ -70,7 +70,7 @@ MonoBehaviour:
       cosmeticIds:
       - emote_vitoria
   - questId: weekly_brawlers3
-    title: "Utilizar tr\xEAs personagens diferentes"
+    title: "Use three different characters"
     period: 1
     metric: 4
     target: 3
@@ -83,8 +83,8 @@ MonoBehaviour:
       cosmeticIds: []
   achievements:
   - achievementId: ach_first_blood
-    title: "Primeira elimina\xE7\xE3o"
-    description: "Elimina o teu primeiro advers\xE1rio."
+    title: "First elimination"
+    description: "Eliminate your first enemy."
     isChallenge: 0
     metric: 1
     target: 1
@@ -95,8 +95,8 @@ MonoBehaviour:
       petIds: []
       cosmeticIds: []
   - achievementId: ach_hunter100
-    title: "Ca\xE7ador"
-    description: "Soma 100 elimina\xE7\xF5es."
+    title: "Hunter"
+    description: "Get 100 eliminations."
     isChallenge: 0
     metric: 1
     target: 100
@@ -108,8 +108,8 @@ MonoBehaviour:
       cosmeticIds:
       - titulo_cacador
   - achievementId: ach_assists25
-    title: "Esp\xEDrito de equipa"
-    description: "Soma 25 assist\xEAncias (desbloqueia o galo Alvorada)."
+    title: "Team spirit"
+    description: "Get 25 assists (unlocks Alvorada the rooster)."
     isChallenge: 0
     metric: 5
     target: 25
@@ -121,8 +121,8 @@ MonoBehaviour:
       - pet_rooster
       cosmeticIds: []
   - achievementId: ach_headshots25
-    title: Olho de lince
-    description: "Soma 25 tiros na cabe\xE7a (desbloqueia a skin Lince Sombra)."
+    title: "Eagle eye"
+    description: "Get 25 headshots (unlocks Shadow Lince)."
     isChallenge: 0
     metric: 6
     target: 25
@@ -134,8 +134,8 @@ MonoBehaviour:
       petIds: []
       cosmeticIds: []
   - achievementId: ach_winner10
-    title: Vencedor
-    description: Vence 10 partidas.
+    title: "Winner"
+    description: "Win 10 matches."
     isChallenge: 0
     metric: 3
     target: 10
@@ -146,8 +146,8 @@ MonoBehaviour:
       petIds: []
       cosmeticIds: []
   - achievementId: ach_level10
-    title: Veterano
-    description: "Chega ao n\xEDvel 10 de jogador."
+    title: "Veteran"
+    description: "Reach player level 10."
     isChallenge: 0
     metric: 10
     target: 10
@@ -158,8 +158,8 @@ MonoBehaviour:
       petIds: []
       cosmeticIds: []
   - achievementId: chal_flawless
-    title: "Sem um arranh\xE3o"
-    description: "Desafio: termina uma partida v\xE1lida sem ser eliminado (desbloqueia a tartaruga Carapa\xE7a)."
+    title: "Without a scratch"
+    description: "Finish a valid match without being eliminated (unlocks Carapaça the turtle)."
     isChallenge: 1
     metric: 9
     target: 1
@@ -171,7 +171,7 @@ MonoBehaviour:
       - pet_turtle
       cosmeticIds: []
   - achievementId: chal_objectives10
-    title: Estratega
+    title: "Strategist"
     description: 'Desafio: conclui 10 objetivos de partida.'
     isChallenge: 1
     metric: 7

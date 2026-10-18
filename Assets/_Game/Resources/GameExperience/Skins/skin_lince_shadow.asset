@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: skin_lince_shadow
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SkinDefinition
   skinId: skin_lince_shadow
-  displayName: Lince Sombra
+  displayName: "Shadow Lince"
   target: 0
   targetId: sniper
   rarity: 2

@@ -81,7 +81,7 @@ namespace FPSLAN
             get
             {
                 var n = PlayerName.Value.ToString();
-                return string.IsNullOrEmpty(n) ? "Jogador " + Id : n;
+                return string.IsNullOrEmpty(n) ? "Player " + Id : n;
             }
         }
 
@@ -187,7 +187,8 @@ namespace FPSLAN
         public void ChangeHero(int heroId)
         {
             if (!IsOwner) return;
-            if (MatchManager.IsCoopActive && !IsBot) return;
+            if (!IsBot && MatchManager.Instance != null && MatchManager.Instance.IsSpawned &&
+                (MatchManager.Instance.IsCoop || MatchManager.Instance.Mode.Value == GameMode.GemGrab)) return;
             HeroId.Value = BrawlerRegistry.Sanitize(heroId);
         }
 

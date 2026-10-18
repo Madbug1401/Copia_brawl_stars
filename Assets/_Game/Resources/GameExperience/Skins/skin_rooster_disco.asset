@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: skin_rooster_disco
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SkinDefinition
   skinId: skin_rooster_disco
-  displayName: Alvorada Disco
+  displayName: "Disco Alvorada"
   target: 1
   targetId: pet_rooster
   rarity: 1

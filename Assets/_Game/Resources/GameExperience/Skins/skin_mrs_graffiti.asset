@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: skin_mrs_graffiti
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SkinDefinition
   skinId: skin_mrs_graffiti
-  displayName: "Mr.S Graf\xEDti"
+  displayName: "Graffiti Mr.S"
   target: 0
   targetId: sprayer
   rarity: 1

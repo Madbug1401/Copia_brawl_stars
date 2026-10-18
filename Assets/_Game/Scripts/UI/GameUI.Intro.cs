@@ -92,12 +92,12 @@ namespace FPSLAN
                 {
                     GUI.color = Color.white;
                     MText(new Rect(24 * K, Screen.height - 58 * K, 360 * K, 32 * K),
-                        "ESPAÇO / ENTER / ESC PARA PULAR", m_MT12, MMuted);
+                        "SPACE / ENTER / ESC TO SKIP", m_MT12, MMuted);
                     var skip = new Rect(Screen.width - 150 * K, Screen.height - 62 * K, 126 * K, 38 * K);
                     bool keySkip = Event.current.type == EventType.KeyDown &&
                         (Event.current.keyCode == KeyCode.Escape || Event.current.keyCode == KeyCode.Space ||
                          Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter);
-                    if (GUI.Button(skip, "PULAR", m_MT14) || keySkip)
+                    if (GUI.Button(skip, "SKIP", m_MT14) || keySkip)
                     {
                         CompleteOpeningIntro();
                         if (keySkip) Event.current.Use();
@@ -186,13 +186,6 @@ namespace FPSLAN
             IntroRing(point, radius * (1f + pulse * 0.65f), ring, fade * lockIn * (1f - pulse) * 0.4f);
             IntroTexture(new Rect(point.x - 3 * K, point.y - 3 * K, 6 * K, 6 * K),
                 Texture2D.whiteTexture, new Color(MCyan.r, MCyan.g, MCyan.b, fade * lockIn));
-
-            var label = new Color(MWhite.r, MWhite.g, MWhite.b, fade * lockIn);
-            GUI.color = Color.white;
-            MText(new Rect(point.x - 150 * K, point.y + radius + 14 * K, 300 * K, 40 * K),
-                "CABO VERDE", m_MT24, label);
-            MText(new Rect(point.x - 150 * K, point.y + radius + 52 * K, 300 * K, 24 * K),
-                "16° N  ·  24° W", m_MT12, new Color(MCyan.r, MCyan.g, MCyan.b, fade * lockIn));
 
             // As mesmas nuvens do voo entre ilhas ligam o mapa mundial ao arquipélago ilustrado.
             var clouds = MenuTexture("fx_clouds");

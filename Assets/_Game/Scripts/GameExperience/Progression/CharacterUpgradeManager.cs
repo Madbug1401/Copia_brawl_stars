@@ -50,7 +50,7 @@ namespace FPSLAN
             if (!m_Ctx.Inventory.TrySpend(Cfg.UpgradeCost(current))) return UpgradeResult.NotEnoughCoins;
             m_Ctx.Profile.Character(brawlerId, true).SetUpgrade(stat, current + 1);
             var b = BrawlerRegistry.FindById(brawlerId);
-            m_Ctx.Emit(FeedbackType.UpgradePurchased, Cfg.Tuning(stat).label.ToUpperInvariant() + " · NÍVEL " + (current + 1),
+            m_Ctx.Emit(FeedbackType.UpgradePurchased, Cfg.Tuning(stat).label.ToUpperInvariant() + " · LEVEL " + (current + 1),
                 b != null ? b.displayName : brawlerId, new Color(0.5f, 0.9f, 1f));
             m_Ctx.Save();
             return UpgradeResult.Ok;
@@ -73,11 +73,11 @@ namespace FPSLAN
         {
             switch (r)
             {
-                case UpgradeResult.MaxLevel: return "Nível máximo";
-                case UpgradeResult.CharacterLevelTooLow: return "Sobe a personagem de nível";
-                case UpgradeResult.NotEnoughCoins: return "Moedas insuficientes";
-                case UpgradeResult.UnknownCharacter: return "Personagem desconhecida";
-                default: return "Disponível";
+                case UpgradeResult.MaxLevel: return "Max level";
+                case UpgradeResult.CharacterLevelTooLow: return "Level up this character";
+                case UpgradeResult.NotEnoughCoins: return "Not enough coins";
+                case UpgradeResult.UnknownCharacter: return "Unknown character";
+                default: return "Available";
             }
         }
     }

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: skin_rabbit_lunar
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SkinDefinition
   skinId: skin_rabbit_lunar
-  displayName: Pipoca Lunar
+  displayName: "Lunar Pipoca"
   target: 1
   targetId: pet_rabbit
   rarity: 2

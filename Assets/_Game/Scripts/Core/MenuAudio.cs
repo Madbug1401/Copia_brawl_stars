@@ -19,6 +19,7 @@ namespace FPSLAN
         static AudioSource s_Music, s_Voice;
         static Runner s_Runner;
         static bool s_WantMusic;
+        static bool s_SetupMusic;
 
         /// <summary>brawlerId → ficheiro da fala (os nomes dos ficheiros seguem as chaves do menu).</summary>
         static string VoiceKeyFor(string brawlerId)
@@ -54,11 +55,18 @@ namespace FPSLAN
         }
 
         /// <summary>Chamado em cada frame pela UI: true nos menus, false em jogo.</summary>
-        public static void SetMenuMusic(bool on)
+        public static void SetMenuMusic(bool on, bool setup = false)
         {
-            if (on == s_WantMusic && s_Runner != null) return;
+            if (on == s_WantMusic && setup == s_SetupMusic && s_Runner != null) return;
+            bool changed = setup != s_SetupMusic;
+            s_SetupMusic = setup;
             Init();
             s_WantMusic = on;
+            if (changed)
+            {
+                s_Music.Stop();
+                s_Music.clip = Resources.Load<AudioClip>(setup ? "Audio/Music/server" : MusicPath);
+            }
             if (on && !s_Music.isPlaying)
             {
                 if (s_Music.clip == null) s_Music.clip = Resources.Load<AudioClip>(MusicPath);

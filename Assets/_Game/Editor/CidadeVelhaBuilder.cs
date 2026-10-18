@@ -78,6 +78,7 @@ namespace FPSLAN.EditorTools
             emitterBaseName = "GEN_Emissor_Base",
             emitterStyle = GemEmitterStyle.Pelourinho,
             arcHeight = 2.2f,
+            decorateMap = SponsorBoards.AddToCidadeVelha,
             expectedSize = "≈ 41 × 56",
         };
 

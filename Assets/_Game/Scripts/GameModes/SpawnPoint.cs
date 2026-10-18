@@ -17,7 +17,7 @@ namespace FPSLAN
         public static IReadOnlyList<SpawnPoint> All => s_All;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() => s_All.Clear();
+        static void ResetStatics() { s_All.Clear(); s_Reserved.Clear(); s_ReservedAt.Clear(); }
 
         void OnEnable() => s_All.Add(this);
         void OnDisable() => s_All.Remove(this);
@@ -46,7 +46,7 @@ namespace FPSLAN
                         float d = Vector3.Distance(sp.transform.position, mate.transform.position);
                         if (d < best) { best = d; nearest = sp; }
                     }
-                    position = nearest.transform.position;
+                    position = ClearCoopPosition(nearest.transform.position, forPlayer);
                     yaw = nearest.transform.eulerAngles.y;
                     return;
                 }
@@ -80,8 +80,47 @@ namespace FPSLAN
             int pickFrom = Mathf.Min(3, s_Scored.Count);
             var chosen = s_Scored[Random.Range(0, pickFrom)].Value;
 
-            position = chosen.transform.position;
+            position = MatchManager.IsCoopActive && MatchManager.IsCoopTeam(forPlayer) ? ClearCoopPosition(chosen.transform.position, forPlayer) : chosen.transform.position;
             yaw = chosen.transform.eulerAngles.y;
+        }
+
+        static readonly Dictionary<ulong, Vector3> s_Reserved = new Dictionary<ulong, Vector3>();
+        static readonly Dictionary<ulong, float> s_ReservedAt = new Dictionary<ulong, float>();
+
+        static bool ClearForPlayer(Vector3 point, PlayerNetwork self)
+        {
+            foreach (var player in PlayerNetwork.All)
+            {
+                if (player == null || player == self || !player.IsSpawned || player.Health.IsDead) continue;
+                Vector3 d = point - player.transform.position; d.y = 0;
+                if (d.sqrMagnitude < 2.2f * 2.2f) return false;
+            }
+            foreach (var entry in s_Reserved)
+                if (self != null && entry.Key != self.Id && Time.unscaledTime - s_ReservedAt[entry.Key] < 2f &&
+                    (entry.Value - point).sqrMagnitude < 2.2f * 2.2f) return false;
+            foreach (var col in Physics.OverlapCapsule(point + Vector3.up * 0.55f, point + Vector3.up * 1.45f, 0.35f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                if (col.GetComponentInParent<PlayerNetwork>() != self) return false;
+            return true;
+        }
+
+        static Vector3 ClearCoopPosition(Vector3 origin, PlayerNetwork self)
+        {
+            for (int ring = 0; ring <= 3; ring++)
+                for (int i = 0; i < (ring == 0 ? 1 : 12); i++)
+                {
+                    float angle = i * Mathf.PI / 6f;
+                    Vector3 candidate = origin + new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * (ring * 2.5f);
+                    if (!Physics.Raycast(candidate + Vector3.up * 2f, Vector3.down, out var ground, 5f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) continue;
+                    if (ground.normal.y < 0.7f || ground.collider.GetComponentInParent<PlayerNetwork>() != null) continue;
+                    candidate = ground.point + Vector3.up * 0.04f;
+                    if (!ClearForPlayer(candidate, self)) continue;
+                    if (self != null) { s_Reserved[self.Id] = candidate; s_ReservedAt[self.Id] = Time.unscaledTime; }
+                    return candidate;
+                }
+            foreach (var sp in s_All)
+                if (ClearForPlayer(sp.transform.position, self)) return sp.transform.position;
+            // No clear location: defer to the original map spawn, never stack vertically.
+            return origin;
         }
 
         void OnDrawGizmos()
