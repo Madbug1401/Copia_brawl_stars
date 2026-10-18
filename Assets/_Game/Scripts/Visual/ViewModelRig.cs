@@ -32,7 +32,7 @@ namespace FPSLAN
         /// <summary>Sufixo do prefab dos braços em 1.ª pessoa (Resources/Characters/&lt;brawlerId&gt;_fparms).</summary>
         public const string FirstPersonArmsSuffix = "_fparms";
         /// <summary>Onde ficam os ombros do modelo, no espaço da câmara (abaixo e ligeiramente atrás).</summary>
-        static readonly Vector3 ModelShoulders = new Vector3(0f, -0.36f, 0.02f);
+        static readonly Vector3 ModelShoulders = new Vector3(0f, -0.36f, 0.16f);
         WeaponModel m_WeaponR, m_WeaponL;
         Vector3 m_GunRRest, m_GunLRest;
         Quaternion m_GunRRot = Quaternion.identity, m_GunLRot = Quaternion.identity;
@@ -213,6 +213,9 @@ namespace FPSLAN
             // as mãos de primitivas deixam de ser precisas
             if (m_HandR != null) { Object.Destroy(m_HandR.gameObject); m_HandR = null; }
             if (m_HandL != null) { Object.Destroy(m_HandL.gameObject); m_HandL = null; }
+
+            // com braços reais a arma fica um pouco mais à frente, para as duas mãos caberem no ecrã
+            if (Style == RigStyle.Sniper && m_GunR != null) m_GunRRest = new Vector3(0.2f, -0.25f, 0.52f);
 
             m_ModelArms = anim.gameObject.AddComponent<FirstPersonArms>();
             m_ModelArms.Setup(anim, Root);
