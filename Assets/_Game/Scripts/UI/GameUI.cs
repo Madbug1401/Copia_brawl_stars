@@ -769,6 +769,7 @@ namespace FPSLAN
                 case GameMode.Knockout: return "KNOCKOUT · Melhor de três rondas";
                 case GameMode.Showdown: return "SHOWDOWN · Último Brawler vivo";
                 case GameMode.ItTakesTwo: return "IT TAKES TWO · Cooperativo a dois";
+                case GameMode.GemGrab: return "PIQUE-GEMAS · Segura 10 gemas com a equipa";
                 default: return "DEATHMATCH · Todos contra todos";
             }
         }
@@ -941,6 +942,7 @@ namespace FPSLAN
                 var top = new Rect(cx - 170 * s, 12 * s, 340 * s, 52 * s);
                 InkPanel(top, PanelBlue, 3f * s);
                 string modeName = match.IsCoop ? $"ONDA {Mathf.Max(1, match.CoopWave.Value)}/{match.coopTotalWaves}" :
+                match.Mode.Value == GameMode.GemGrab ? "PIQUE-GEMAS" :
                     match.Mode.Value == GameMode.Wipeout ? "WIPEOUT" :
                     match.Mode.Value == GameMode.Knockout ? $"KNOCKOUT · RONDA {match.RoundNumber.Value}" :
                     match.Mode.Value == GameMode.Showdown ? "SHOWDOWN" : "DEATHMATCH";
