@@ -761,6 +761,7 @@ namespace FPSLAN
                 case GameMode.Wipeout: return "WIPEOUT · Eliminações por equipa";
                 case GameMode.Knockout: return "KNOCKOUT · Melhor de três rondas";
                 case GameMode.Showdown: return "SHOWDOWN · Último Brawler vivo";
+                case GameMode.GemGrab: return "PIQUE-GEMAS · Segura 10 gemas com a equipa";
                 default: return "DEATHMATCH · Todos contra todos";
             }
         }
@@ -927,7 +928,8 @@ namespace FPSLAN
                 string time = match.Phase.Value == MatchPhase.Playing ? $"{(int)(tr / 60)}:{(int)(tr % 60):00}" : "FIM";
                 var top = new Rect(cx - 170 * s, 12 * s, 340 * s, 52 * s);
                 InkPanel(top, PanelBlue, 3f * s);
-                string modeName = match.Mode.Value == GameMode.Wipeout ? "WIPEOUT" :
+                string modeName = match.Mode.Value == GameMode.GemGrab ? "PIQUE-GEMAS" :
+                    match.Mode.Value == GameMode.Wipeout ? "WIPEOUT" :
                     match.Mode.Value == GameMode.Knockout ? $"KNOCKOUT · RONDA {match.RoundNumber.Value}" :
                     match.Mode.Value == GameMode.Showdown ? "SHOWDOWN" : "DEATHMATCH";
                 string modeScore = match.Mode.Value == GameMode.Deathmatch

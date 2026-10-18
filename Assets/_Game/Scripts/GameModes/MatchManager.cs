@@ -15,12 +15,14 @@ namespace FPSLAN
         Deathmatch,
         Wipeout,
         Knockout,
-        Showdown
+        Showdown,
+        GemGrab   // Pique-Gemas: equipas recolhem gemas do gerador (ver GemGrabManager)
     }
 
     /// <summary>
     /// Autoridade do host para ciclo de partida e modos. Deathmatch mantém as regras originais;
-    /// Wipeout usa pontuação por equipa; Knockout usa rondas; Showdown é último jogador vivo.
+    /// Wipeout usa pontuação por equipa; Knockout usa rondas; Showdown é último jogador vivo;
+    /// GemGrab (Pique-Gemas) delega gemas e contagem de vitória no GemGrabManager da cena.
     /// </summary>
     public class MatchManager : NetworkBehaviour
     {
@@ -33,6 +35,11 @@ namespace FPSLAN
         public int wipeoutTeamKillLimit = 10;
         public float knockoutRoundSeconds = 90f;
         public float knockoutIntermissionSeconds = 4f;
+
+        [Header("Modo fixo da cena (mapas dedicados, ex.: Pique-Gemas)")]
+        [Tooltip("Se ativo, a partida usa sempre 'sceneMode' em vez do modo escolhido no menu.")]
+        public bool overrideMenuMode;
+        public GameMode sceneMode = GameMode.GemGrab;
 
         public readonly NetworkVariable<MatchPhase> Phase = new NetworkVariable<MatchPhase>(MatchPhase.Playing);
         public readonly NetworkVariable<GameMode> Mode = new NetworkVariable<GameMode>(GameMode.Deathmatch);
@@ -47,12 +54,15 @@ namespace FPSLAN
         public static bool IsCombatActive => Instance == null || !Instance.IsSpawned ||
             (Instance.Phase.Value == MatchPhase.Playing && !Instance.IsRoundIntermission.Value);
 
+        public static bool IsTeamMode(GameMode mode) =>
+            mode == GameMode.Wipeout || mode == GameMode.Knockout || mode == GameMode.GemGrab;
+
         public static bool AreTeammates(PlayerNetwork first, PlayerNetwork second)
         {
             if (first == null || second == null || first == second || Instance == null || !Instance.IsSpawned)
                 return false;
 
-            if (Instance.Mode.Value != GameMode.Wipeout && Instance.Mode.Value != GameMode.Knockout)
+            if (!IsTeamMode(Instance.Mode.Value))
                 return false;
 
             int team = first.TeamId.Value;
@@ -99,7 +109,7 @@ namespace FPSLAN
         {
             if (!IsSpawned || !IsServer) return;
 
-            if (Mode.Value == GameMode.Wipeout || Mode.Value == GameMode.Knockout)
+            if (IsTeamMode(Mode.Value))
                 ServerAssignMissingTeams();
 
             double now = NetworkManager.ServerTime.Time;
@@ -137,9 +147,14 @@ namespace FPSLAN
                 return;
             }
 
-            if (Mode.Value == GameMode.Wipeout)
+            if (Mode.Value == GameMode.Wipeout || Mode.Value == GameMode.GemGrab)
             {
-                if (BlueScore.Value == RedScore.Value) ServerEndMatch(null);
+                // GemGrab: no fim do tempo ganha quem tiver mais gemas (Blue/RedScore = gemas da equipa)
+                if (BlueScore.Value == RedScore.Value)
+                {
+                    if (Mode.Value == GameMode.GemGrab) ServerEndMatch(-1);
+                    else ServerEndMatch(null);
+                }
                 else ServerEndMatch(BlueScore.Value > RedScore.Value ? 0 : 1);
             }
             else if (Mode.Value == GameMode.Showdown)
@@ -154,7 +169,7 @@ namespace FPSLAN
 
         void ServerStartMatch()
         {
-            Mode.Value = MenuSelectedMode;
+            Mode.Value = overrideMenuMode ? sceneMode : MenuSelectedMode;
             Phase.Value = MatchPhase.Playing;
             WinnerName.Value = default;
             BlueScore.Value = 0;
@@ -172,8 +187,11 @@ namespace FPSLAN
                 p.Combat.ServerResetSuper();
             }
 
-            if (Mode.Value == GameMode.Wipeout || Mode.Value == GameMode.Knockout)
+            if (IsTeamMode(Mode.Value))
                 ServerAssignMissingTeams();
+
+            // Gemas e temporizadores do Pique-Gemas recomeçam do zero em cada partida
+            if (GemGrabManager.Instance != null) GemGrabManager.Instance.ServerResetRound();
 
             if (Mode.Value == GameMode.Knockout)
                 ServerStartKnockoutRound();
@@ -203,8 +221,7 @@ namespace FPSLAN
 
         public void ServerAssignMissingTeams()
         {
-            if (!IsServer || !IsSpawned ||
-                (Mode.Value != GameMode.Wipeout && Mode.Value != GameMode.Knockout))
+            if (!IsServer || !IsSpawned || !IsTeamMode(Mode.Value))
                 return;
 
             int blue = 0, red = 0;
@@ -230,6 +247,13 @@ namespace FPSLAN
             IsRoundIntermission.Value = false;
             WinnerName.Value = new FixedString64Bytes(winner != null ? winner.DisplayName : "Ninguém");
             PhaseEndTime.Value = NetworkManager.ServerTime.Time + resultsSeconds;
+        }
+
+        /// <summary>Servidor: termina a partida com vitória de uma equipa (0 azul, 1 vermelha, -1 empate).</summary>
+        public void ServerEndMatchForTeam(int winningTeam)
+        {
+            if (!IsServer || Phase.Value != MatchPhase.Playing) return;
+            ServerEndMatch(winningTeam);
         }
 
         void ServerEndMatch(int winningTeam)
@@ -374,6 +398,13 @@ namespace FPSLAN
         {
             var killerName = killer != null && killer != victim ? killer.DisplayName : "";
             KillFeedRpc(new FixedString64Bytes(killerName), new FixedString64Bytes(victim != null ? victim.DisplayName : "?"));
+
+            // Pique-Gemas: quem morre larga as gemas que transportava (decidido no host)
+            if (Mode.Value == GameMode.GemGrab)
+            {
+                if (GemGrabManager.Instance != null) GemGrabManager.Instance.ServerOnPlayerDied(victim);
+                return; // as mortes não decidem a partida neste modo
+            }
 
             if (Mode.Value == GameMode.Showdown && Phase.Value == MatchPhase.Playing && !IsRoundIntermission.Value)
             {
