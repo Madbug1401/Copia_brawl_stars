@@ -12,9 +12,9 @@ namespace FPSLAN
     {
         const string MusicPath = "Audio/Music/menu";
         const string VoicesPath = "Audio/Voices/";
-        const float MusicVolume = 0.55f;
+        const float MusicVolume = 0.22f;          // música de fundo discreta
         const float VoiceVolume = 1f;
-        const float MusicDuckWhileVoice = 0.45f;   // a música baixa enquanto o personagem fala
+        const float MusicDuckWhileVoice = 0.35f;   // a música baixa bastante enquanto o personagem fala
 
         static AudioSource s_Music, s_Voice;
         static Runner s_Runner;
@@ -86,7 +86,7 @@ namespace FPSLAN
             {
                 if (s_Music == null) return;
                 float target = s_WantMusic ? MusicVolume * (s_Voice != null && s_Voice.isPlaying ? MusicDuckWhileVoice : 1f) : 0f;
-                s_Music.volume = Mathf.MoveTowards(s_Music.volume, target, Time.unscaledDeltaTime * (s_WantMusic ? 0.6f : 0.9f));
+                s_Music.volume = Mathf.MoveTowards(s_Music.volume, target, Time.unscaledDeltaTime * (s_WantMusic ? 0.5f : 0.4f));
                 if (!s_WantMusic && s_Music.isPlaying && s_Music.volume <= 0.001f) s_Music.Pause();
                 else if (s_WantMusic && !s_Music.isPlaying && s_Music.clip != null) s_Music.UnPause();
             }
