@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: gunslinger
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.BrawlerDefinition
   brawlerId: gunslinger
-  displayName: Dex
+  displayName: Riot
   role: "Pistoleiro \u2014 rajada de 6 tiros de longo alcance; Super: tempestade de balas que destr\xF3i cobertura"
   available: 1
   stats:

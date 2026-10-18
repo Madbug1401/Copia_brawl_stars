@@ -12,6 +12,7 @@ namespace FPSLAN
         const string KeyAimSensitivity = "fpslan.aim.sensitivity";
         const string KeyScopeFov = "fpslan.aim.scopeFov";
         const string KeyMasterVolume = "fpslan.audio.masterVolume";
+        const string KeyMuted = "fpslan.audio.muted";
 
         public static string LocalName
         {
@@ -50,11 +51,23 @@ namespace FPSLAN
             {
                 float volume = Mathf.Clamp01(value);
                 PlayerPrefs.SetFloat(KeyMasterVolume, volume);
-                AudioListener.volume = volume;
+                if (volume > 0.001f) PlayerPrefs.SetInt(KeyMuted, 0);   // mexer no volume tira o mudo
+                ApplyAudioSettings();
             }
         }
 
-        public static void ApplyAudioSettings() => AudioListener.volume = MasterVolume;
+        /// <summary>Silenciar sem perder o volume escolhido (botão de mudo do menu).</summary>
+        public static bool Muted
+        {
+            get => PlayerPrefs.GetInt(KeyMuted, 0) == 1;
+            set
+            {
+                PlayerPrefs.SetInt(KeyMuted, value ? 1 : 0);
+                ApplyAudioSettings();
+            }
+        }
+
+        public static void ApplyAudioSettings() => AudioListener.volume = Muted ? 0f : MasterVolume;
 
         static float GetClampedFloat(string key, float fallback, float minimum, float maximum)
         {

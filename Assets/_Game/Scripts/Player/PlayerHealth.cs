@@ -18,6 +18,8 @@ namespace FPSLAN
         public readonly NetworkVariable<ulong> LastKiller = new NetworkVariable<ulong>(ulong.MaxValue);
         /// <summary>Hora do servidor até à qual o jogador está protegido (escudo de spawn).</summary>
         public readonly NetworkVariable<double> ProtectedUntil = new NetworkVariable<double>(0);
+        /// <summary>Cooperativo: progresso (0–1) do parceiro a levantar este jogador.</summary>
+        public readonly NetworkVariable<float> ReviveProgress = new NetworkVariable<float>(0f);
 
         PlayerNetwork m_Player;
         float m_LastCombatTime;
@@ -98,6 +100,7 @@ namespace FPSLAN
             if (!MatchManager.IsCombatActive || MatchManager.IsMatchOver) return false;
             if (MatchManager.AreTeammates(PlayerNetwork.Find(attackerId), m_Player)) return false;
             if (IsProtected) return false;
+            amount = MatchManager.ScaleDamage(PlayerNetwork.Find(attackerId), amount);   // Laço do cooperativo
 
             m_LastCombatTime = Time.time;
             Health.Value = Mathf.Max(0, Health.Value - amount);
@@ -148,6 +151,21 @@ namespace FPSLAN
             m_Player.Motor.TeleportRpc(pos, yaw);
             m_Player.Combat.ServerRefill();
             ProtectedUntil.Value = NetworkManager.ServerTime.Time + spawnProtection;
+            ReviveProgress.Value = 0f;
+            Dead.Value = false;
+        }
+
+        /// <summary>Servidor (cooperativo): levanta o jogador no sítio onde caiu, com parte da vida.</summary>
+        public void ServerReviveInPlace(float healthPercent)
+        {
+            if (!IsServer || !Dead.Value) return;
+            m_RegenCarry = 0f;
+            m_LastCombatTime = Time.time;
+            Health.Value = Mathf.Clamp(Mathf.RoundToInt(MaxHealth * healthPercent), 1, MaxHealth);
+            m_Player.Status?.ServerClear();
+            m_Player.Combat.ServerRefill();
+            ProtectedUntil.Value = NetworkManager.ServerTime.Time + spawnProtection;
+            ReviveProgress.Value = 0f;
             Dead.Value = false;
         }
 

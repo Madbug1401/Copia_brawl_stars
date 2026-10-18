@@ -36,6 +36,10 @@ namespace FPSLAN
             root.SetParent(parent, false);
             w.root = root;
 
+            // Modelo 3D da arma, se existir (Resources/Weapons/<estilo>): substitui a arma de primitivas,
+            // tanto no personagem em 3.ª pessoa como na vista em 1.ª pessoa.
+            if (TryBuildFromPrefab(style, w, shadows)) return w;
+
             switch (style)
             {
                 case RigStyle.DualRevolvers: Revolver(w, accent, shadows); break;
@@ -47,6 +51,26 @@ namespace FPSLAN
                 default: Blaster(w, accent, shadows); break;
             }
             return w;
+        }
+
+        /// <summary>Pasta (em Resources) dos modelos 3D das armas, um prefab por estilo (ex.: Weapons/Sniper).</summary>
+        public const string PrefabFolder = "Weapons/";
+
+        /// <summary>
+        /// Usa o prefab Resources/Weapons/&lt;estilo&gt; (origem = punho, +Z = cano). Filhos opcionais: "Muzzle" (boca do
+        /// cano, de onde saem os tiros) e "Support" (onde pousa a outra mão).
+        /// </summary>
+        static bool TryBuildFromPrefab(RigStyle style, WeaponModel w, ShadowCastingMode shadows)
+        {
+            var prefab = Resources.Load<GameObject>(PrefabFolder + style);
+            if (prefab == null) return false;
+            var model = Object.Instantiate(prefab, w.root, false);
+            model.name = "Model";
+            foreach (var r in model.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = shadows;
+            foreach (var t in model.GetComponentsInChildren<Transform>(true))
+                if (t.name == "Muzzle") w.muzzles.Add(t);
+            if (w.muzzles.Count == 0) Muzzle(w, new Vector3(0f, 0.05f, 0.6f));
+            return true;
         }
 
         static Transform P(WeaponModel w, PrimitiveType t, Vector3 pos, Vector3 scale, Color c, ShadowCastingMode s, Vector3 euler = default, Transform parent = null)

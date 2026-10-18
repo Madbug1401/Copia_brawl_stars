@@ -15,14 +15,15 @@ namespace FPSLAN
         Deathmatch,
         Wipeout,
         Knockout,
-        Showdown
+        Showdown,
+        ItTakesTwo   // cooperativo a dois contra ondas de bots (MatchManager.Coop.cs)
     }
 
     /// <summary>
     /// Autoridade do host para ciclo de partida e modos. Deathmatch mantém as regras originais;
     /// Wipeout usa pontuação por equipa; Knockout usa rondas; Showdown é último jogador vivo.
     /// </summary>
-    public class MatchManager : NetworkBehaviour
+    public partial class MatchManager : NetworkBehaviour
     {
         public static MatchManager Instance { get; private set; }
         public static GameMode MenuSelectedMode { get; set; } = GameMode.Deathmatch;
@@ -52,14 +53,16 @@ namespace FPSLAN
             if (first == null || second == null || first == second || Instance == null || !Instance.IsSpawned)
                 return false;
 
-            if (Instance.Mode.Value != GameMode.Wipeout && Instance.Mode.Value != GameMode.Knockout)
+            if (Instance.Mode.Value != GameMode.Wipeout && Instance.Mode.Value != GameMode.Knockout &&
+                Instance.Mode.Value != GameMode.ItTakesTwo)
                 return false;
 
             int team = first.TeamId.Value;
             return team >= 0 && team == second.TeamId.Value;
         }
 
-        public bool CanRespawnDeadPlayers => Mode.Value != GameMode.Knockout && Mode.Value != GameMode.Showdown;
+        public bool CanRespawnDeadPlayers => Mode.Value != GameMode.Knockout && Mode.Value != GameMode.Showdown &&
+            Mode.Value != GameMode.ItTakesTwo;   // no cooperativo é o parceiro que levanta
 
         public int AlivePlayerCount
         {
@@ -98,6 +101,12 @@ namespace FPSLAN
         void Update()
         {
             if (!IsSpawned || !IsServer) return;
+
+            if (Mode.Value == GameMode.ItTakesTwo)
+            {
+                ServerCoopUpdate();
+                return;
+            }
 
             if (Mode.Value == GameMode.Wipeout || Mode.Value == GameMode.Knockout)
                 ServerAssignMissingTeams();
@@ -172,6 +181,12 @@ namespace FPSLAN
                 p.Combat.ServerResetSuper();
             }
 
+            if (Mode.Value == GameMode.ItTakesTwo)
+            {
+                ServerCoopStart();
+                return;
+            }
+
             if (Mode.Value == GameMode.Wipeout || Mode.Value == GameMode.Knockout)
                 ServerAssignMissingTeams();
 
@@ -203,6 +218,12 @@ namespace FPSLAN
 
         public void ServerAssignMissingTeams()
         {
+            if (IsServer && IsSpawned && Mode.Value == GameMode.ItTakesTwo)
+            {
+                ServerCoopAssignTeams();
+                return;
+            }
+
             if (!IsServer || !IsSpawned ||
                 (Mode.Value != GameMode.Wipeout && Mode.Value != GameMode.Knockout))
                 return;
@@ -374,6 +395,9 @@ namespace FPSLAN
         {
             var killerName = killer != null && killer != victim ? killer.DisplayName : "";
             KillFeedRpc(new FixedString64Bytes(killerName), new FixedString64Bytes(victim != null ? victim.DisplayName : "?"));
+
+            // Cooperativo: a vitória/derrota é avaliada por ondas no ServerCoopUpdate
+            if (Mode.Value == GameMode.ItTakesTwo) return;
 
             if (Mode.Value == GameMode.Showdown && Phase.Value == MatchPhase.Playing && !IsRoundIntermission.Value)
             {

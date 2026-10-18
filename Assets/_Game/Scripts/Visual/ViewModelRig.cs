@@ -27,6 +27,16 @@ namespace FPSLAN
         Transform m_Sway, m_HandR, m_HandL, m_ArmR, m_ArmL, m_GunR, m_GunL;
         Transform m_Knife;
         Vector3 m_KnifeRest;
+        FirstPersonArms m_ModelArms;
+
+        /// <summary>Sufixo do prefab dos braços em 1.ª pessoa (Resources/Characters/&lt;brawlerId&gt;_fparms).</summary>
+        public const string FirstPersonArmsSuffix = "_fparms";
+        /// <summary>Onde ficam os ombros do modelo, no espaço da câmara (abaixo e ligeiramente atrás).</summary>
+        static readonly Vector3 ModelShoulders = new Vector3(0f, -0.36f, 0.3f);
+        /// <summary>Braços da 1.ª pessoa um pouco maiores, para a mão esquerda chegar à frente da arma.</summary>
+        const float ModelArmsScale = 1.12f;
+        /// <summary>Animações com a arma nas mãos: onde fica a cabeça do modelo em relação à câmara. Público para afinar.</summary>
+        public static Vector3 ModelHeadOffset = new Vector3(-0.1f, -0.12f, -0.18f);
         WeaponModel m_WeaponR, m_WeaponL;
         Vector3 m_GunRRest, m_GunLRest;
         Quaternion m_GunRRot = Quaternion.identity, m_GunLRot = Quaternion.identity;
@@ -129,8 +139,12 @@ namespace FPSLAN
                     break;
             }
 
-            if (m_HandR != null) m_ArmR = Forearm(sleeve);
-            if (m_HandL != null) m_ArmL = Forearm(sleeve);
+            // Braços do próprio modelo do personagem, se existirem; senão, mãos e antebraços de primitivas.
+            if (!TryModelArms(b))
+            {
+                if (m_HandR != null) m_ArmR = Forearm(sleeve);
+                if (m_HandL != null) m_ArmL = Forearm(sleeve);
+            }
 
             m_Knife = new GameObject("MeleeKnife").transform;
             m_Knife.SetParent(m_Sway, false);
@@ -140,6 +154,7 @@ namespace FPSLAN
             Art.Part(PrimitiveType.Cube, m_Knife, new Vector3(0f, 0f, 0.18f), new Vector3(0.07f, 0.025f, 0.25f), new Color(0.72f, 0.82f, 0.9f), true, new Vector3(0f, 0f, -8f), ShadowCastingMode.Off);
             m_Knife.localPosition = m_KnifeRest;
             m_Knife.gameObject.SetActive(false);
+            if (m_ModelArms != null) m_ModelArms.knife = m_Knife;
 
             foreach (var w in new[] { m_WeaponR, m_WeaponL })
                 if (w != null) m_WeaponRenderers.AddRange(w.root.GetComponentsInChildren<Renderer>(true));
@@ -152,6 +167,115 @@ namespace FPSLAN
                 Art.SetFloat(r, Art.OutlineWidthId, 0.0028f);
             }
             Tick(0f, default);
+        }
+
+        /// <summary>
+        /// Usa os braços do modelo do personagem (prefab gerado pelo CharacterModelBuilder): as mãos seguram a arma
+        /// por IK (direita no punho, esquerda no apoio / 2.ª arma / arco). Devolve false se o personagem não tiver modelo.
+        /// </summary>
+        bool TryModelArms(BrawlerDefinition b)
+        {
+            if (b == null) return false;
+            var prefab = Resources.Load<GameObject>(CharacterRig.ModelResourceFolder + b.brawlerId + FirstPersonArmsSuffix);
+            if (prefab == null) return false;
+            var go = Object.Instantiate(prefab, Root, false);
+            go.name = "ModelArms";
+            var anim = go.GetComponentInChildren<Animator>();
+            if (anim == null || !anim.isHuman) { Object.Destroy(go); return false; }
+            anim.applyRootMotion = false;
+            anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            foreach (var smr in go.GetComponentsInChildren<SkinnedMeshRenderer>(true)) smr.updateWhenOffscreen = true;
+
+            // Animações que já seguram a arma (Mixamo "Rifle"): a pose vem da animação e a arma segue as mãos.
+            bool animatedHold = m_WeaponR != null && m_GunR != null &&
+                (Style == RigStyle.Sniper || Style == RigStyle.Shotgun || Style == RigStyle.Generic);
+            if (animatedHold)
+            {
+                animatedHold = false;
+                foreach (var p in anim.parameters) if (p.name == ModelWeaponHolder.HoldsWeaponParam) animatedHold = true;
+            }
+            if (animatedHold)
+            {
+                go.transform.SetParent(m_Sway, false);   // balanço e sway da câmara também nos braços
+                anim.Rebind();
+                anim.Update(0f);
+                var head = anim.GetBoneTransform(HumanBodyBones.Head);
+                if (head != null) go.transform.localPosition += ModelHeadOffset - m_Sway.InverseTransformPoint(head.position);
+                if (m_HandR != null) { Object.Destroy(m_HandR.gameObject); m_HandR = null; }
+                if (m_HandL != null) { Object.Destroy(m_HandL.gameObject); m_HandL = null; }
+                m_ModelArms = anim.gameObject.AddComponent<FirstPersonArms>();
+                m_ModelArms.Setup(anim, Root);
+                m_ModelArms.drivenWeapon = m_GunR;
+                foreach (var t in m_GunR.GetComponentsInChildren<Transform>(true))
+                    if (t.name == "Support") { m_ModelArms.supportLocal = m_GunR.InverseTransformPoint(t.position); break; }
+                return true;
+            }
+
+            // ombros do modelo no sítio certo em relação à câmara
+            go.transform.localScale *= ModelArmsScale;
+            anim.Rebind();
+            anim.Update(0f);
+            var ua = anim.GetBoneTransform(HumanBodyBones.LeftUpperArm);
+            var ub = anim.GetBoneTransform(HumanBodyBones.RightUpperArm);
+            if (ua != null && ub != null)
+            {
+                var mid = Root.InverseTransformPoint((ua.position + ub.position) * 0.5f);
+                go.transform.localPosition += ModelShoulders - mid;
+            }
+
+            // alvos das mãos
+            Transform right = null, left = null;
+            switch (Style)
+            {
+                case RigStyle.DualRevolvers:
+                case RigStyle.DualExplosives:
+                    right = m_WeaponR?.root; left = m_WeaponL?.root; break;
+                case RigStyle.Bow:
+                    left = m_WeaponL?.root; right = m_WeaponL?.nock; break;
+                case RigStyle.SprayCan:
+                    right = m_WeaponR?.root; break;
+                default:
+                    right = m_WeaponR?.root;
+                    left = m_WeaponR != null ? SupportPoint(m_WeaponR) : null;
+                    if (left != null && Style == RigStyle.Sniper)
+                    {
+                        // mão esquerda mais à frente, por baixo do cano
+                        var front = new GameObject("FrontGrip").transform;
+                        front.SetParent(m_WeaponR.root, false);
+                        front.localPosition = new Vector3(0f, 0f, 0.36f);
+                        left = front;
+                    }
+                    break;
+            }
+
+            // as mãos de primitivas deixam de ser precisas
+            if (m_HandR != null) { Object.Destroy(m_HandR.gameObject); m_HandR = null; }
+            if (m_HandL != null) { Object.Destroy(m_HandL.gameObject); m_HandL = null; }
+
+            // com braços reais a arma fica um pouco mais à frente, para as duas mãos caberem no ecrã
+            if (Style == RigStyle.Sniper && m_GunR != null)
+            {
+                m_GunRRest = new Vector3(0.2f, -0.24f, 0.42f);
+                m_GunRRot = Quaternion.Euler(-4f, -28f, -6f);   // cano inclinado para dentro, por cima da mão esquerda
+            }
+
+            m_ModelArms = anim.gameObject.AddComponent<FirstPersonArms>();
+            m_ModelArms.Setup(anim, Root);
+            m_ModelArms.rightTarget = right;
+            m_ModelArms.leftTarget = left;
+            return true;
+        }
+
+        /// <summary>Ponto de apoio da mão esquerda: "Support" do modelo 3D da arma, o pump, ou um ponto no cano.</summary>
+        static Transform SupportPoint(WeaponModel w)
+        {
+            foreach (var t in w.root.GetComponentsInChildren<Transform>(true))
+                if (t.name == "Support") return t;
+            if (w.pump != null) return w.pump;
+            var s = new GameObject("Support").transform;
+            s.SetParent(w.root, false);
+            s.localPosition = new Vector3(0f, -0.03f, 0.3f);
+            return s;
         }
 
         Transform Holder(string name, Vector3 pos)
@@ -359,7 +483,12 @@ namespace FPSLAN
                 {
                     float kickBack = Style == RigStyle.Sniper ? 0.11f : 0.09f;
                     float kickRot = Style == RigStyle.Sniper ? 18f : 14f;
-                    PoseGun(m_GunR, m_GunRRest, m_KickR, kickBack, kickRot, 0f);
+                    if (m_ModelArms != null && m_ModelArms.drivenWeapon != null) m_ModelArms.kick = m_KickR;   // a arma segue as mãos animadas
+                    else
+                    {
+                        PoseGun(m_GunR, m_GunRRest, m_KickR, kickBack, kickRot, 0f);
+                        m_GunR.localRotation = m_GunRRot * m_GunR.localRotation;   // inclinação de descanso (braços do modelo)
+                    }
                     if (m_WeaponR != null && m_WeaponR.pump != null)
                     {
                         m_Pump = Mathf.MoveTowards(m_Pump, 1f, dt * 2.2f);

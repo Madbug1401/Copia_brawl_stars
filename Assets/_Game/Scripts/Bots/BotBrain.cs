@@ -24,6 +24,7 @@ namespace FPSLAN
         BotDifficulty m_Difficulty;
 
         PlayerNetwork m_Target;
+        PlayerNetwork m_ReviveGoal;   // cooperativo: parceiro caído a levantar
         bool m_TargetVisible;
         float m_NextThink;
         float m_TargetSeenAt;
@@ -152,7 +153,16 @@ namespace FPSLAN
 
             // ---------------- Movimento ----------------
             Vector3 moveWorld;
-            if (m_Target != null)
+            // Cooperativo: ir levantar o parceiro, a não ser que haja um inimigo visível muito perto
+            bool goRevive = m_ReviveGoal != null && m_ReviveGoal.IsSpawned && m_ReviveGoal.Health.IsDead &&
+                !(m_Target != null && m_TargetVisible && distToTarget < 8f);
+            if (goRevive)
+            {
+                var flat = m_ReviveGoal.transform.position - pos;
+                flat.y = 0f;
+                moveWorld = flat.magnitude > 1.2f ? flat.normalized : Vector3.zero;
+            }
+            else if (m_Target != null)
             {
                 var flat = m_Target.transform.position - pos;
                 flat.y = 0f;
@@ -266,6 +276,7 @@ namespace FPSLAN
             if (best != m_Target || (bestVisible && !m_TargetVisible)) m_TargetSeenAt = Time.time;
             m_Target = best;
             m_TargetVisible = bestVisible;
+            m_ReviveGoal = MatchManager.FindDownedTeammate(m_Self);
         }
 
         Vector3 AvoidObstacles(Vector3 pos, Vector3 dir, out bool wantJump)
