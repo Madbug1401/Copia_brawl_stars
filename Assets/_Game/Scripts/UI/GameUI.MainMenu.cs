@@ -53,7 +53,7 @@ namespace FPSLAN
         /// </summary>
         static readonly MenuMode[] s_Modes =
         {
-            new MenuMode("IT TAKES TWO", "Cooperativo a dois", "O modo IT TAKES TWO chega em breve.", "ItTakesTwo", "Coop"),
+            new MenuMode("IT TAKES TWO", "The Pelourinho Heist · Lince & Riot", null, "ItTakesTwo", "Coop"),
             new MenuMode("DEATHMATCH", "Todos contra todos", null, "Deathmatch"),
             new MenuMode("GEM GRAB", "Apanha e segura as gemas", "O modo GEM GRAB chega em breve.", "GemGrab", "GemRush", "PiqueGema"),
         };
@@ -98,6 +98,7 @@ namespace FPSLAN
         bool m_MAudioOpen; float m_MAudioT;
         int m_MFocus = 0;               // foco do teclado no menu principal (começa em PLAY ONLINE)
         int m_MModeSel = -1;
+        bool MenuCoopSetup => m_MSetupCtx != SetupContext.LocalJoin && MatchManager.MenuSelectedMode == GameMode.ItTakesTwo;
         int m_MMapSel;
         float m_MMapScroll, m_MMapScrollTarget;
         int m_MCharPrev = -1; float m_MCharT = 1f;
@@ -195,6 +196,7 @@ namespace FPSLAN
             m_MMapSel = 0;
             for (int i = 0; i < s_Maps.Length; i++) if (s_Maps[i].key == SelectedMapKey && s_Maps[i].playable) m_MMapSel = i;
             if (MenuCharIndexForHero(m_Hero) < 0) SelectMenuCharacter(0, false);
+            if (MatchManager.MenuSelectedMode == GameMode.ItTakesTwo) SelectMode(m_MModeSel, false);
         }
 
         // ================================================================== ecrã principal
@@ -310,6 +312,8 @@ namespace FPSLAN
         void OpenSetup(SetupContext ctx)
         {
             m_MSetupCtx = ctx;
+            if (ctx != SetupContext.LocalJoin && MatchManager.MenuSelectedMode == GameMode.ItTakesTwo)
+                SelectMode(Mathf.Max(0, m_MModeSel), false);
             m_MScreen = MenuScreen.Setup;
             m_MScreenT = 0f;
             m_MAudioOpen = false;
@@ -413,6 +417,11 @@ namespace FPSLAN
                 m_MModeSel = i;
                 MatchManager.MenuSelectedMode = gm;
                 PlayerPrefs.SetInt("fpslan.mode", (int)gm);
+                if (gm == GameMode.ItTakesTwo)
+                {
+                    SelectMap(1);
+                    if (!MatchManager.IsCoopStoryHero(BrawlerRegistry.Get(m_Hero))) SelectMenuCharacter(0, false);
+                }
             }
             else
             {
@@ -436,12 +445,12 @@ namespace FPSLAN
             if (portrait != null) MTex(Expand(pr, -3 * K), portrait, Color.white, ScaleMode.ScaleAndCrop);
             if (selected) MDraw9(m_MLine, pr, Fade(MCyan, 1f));
             else MDraw9(m_MLine, pr, Fade(MCyanDim, 0.25f + 0.6f * h));
-            bool available = MenuCharacterBrawler(i) != null;
+            bool available = MenuCharacterBrawler(i) != null && (!MenuCoopSetup || i < 2);
             MText(new Rect(cell.x - 10 * K, pr.yMax + 2 * K, cell.width + 20 * K, 22 * K), s_Roster[i].name, m_MT14,
                 selected ? MCyan : (available ? MWhite : MMuted));
             if (GUI.enabled && GUI.Button(cell, GUIContent.none, GUIStyle.none))
             {
-                if (!available) { MenuNotice(s_Roster[i].name + " ainda não está disponível."); return false; }
+                if (!available) { MenuNotice(MenuCoopSetup ? "Esta missão é protagonizada por Lince e Riot." : s_Roster[i].name + " ainda não está disponível."); return false; }
                 return true;
             }
             return false;
@@ -462,13 +471,13 @@ namespace FPSLAN
         {
             if (coopPreview)
             {
-                int second = (selChar + 1) % s_Roster.Length;
+                int second = selChar == 0 ? 1 : 0;
                 float half = stage.width / 2f;
                 DrawCharacterArt(new Rect(stage.x, stage.y + 34 * K, half, stage.height - 74 * K), selChar, 1f);
                 DrawCharacterArt(new Rect(stage.x + half, stage.y + 34 * K, half, stage.height - 74 * K), second, 1f);
                 MText(new Rect(stage.x, stage.y, half, 30 * K), "1", m_MT24, MWhite);
                 MText(new Rect(stage.x + half, stage.y, half, 30 * K), "2", m_MT24, MWhite);
-                MText(new Rect(stage.x, stage.yMax - 34 * K, stage.width, 30 * K), "COOPERATIVO A DOIS", m_MT17, MCyan);
+                MText(new Rect(stage.x, stage.yMax - 34 * K, stage.width, 30 * K), MatchManager.CoopMissionTitle, m_MT17, MCyan);
                 return;
             }
 
@@ -548,10 +557,16 @@ namespace FPSLAN
                 MTex(dot, Art.CircleTexture, Fade(MCyan, 1f), ScaleMode.StretchToFill);
             }
             MDraw9(m_MLine, frame, Fade(sel ? MCyan : MCyanDim, sel ? 1f : 0.35f + 0.5f * h));
+            if (MenuCoopSetup && m.key != "santiago")
+            {
+                MDraw9(m_MFill, frame, Fade(new Color(0f, 0f, 0f, 0.65f), 1f));
+                MText(frame, "MISSÃO FUTURA", m_MT14, MMuted);
+            }
 
             if (GUI.enabled && GUI.Button(r, GUIContent.none, GUIStyle.none))
             {
                 FocusMapIsland(i);   // a aproximação acontece sempre: mostra de que ilha se trata
+                if (MenuCoopSetup && m.key != "santiago") { MenuNotice("Primeira missão: The Pelourinho Heist. As outras missões ficam para a progressão futura."); m_BgReturnAt = Time.unscaledTime + BgTravelTime + 1.6f; return false; }
                 if (!m.playable) { PeekUnavailableMap(); return false; }
                 return true;
             }
@@ -599,6 +614,14 @@ namespace FPSLAN
             }
             y += 48 * K;
 
+            // O cooperativo gere o parceiro e os guardas automaticamente.
+            if (MenuCoopSetup)
+            {
+                MText(new Rect(x, y, w, 42 * K), "LINCE & RIOT\nParceiro bot a solo · 2 jogadores por LAN", m_MT14, MCyan, TextAnchor.MiddleLeft, true);
+                y += 46 * K;
+            }
+            else
+            {
             // bots
             MText(new Rect(x, y, 70 * K, 34 * K), "BOTS", m_MT14, MWhite, TextAnchor.MiddleLeft);
             if (MenuButton(new Rect(x + 60 * K, y, 34 * K, 34 * K), "−", 5001, MBtn.Normal, false, m_MT20) == MClick.Clicked)
@@ -613,6 +636,7 @@ namespace FPSLAN
                 BotManager.ApplyDifficulty();
             }
             y += 46 * K;
+            }
 
             string label = ctx == SetupContext.Online ? "JOGAR" : "CRIAR SERVIDOR";
             if (MenuButton(new Rect(x, y, w, 58 * K), label, 5004, MBtn.Primary, false, m_MT20) == MClick.Clicked)
@@ -646,6 +670,13 @@ namespace FPSLAN
             if (MatchManager.MenuSelectedMode == GameMode.GemGrab && !ConnectionManager.SupportsGemGrab(SelectedMapKey))
             { MenuNotice("GEM GRAB está disponível em Santiago e no Sal. Escolhe uma dessas ilhas."); return; }
             SaveMenuPrefs();
+            if (MatchManager.MenuSelectedMode == GameMode.ItTakesTwo)
+            {
+                SelectMap(1);
+                bots = 0;
+                if (!MatchManager.IsCoopStoryHero(BrawlerRegistry.Get(m_Hero)))
+                { m_Hero = MatchManager.CoopHeroIndex("sniper"); GameSession.LocalHeroId = m_Hero; }
+            }
             if (ConnectionManager.Instance.HostMap(SelectedMapKey)) m_PendingBots = bots;
             else MenuNotice(ConnectionManager.Instance.Status);
         }
@@ -803,8 +834,9 @@ namespace FPSLAN
 
             int c = Mathf.Max(0, MenuCharIndexForHero(m_Hero));
             bool modes = m_MSetupCtx != SetupContext.LocalJoin;
-            if (e.keyCode == KeyCode.RightArrow || e.keyCode == KeyCode.D) { SelectMenuCharacter((c + 1) % s_Roster.Length); e.Use(); }
-            else if (e.keyCode == KeyCode.LeftArrow || e.keyCode == KeyCode.A) { SelectMenuCharacter((c + s_Roster.Length - 1) % s_Roster.Length); e.Use(); }
+            int characterCount = MenuCoopSetup ? 2 : s_Roster.Length;
+            if (e.keyCode == KeyCode.RightArrow || e.keyCode == KeyCode.D) { SelectMenuCharacter((c + 1) % characterCount); e.Use(); }
+            else if (e.keyCode == KeyCode.LeftArrow || e.keyCode == KeyCode.A) { SelectMenuCharacter((c + characterCount - 1) % characterCount); e.Use(); }
             else if (modes && (e.keyCode == KeyCode.DownArrow || e.keyCode == KeyCode.S))
             { SelectMode((Mathf.Max(0, m_MModeSel) + 1) % s_Modes.Length, true); e.Use(); }
             else if (modes && (e.keyCode == KeyCode.UpArrow || e.keyCode == KeyCode.W))
@@ -813,7 +845,8 @@ namespace FPSLAN
             {
                 int n = s_Maps.Length, next = (m_MMapSel + (e.keyCode == KeyCode.E ? 1 : n - 1)) % n;
                 FocusMapIsland(next);
-                if (s_Maps[next].playable) SelectMap(next); else PeekUnavailableMap();
+                if (MenuCoopSetup) { SelectMap(1); FocusMapIsland(1); }
+                else if (s_Maps[next].playable) SelectMap(next); else PeekUnavailableMap();
                 e.Use();
             }
         }
@@ -840,6 +873,7 @@ namespace FPSLAN
 
         void SelectMenuCharacter(int menuIndex, bool voice = true)
         {
+            if (MenuCoopSetup && menuIndex >= 2) return;
             var b = MenuCharacterBrawler(menuIndex);
             if (b == null) return;
             int prev = MenuCharIndexForHero(m_Hero);

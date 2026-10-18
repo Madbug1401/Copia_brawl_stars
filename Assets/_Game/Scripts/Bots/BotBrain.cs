@@ -181,6 +181,13 @@ namespace FPSLAN
                 var strafe = Vector3.Cross(Vector3.up, toward) * m_StrafeDir * (m_TargetVisible ? 0.8f : 0.2f);
                 moveWorld = radial + strafe;
             }
+            else if (MatchManager.Instance != null && MatchManager.Instance.TryCoopObjectiveGoal(m_Self, out var coopGoal))
+            {
+                var flat = coopGoal - pos;
+                flat.y = 0f;
+                float stop = MatchManager.Instance.CoopStage.Value >= CoopMissionStage.Puzzle ? 0.45f : 3f;
+                moveWorld = flat.magnitude > stop ? flat.normalized : Vector3.zero;
+            }
             else
             {
                 var flat = m_WanderPoint - pos;
@@ -245,6 +252,12 @@ namespace FPSLAN
                 }
             }
 
+            if (goRevive && Vector3.Distance(pos, m_ReviveGoal.transform.position) <= MatchManager.Instance.coopReviveRadius)
+            {
+                cmd.interact = true;
+                cmd.move = Vector2.zero;
+                cmd.jumpPressed = cmd.fire = cmd.meleePressed = cmd.superPressed = false;
+            }
             Commands = cmd;
         }
 

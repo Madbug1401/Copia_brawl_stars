@@ -27,6 +27,7 @@ namespace FPSLAN
         float m_RespawnAt;
         bool m_NeedsInitialSpawn;
         float m_ClientRespawnAt;
+        public float LastDamageTime { get; private set; } = -100f;
 
         public bool IsDead => Dead.Value;
         public int MaxHealth => m_Player.Brawler != null ? m_Player.Brawler.stats.maxHealth : 100;
@@ -103,6 +104,7 @@ namespace FPSLAN
             amount = MatchManager.ScaleDamage(PlayerNetwork.Find(attackerId), amount);   // Laço do cooperativo
 
             m_LastCombatTime = Time.time;
+            LastDamageTime = Time.time;
             Health.Value = Mathf.Max(0, Health.Value - amount);
 
             if (Health.Value > 0) return false;
@@ -138,6 +140,7 @@ namespace FPSLAN
                 killer.Kills.Value++;
 
             if (MatchManager.Instance != null) MatchManager.Instance.ServerOnKill(killer, m_Player);
+            MatchManager.Instance?.ServerCoopDangerLine(m_Player, false);
         }
 
         public void ServerRespawn()
@@ -167,6 +170,7 @@ namespace FPSLAN
             ProtectedUntil.Value = NetworkManager.ServerTime.Time + spawnProtection;
             ReviveProgress.Value = 0f;
             Dead.Value = false;
+            MatchManager.Instance?.ServerCoopDangerLine(m_Player, true);
         }
 
         void Update()

@@ -17,6 +17,7 @@ namespace FPSLAN
         public bool fire;
         public bool meleePressed;
         public bool superPressed;
+        public bool interact;
 
         public static PlayerCommands FromHuman(bool allowed)
         {
@@ -34,6 +35,7 @@ namespace FPSLAN
                 fire = InputReader.Fire,
                 meleePressed = InputReader.MeleePressed,
                 superPressed = InputReader.SuperPressed,
+                interact = InputReader.InteractHeld,
             };
         }
     }

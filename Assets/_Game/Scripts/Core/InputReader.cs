@@ -18,6 +18,7 @@ namespace FPSLAN
         public static bool Fire => ReadFire();
         public static bool MeleePressed => GameInputSettings.WasPressedThisFrame(GameAction.Melee);
         public static bool AimHeld => GameInputSettings.IsHeld(GameAction.Aim);
+        public static bool InteractHeld => GameInputSettings.IsHeld(GameAction.Interact);
         public static bool SuperPressed => ReadSuperPressed();
         public static bool ScoreboardHeld => ReadScoreboardHeld();
         public static bool PausePressed => ReadPausePressed();

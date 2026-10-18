@@ -49,6 +49,7 @@ namespace FPSLAN
         public bool HostMap(string mapKey, ushort port = DefaultPort)
         {
             if (NM == null || NM.IsListening || IsConnecting) return false;
+            if (MatchManager.MenuSelectedMode == GameMode.ItTakesTwo) mapKey = "santiago";
             string scene;
             switch (mapKey)
             {
@@ -125,6 +126,9 @@ namespace FPSLAN
         public bool Host(ushort port = DefaultPort)
         {
             if (NM == null || NM.IsListening) return false;
+            if (MatchManager.MenuSelectedMode == GameMode.ItTakesTwo &&
+                UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "CidadeVelha")
+                return HostMap("santiago", port);
             if (MatchManager.MenuSelectedMode == GameMode.GemGrab && GemGrabManager.Instance == null)
             {
                 Status = "O Pique-Gemas requer um mapa com gerador de gemas (Santiago ou Sal).";
@@ -167,12 +171,13 @@ namespace FPSLAN
 
         void ApproveConnection(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
         {
-            bool full = NM.ConnectedClientsIds.Count >= MaxPlayers;
+            int limit = MatchManager.IsCoopActive || MatchManager.MenuSelectedMode == GameMode.ItTakesTwo ? 2 : MaxPlayers;
+            bool full = NM.ConnectedClientsIds.Count >= limit;
             // Arena cheia de bots? Um humano tem sempre prioridade sobre um bot.
             if (!full && PlayerNetwork.All.Count >= BotManager.MaxTotalPlayers) BotManager.RemoveBot();
             response.Approved = !full;
             response.CreatePlayerObject = true;
-            response.Reason = full ? "Servidor cheio (máx. " + MaxPlayers + " jogadores)." : "";
+            response.Reason = full ? "Servidor cheio (máx. " + limit + " jogadores)." : "";
             response.Pending = false;
         }
 

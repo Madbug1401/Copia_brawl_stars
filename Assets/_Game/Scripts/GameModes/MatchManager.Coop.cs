@@ -7,8 +7,8 @@ namespace FPSLAN
 {
     /// <summary>
     /// Modo IT TAKES TWO (cooperativo a dois). Os dois jogadores (equipa 0) enfrentam ondas de bots (equipa 1).
-    ///  • Ondas: cada onda traz mais inimigos e mais difíceis. Sobreviver a todas = vitória dos dois.
-    ///  • Ninguém reaparece sozinho: quem cai fica no chão até o parceiro o levantar (ficar perto alguns segundos).
+    ///  • Ondas: abrem caminho até ao puzzle das duas placas e à Gem dourada (CoopStory).
+    ///  • Ninguém reaparece sozinho: quem cai fica no chão até o parceiro manter a interação, imóvel e sem sofrer dano.
     ///  • Se os dois estiverem no chão ao mesmo tempo, perdem os dois. Limpar uma onda levanta e cura toda a gente.
     ///  • Laço: perto um do outro, os dois curam devagar e fazem mais dano. Separados, ficam mais fracos.
     ///  • A jogar sozinho, o host recebe um bot aliado como parceiro (sai quando entra um 2.º humano).
@@ -18,8 +18,8 @@ namespace FPSLAN
     {
         [Header("IT TAKES TWO (cooperativo)")]
         public int coopTotalWaves = 5;
-        public float coopFirstWaveDelay = 6f;
-        public float coopIntermissionSeconds = 7f;
+        public float coopFirstWaveDelay = 14f;
+        public float coopIntermissionSeconds = 12f;
         [Tooltip("Segundos que o parceiro tem de ficar perto para levantar quem caiu.")]
         public float coopReviveSeconds = 3f;
         public float coopReviveRadius = 2.8f;
@@ -105,11 +105,13 @@ namespace FPSLAN
             CoopEnemiesLeft.Value = 0;
             CoopVictory.Value = false;
             m_CoopRegenCarry.Clear();
+            ServerCoopStoryReset();
+            CombatSystem.Instance?.ClearAll();
             ServerCoopAssignTeams();
 
             double now = NetworkManager.ServerTime.Time;
             IsRoundIntermission.Value = true;
-            PhaseEndTime.Value = now + coopFirstWaveDelay;
+            PhaseEndTime.Value = now + Mathf.Max(14f, coopFirstWaveDelay);
             m_CoopAllyCheckAt = now + 1.5;
 
             foreach (var p in PlayerNetwork.All)
@@ -135,36 +137,41 @@ namespace FPSLAN
             ServerCoopRevives();
             ServerCoopBondRegen();
 
-            if (IsRoundIntermission.Value)
+            int team = 0, teamAlive = 0;
+            foreach (var p in PlayerNetwork.All)
+                if (IsCoopTeam(p)) { team++; if (!p.Health.IsDead) teamAlive++; }
+            if (team > 0 && teamAlive == 0) { ServerCoopEnd(false); return; }
+
+            if (CoopStage.Value >= CoopMissionStage.Puzzle)
             {
-                if (now < PhaseEndTime.Value) return;
-                if (CoopWave.Value >= coopTotalWaves) ServerCoopEnd(true);
-                else ServerCoopStartWave(CoopWave.Value + 1);
+                ServerCoopObjectiveUpdate();
                 return;
             }
 
-            int enemies = 0, team = 0, teamAlive = 0;
+            if (IsRoundIntermission.Value)
+            {
+                if (now < PhaseEndTime.Value) return;
+                ServerCoopStartWave(CoopWave.Value + 1);
+                return;
+            }
+
+            int enemies = 0;
             foreach (var p in PlayerNetwork.All)
             {
                 if (p == null || !p.IsSpawned) continue;
-                if (p.TeamId.Value == 0)
-                {
-                    team++;
-                    if (!p.Health.IsDead) teamAlive++;
-                }
-                else if (p.TeamId.Value == 1 && !p.Health.IsDead) enemies++;
+                if (p.TeamId.Value == 1 && !p.Health.IsDead) enemies++;
             }
 
             if (CoopEnemiesLeft.Value != enemies) CoopEnemiesLeft.Value = enemies;
 
-            if (team > 0 && teamAlive == 0) ServerCoopEnd(false);
-            else if (enemies == 0) ServerCoopWaveCleared();
+            if (enemies == 0) ServerCoopWaveCleared();
         }
 
         void ServerCoopStartWave(int wave)
         {
             ServerCoopDespawnEnemies(true);
             CoopWave.Value = wave;
+            CoopStage.Value = wave == 1 ? CoopMissionStage.Infiltration : CoopMissionStage.Resistance;
 
             var difficulty = wave <= 2 ? BotDifficulty.Facil : wave <= 4 ? BotDifficulty.Normal : BotDifficulty.Dificil;
             int room = BotManager.MaxTotalPlayers - PlayerNetwork.All.Count;
@@ -195,12 +202,13 @@ namespace FPSLAN
 
             if (CoopWave.Value >= coopTotalWaves)
             {
-                ServerCoopEnd(true);
+                ServerCoopBeginPuzzle();
                 return;
             }
 
             IsRoundIntermission.Value = true;
             PhaseEndTime.Value = NetworkManager.ServerTime.Time + coopIntermissionSeconds;
+            ServerCoopSetStory(Mathf.Clamp(CoopWave.Value, 1, 4));
             CoopAnnounceRpc(new FixedString64Bytes("ONDA " + CoopWave.Value + " LIMPA!"), true);
         }
 
@@ -210,7 +218,8 @@ namespace FPSLAN
             Phase.Value = MatchPhase.Ended;
             IsRoundIntermission.Value = false;
             WinnerName.Value = new FixedString64Bytes(victory ? "Vitória a dois" : "Derrota");
-            PhaseEndTime.Value = NetworkManager.ServerTime.Time + resultsSeconds;
+            ServerCoopSetStory(victory ? 8 : 9);
+            PhaseEndTime.Value = NetworkManager.ServerTime.Time + Mathf.Max(resultsSeconds, 14f);
         }
 
         /// <summary>Sozinho? Dá um bot parceiro. Entrou um 2.º humano? O bot parceiro sai.</summary>
@@ -218,6 +227,7 @@ namespace FPSLAN
         {
             if (now < m_CoopAllyCheckAt) return;
             m_CoopAllyCheckAt = now + 1.0;
+            ServerCoopAssignStoryRoles();
 
             int humans = 0;
             foreach (var p in PlayerNetwork.All)
@@ -233,13 +243,15 @@ namespace FPSLAN
             }
             else if (humans == 1 && ally == null)
             {
-                var bot = BotManager.SpawnBot(-1, BotDifficulty.Normal, "Parceiro");
+                var bot = BotManager.SpawnBot(CoopPartnerHero(), BotDifficulty.Normal, "Parceiro");
                 if (bot != null)
                 {
                     m_CoopAllyId = bot.Id;
                     ServerCoopAssignTeams();
                 }
             }
+            else if (ally != null && ally.HeroId.Value != CoopPartnerHero())
+                ally.ChangeHero(CoopPartnerHero());
         }
 
         void ServerCoopRevives()
@@ -257,14 +269,17 @@ namespace FPSLAN
 
                 bool helped = false;
                 foreach (var h in PlayerNetwork.All)
-                    if (h != down && IsCoopTeam(h) && !h.Health.IsDead && FlatDistance(h, down) <= coopReviveRadius)
+                    if (h != down && IsCoopTeam(h) && !h.Health.IsDead && FlatDistance(h, down) <= coopReviveRadius &&
+                        Mathf.Abs(h.transform.position.y - down.transform.position.y) < 2f &&
+                        CoopIsHelping(h) && !h.Motor.IsMoving && Time.time - h.Health.LastDamageTime > 0.4f &&
+                        CombatMath.HasLineOfSight(h, down))
                     {
                         helped = true;
                         break;
                     }
 
                 float step = dt / Mathf.Max(0.1f, coopReviveSeconds);
-                float progress = helped ? hp.ReviveProgress.Value + step : Mathf.Max(0f, hp.ReviveProgress.Value - step * 0.5f);
+                float progress = helped ? hp.ReviveProgress.Value + step : 0f;
                 if (progress >= 1f)
                 {
                     hp.ServerReviveInPlace(coopReviveHealthPercent);

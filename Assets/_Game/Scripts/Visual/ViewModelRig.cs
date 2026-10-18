@@ -36,7 +36,7 @@ namespace FPSLAN
         /// <summary>Braços da 1.ª pessoa um pouco maiores, para a mão esquerda chegar à frente da arma.</summary>
         const float ModelArmsScale = 1.12f;
         /// <summary>Animações com a arma nas mãos: onde fica a cabeça do modelo em relação à câmara. Público para afinar.</summary>
-        public static Vector3 ModelHeadOffset = new Vector3(0.1f, -0.02f, -0.14f);
+        public static Vector3 ModelHeadOffset = new Vector3(0.06f, -0.08f, -0.06f);
         WeaponModel m_WeaponR, m_WeaponL;
         Vector3 m_GunRRest, m_GunLRest;
         Quaternion m_GunRRot = Quaternion.identity, m_GunLRot = Quaternion.identity;
@@ -205,6 +205,7 @@ namespace FPSLAN
                 if (m_HandL != null) { Object.Destroy(m_HandL.gameObject); m_HandL = null; }
                 m_ModelArms = anim.gameObject.AddComponent<FirstPersonArms>();
                 m_ModelArms.Setup(anim, Root);
+                m_GunR.localScale = Vector3.one * 0.8f;
                 m_ModelArms.drivenWeapon = m_GunR;
                 foreach (var t in m_GunR.GetComponentsInChildren<Transform>(true))
                     if (t.name == "Support") { m_ModelArms.supportLocal = m_GunR.InverseTransformPoint(t.position); break; }

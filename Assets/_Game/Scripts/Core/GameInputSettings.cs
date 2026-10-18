@@ -19,6 +19,7 @@ namespace FPSLAN
         Scoreboard,
         Pause,
         Aim,
+        Interact,
     }
 
     public static class GameInputSettings
@@ -86,6 +87,7 @@ namespace FPSLAN
                 case GameAction.Scoreboard: return KeyCode.Tab;
                 case GameAction.Pause: return KeyCode.Escape;
                 case GameAction.Aim: return KeyCode.Mouse1;
+                case GameAction.Interact: return KeyCode.F;
                 default: return KeyCode.None;
             }
         }

@@ -943,13 +943,13 @@ namespace FPSLAN
                     time = match.IsRoundIntermission.Value ? $"0:{Mathf.CeilToInt(tr):00}" : "";
                 var top = new Rect(cx - 170 * s, 12 * s, 340 * s, 52 * s);
                 InkPanel(top, PanelBlue, 3f * s);
-                string modeName = match.IsCoop ? $"ONDA {Mathf.Max(1, match.CoopWave.Value)}/{match.coopTotalWaves}" :
+                string modeName = match.IsCoop ? "IT TAKES TWO" :
                 match.Mode.Value == GameMode.GemGrab ? "PIQUE-GEMAS" :
                     match.Mode.Value == GameMode.Wipeout ? "WIPEOUT" :
                     match.Mode.Value == GameMode.Knockout ? $"KNOCKOUT · RONDA {match.RoundNumber.Value}" :
                     match.Mode.Value == GameMode.Showdown ? "SHOWDOWN" : "DEATHMATCH";
                 string modeScore = match.IsCoop
-                    ? $"IT TAKES TWO  ·  INIMIGOS {match.CoopEnemiesLeft.Value}  ·  K {me.Kills.Value}"
+                    ? match.CoopStage.Value >= CoopMissionStage.Puzzle ? match.CoopStageTitle : $"ONDA {Mathf.Max(1, match.CoopWave.Value)}/{match.coopTotalWaves}  ·  INIMIGOS {match.CoopEnemiesLeft.Value}"
                     : match.Mode.Value == GameMode.Deathmatch
                     ? $"K {me.Kills.Value}  ·  D {me.Deaths.Value}  ·  meta {match.killLimit}"
                     : match.Mode.Value == GameMode.Showdown
@@ -1122,7 +1122,9 @@ namespace FPSLAN
 
         void DrawCoopHud(PlayerNetwork me, MatchManager match, Rect top, float s)
         {
+            if (match.Phase.Value != MatchPhase.Playing) return;
             float cx = Screen.width / 2f;
+            DrawCoopStory(me, match, top, s);
 
             // Laço: estado por baixo do painel do topo
             var bond = new Rect(cx - 210 * s, top.yMax + 6 * s, 420 * s, 24 * s);
@@ -1145,9 +1147,9 @@ namespace FPSLAN
             if (match.Phase.Value == MatchPhase.Playing && match.IsRoundIntermission.Value)
             {
                 int secs = Mathf.CeilToInt(match.TimeRemaining);
-                string head = match.CoopWave.Value == 0 ? "PREPAREM-SE" : $"ONDA {match.CoopWave.Value} LIMPA!";
+                string head = match.CoopWave.Value == 0 ? MatchManager.CoopMissionTitle : $"ONDA {match.CoopWave.Value} LIMPA!";
                 var r = new Rect(0, Screen.height * 0.24f, Screen.width, 60 * s);
-                m_DeathOverlay.fontSize = Mathf.RoundToInt(40 * s);
+                m_DeathOverlay.fontSize = Mathf.RoundToInt((match.CoopWave.Value == 0 ? 32 : 40) * s);
                 Outlined(r, head, m_DeathOverlay, match.CoopWave.Value == 0 ? Gold : CoopGreen, 3f);
                 Outlined(new Rect(0, r.yMax, Screen.width, 30 * s), $"Onda {match.CoopWave.Value + 1} de {match.coopTotalWaves} em {secs}s", m_Center, Color.white, 1.5f);
             }
@@ -1184,7 +1186,11 @@ namespace FPSLAN
                 }
                 else if (dist > match.coopReviveRadius)
                 {
-                    Outlined(new Rect(0, Screen.height * 0.62f, Screen.width, 24 * s), "O teu parceiro caiu! Vai até ele e fica perto para o levantar.", m_Center, new Color(1f, 0.75f, 0.6f), 1.5f);
+                    Outlined(new Rect(0, Screen.height * 0.62f, Screen.width, 24 * s), "O teu parceiro caiu! Aproxima-te para o levantar.", m_Center, new Color(1f, 0.75f, 0.6f), 1.5f);
+                }
+                else
+                {
+                    Outlined(new Rect(0, Screen.height * 0.62f, Screen.width, 24 * s), "Mantém [" + GameInputSettings.BindingLabel(GameAction.Interact) + "] sem te mover para reanimar. O dano interrompe.", m_Center, Color.white, 1.5f);
                 }
             }
         }
@@ -1202,7 +1208,7 @@ namespace FPSLAN
                 if (p != me && MatchManager.IsCoopTeam(p) && !p.Health.IsDead) { mate = p; break; }
 
             string hint = mate != null
-                ? mate.DisplayName + " pode levantar-te: tem de ficar perto de ti."
+                ? mate.DisplayName + " pode levantar-te: aproximar-se e manter a interação."
                 : "Ninguém para te levantar…";
             Outlined(new Rect(0, r.yMax + 4 * s, Screen.width, 30 * s), hint, m_Center, Color.white, 1.5f);
 
@@ -1261,13 +1267,7 @@ namespace FPSLAN
             Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0.02f, 0.02f, 0.08f, 0.5f));
             if (match.IsCoop)
             {
-                bool win = match.CoopVictory.Value;
-                string title = win ? "VITÓRIA A DOIS!" : "DERROTA";
-                string sub = win ? $"Sobreviveram às {match.coopTotalWaves} ondas — juntos é melhor."
-                                 : $"Caíram os dois na onda {Mathf.Max(1, match.CoopWave.Value)}. Fiquem mais perto um do outro!";
-                Outlined(new Rect(0, Screen.height * 0.03f, Screen.width, 70 * s), title, m_Title, win ? Gold : new Color(1f, 0.4f, 0.35f), 3f);
-                Outlined(new Rect(0, Screen.height * 0.03f + 64 * s, Screen.width, 30 * s), sub + "   ·   Nova partida em " + Mathf.CeilToInt(match.TimeRemaining) + "s", m_Center, Color.white, 1.5f);
-                DrawScoreboard();
+                DrawCoopStoryResults(match, s);
                 return;
             }
             Outlined(new Rect(0, Screen.height * 0.03f, Screen.width, 70 * s), "VENCEDOR: " + match.WinnerName.Value.ToString().ToUpperInvariant(), m_Title, Gold, 3f);
@@ -1316,6 +1316,7 @@ namespace FPSLAN
                 case GameAction.Scoreboard: return "Placar";
                 case GameAction.Pause: return "Pausa";
                 case GameAction.Aim: return "Mirar (Lince)";
+                case GameAction.Interact: return "Reanimar parceiro (manter)";
                 default: return action.ToString();
             }
         }
@@ -1375,7 +1376,7 @@ namespace FPSLAN
             {
                 GameAction.MoveForward, GameAction.MoveBackward, GameAction.MoveLeft, GameAction.MoveRight,
                 GameAction.Fire, GameAction.Melee, GameAction.Super, GameAction.Jump, GameAction.Sprint,
-                GameAction.Scoreboard, GameAction.Pause, GameAction.Aim,
+                GameAction.Scoreboard, GameAction.Pause, GameAction.Aim, GameAction.Interact,
             };
             foreach (var action in actions)
             {
@@ -1534,11 +1535,14 @@ namespace FPSLAN
             Outlined(tr, "PAUSA", m_BigCenter, Gold, 2f);
             GUILayout.Space(6 * s);
 
-            GUILayout.Label("Brawler (troca já)", m_Small);
+            GUILayout.Label(MatchManager.IsCoopActive ? "The Pelourinho Heist · Lince & Riot" : "Brawler (troca já)", m_Small);
             var me = PlayerNetwork.Local;
             int current = me != null ? me.HeroId.Value : m_Hero;
             int sel = current;
+            bool heroInput = GUI.enabled;
+            if (MatchManager.IsCoopActive) GUI.enabled = false;
             DrawBrawlerCards(s, ref sel, true, area.width - 44 * s);
+            GUI.enabled = heroInput;
             m_Hero = sel;
 
             GUILayout.Space(10 * s);
@@ -1546,7 +1550,7 @@ namespace FPSLAN
             float sens = GUILayout.HorizontalSlider(GameSession.Sensitivity, 0.2f, 8f);
             if (!Mathf.Approximately(sens, GameSession.Sensitivity)) GameSession.Sensitivity = sens;
 
-            if (host)
+            if (host && !MatchManager.IsCoopActive)
             {
                 GUILayout.Space(12 * s);
                 DrawBotControls(s, true);

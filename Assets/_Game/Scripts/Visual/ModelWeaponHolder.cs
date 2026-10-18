@@ -69,14 +69,14 @@ namespace FPSLAN
             Vector3 aimFwd, Vector3 upRef, float kick, out Vector3 rPos, out Quaternion rRot, out Vector3 lPos, out Quaternion lRot, Vector3 handOffset = default)
         {
             rPos = anim.GetIKPosition(AvatarIKGoal.RightHand);
-            rRot = anim.GetIKRotation(AvatarIKGoal.RightHand);
-            lRot = anim.GetIKRotation(AvatarIKGoal.LeftHand);
             rPos = pivot + pitchRot * (rPos - pivot) + handOffset;
-            rRot = pitchRot * rRot; lRot = pitchRot * lRot;
+
             var fwd = (pitchRot * aimFwd).normalized;
             var up = Vector3.ProjectOnPlane(upRef, fwd);
             if (up.sqrMagnitude < 1e-6f) up = Vector3.up;
             var rot = Quaternion.LookRotation(fwd, up) * Quaternion.Euler(-10f * kick, 0f, 0f);
+            rRot = rot * Quaternion.Euler(30f, -45f, -90f);
+            lRot = rot * Quaternion.Euler(20f, -60f, 180f);
             rPos += -fwd * 0.06f * kick + up.normalized * 0.01f * kick;   // coice
             // O apoio foi medido no espaço local da arma, que pode estar escalada.
             var supportOffset = weapon != null ? Vector3.Scale(supportLocal, weapon.lossyScale) : supportLocal;

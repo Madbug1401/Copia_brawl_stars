@@ -34,6 +34,8 @@ namespace FPSLAN
 
         /// <summary>0 = equipa azul, 1 = equipa vermelha, -1 = ainda não atribuída.</summary>
         public readonly NetworkVariable<int> TeamId = new NetworkVariable<int>(-1);
+        public readonly NetworkVariable<bool> CoopInteractHeld = new NetworkVariable<bool>(false,
+            NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
         public PlayerMotor Motor { get; private set; }
         public PlayerHealth Health { get; private set; }
@@ -120,14 +122,32 @@ namespace FPSLAN
         /// <summary>Comandos deste frame (só faz sentido onde o jogador é simulado).</summary>
         public PlayerCommands ReadCommands()
         {
-            if (Bot != null) return Bot.Commands;
-            return PlayerCommands.FromHuman(GameUI.GameplayInputAllowed);
+            var cmd = Bot != null ? Bot.Commands : PlayerCommands.FromHuman(GameUI.GameplayInputAllowed);
+            if (MatchManager.IsCoopActive && cmd.interact && MatchManager.FindDownedTeammate(this,
+                MatchManager.Instance.coopReviveRadius) != null)
+                cmd.fire = cmd.meleePressed = cmd.superPressed = false;
+            return cmd;
+        }
+
+        void Update()
+        {
+            if (!IsSpawned || !IsLocalHuman) return;
+            bool held = MatchManager.IsCoopActive && !Health.IsDead && GameUI.GameplayInputAllowed && InputReader.InteractHeld;
+            if (CoopInteractHeld.Value != held) CoopInteractHeld.Value = held;
+        }
+
+        [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
+        public void AssignCoopHeroRpc(int heroId)
+        {
+            if (!IsOwner || !MatchManager.IsCoopActive) return;
+            HeroId.Value = BrawlerRegistry.Sanitize(heroId);
         }
 
         /// <summary>Dono: trocar de personagem (aplica-se já, com vida e munição cheias).</summary>
         public void ChangeHero(int heroId)
         {
             if (!IsOwner) return;
+            if (MatchManager.IsCoopActive && !IsBot) return;
             HeroId.Value = BrawlerRegistry.Sanitize(heroId);
         }
 
