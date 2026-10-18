@@ -82,6 +82,7 @@ namespace FPSLAN
                 if (c.Count <= 0) continue;
                 var p = PlayerNetwork.Find(c.PlayerId);
                 if (p == null || p.Health.IsDead || p == me) continue;
+                if (p.Visuals != null && p.Visuals.IsConcealedForLocal) continue; // escondido num arbusto: não denunciar
                 var wp = p.transform.position + Vector3.up * 2.35f;
                 var sp = cam.WorldToScreenPoint(wp);
                 if (sp.z <= 0f || sp.z > 45f) continue;

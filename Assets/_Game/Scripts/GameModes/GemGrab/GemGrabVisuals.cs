@@ -191,11 +191,14 @@ namespace FPSLAN
         /// <summary>Efeito curto de recolha (chamado pelo RPC do host).</summary>
         public void PlayCollect(Vector3 position, ulong playerId, int team)
         {
+            var local = PlayerNetwork.Local;
+            var who = PlayerNetwork.Find(playerId);
+            if (who != null && who != local && who.Visuals != null && who.Visuals.IsConcealedForLocal)
+                return; // apanhou escondido num arbusto: sem efeito que revele a posição
             var c = Color.Lerp(m_Mgr.gemColor, Color.white, 0.35f);
             Fx.Sparks(position, c, 14, 4f);
             Fx.Ring(Ground(position), c, 1.8f, 0.3f);
             Fx.Light(position, m_Mgr.gemColor, 2.2f, 4f, 0.2f);
-            var local = PlayerNetwork.Local;
             if (local != null && local.Id == playerId) Sfx.Play2D(Sound.SuperReady, 0.6f);
             else Sfx.PlayAt(Sound.Crate, position, 0.5f);
         }

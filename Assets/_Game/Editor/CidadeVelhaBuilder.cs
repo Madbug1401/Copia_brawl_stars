@@ -313,6 +313,31 @@ namespace FPSLAN.EditorTools
             }
             log.AppendLine($"Colisores: {boxes} caixas + {meshes} convexos (degraus do Pelourinho).");
 
+            // Arbustos de esconder: zona BUSH_* → componente Bush do projeto (atravessa-se, oculta, revela por
+            // proximidade/ataque/dano) + folhas LeafBush; a folhagem de pré-visualização BSHV_* do Blender sai.
+            var bushZones = new List<Transform>();
+            CollectDeep(root.transform, "BUSH_", bushZones);
+            var bushParent = new GameObject("Arbustos").transform;
+            bushParent.SetParent(root.transform, false);
+            foreach (var z in bushZones)
+            {
+                var zr = z.GetComponent<Renderer>();
+                if (zr == null) continue;
+                var wb = zr.bounds; // em metros e no espaço do mundo, independente da rotação do import
+                var go = new GameObject(z.name);
+                go.transform.SetParent(bushParent, false);
+                go.transform.position = new Vector3(wb.center.x, wb.min.y, wb.center.z);
+                var bush = go.AddComponent<Bush>();
+                bush.halfExtents = new Vector2(wb.extents.x, wb.extents.z);
+                bush.height = wb.size.y + 0.2f;
+                BushTools.AddLeaves(bush, BushTools.SeedFor(go.transform.position));
+            }
+            foreach (var z in bushZones) Object.DestroyImmediate(z.gameObject);
+            var previewLeaves = new List<Transform>();
+            CollectDeep(root.transform, "BSHV_", previewLeaves);
+            foreach (var t in previewLeaves) Object.DestroyImmediate(t.gameObject);
+            log.AppendLine($"Arbustos: {bushParent.childCount} (sistema Bush + LeafBush, sem colisores).");
+
             // Spawns por equipa, a olhar para o centro do mapa
             var spawns = new List<Transform>();
             CollectDeep(root.transform, "SPAWN_", spawns);
@@ -335,7 +360,8 @@ namespace FPSLAN.EditorTools
                 if (r.name.StartsWith("GRD_") || r.name.StartsWith("BG_Mar")) r.shadowCastingMode = ShadowCastingMode.Off;
             }
             foreach (var t in root.GetComponentsInChildren<Transform>(true))
-                if (!t.name.StartsWith("GEN_Emissor") && !t.name.StartsWith("GEM_")) t.gameObject.isStatic = true;
+                if (!t.name.StartsWith("GEN_Emissor") && !t.name.StartsWith("GEM_") && t.GetComponentInParent<Bush>() == null)
+                    t.gameObject.isStatic = true; // arbustos fora do static batching (malha de folhas gerada em runtime + fade)
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(root, MapPrefabPath);
             Object.DestroyImmediate(root);

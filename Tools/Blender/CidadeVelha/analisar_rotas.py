@@ -159,6 +159,24 @@ def main():
         # gema afastada da pedra (degrau inferior) e de colisores bloqueantes
         r = math.hypot(l[0], l[1])
         check(f"GEM_Land_{i:02d} fora da pedra (r={r:.2f} > {data['pelourinho_step_radii'][0]:.2f})", r > data["pelourinho_step_radii"][0] + 0.3)
+    # Arbustos: não bloqueiam, ficam alcançáveis, não tapam spawns nem aterragens de gemas
+    def in_bush(pt, margin=0.0):
+        for b in data.get("bushes", []):
+            if abs(pt[0] - b["center"][0]) <= b["size"][0] / 2 + margin and abs(pt[1] - b["center"][1]) <= b["size"][1] / 2 + margin:
+                return b["name"]
+        return None
+    for b in data.get("bushes", []):
+        c = b["center"]
+        check(f"{b['name']} atravessável e alcançável ({b['size'][0]:.1f}×{b['size'][1]:.1f}×{b['size'][2]:.1f} m)",
+              free[idx(xs, ys, c)] and dist[idx(xs, ys, c)] >= 0 and b["size"][2] >= 1.9)
+    for p in blue + red:
+        check(f"spawn ({p[0]:.1f}, {p[1]:.1f}) fora de arbustos", in_bush(p, RADIUS) is None)
+    for i, l in enumerate(data["lands"]):
+        check(f"GEM_Land_{i:02d} fora de arbustos", in_bush(l, 0.6) is None)
+    if data.get("bushes"):
+        area = sum(b["size"][0] * b["size"][1] for b in data["bushes"])
+        report.append(f"INFO {len(data['bushes'])} arbustos, {area:.0f} m² de esconderijo")
+
     # zonas sem acesso (becos fechados): células livres não alcançadas
     unreach = free & (dist < 0)
     lab, n = ndimage.label(unreach)
@@ -230,6 +248,12 @@ def draw(data, routes, render_path, out_path, free, xs, ys):
         pts = [to_px(xs[c], ys[rw]) for rw, c in r["path"][::6]]
         ax.plot([p[0] for p in pts], [p[1] for p in pts], color=colors[k], lw=3.2, alpha=0.9,
                 label=f"rota {k} · gargalo {r['width']:.1f} m · {r['length']:.0f} m")
+    import matplotlib.patches as mpatches
+    for b in data.get("bushes", []):
+        (cx, cy), (w, d) = b["center"], b["size"][:2]
+        x0, y0 = to_px(cx - w / 2, cy + d / 2)
+        ax.add_patch(mpatches.Rectangle((x0, y0), w * ppm, d * ppm, fill=True, fc=(0.1, 0.8, 0.2, 0.35), ec="#0b5d1e", lw=2, hatch="//"))
+    ax.add_patch(mpatches.Rectangle((0, 0), 0, 0, fc=(0.1, 0.8, 0.2, 0.35), ec="#0b5d1e", hatch="//", label="arbusto (esconde, atravessa-se)"))
     for s in data["spawns"]:
         x, y = to_px(*s["pos"][:2])
         ax.plot(x, y, "o", ms=9, mec="black", mfc="#2f7bff" if s["team"] == "Blue" else "#ff3b30")

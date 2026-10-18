@@ -1091,6 +1091,35 @@ def tree(name, cx, cy, seed, det, scale=1.0, collide=True):
         col_box(name + "_Tronco", (0.7 * scale, 0.7 * scale, 3.0 * scale), (cx, cy, 0))
 
 
+BUSH_HEIGHT = 2.0   # tapa uma personagem em pé (CharacterController 1.8 m)
+
+
+def bush(name, cx, cy, w, d, seed, det, data):
+    """Arbusto denso de esconder (ao estilo Brawl Stars). NÃO tem colisor: atravessa-se e as balas passam.
+    BUSH_<nome>: caixa da zona (no Unity → componente Bush do projeto + folhas LeafBush; a caixa é removida).
+    BSHV_<nome>: folhagem só para a pré-visualização no Blender (no Unity é substituída pelas LeafBush)."""
+    bm = new_bm()
+    add_box(bm, w, d, BUSH_HEIGHT, mi=0)
+    me = mesh_from_bm(bm, "BUSH_" + name, [MAT["MAT_Colisor"]])
+    zone = place(me, "BUSH_" + name, C["Gameplay"], (cx, cy, 0))
+    zone.display_type = 'WIRE'
+    zone.hide_render = True
+    rng = random.Random(seed)
+    bm = new_bm()
+    nx = max(2, round(w / 0.9))
+    ny = max(2, round(d / 0.9))
+    for i in range(nx):
+        for j in range(ny):
+            x = (i + 0.5) / nx * w - w / 2 + rng.uniform(-0.15, 0.15)
+            y = (j + 0.5) / ny * d - d / 2 + rng.uniform(-0.15, 0.15)
+            r = rng.uniform(0.62, 0.8)
+            add_icosphere(bm, r, (x, y, rng.uniform(0.75, 1.0)), mi=(i + j) % 2, subdiv=1 if det < 3 else 2, squash=1.15)
+            if det >= 2:
+                add_icosphere(bm, r * 0.7, (x * 0.85, y * 0.85, BUSH_HEIGHT - r * 0.55), mi=1, subdiv=1, squash=0.9)
+    place(mesh_from_bm(bm, "BSHV_" + name, [MAT["MAT_Folhas"], MAT["MAT_Folhas_Claras"]]), "BSHV_" + name, C["Props"], (cx, cy, 0))
+    data["bushes"].append(dict(name="BUSH_" + name, center=[cx, cy], size=[w, d, BUSH_HEIGHT]))
+
+
 def palm(name, cx, cy, seed):
     rng = random.Random(seed)
     bm = new_bm()
@@ -1179,6 +1208,9 @@ def background(P):
         add_box(bm, 12, 1.5, 4, center=(11 * math.cos(a), 11 * math.sin(a), 6.5), mi=0)
     add_box(bm, 6, 6, 6, center=(0, 0, 6.5), mi=0)
     place(mesh_from_bm(bm, "BG_Fortaleza", [MAT["MAT_Pedra_Muro"], MAT["MAT_Monte"]]), "BG_Fortaleza", coll, (-35, 85, 4))
+    # Árvores fora da área jogável (a vista para lá dos parapeitos; sem colisão)
+    for i, (x, y) in enumerate(((hx + 3.5, 20.5), (-hx - 3.5, -20.5), (hx + 4.0, -9.0), (-hx - 4.0, 9.0))):
+        tree(f"BG_Arvore_{i}", x, y, 40 + i, det, scale=0.9, collide=False)
     # Palmeiras fora dos parapeitos
     for i, (x, y) in enumerate(((hx + 4, 15.5), (hx + 6, 11), (-hx - 4, -15.5), (-hx - 5, -11), (hx + 5, -16), (-hx - 6, 16))):
         palm(f"BG_Palmeira_{i}", x, y, i)
@@ -1214,7 +1246,7 @@ def build_map(P):
     wall_h = P["wall_height"]
     plasters = {(1, 1): "MAT_Reboco_Ocre", (-1, 1): "MAT_Reboco_Terracota", (1, -1): "MAT_Reboco_Azul", (-1, -1): "MAT_Reboco_Rosa"}
     shutters = {(1, 1): "Verde", (-1, 1): "Azul", (1, -1): "Azul", (-1, -1): "Verde"}
-    data = dict(boxes=[], spawns=[], lands=[], waypoints=[])
+    data = dict(boxes=[], spawns=[], lands=[], waypoints=[], bushes=[])
 
     ground(L, P)
     pel = pelourinho(P)
@@ -1245,9 +1277,11 @@ def build_map(P):
             bench(f"CVR_Banco_{tag}", L.X(sx * 2.6), L.Y(sy * 6.9), 0.0)
             # Caixotes dentro da bolsa lateral
             crates(f"CVR_Caixotes_{tag}", L.X(sx * 12.0), L.Y(sy * 2.6), det, side=sx)
-            # Árvore na junção praça/corredor + árvore no spawn
-            tree(f"PRP_Arvore_{tag}", L.X(sx * 6.9), L.Y(sy * 12.3), stable_seed(tag), det)
-            tree(f"PRP_ArvoreSpawn_{tag}", L.X(sx * 6.8), L.Y(sy * 21.4), stable_seed(tag) + 7, det, scale=0.85)
+            # Arbustos de esconder (substituem as árvores da área jogável; mesmas zonas verdes):
+            # junção praça/corredor, canto do spawn e faixa encostada ao edifício da bolsa lateral
+            bush(f"Juncao_{tag}", L.X(sx * 7.0), L.Y(sy * 12.5), L.X(2.8), L.Y(2.6), stable_seed(tag), det, data)
+            bush(f"Spawn_{tag}", L.X(sx * 6.9), L.Y(sy * 21.4), L.X(2.8), L.Y(2.8), stable_seed(tag) + 7, det, data)
+            bush(f"Bolsa_{tag}", L.X(sx * 15.0), L.Y(sy * 2.8), L.X(2.0), L.Y(3.6), stable_seed(tag) + 13, det, data)
             # Waypoints dos bots
             for (wx, wy) in ((12.5, 13.6), (18.0, 17.3), (12.0, 0.0), (11.0, 5.8), (6.4, 7.2), (4.0, 13.6), (14.5, 4.8)):
                 if wx == 12.0 and sy < 0:
