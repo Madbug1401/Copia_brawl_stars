@@ -13,6 +13,8 @@ namespace FPSLAN
         public string mapName = "Arena";
         [Tooltip("Meia largura da área jogável (quadrado centrado na origem).")]
         public float halfSize = 22f;
+        [Tooltip("Abaixo desta altura (m) um jogador é levado para um ponto de spawn (ex.: caiu num buraco).")]
+        public float fallRecoveryY = -20f;
         [Tooltip("Pontos livres por onde os bots circulam.")]
         public Vector3[] waypoints = new Vector3[0];
 
@@ -20,6 +22,9 @@ namespace FPSLAN
         void OnDestroy() { if (Instance == this) Instance = null; }
 
         public static float HalfSize => Instance != null ? Instance.halfSize : 22f;
+
+        /// <summary>Altura abaixo da qual o PlayerMotor recupera o jogador para um spawn (por defeito -20 m).</summary>
+        public static float FallRecoveryY => Instance != null ? Instance.fallRecoveryY : -20f;
 
         /// <summary>Mantém um ponto dentro da área jogável (com margem).</summary>
         public static Vector3 ClampInside(Vector3 p, float margin = 1.2f)

@@ -413,7 +413,9 @@ namespace FPSLAN
             // ---------------- arbustos
             InBush = !dead && Bush.Find(pos) != null;
             var me = PlayerNetwork.Local;
-            bool concealed = !local && !dead && me != null && me != m_Player && Bush.Conceals(m_Player, me.transform.position);
+            // Colegas de equipa continuam visíveis uns para os outros (só os adversários ficam ocultos)
+            bool concealed = !local && !dead && me != null && me != m_Player && !MatchManager.AreTeammates(me, m_Player) &&
+                Bush.Conceals(m_Player, me.transform.position);
             if (concealed != m_Concealed)
             {
                 m_Concealed = concealed;
