@@ -104,6 +104,12 @@ namespace FPSLAN
         int m_PendingMirror = -1;
         int[] m_Mirror = new int[0];
         readonly Dictionary<ulong, Vector3> m_LastPos = new Dictionary<ulong, Vector3>();
+        // Hora (servidor) a partir da qual cada jogador pode voltar a apanhar gemas depois de reaparecer:
+        // a posição do cliente só chega ao host um pouco depois do teletransporte para o spawn.
+        readonly Dictionary<ulong, double> m_PickupAllowedAt = new Dictionary<ulong, double>();
+        readonly HashSet<ulong> m_WasDead = new HashSet<ulong>();
+        [Tooltip("Segundos sem apanhar gemas depois de reaparecer (evita usar a posição antiga do cliente).")]
+        public float respawnPickupGrace = 0.75f;
         readonly List<ulong> m_Tmp = new List<ulong>();
         readonly Collider[] m_Overlap = new Collider[16];
         GemGrabVisuals m_Visuals;
@@ -176,6 +182,8 @@ namespace FPSLAN
             Gems.Clear();
             Carriers.Clear();
             m_LastPos.Clear();
+            m_PickupAllowedAt.Clear();
+            m_WasDead.Clear();
             m_PendingMirror = -1;
             CountdownTeam.Value = -1;
             CountdownEnd.Value = 0;
@@ -211,8 +219,14 @@ namespace FPSLAN
 
         void TrackPlayers()
         {
+            double now = Now;
             foreach (var p in PlayerNetwork.All)
-                if (p != null && p.IsSpawned) m_LastPos[p.Id] = p.transform.position;
+            {
+                if (p == null || !p.IsSpawned) continue;
+                if (p.Health.IsDead) { m_WasDead.Add(p.Id); continue; } // morto: não atualiza a última posição
+                if (m_WasDead.Remove(p.Id)) m_PickupAllowedAt[p.Id] = now + respawnPickupGrace;
+                m_LastPos[p.Id] = p.transform.position;
+            }
 
             // Portadores que saíram da partida largam as gemas onde foram vistos pela última vez
             for (int i = Carriers.Count - 1; i >= 0; i--)
@@ -368,6 +382,7 @@ namespace FPSLAN
                 foreach (var p in PlayerNetwork.All)
                 {
                     if (p == null || !p.IsSpawned || p.Health.IsDead || p.TeamId.Value < 0) continue;
+                    if (m_PickupAllowedAt.TryGetValue(p.Id, out var allowedAt) && now < allowedAt) continue;
                     var d = p.transform.position - g.To;
                     if (Mathf.Abs(d.y + gemFloatHeight) > pickupHeight) continue;
                     d.y = 0f;

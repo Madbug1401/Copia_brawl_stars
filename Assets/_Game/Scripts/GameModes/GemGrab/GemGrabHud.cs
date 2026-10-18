@@ -44,7 +44,7 @@ namespace FPSLAN
             if (!GemGrabManager.IsActive || m_Mgr == null) return;
             var match = MatchManager.Instance;
             var me = PlayerNetwork.Local;
-            float s = Screen.height / 1080f;
+            float s = Mathf.Clamp(Screen.height / 900f, 0.7f, 2f); // mesma escala do GameUI (fica por baixo do painel do topo)
             Styles(s);
             float cx = Screen.width / 2f;
 

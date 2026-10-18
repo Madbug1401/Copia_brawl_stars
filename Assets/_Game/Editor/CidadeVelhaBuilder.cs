@@ -160,7 +160,11 @@ namespace FPSLAN.EditorTools
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
                 if (AssetImporter.GetAtPath(path) is not TextureImporter ti) continue;
-                bool dirty = ti.wrapMode != TextureWrapMode.Repeat || ti.maxTextureSize != 1024 || !ti.mipmapEnabled;
+                bool dirty = ti.wrapMode != TextureWrapMode.Repeat || ti.maxTextureSize != 1024 || !ti.mipmapEnabled ||
+                    ti.textureShape != TextureImporterShape.Texture2D || ti.textureType != TextureImporterType.Default;
+                ti.textureType = TextureImporterType.Default;
+                ti.textureShape = TextureImporterShape.Texture2D;
+                ti.sRGBTexture = true;
                 ti.wrapMode = TextureWrapMode.Repeat;
                 ti.maxTextureSize = 1024;
                 ti.mipmapEnabled = true;

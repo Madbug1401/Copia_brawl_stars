@@ -164,6 +164,7 @@ namespace FPSLAN
 
             var c = Color.Lerp(m_Mgr.emitterIdleEmission, m_Mgr.emitterWarnEmission, warn);
             c *= 0.85f + 0.15f * Mathf.Sin(Time.time * (3f + warn * 14f));
+            if (m_Mpb == null) m_Mpb = new MaterialPropertyBlock(); // pode faltar após recarregar scripts em Play
             foreach (var r in m_Mgr.emitterRenderers)
             {
                 if (r == null) continue;
