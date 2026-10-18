@@ -88,9 +88,9 @@ namespace FPSLAN
         {
             public AttackContext ctx;
             public ConeVolumeDelivery delivery;
-            public Vector3 visualOrigin;
-            public float age, nextTick, nextPuff;
-            public int puffCount, ticksDone;
+            public float age, nextTick;
+            public int ticksDone;
+            public SprayConeVisual visual;
             public readonly List<ulong> hitIds = new List<ulong>();
             public readonly List<int> hitCounts = new List<int>();
         }
@@ -109,6 +109,7 @@ namespace FPSLAN
         readonly List<Trap> m_Traps = new List<Trap>();
         readonly List<Trap> m_TrapScratch = new List<Trap>();
         readonly List<Cone> m_Cones = new List<Cone>();
+        readonly Stack<SprayConeVisual> m_SprayPool = new Stack<SprayConeVisual>();
 
         readonly Stack<ZoneVisual> m_ZonePool = new Stack<ZoneVisual>();
         readonly Stack<Projectile> m_ProjectilePool = new Stack<Projectile>();
@@ -157,6 +158,7 @@ namespace FPSLAN
             m_Zones.Clear();
             foreach (var t in m_Traps) ReleaseTrapVisual(t);
             m_Traps.Clear();
+            foreach (var cone in m_Cones) ReleaseSpray(cone);
             m_Cones.Clear();
         }
 
@@ -303,15 +305,15 @@ namespace FPSLAN
             {
                 ctx = ctx,
                 delivery = d,
-                visualOrigin = ctx.authoritative ? ctx.origin : Muzzle(ctx, 0),
                 age = 0f,
                 // Primeiro tick quando o spray já chegou ao alcance (não desperdiçar um tick com alcance 0)
                 nextTick = d.FirstTickTime,
-                nextPuff = 0f,
             };
             m_Cones.Add(cone);
             if (!ctx.authoritative)
             {
+                cone.visual = m_SprayPool.Count > 0 ? m_SprayPool.Pop() : new SprayConeVisual(transform);
+                cone.visual.Begin(ctx, d, Muzzle(ctx, 0), Muzzle(ctx, 1));
                 ctx.shooter?.Visuals?.MuzzleFlash(ctx.VisualColor, 0);
                 if (d.dualStream) ctx.shooter?.Visuals?.MuzzleFlash(ctx.VisualColor, 1);
             }
@@ -633,7 +635,11 @@ namespace FPSLAN
             }
 
             for (int i = m_Cones.Count - 1; i >= 0; i--)
-                if (!StepCone(m_Cones[i], dt)) m_Cones.RemoveAt(i);
+                if (!StepCone(m_Cones[i], dt))
+                {
+                    ReleaseSpray(m_Cones[i]);
+                    m_Cones.RemoveAt(i);
+                }
 
             for (int i = m_Zones.Count - 1; i >= 0; i--)
             {
@@ -835,28 +841,17 @@ namespace FPSLAN
                 }
             }
 
-            if (!ctx.authoritative && c.age < d.duration * 0.85f && c.age >= c.nextPuff)
-            {
-                c.nextPuff += 0.022f;
-                var rng = ctx.RngFor(1000 + c.puffCount++);
-                float yaw = (float)(rng.NextDouble() * 2.0 - 1.0) * halfAngle;
-                float pitch = (float)(rng.NextDouble() * 2.0 - 1.0) * halfAngle * 0.5f;
-                var dir = Quaternion.LookRotation(ctx.direction) * Quaternion.Euler(pitch, yaw, 0f) * Vector3.forward;
-                bool local = ctx.shooter != null && ctx.shooter.IsLocalHuman;
-                // Duas latas: o spray sai alternadamente de cada uma (o dano é um só volume)
-                var origin = d.dualStream ? Muzzle(ctx, c.puffCount % 2) : c.visualOrigin;
-                var start = origin + ctx.direction * (local ? 0.9f : 0.2f);
-                float speed = d.range / Mathf.Max(0.05f, d.expandTime + 0.15f) * 1.25f;
-                var baseColor = ctx.VisualColor;
-                var col = Color.Lerp(baseColor, Color.white, (float)rng.NextDouble() * 0.35f);
-                col.a = local ? 0.4f : 0.7f;
-                float life = d.expandTime + 0.35f;
-                Fx.Puff(start, dir * speed, col, (local ? 0.45f : 0.6f) * ctx.attack.visuals.scale, life);
-                if (c.puffCount % 3 == 0)
-                    Fx.Glow(start + dir * 0.3f, dir * speed * 0.9f, Color.Lerp(baseColor, Color.white, 0.5f), 0.12f, life * 0.8f);
-            }
+            if (!ctx.authoritative) c.visual?.Pose(c.age);
 
             return c.age < d.duration;
+        }
+
+        void ReleaseSpray(Cone cone)
+        {
+            if (cone.visual == null) return;
+            cone.visual.Release();
+            m_SprayPool.Push(cone.visual);
+            cone.visual = null;
         }
 
         void ConeTickAll(Cone c, float reach, float halfAngle)
