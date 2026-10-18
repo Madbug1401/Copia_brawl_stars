@@ -52,7 +52,7 @@ Regras de desenho aplicadas pelo script:
 | fluxo da lava (mapeamento animado), pulsação da emissão | shader `FPSLAN/Lava` (UV em XZ do mundo, duas camadas de calor, crosta que desliza devagar, pulsação) |
 | bolhas `FX_Bolha_*` que crescem e rebentam | `LavaFx`: bolhas com pooling (máx. 14), só perto da câmara |
 | gotas `FX_Gota_*` em arco | `LavaFx`: gotas balísticas (máx. 36) que voltam à lava ou desaparecem no chão |
-| jato `FX_Jato` + anel de aviso | `LavaJets` (rede): 1,6 s de aviso → 1,1 s de coluna com dano, horário determinístico |
+| jato `FX_Jato` + anel de aviso | `LavaJets` (rede): 1,6 s de aviso (anel, bolhas, a superfície incha) → 1,1 s de explosão de lava (língua que sobe e cai + até 160 gotas irregulares em pool, a arrefecer de laranja para vermelho escuro) com dano; horário determinístico |
 | fumo das fumarolas, brilho da cratera | `VolcanoAmbience`: fumo moderado, luz laranja a pulsar, brasas nas entradas |
 
 Materiais Principled/emissão do Blender não passam no FBX tal como estão: o construtor do Unity cria materiais
