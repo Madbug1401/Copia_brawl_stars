@@ -139,6 +139,8 @@ namespace FPSLAN
                 bool expired = now >= d.until;
                 int whole = DotMath.Step(ref d.remaining, ref d.carry, d.dps, Time.deltaTime, expired);
                 if (whole > 0) EffectResolver.DamageRaw(m_Player.Health, whole, d.attackerId, d.fromSuper, false);
+                // o dano pode ter matado o jogador → ServerClear() já esvaziou a lista
+                if (i >= m_Dots.Count) break;
                 if (expired || DotMath.IsDone(d.remaining, d.carry) || m_Player.Health.IsDead) m_Dots.RemoveAt(i);
                 else m_Dots[i] = d;
             }

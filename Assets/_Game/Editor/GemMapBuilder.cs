@@ -173,7 +173,7 @@ namespace FPSLAN.EditorTools
             return summary;
         }
 
-        static void EnsureFolder(string path)
+        internal static void EnsureFolder(string path)
         {
             if (AssetDatabase.IsValidFolder(path)) return;
             var parent = Path.GetDirectoryName(path).Replace('\\', '/');
@@ -181,7 +181,7 @@ namespace FPSLAN.EditorTools
             AssetDatabase.CreateFolder(parent, Path.GetFileName(path));
         }
 
-        static void ConfigureTextures(GemMapConfig cfg)
+        internal static void ConfigureTextures(GemMapConfig cfg)
         {
             if (!AssetDatabase.IsValidFolder(cfg.TexturesPath)) return;
             foreach (var guid in AssetDatabase.FindAssets("t:Texture", new[] { cfg.TexturesPath }))
@@ -213,7 +213,7 @@ namespace FPSLAN.EditorTools
             return s;
         }
 
-        static Dictionary<string, Material> CreateMaterials(GemMapConfig cfg)
+        internal static Dictionary<string, Material> CreateMaterials(GemMapConfig cfg)
         {
             var dict = new Dictionary<string, Material>();
             foreach (var spec in cfg.materials)
@@ -260,7 +260,7 @@ namespace FPSLAN.EditorTools
         static void Set(Material m, string prop, Color c) { if (m.HasProperty(prop)) m.SetColor(prop, c); }
 
         /// <summary>Import em metros, sem câmaras/luzes, materiais do Blender remapeados para os do jogo.</summary>
-        static void ConfigureModel(string path, bool animations, Dictionary<string, Material> mats, bool readable)
+        internal static void ConfigureModel(string path, bool animations, Dictionary<string, Material> mats, bool readable)
         {
             if (AssetImporter.GetAtPath(path) is not ModelImporter mi) return;
             mi.globalScale = 1f;
@@ -282,7 +282,7 @@ namespace FPSLAN.EditorTools
             mi.SaveAndReimport();
         }
 
-        static GameObject Unpacked(string fbx, string name)
+        internal static GameObject Unpacked(string fbx, string name)
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(fbx);
             var go = (GameObject)PrefabUtility.InstantiatePrefab(model);
@@ -336,7 +336,7 @@ namespace FPSLAN.EditorTools
 
         // ------------------------------------------------------------------ cenário
 
-        static void ConvertColliders(Transform root, StringBuilder log)
+        internal static void ConvertColliders(Transform root, StringBuilder log)
         {
             int boxes = 0, convex = 0, tri = 0, pass = 0;
             var cols = new List<Transform>();

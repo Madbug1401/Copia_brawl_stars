@@ -158,7 +158,16 @@ namespace FPSLAN
             // Cooperativo: ir levantar o parceiro, a não ser que haja um inimigo visível muito perto
             bool goRevive = m_ReviveGoal != null && m_ReviveGoal.IsSpawned && m_ReviveGoal.Health.IsDead &&
                 !(m_Target != null && m_TargetVisible && distToTarget < 8f);
-            if (goRevive)
+            // Tempestade (Fogo): fora (ou quase fora) da zona segura, fugir pelo caminho das entradas tem prioridade
+            Vector3 fleeGoal = pos;
+            bool stormFlee = !goRevive && StormManager.TryGetBotGoal(pos, out fleeGoal) && StormManager.BotMustMove(pos);
+            if (stormFlee)
+            {
+                var flat = fleeGoal - pos;
+                flat.y = 0f;
+                moveWorld = flat.sqrMagnitude > 0.01f ? flat.normalized : Vector3.zero;
+            }
+            else if (goRevive)
             {
                 var flat = m_ReviveGoal.transform.position - pos;
                 flat.y = 0f;
@@ -192,6 +201,8 @@ namespace FPSLAN
             }
             else
             {
+                // Tempestade (Fogo): ir para a zona segura pelos desfiladeiros em vez de vaguear
+                if (StormManager.TryGetBotGoal(pos, out var stormGoal)) m_WanderPoint = stormGoal;
                 var flat = m_WanderPoint - pos;
                 flat.y = 0f;
                 if (flat.magnitude < 2f) PickWanderPoint();
@@ -200,6 +211,7 @@ namespace FPSLAN
 
             if (moveWorld.sqrMagnitude > 1f) moveWorld.Normalize();
             moveWorld = AvoidObstacles(pos, moveWorld, out bool wantJump);
+            if (LavaArea.Instance != null) moveWorld = LavaArea.Instance.SteerAway(pos, moveWorld);   // não entrar na lava
 
             // Preso? Tenta outra direção e salta
             m_StuckTimer += dt;
@@ -220,7 +232,7 @@ namespace FPSLAN
             var yawRot = Quaternion.Euler(0f, m_Yaw, 0f);
             var local = Quaternion.Inverse(yawRot) * moveWorld;
             cmd.move = now < m_UnstickUntil ? m_UnstickMove : new Vector2(local.x, local.z);
-            cmd.sprint = m_Target == null || !m_TargetVisible;
+            cmd.sprint = m_Target == null || !m_TargetVisible || (stormFlee && distToTarget > 12f);
             cmd.jumpPressed = wantJump || (m_TargetVisible && Random.value < 0.004f);
 
             // ---------------- Disparo ----------------

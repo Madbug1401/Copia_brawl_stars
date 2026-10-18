@@ -11,6 +11,9 @@ namespace FPSLAN
         Pelourinho = 0,
         /// <summary>Buracona: brilho por baixo da água, ondulação e bolhas antes da geração, salpico ao emergir.</summary>
         Agua = 1,
+        /// <summary>Fogo: respiradouro de lava no centro da cratera; borbulha e brilha no aviso e rebenta num
+        /// pequeno jato de lava de onde saltam as gemas.</summary>
+        Lava = 2,
     }
 
     /// <summary>
@@ -96,6 +99,7 @@ namespace FPSLAN
                     {
                         // Surgimento: clarão no ponto de geração e marca no sítio onde vai cair
                         if (style == GemEmitterStyle.Agua) Splash();
+                        else if (style == GemEmitterStyle.Lava) LavaBurst();
                         else
                         {
                             Fx.Light(g.From, m_Mgr.gemColor, 3f, 6f, 0.3f);
@@ -126,6 +130,7 @@ namespace FPSLAN
             if (warn > 0f)
             {
                 if (style == GemEmitterStyle.Agua) EmitWaterWarning(warn, dt);
+                else if (style == GemEmitterStyle.Lava) EmitLavaWarning(warn, dt);
                 else EmitRisingParticles(warn, dt);
             }
             if (warn > 0f && !m_WasWarning && m_Mgr.spawnPoint != null)
@@ -252,6 +257,44 @@ namespace FPSLAN
                     foam, Random.Range(0.25f, 0.45f), Random.Range(0.35f, 0.55f));
             Fx.Light(c + Vector3.up * 0.4f, waterColor, 2.2f, 5f, 0.25f);
             Sfx.PlayAt(Sound.Poof, c, 0.45f);
+        }
+
+
+        static readonly Color LavaHot = new Color(1f, 0.5f, 0.12f);
+        float m_LastLavaBurst = -10f;
+
+        /// <summary>Estilo Lava: a lava do respiradouro borbulha, deita brasas e fumo cada vez mais depressa.</summary>
+        void EmitLavaWarning(float warn, float dt)
+        {
+            var c = SurfacePoint;
+            m_RippleTimer -= dt;
+            if (m_RippleTimer <= 0f)
+            {
+                m_RippleTimer = Mathf.Lerp(0.55f, 0.18f, warn);
+                Fx.Ring(c + Vector3.down * 0.03f, LavaHot, Mathf.Lerp(0.9f, 2.0f, warn), 0.45f);
+                if (Random.value < 0.5f + warn * 0.5f)
+                    Fx.Smoke(c + Vector3.up * 0.3f, new Vector3(Random.Range(-0.2f, 0.2f), 1.1f, Random.Range(-0.2f, 0.2f)), 0.9f, 1.4f, 0.25f);
+            }
+            m_ParticleCarry += Mathf.Lerp(6f, 30f, warn) * dt;
+            while (m_ParticleCarry >= 1f)
+            {
+                m_ParticleCarry -= 1f;
+                var off = Random.insideUnitCircle * 0.6f;
+                Fx.Glow(c + new Vector3(off.x, 0.05f, off.y), Vector3.up * Random.Range(0.6f, 1.8f + warn * 1.5f), LavaHot, Random.Range(0.07f, 0.14f), Random.Range(0.4f, 0.8f));
+            }
+        }
+
+        /// <summary>Estilo Lava: pequeno jato de lava (gotas da LavaJets, se existir) quando as gemas saltam.</summary>
+        void LavaBurst()
+        {
+            if (Time.time - m_LastLavaBurst < 0.25f) return;   // várias gemas no mesmo instante = um só jato
+            m_LastLavaBurst = Time.time;
+            var c = SurfacePoint;
+            if (LavaJets.Instance != null) LavaJets.Instance.VisualBurst(c, 16, 0.6f);
+            Fx.Sparks(c + Vector3.up * 0.3f, LavaHot, 10, 4f);
+            Fx.Ring(c + Vector3.down * 0.03f, LavaHot, 2.2f, 0.4f);
+            Fx.Light(c + Vector3.up * 0.6f, LavaHot, 3f, 6f, 0.4f);
+            Sfx.PlayAt(Sound.Poof, c, 0.5f);
         }
 
         /// <summary>Efeito curto de recolha (chamado pelo RPC do host).</summary>
