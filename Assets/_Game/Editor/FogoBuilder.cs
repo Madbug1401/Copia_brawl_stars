@@ -281,7 +281,16 @@ namespace FPSLAN.EditorTools
                 var existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
                 if (existing != null)
                 {
-                    EditorUtility.CopySerialized(mesh, existing);      // mantém o GUID (sem .meta novos a cada construção)
+                    // mantém o GUID (sem .meta novos a cada construção); cópia pela API para atualizar também a GPU
+                    existing.Clear();
+                    existing.indexFormat = mesh.indexFormat;
+                    existing.vertices = mesh.vertices;
+                    existing.normals = mesh.normals;
+                    if (mesh.uv.Length > 0) existing.uv = mesh.uv;
+                    if (mesh.colors.Length > 0) existing.colors = mesh.colors;
+                    existing.subMeshCount = mesh.subMeshCount;
+                    for (int sm = 0; sm < mesh.subMeshCount; sm++) existing.SetTriangles(mesh.GetTriangles(sm), sm);
+                    existing.RecalculateBounds();
                     Object.DestroyImmediate(mesh);
                     mesh = existing;
                     EditorUtility.SetDirty(mesh);
