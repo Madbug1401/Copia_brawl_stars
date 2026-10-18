@@ -12,7 +12,7 @@ namespace FPSLAN
     /// Progressão em jogo: o dono declara o seu loadout (skin, pet, níveis, melhorias); o host calcula os modificadores
     /// efetivos com limites e normalização (StatResolver) e sincroniza-os em 'Effective'. Os dados base não mudam.
     /// </summary>
-    public class PlayerNetwork : NetworkBehaviour
+    public partial class PlayerNetwork : NetworkBehaviour
     {
         public static readonly List<PlayerNetwork> All = new List<PlayerNetwork>();
         public static PlayerNetwork Local { get; private set; }
@@ -135,6 +135,7 @@ namespace FPSLAN
                 GameExperience.Current.ProfileChanged += OnLocalProfileChanged;
             }
 
+            PetFeeding.OnValueChanged += OnPetFeedingChanged;
             HeroId.OnValueChanged += OnHeroChangedLoadout;
             Loadout.OnValueChanged += OnLoadoutChanged;
             if (IsServer)
@@ -148,6 +149,7 @@ namespace FPSLAN
 
         public override void OnNetworkDespawn()
         {
+            PetFeeding.OnValueChanged -= OnPetFeedingChanged;
             HeroId.OnValueChanged -= OnHeroChangedLoadout;
             Loadout.OnValueChanged -= OnLoadoutChanged;
             if (IsOwner && !IsBot && GameExperience.Current != null) GameExperience.Current.ProfileChanged -= OnLocalProfileChanged;
@@ -171,6 +173,7 @@ namespace FPSLAN
 
         void Update()
         {
+            TickPetFood();
             if (!IsSpawned || !IsLocalHuman) return;
             bool held = MatchManager.IsCoopActive && !Health.IsDead && GameUI.GameplayInputAllowed && InputReader.InteractHeld;
             if (CoopInteractHeld.Value != held) CoopInteractHeld.Value = held;
@@ -245,6 +248,9 @@ namespace FPSLAN
             var gx = GameExperience.Current;
             int previousMax = EffectiveMaxHealth;
             var mods = StatResolver.Resolve(gx.Config, gx.PetCatalog, Loadout.Value, competitive);
+            var feeding = PetFeeding.Value;
+            if (feeding.Remaining(PetFoodTime) > 0 && feeding.petHash == Loadout.Value.petHash)
+                PetFoodRules.ApplyBoost(ref mods, (PetAbilityType)feeding.ability);
             if (!mods.Equals(Effective.Value)) Effective.Value = mods;
             if (Health != null && Health.IsSpawned && EffectiveMaxHealth != previousMax) Health.ServerOnMaxHealthChanged(previousMax);
         }

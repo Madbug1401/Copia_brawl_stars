@@ -213,6 +213,7 @@ namespace FPSLAN
             if (string.IsNullOrEmpty(d.createdUtc)) d.createdUtc = DateTime.UtcNow.ToString("o");
             d.playerXp = Math.Max(0, d.playerXp);
             d.coins = Math.Max(0, d.coins);
+            d.upraFood = Mathf.Clamp(d.upraFood, 0, PetFoodRules.MaxStock);
             d.characters = d.characters ?? new List<CharacterProgress>();
             d.pets = d.pets ?? new List<PetProgress>();
             d.unlockedSkins = Dedup(d.unlockedSkins);

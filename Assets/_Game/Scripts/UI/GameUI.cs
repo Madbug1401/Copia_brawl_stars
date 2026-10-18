@@ -1335,6 +1335,7 @@ namespace FPSLAN
                 case GameAction.Pause: return "Pause";
                 case GameAction.Aim: return "Aim (Lince)";
                 case GameAction.Interact: return "Revive partner (hold)";
+                case GameAction.FeedPet: return "Feed pet (UPRA)";
                 default: return action.ToString();
             }
         }
@@ -1394,7 +1395,7 @@ namespace FPSLAN
             {
                 GameAction.MoveForward, GameAction.MoveBackward, GameAction.MoveLeft, GameAction.MoveRight,
                 GameAction.Fire, GameAction.Melee, GameAction.Super, GameAction.Jump, GameAction.Sprint,
-                GameAction.Scoreboard, GameAction.Pause, GameAction.Aim, GameAction.Interact,
+                GameAction.Scoreboard, GameAction.Pause, GameAction.Aim, GameAction.Interact, GameAction.FeedPet,
             };
             foreach (var action in actions)
             {

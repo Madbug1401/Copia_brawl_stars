@@ -20,6 +20,7 @@ namespace FPSLAN
         Pause,
         Aim,
         Interact,
+        FeedPet,
     }
 
     public static class GameInputSettings
@@ -88,6 +89,7 @@ namespace FPSLAN
                 case GameAction.Pause: return KeyCode.Escape;
                 case GameAction.Aim: return KeyCode.Mouse1;
                 case GameAction.Interact: return KeyCode.F;
+                case GameAction.FeedPet: return KeyCode.T;
                 default: return KeyCode.None;
             }
         }

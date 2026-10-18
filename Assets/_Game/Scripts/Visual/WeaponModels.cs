@@ -340,8 +340,7 @@ namespace FPSLAN
             P(w, PrimitiveType.Cylinder, new Vector3(0f, 0.02f, 0f), new Vector3(0.115f, 0.04f, 0.115f), Color.white, ShadowCastingMode.Off, default, can);
             P(w, PrimitiveType.Sphere, new Vector3(0f, 0.13f, 0f), new Vector3(0.1f, 0.06f, 0.1f), new Color(0.85f, 0.88f, 0.92f), s, default, can);
             P(w, PrimitiveType.Cube, new Vector3(0f, 0.175f, 0.015f), new Vector3(0.03f, 0.035f, 0.05f), DarkMetal, ShadowCastingMode.Off, default, can);
-            // Pequena caveira/estrela pintada (rótulo)
-            P(w, PrimitiveType.Sphere, new Vector3(0f, 0.02f, 0.055f), new Vector3(0.05f, 0.05f, 0.01f), Art.Lighten(accent, 0.6f), ShadowCastingMode.Off, default, can);
+            SprayCanBranding.AddTo(can);
             w.scope = can;
             Muzzle(w, new Vector3(0f, 0.18f, 0.05f), can);
         }

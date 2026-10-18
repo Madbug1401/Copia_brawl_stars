@@ -22,6 +22,7 @@ namespace FPSLAN
 
         public string petId = "";
         public int petXp;
+        public int upraFood;
         public int petLevelBefore, petLevelAfter, petStageBefore, petStageAfter;
 
         /// <summary>Desbloqueios e conquistas desta partida (texto para a interface).</summary>
@@ -129,6 +130,7 @@ namespace FPSLAN
             if (!r.participated) return; // partida não válida: só fica registada (sem XP)
 
             stats.validMatches++;
+            report.upraFood = m_Ctx.PetFood.Add(PetFoodRules.FoodPerMatch);
             stats.kills += Mathf.Max(0, (int)r.kills);
             stats.assists += Mathf.Max(0, (int)r.assists);
             stats.deaths += Mathf.Max(0, (int)r.deaths);

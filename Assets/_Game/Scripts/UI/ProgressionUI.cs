@@ -726,6 +726,8 @@ namespace FPSLAN
             if (Btn(new Rect(c.x, c.y, 200 * s, 34 * s), "SELECTION", !m_PetEvolution ? PanelBlue : new Color(0.22f, 0.24f, 0.34f), true, ButtonSmall)) m_PetEvolution = false;
             if (Btn(new Rect(c.x + 208 * s, c.y, 200 * s, 34 * s), "EVOLUTION", m_PetEvolution ? PanelBlue : new Color(0.22f, 0.24f, 0.34f), true, ButtonSmall)) m_PetEvolution = true;
 
+            DrawUpraStock(new Rect(c.x + 422 * s, c.y, c.width - 422 * s, 34 * s));
+
             // Grelha de pets
             var grid = new Rect(c.x, c.y + 44 * s, c.width * 0.42f, c.height - 44 * s);
             int cols = 2;
@@ -765,6 +767,17 @@ namespace FPSLAN
             else DrawPetDetail(right, pet);
         }
 
+        void DrawUpraStock(Rect r)
+        {
+            float s = Scale;
+            float buyWidth = Mathf.Min(220 * s, r.width * 0.56f);
+            Outlined(new Rect(r.x, r.y, r.width - buyWidth - 8*s, 20*s), "UPRA " + m_Ctx.PetFood.Stock, Label, Gold, 1f);
+            Outlined(new Rect(r.x, r.y + 20*s, r.width - buyWidth - 8*s, 14*s), "PET FOOD · +2 PER MATCH", Tiny, Muted, 1f);
+            bool affordable = m_Ctx.Inventory.Coins >= PetFoodRules.PackCost && m_Ctx.PetFood.Stock <= PetFoodRules.MaxStock - PetFoodRules.PackSize;
+            if (Btn(new Rect(r.xMax - buyWidth, r.y, buyWidth, r.height), "+3 UPRA · 15 COINS", PanelBlue, affordable, ButtonSmall) && m_Ctx.PetFood.BuyPack())
+                Say("UPRA added. Earn 2 more after each completed match.");
+        }
+
         void DrawPetDetail(Rect r, PetDefinition pet)
         {
             float s = Scale;
@@ -790,7 +803,7 @@ namespace FPSLAN
                 Outlined(new Rect(x, y, w, 40 * s), "Lv " + (lv + 1) + ": " + pet.AbilityText(lv + 1), Wrap, Good, 1f);
                 y += 42 * s;
             }
-            Outlined(new Rect(x, y, w, 36 * s), "Competitive matches: cosmetic only.", Wrap, Muted, 1f);
+            Outlined(new Rect(x, y, w, 64 * s), "UPRA · " + PetFoodRules.BoostText(pet.ability) + " for 20s.\n[" + GameInputSettings.BindingLabel(GameAction.FeedPet) + "] feed in match · 90s cooldown · 3 uses.\nCompetitive: cosmetic only.", Wrap, Muted, 1f);
 
             float by = r.yMax - 128 * s;
             if (state != PetState.Locked)
@@ -1093,7 +1106,7 @@ namespace FPSLAN
                 Outlined(new Rect(r.x + 16 * s, y, r.width - 32 * s, 22 * s), "Pet: " + petText, Small, new Color(0.7f, 1f, 0.7f), 1f);
                 y += 26 * s;
             }
-            Outlined(new Rect(r.x + 16 * s, y, r.width - 32 * s, 22 * s), "Coins: +" + rep.coins, Small, Gold, 1f);
+            Outlined(new Rect(r.x + 16 * s, y, r.width - 32 * s, 22 * s), "Coins: +" + rep.coins + "   ·   UPRA: +" + rep.upraFood, Small, Gold, 1f);
             y += 28 * s;
 
             // Estatísticas da partida

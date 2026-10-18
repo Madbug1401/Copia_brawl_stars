@@ -259,6 +259,8 @@ namespace FPSLAN
         /// <summary>O dono eliminou alguém: o pet celebra.</summary>
         public void OnOwnerScored() => m_Pet?.Celebrate();
 
+        public void OnPetFed() => m_Pet?.Celebrate();
+
         /// <summary>Uma habilidade de pet foi ativada (ex.: escudo de lama do Porco).</summary>
         public void OnPetAbility(PetAbilityType ability)
         {

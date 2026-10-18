@@ -124,6 +124,9 @@ namespace FPSLAN
                 Tex(badge, m_Circle, pet.primaryColor);
                 HudLabel(badge, me.Loadout.Value.petLevel.ToString(), m_HudSmall, Color.white);
             }
+            if (pet != null)
+                HudLabel(new Rect(portrait.xMax + 14*s, portrait.y + 45*s, health.xMax - portrait.xMax - 24*s, 24*s),
+                    me.UpraStatus, m_HudSmall, me.UpraActive ? HudLime : HudCyan);
             DrawHudAmmo(me, new Rect(portrait.xMax + 14 * s, portrait.yMax - 27 * s,
                 Mathf.Max(1, health.xMax - portrait.xMax - 28 * s), 16 * s), s);
             HudLabel(new Rect(portrait.xMax + 14 * s, portrait.y + 13 * s,
