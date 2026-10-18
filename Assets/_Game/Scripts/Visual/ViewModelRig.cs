@@ -32,7 +32,9 @@ namespace FPSLAN
         /// <summary>Sufixo do prefab dos braços em 1.ª pessoa (Resources/Characters/&lt;brawlerId&gt;_fparms).</summary>
         public const string FirstPersonArmsSuffix = "_fparms";
         /// <summary>Onde ficam os ombros do modelo, no espaço da câmara (abaixo e ligeiramente atrás).</summary>
-        static readonly Vector3 ModelShoulders = new Vector3(0f, -0.36f, 0.16f);
+        static readonly Vector3 ModelShoulders = new Vector3(0f, -0.36f, 0.3f);
+        /// <summary>Braços da 1.ª pessoa um pouco maiores, para a mão esquerda chegar à frente da arma.</summary>
+        const float ModelArmsScale = 1.12f;
         WeaponModel m_WeaponR, m_WeaponL;
         Vector3 m_GunRRest, m_GunLRest;
         Quaternion m_GunRRot = Quaternion.identity, m_GunLRot = Quaternion.identity;
@@ -183,6 +185,7 @@ namespace FPSLAN
             foreach (var smr in go.GetComponentsInChildren<SkinnedMeshRenderer>(true)) smr.updateWhenOffscreen = true;
 
             // ombros do modelo no sítio certo em relação à câmara
+            go.transform.localScale *= ModelArmsScale;
             anim.Rebind();
             anim.Update(0f);
             var ua = anim.GetBoneTransform(HumanBodyBones.LeftUpperArm);
@@ -207,6 +210,14 @@ namespace FPSLAN
                 default:
                     right = m_WeaponR?.root;
                     left = m_WeaponR != null ? SupportPoint(m_WeaponR) : null;
+                    if (left != null && Style == RigStyle.Sniper)
+                    {
+                        // mão esquerda mais à frente, por baixo do cano
+                        var front = new GameObject("FrontGrip").transform;
+                        front.SetParent(m_WeaponR.root, false);
+                        front.localPosition = new Vector3(0f, 0f, 0.36f);
+                        left = front;
+                    }
                     break;
             }
 
@@ -215,7 +226,11 @@ namespace FPSLAN
             if (m_HandL != null) { Object.Destroy(m_HandL.gameObject); m_HandL = null; }
 
             // com braços reais a arma fica um pouco mais à frente, para as duas mãos caberem no ecrã
-            if (Style == RigStyle.Sniper && m_GunR != null) m_GunRRest = new Vector3(0.2f, -0.25f, 0.52f);
+            if (Style == RigStyle.Sniper && m_GunR != null)
+            {
+                m_GunRRest = new Vector3(0.2f, -0.24f, 0.42f);
+                m_GunRRot = Quaternion.Euler(-4f, -28f, -6f);   // cano inclinado para dentro, por cima da mão esquerda
+            }
 
             m_ModelArms = anim.gameObject.AddComponent<FirstPersonArms>();
             m_ModelArms.Setup(anim, Root);
@@ -442,6 +457,7 @@ namespace FPSLAN
                     float kickBack = Style == RigStyle.Sniper ? 0.11f : 0.09f;
                     float kickRot = Style == RigStyle.Sniper ? 18f : 14f;
                     PoseGun(m_GunR, m_GunRRest, m_KickR, kickBack, kickRot, 0f);
+                    m_GunR.localRotation = m_GunRRot * m_GunR.localRotation;   // inclinação de descanso (braços do modelo)
                     if (m_WeaponR != null && m_WeaponR.pump != null)
                     {
                         m_Pump = Mathf.MoveTowards(m_Pump, 1f, dt * 2.2f);
