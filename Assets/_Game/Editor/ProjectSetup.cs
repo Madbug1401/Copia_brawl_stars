@@ -738,22 +738,8 @@ namespace FPSLAN.EditorTools
             bush.halfExtents = new Vector2(p.size.x * 0.5f, p.size.z * 0.5f);
             bush.height = p.size.y + 0.2f;
 
-            var rng = new System.Random(seed * 17 + 3);
-            float step = 1.05f;
-            int nx = Mathf.Max(1, Mathf.RoundToInt(p.size.x / step));
-            int nz = Mathf.Max(1, Mathf.RoundToInt(p.size.z / step));
-            for (int ix = 0; ix < nx; ix++)
-                for (int iz = 0; iz < nz; iz++)
-                {
-                    float x = -p.size.x * 0.5f + (ix + 0.5f) * p.size.x / nx + (float)(rng.NextDouble() - 0.5) * 0.3f;
-                    float z = -p.size.z * 0.5f + (iz + 0.5f) * p.size.z / nz + (float)(rng.NextDouble() - 0.5) * 0.3f;
-                    float h = p.size.y * (0.85f + (float)rng.NextDouble() * 0.3f);
-                    float w = 1.35f + (float)rng.NextDouble() * 0.35f;
-                    var mat = rng.NextDouble() < 0.5 ? m.bush : m.bushLight;
-                    Visual(root.transform, PrimitiveType.Sphere, "Leaves", new Vector3(x, h * 0.5f, z), new Vector3(w, h * 1.05f, w), Quaternion.identity, mat, true, true);
-                    if (rng.NextDouble() < 0.4)
-                        Visual(root.transform, PrimitiveType.Sphere, "Top", new Vector3(x + 0.15f, h * 0.95f, z - 0.1f), new Vector3(0.7f, 0.5f, 0.7f), Quaternion.identity, m.bushLight, false, true);
-                }
+            // Visual de folhas procedural (LeafBush), com variação estável por posição
+            BushTools.AddLeaves(bush, BushTools.SeedFor(p.center));
         }
 
         static void Pond(Transform parent, Piece p, Quaternion rot, Mats m, int seed)
@@ -1035,6 +1021,7 @@ namespace FPSLAN.EditorTools
 
     public static class BuildTools
     {
+        [MenuItem("FPS-LAN/Build Windows (substituir pasta 'build windows')", priority = 21)]
         public static void BuildWindowsPlayer()
         {
             var outputPath = System.Environment.GetEnvironmentVariable("FPSLAN_WINDOWS_OUTPUT");
