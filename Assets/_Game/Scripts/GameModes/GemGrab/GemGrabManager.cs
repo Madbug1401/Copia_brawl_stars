@@ -80,6 +80,10 @@ namespace FPSLAN
         public float dropRadius = 1.8f;
         [Tooltip("Altura a que a gema flutua acima do chão.")]
         public float gemFloatHeight = 0.6f;
+        [Tooltip("Desnível máximo (m) acima dos pés de referência para uma gema largada/deslocada poder pousar.")]
+        public float maxGroundRise = 0.45f;
+        [Tooltip("Desnível máximo (m) abaixo dos pés de referência (evita gemas no fundo de buracos/água).")]
+        public float maxGroundDrop = 1.0f;
 
         [Header("Visual (clientes)")]
         public GameObject gemPrefab;
@@ -325,34 +329,40 @@ namespace FPSLAN
                 {
                     float a = (k / 8f + ring * 0.07f) * Mathf.PI * 2f;
                     var c = p + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * (0.55f * ring);
-                    if (!Occupied(c, 0.45f) && ValidGemSpot(p, c, out var ok)) return ok;
+                    if (!Occupied(c, 0.45f) && ValidGemSpot(p.y - gemFloatHeight, p, c, out var ok)) return ok;
                 }
             return p; // empilha (nunca dentro da pedra: é o próprio marcador)
         }
 
         /// <summary>
-        /// Um sítio é válido se tem chão por baixo, está à altura de quem anda, não está dentro de colisores
-        /// e se vê a partir da origem (não atravessa muros).
+        /// Um sítio é válido se tem chão firme quase à mesma altura de quem lá anda (nem em cima de muros/rochas,
+        /// nem no fundo de um buraco ou da água), não está dentro de colisores — incluindo barreiras que só bloqueiam
+        /// o movimento (layer Ignore Raycast, ex.: borda da Buracona) — e se vê a partir de <paramref name="sightFrom"/>.
         /// </summary>
-        bool ValidGemSpot(Vector3 origin, Vector3 candidate, out Vector3 result)
+        /// <param name="refFeetY">Altura dos pés de referência (jogador que largou as gemas ou chão do ponto de aterragem).</param>
+        bool ValidGemSpot(float refFeetY, Vector3 sightFrom, Vector3 candidate, out Vector3 result)
         {
             result = candidate;
             candidate = MapInfo.ClampInside(candidate, 1.0f);
-            var top = new Vector3(candidate.x, origin.y + 2.5f, candidate.z);
+            var top = new Vector3(candidate.x, refFeetY + 2.5f, candidate.z);
             if (!Physics.Raycast(top, Vector3.down, out var hit, 6f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
                 return false;
             if (hit.normal.y < 0.7f || IsPlayerCollider(hit.collider)) return false;
-            if (hit.point.y > origin.y - gemFloatHeight + 1.1f) return false;   // em cima de bancas/muros: não
+            if (hit.point.y > refFeetY + maxGroundRise) return false;   // em cima de bancas/muros/rochas: não
+            if (hit.point.y < refFeetY - maxGroundDrop) return false;   // fundo de buracos / água: não
             var pos = hit.point + Vector3.up * gemFloatHeight;
-            int n = Physics.OverlapSphereNonAlloc(pos, 0.3f, m_Overlap, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+            int n = Physics.OverlapSphereNonAlloc(pos, 0.3f, m_Overlap, BlockMask, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < n; i++)
                 if (!IsPlayerCollider(m_Overlap[i])) return false;
-            if (Physics.Linecast(origin + Vector3.up * 0.2f, pos, out var block, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore) &&
+            if (Physics.Linecast(sightFrom, pos, out var block, BlockMask, QueryTriggerInteraction.Ignore) &&
                 !IsPlayerCollider(block.collider))
                 return false;
             result = pos;
             return true;
         }
+
+        /// <summary>Tudo o que bloqueia o movimento, incluindo barreiras de Ignore Raycast (que deixam passar tiros).</summary>
+        static int BlockMask => Physics.DefaultRaycastLayers | (1 << 2);
 
         static bool IsPlayerCollider(Collider c) => c != null && c.GetComponentInParent<PlayerNetwork>() != null;
 
@@ -426,7 +436,7 @@ namespace FPSLAN
         void ServerDropGems(Vector3 feet, int count)
         {
             double now = Now;
-            var origin = feet + Vector3.up * 1.0f;
+            var origin = feet + Vector3.up * 1.0f;      // a gema sai do peito de quem morreu
             for (int k = 0; k < count; k++)
             {
                 Vector3 to = Vector3.zero;
@@ -436,12 +446,12 @@ namespace FPSLAN
                     float a = (k / (float)Mathf.Max(1, count) + tries * 0.13f) * Mathf.PI * 2f;
                     float r = Mathf.Lerp(0.6f, dropRadius, UnityEngine.Random.value);
                     var c = feet + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * r;
-                    found = !Occupied(c, 0.35f) && ValidGemSpot(origin, c, out to);
+                    found = !Occupied(c, 0.35f) && ValidGemSpot(feet.y, origin, c, out to);
                 }
                 if (!found)
                 {
                     // Junto aos pés (se válido) ou, em último caso, no ponto de aterragem mais próximo (sempre acessível)
-                    if (!ValidGemSpot(origin, feet, out to)) to = NearestLanding(feet);
+                    if (!ValidGemSpot(feet.y, origin, feet, out to)) to = NearestLanding(feet);
                 }
                 AddGem(origin, to, now, dropArcSeconds, 1);
             }

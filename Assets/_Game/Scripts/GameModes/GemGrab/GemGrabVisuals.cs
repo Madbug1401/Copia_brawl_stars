@@ -4,6 +4,15 @@ using UnityEngine;
 
 namespace FPSLAN
 {
+    /// <summary>Aspeto do emissor de gemas de cada mapa (só apresentação; as regras são as mesmas).</summary>
+    public enum GemEmitterStyle
+    {
+        /// <summary>Cidade Velha: halo e anel no Pelourinho, faíscas a subir junto da coluna.</summary>
+        Pelourinho = 0,
+        /// <summary>Buracona: brilho por baixo da água, ondulação e bolhas antes da geração, salpico ao emergir.</summary>
+        Agua = 1,
+    }
+
     /// <summary>
     /// Apresentação do Pique-Gemas em cada máquina (host e clientes). Lê o estado replicado do
     /// <see cref="GemGrabManager"/> e desenha: aviso do emissor (brilho + partículas a subir junto da coluna),
@@ -21,6 +30,15 @@ namespace FPSLAN
         }
 
         static readonly int EmissionId = Shader.PropertyToID("_Emission");
+
+        [Tooltip("Aspeto do emissor deste mapa.")]
+        public GemEmitterStyle style = GemEmitterStyle.Pelourinho;
+        [Tooltip("Estilo Água: superfície da água (centro) onde aparecem ondulação, bolhas e salpicos.")]
+        public Transform waterSurface;
+        [Tooltip("Estilo Água: raio da zona de bolhas/ondulação.")]
+        public float waterRadius = 2.2f;
+        public Color waterColor = new Color(0.45f, 0.95f, 0.95f, 0.9f);
+        float m_RippleTimer;
 
         GemGrabManager m_Mgr;
         readonly Dictionary<ushort, View> m_Views = new Dictionary<ushort, View>();
@@ -77,9 +95,13 @@ namespace FPSLAN
                     if (g.Source == 0 && age < 0.3f)
                     {
                         // Surgimento: clarão no ponto de geração e marca no sítio onde vai cair
-                        Fx.Light(g.From, m_Mgr.gemColor, 3f, 6f, 0.3f);
-                        for (int k = 0; k < 10; k++)
-                            Fx.Glow(g.From, Random.insideUnitSphere * 1.6f, Color.Lerp(m_Mgr.gemColor, Color.white, 0.5f), 0.18f, 0.5f);
+                        if (style == GemEmitterStyle.Agua) Splash();
+                        else
+                        {
+                            Fx.Light(g.From, m_Mgr.gemColor, 3f, 6f, 0.3f);
+                            for (int k = 0; k < 10; k++)
+                                Fx.Glow(g.From, Random.insideUnitSphere * 1.6f, Color.Lerp(m_Mgr.gemColor, Color.white, 0.5f), 0.18f, 0.5f);
+                        }
                         Fx.Ring(Ground(g.To), m_Mgr.gemColor, 1.4f, Mathf.Max(0.3f, g.Duration));
                     }
                     else if (age >= g.Duration) v.landed = true; // já estava no chão (entrou a meio da partida)
@@ -101,7 +123,11 @@ namespace FPSLAN
             float warn = (toNext > 0f && toNext <= m_Mgr.warningSeconds) ? 1f - toNext / m_Mgr.warningSeconds : 0f;
             if (MatchManager.Instance != null && MatchManager.Instance.Phase.Value != MatchPhase.Playing) warn = 0f;
             UpdateEmitter(warn, dt);
-            if (warn > 0f) EmitRisingParticles(warn, dt);
+            if (warn > 0f)
+            {
+                if (style == GemEmitterStyle.Agua) EmitWaterWarning(warn, dt);
+                else EmitRisingParticles(warn, dt);
+            }
             if (warn > 0f && !m_WasWarning && m_Mgr.spawnPoint != null)
                 Sfx.PlayAt(Sound.Twirl, m_Mgr.spawnPoint.position, 0.5f);
             m_WasWarning = warn > 0f;
@@ -187,6 +213,45 @@ namespace FPSLAN
                 var p = origin + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * Random.Range(0.45f, 0.65f);
                 Fx.Glow(p, Vector3.up * Random.Range(2.5f, 4.8f), light, Random.Range(0.1f, 0.2f), Random.Range(1.0f, 1.6f));
             }
+        }
+
+        Vector3 SurfacePoint => waterSurface != null ? waterSurface.position :
+            (m_Mgr.spawnPoint != null ? m_Mgr.spawnPoint.position : transform.position);
+
+        /// <summary>Estilo Água: ondulação circular e pequenas bolhas na superfície antes da geração (sem jato).</summary>
+        void EmitWaterWarning(float warn, float dt)
+        {
+            var c = SurfacePoint;
+            m_RippleTimer -= dt;
+            if (m_RippleTimer <= 0f)
+            {
+                m_RippleTimer = Mathf.Lerp(0.6f, 0.25f, warn);
+                // Fx.Ring sobe 5 cm; compensar para ficar rente à água
+                Fx.Ring(c + Vector3.down * 0.04f, Art.WithAlpha(Color.Lerp(waterColor, Color.white, 0.4f), 0.7f), Mathf.Lerp(1.2f, 3.2f, warn), 0.9f);
+            }
+            m_ParticleCarry += Mathf.Lerp(5f, 22f, warn) * dt;
+            var bubble = Art.WithAlpha(Color.Lerp(waterColor, Color.white, 0.6f), 0.9f);
+            while (m_ParticleCarry >= 1f)
+            {
+                m_ParticleCarry -= 1f;
+                var off = Random.insideUnitCircle * waterRadius * Mathf.Lerp(1f, 0.45f, warn);
+                var p = c + new Vector3(off.x, -0.35f, off.y);
+                Fx.Glow(p, Vector3.up * Random.Range(0.4f, 0.9f), bubble, Random.Range(0.05f, 0.1f), Random.Range(0.45f, 0.8f));
+            }
+        }
+
+        /// <summary>Estilo Água: salpico curto quando a gema emerge.</summary>
+        void Splash()
+        {
+            var c = SurfacePoint;
+            var foam = new Color(0.92f, 0.98f, 1f, 0.9f);
+            Fx.Ring(c + Vector3.down * 0.04f, foam, 2.4f, 0.45f);
+            Fx.Debris(c, Color.Lerp(waterColor, Color.white, 0.5f), 10, 4.5f);
+            for (int k = 0; k < 8; k++)
+                Fx.Puff(c + Random.insideUnitSphere * 0.3f, new Vector3(Random.Range(-1f, 1f), Random.Range(1.5f, 3f), Random.Range(-1f, 1f)),
+                    foam, Random.Range(0.25f, 0.45f), Random.Range(0.35f, 0.55f));
+            Fx.Light(c + Vector3.up * 0.4f, waterColor, 2.2f, 5f, 0.25f);
+            Sfx.PlayAt(Sound.Poof, c, 0.45f);
         }
 
         /// <summary>Efeito curto de recolha (chamado pelo RPC do host).</summary>
