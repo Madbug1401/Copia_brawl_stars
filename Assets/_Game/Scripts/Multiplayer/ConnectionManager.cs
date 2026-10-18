@@ -44,7 +44,7 @@ namespace FPSLAN
                     }
         }
 
-        public static bool SupportsGemGrab(string mapKey) => mapKey == "santiago" || mapKey == "sal";
+        public static bool SupportsGemGrab(string mapKey) => mapKey == "santiago" || mapKey == "sal" || mapKey == "fogo";
 
         public bool HostMap(string mapKey, ushort port = DefaultPort)
         {
@@ -61,7 +61,7 @@ namespace FPSLAN
             }
             if (MatchManager.MenuSelectedMode == GameMode.GemGrab && !SupportsGemGrab(mapKey))
             {
-                Status = "O Pique-Gemas está disponível em Santiago e no Sal.";
+                Status = "O Pique-Gemas está disponível em Santiago, no Sal e no Fogo.";
                 return false;
             }
             if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == scene)

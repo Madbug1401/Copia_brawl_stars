@@ -1615,7 +1615,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
+  team: 0
 --- !u!1 &484095824610843086
 GameObject:
   m_ObjectHideFlags: 0
@@ -8482,7 +8482,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
+  team: 0
 --- !u!1 &1878500651970955196
 GameObject:
   m_ObjectHideFlags: 0
@@ -26008,7 +26008,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
+  team: 1
 --- !u!1 &5607664539563483279
 GameObject:
   m_ObjectHideFlags: 0
@@ -27868,7 +27868,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
+  team: 0
 --- !u!1 &5958505780298350311
 GameObject:
   m_ObjectHideFlags: 0
@@ -30048,7 +30048,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
+  team: 1
 --- !u!1 &6415390234955981883
 GameObject:
   m_ObjectHideFlags: 0
@@ -33080,7 +33080,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
+  team: 1
 --- !u!1 &7020489598751492148
 GameObject:
   m_ObjectHideFlags: 0
@@ -34222,7 +34222,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
+  team: 1
 --- !u!1 &7236439414911782620
 GameObject:
   m_ObjectHideFlags: 0
@@ -43022,7 +43022,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
+  team: 0
 --- !u!1 &9049111944582757620
 GameObject:
   m_ObjectHideFlags: 0

@@ -683,7 +683,7 @@ namespace FPSLAN
             if (NM != null && NM.IsListening) return;
             if (ConnectionManager.Instance == null) { MenuNotice("Erro: sistema de rede não encontrado na cena."); return; }
             if (MatchManager.MenuSelectedMode == GameMode.GemGrab && !ConnectionManager.SupportsGemGrab(SelectedMapKey))
-            { MenuNotice("GEM GRAB está disponível em Santiago e no Sal. Escolhe uma dessas ilhas."); return; }
+            { MenuNotice("GEM GRAB está disponível em Santiago, no Sal e no Fogo. Escolhe uma dessas ilhas."); return; }
             if (MatchManager.MenuSelectedMode == GameMode.ItTakesTwo) MatchManager.MenuSelectedCompetitive = false;
             SaveMenuPrefs();
             if (MatchManager.MenuSelectedMode == GameMode.ItTakesTwo)

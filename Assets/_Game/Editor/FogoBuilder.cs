@@ -202,7 +202,9 @@ namespace FPSLAN.EditorTools
             foreach (var t in spawns)
             {
                 var sp = t.gameObject.AddComponent<SpawnPoint>();
-                sp.team = -1;
+                // equipas para os modos por equipas (Pique-Gemas, Wipeout…): azul a −Z, vermelho a +Z.
+                // Em Showdown/Deathmatch as equipas dos spawns são ignoradas (usa-se qualquer spawn).
+                sp.team = t.position.z < 0f ? 0 : 1;
                 var toCenter = -t.position;
                 toCenter.y = 0f;
                 if (toCenter.sqrMagnitude > 0.01f) t.rotation = Quaternion.LookRotation(toCenter.normalized, Vector3.up);
@@ -477,6 +479,8 @@ namespace FPSLAN.EditorTools
             jets.columnMaterial = mats["MAT_Brasa"];
             log.AppendLine($"Jatos de lava: {vents.Count}.");
 
+            BuildGemGrab(mats, bowlY, log);
+
             Validate(map.transform, layout, storm, log);
 
             GemMapBuilder.EnsureFolder(Path.GetDirectoryName(ScenePath).Replace('\\', '/'));
@@ -497,6 +501,120 @@ namespace FPSLAN.EditorTools
                 }
             EditorSceneManager.MarkSceneDirty(reopened);
             EditorSceneManager.SaveScene(reopened);
+        }
+
+
+        // ------------------------------------------------------------------ Pique-Gemas
+
+        /// <summary>
+        /// Pique-Gemas no Fogo: um pequeno respiradouro de lava no centro da arena interior (só visual, sem dano)
+        /// que borbulha no aviso e rebenta num jato pequeno de onde saltam as gemas para 12 pontos de rocha seca
+        /// à volta (simétricos entre as duas equipas).
+        /// </summary>
+        static void BuildGemGrab(Dictionary<string, Material> mats, float bowlY, StringBuilder log)
+        {
+            Physics.SyncTransforms();
+            var root = new GameObject("PiqueGemas");
+            root.AddComponent<NetworkObject>();
+            var gm = root.AddComponent<GemGrabManager>();
+            var vis = root.AddComponent<GemGrabVisuals>();
+            root.AddComponent<GemGrabHud>();
+            gm.gemPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ProjectSetup.Root + "/Prefabs/Environment/PF_Gema.prefab");
+            gm.gemColor = new Color(0.72f, 0.42f, 1f);
+            gm.arcHeight = 2.6f;
+            vis.style = GemEmitterStyle.Lava;
+            vis.waterRadius = 0.8f;
+
+            // respiradouro: poça de lava redonda e um anel de escória à volta (sem colisores: anda-se por cima)
+            var vent = new GameObject("Respiradouro_Gemas").transform;
+            vent.SetParent(root.transform, false);
+            vent.position = new Vector3(0f, bowlY, 0f);
+            var pool = new GameObject("Lava_Respiradouro");
+            pool.transform.SetParent(vent, false);
+            pool.transform.localPosition = new Vector3(0f, 0.03f, 0f);
+            pool.transform.localScale = new Vector3(1.7f, 0.02f, 1.7f);
+            pool.AddComponent<MeshFilter>().sharedMesh = Art.PrimitiveMesh(PrimitiveType.Cylinder);
+            var pr = pool.AddComponent<MeshRenderer>();
+            pr.sharedMaterial = mats["MAT_Lava"];
+            pr.shadowCastingMode = ShadowCastingMode.Off;
+            var rng = new System.Random(77);
+            var rockMesh = Art.PrimitiveMesh(PrimitiveType.Sphere);
+            for (int i = 0; i < 11; i++)
+            {
+                float a = i * Mathf.PI * 2f / 11f + (float)rng.NextDouble() * 0.2f;
+                var rock = new GameObject("Escoria_" + i);
+                rock.transform.SetParent(vent, false);
+                rock.transform.localPosition = new Vector3(Mathf.Cos(a), 0.05f, Mathf.Sin(a)) * 1.0f;
+                rock.transform.localRotation = Quaternion.Euler((float)rng.NextDouble() * 30f, (float)rng.NextDouble() * 360f, (float)rng.NextDouble() * 30f);
+                rock.transform.localScale = new Vector3(0.38f + (float)rng.NextDouble() * 0.2f, 0.18f + (float)rng.NextDouble() * 0.12f, 0.3f + (float)rng.NextDouble() * 0.2f);
+                rock.AddComponent<MeshFilter>().sharedMesh = rockMesh;
+                var rr = rock.AddComponent<MeshRenderer>();
+                rr.sharedMaterial = i % 3 == 0 ? mats["MAT_Escoria"] : mats["MAT_Basalto_Escuro"];
+            }
+            var surface = new GameObject("Superficie").transform;
+            surface.SetParent(vent, false);
+            surface.localPosition = new Vector3(0f, 0.06f, 0f);
+            var exit = new GameObject("GEM_Saida").transform;
+            exit.SetParent(vent, false);
+            exit.localPosition = new Vector3(0f, 0.45f, 0f);
+            gm.spawnPoint = exit;
+            vis.waterSurface = surface;
+            gm.emitterRenderers = new Renderer[0];
+
+            // aterragens: metade a −Z escolhida em rocha seca e livre, e o espelho em +Z (justo para as duas equipas)
+            var lava = Object.FindFirstObjectByType<LavaArea>();
+            LavaArea tmp = null;
+            if (lava != null)
+            {
+                tmp = new GameObject("tmpLava").AddComponent<LavaArea>();
+                tmp.nx = lava.nx; tmp.ny = lava.ny; tmp.cell = lava.cell; tmp.x0 = lava.x0; tmp.y0 = lava.y0;
+                tmp.surfaceIn = lava.surfaceIn; tmp.surfaceOut = lava.surfaceOut; tmp.rows = lava.rows;
+                typeof(LavaArea).GetMethod("Decode", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(tmp, null);
+            }
+            bool Good(Vector3 xz, out Vector3 ground)
+            {
+                ground = default;
+                if (!Physics.Raycast(new Vector3(xz.x, bowlY + 4f, xz.z), Vector3.down, out var hit, 8f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return false;
+                if (!(hit.collider is MeshCollider) || hit.normal.y < 0.9f || Mathf.Abs(hit.point.y - bowlY) > 0.3f) return false;
+                if (tmp != null && tmp.IsLava(hit.point, out _)) return false;
+                foreach (var c in Physics.OverlapCapsule(hit.point + Vector3.up * 0.3f, hit.point + Vector3.up * 1.2f, 0.9f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                    if (!(c is MeshCollider)) return false;
+                ground = hit.point;
+                return true;
+            }
+            var lands = new List<Transform>();
+            var landRoot = new GameObject("Aterragens").transform;
+            landRoot.SetParent(root.transform, false);
+            float[] angles = { 200f, 228f, 256f, 284f, 312f, 340f };
+            float[] radii = { 3.4f, 5.6f, 3.6f, 5.4f, 3.4f, 5.6f };
+            int k = 0;
+            for (int i = 0; i < angles.Length; i++)
+            {
+                bool placed = false;
+                for (float dr = 0f; dr <= 2.2f && !placed; dr += 0.4f)
+                    foreach (var sign in new[] { 1f, -1f })
+                    {
+                        float r = radii[i] + sign * dr;
+                        if (r < 2.4f || r > 7f) continue;
+                        float a = angles[i] * Mathf.Deg2Rad;
+                        var p = new Vector3(Mathf.Cos(a) * r, 0f, Mathf.Sin(a) * r);
+                        var pm = new Vector3(p.x, 0f, -p.z);
+                        if (!Good(p, out var g1) || !Good(pm, out var g2)) continue;
+                        foreach (var g in new[] { g1, g2 })
+                        {
+                            var t = new GameObject("GEM_Land_" + (k++).ToString("00")).transform;
+                            t.SetParent(landRoot, false);
+                            t.position = g + Vector3.up * gm.gemFloatHeight;
+                            lands.Add(t);
+                        }
+                        placed = true;
+                        break;
+                    }
+            }
+            if (tmp != null) Object.DestroyImmediate(tmp.gameObject);
+            gm.landingPoints = lands.ToArray();
+            log.AppendLine($"Pique-Gemas: respiradouro de lava no centro (y={bowlY:0.00}), {lands.Count} aterragens em rocha seca (simétricas), spawns azul −Z / vermelho +Z.");
+            if (gm.gemPrefab == null) log.AppendLine("ATENÇÃO: PF_Gema.prefab não encontrado (constrói primeiro a Cidade Velha).");
         }
 
         static Vector3 Ground(Vector3 p)

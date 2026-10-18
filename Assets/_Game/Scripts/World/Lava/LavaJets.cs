@@ -169,6 +169,13 @@ namespace FPSLAN
             b.t.gameObject.SetActive(true);
         }
 
+        /// <summary>Só visual: pequena explosão de lava num ponto qualquer (ex.: respiradouro das gemas no Pique-Gemas).</summary>
+        public void VisualBurst(Vector3 at, int count, float strength)
+        {
+            if (m_Mpb == null) return;   // ainda não arrancou
+            for (int k = 0; k < count; k++) SpawnBlob(at, strength * Random.Range(0.8f, 1.05f), 5 + k % 3);
+        }
+
         void UpdateBlobs(float dt)
         {
             for (int k = 0; k < m_Blobs.Count; k++)

@@ -75,6 +75,10 @@ Sistemas (todos controlados pelo host; estado replicado mínimo, quem entra a me
 - `LavaArea` — máscara de 0,4 m gerada pelo mesmo script que desenha a lava; dano 24/s só com os pés na lava.
 - `LavaJets`, `LavaFx`, `VolcanoAmbience` — ver tabela acima.
 - Reinício da partida reinicia tempestade e jatos (`MatchManager.ServerStartMatch`).
+- **Pique-Gemas (GEM GRAB)**: no centro da arena interior há um respiradouro de lava pequeno (só visual, sem dano).
+  No aviso borbulha, brilha e fumega; quando as gemas saem rebenta num jato de lava pequeno (gotas da `LavaJets`)
+  e as gemas saltam para 10 pontos de rocha seca à volta, simétricos entre as equipas. Spawns: azul a −Z, vermelho a +Z
+  (os modos sem equipas ignoram isto). Estilo `GemEmitterStyle.Lava` em `GemGrabVisuals`.
 
 ## 3. Validação automática (`FogoValidation`)
 
