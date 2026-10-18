@@ -52,15 +52,151 @@ namespace FPSLAN
 
         public bool IsDeadAnimDone => m_Dead && m_DeadT > 0.95f;
         public Vector3 HeadPosition => m_Head != null ? m_Head.position : Root.position + Vector3.up * 1.5f;
-        public Vector3 ChestPosition => m_Spine != null ? m_Spine.position + Vector3.up * 0.3f * m_Scale : Root.position + Vector3.up * 1.1f;
+        public Vector3 ChestPosition => m_IsModel
+            ? (m_Spine != null ? m_Spine.position : Root.position + Vector3.up * 1.1f)
+            : (m_Spine != null ? m_Spine.position + Vector3.up * 0.3f * m_Scale : Root.position + Vector3.up * 1.1f);
 
         // ================================================================== construção
 
         public static CharacterRig Build(BrawlerDefinition b, Transform parent, ShadowCastingMode shadows, int layer)
         {
             var rig = new CharacterRig();
-            rig.Create(b, parent, shadows, layer);
+            // Modelo final (FBX com rig humanoide) se existir Resources/Characters/<brawlerId>; senão, personagem de primitivas.
+            var model = b != null ? Resources.Load<GameObject>(ModelResourceFolder + b.brawlerId) : null;
+            if (model != null && model.GetComponentInChildren<Animator>() != null) rig.CreateFromModel(b, model, parent, shadows, layer);
+            else rig.Create(b, parent, shadows, layer);
             return rig;
+        }
+
+        // ================================================================== modelo animado (Animator)
+
+        /// <summary>Pasta (em Resources) dos prefabs de personagens com modelo e Animator, um por brawlerId.</summary>
+        public const string ModelResourceFolder = "Characters/";
+        /// <summary>Altura de referência do personagem de primitivas (o modelo é escalado para esta altura).</summary>
+        public const float ModelTargetHeight = 1.8f;
+        /// <summary>Escala das armas de primitivas quando seguradas por um modelo (no boneco de primitivas é 1,45).</summary>
+        const float ModelWeaponScale = 1.3f;
+
+        Animator m_Anim;
+        bool m_IsModel;
+        ModelWeaponHolder m_Holder;
+        readonly HashSet<int> m_AnimParams = new HashSet<int>();
+        static readonly int AnimSpeed = Animator.StringToHash("Speed");
+        static readonly int AnimGrounded = Animator.StringToHash("Grounded");
+        static readonly int AnimDead = Animator.StringToHash("Dead");
+        static readonly int AnimAttack = Animator.StringToHash("Attack");
+        static readonly int AnimSuper = Animator.StringToHash("Super");
+        static readonly int AnimHurt = Animator.StringToHash("Hurt");
+
+        void CreateFromModel(BrawlerDefinition b, GameObject prefab, Transform parent, ShadowCastingMode shadows, int layer)
+        {
+            var tp = b.thirdPerson ?? new ThirdPersonPresentation();
+            m_Look = tp.look ?? new CharacterLook();
+            Style = tp.rig;
+            m_IsModel = true;
+            var accentColor = b.firstPerson.accentColor;
+
+            Root = new GameObject("Rig_" + b.brawlerId + "_model").transform;
+            Root.SetParent(parent, false);
+            m_Body = Object.Instantiate(prefab, Root, false).transform;
+            m_Body.name = "Model";
+            m_Body.localPosition = Vector3.zero;
+            m_Body.localRotation = Quaternion.identity;
+
+            m_Anim = m_Body.GetComponentInChildren<Animator>();
+            m_Anim.applyRootMotion = false;
+            m_Anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            foreach (var p in m_Anim.parameters) m_AnimParams.Add(p.nameHash);
+
+            if (m_Anim.isHuman)
+            {
+                m_Hips = m_Anim.GetBoneTransform(HumanBodyBones.Hips);
+                m_Spine = m_Anim.GetBoneTransform(HumanBodyBones.Chest) ?? m_Anim.GetBoneTransform(HumanBodyBones.Spine);
+                m_Head = m_Anim.GetBoneTransform(HumanBodyBones.Head);
+            }
+            m_Scale = 1f;
+
+            // ---------------- armas: as mesmas do boneco de primitivas, seguradas pelas mãos do modelo (IK)
+            bool dual = Style == RigStyle.DualRevolvers || Style == RigStyle.DualExplosives;
+            bool leftOnly = Style == RigStyle.Bow;
+            if (!leftOnly)
+            {
+                m_SocketR = WeaponSocket("WeaponR");
+                m_WeaponR = WeaponModels.Build(Style, m_SocketR, accentColor, 0, shadows);
+            }
+            if (dual || leftOnly)
+            {
+                m_SocketL = WeaponSocket("WeaponL");
+                m_WeaponL = WeaponModels.Build(Style, m_SocketL, accentColor, 1, shadows);
+            }
+            if (m_Anim.isHuman)
+            {
+                m_Holder = m_Anim.gameObject.AddComponent<ModelWeaponHolder>();
+                m_Holder.Setup(m_Anim, Root, m_SocketR, m_SocketL, Style);
+            }
+
+            foreach (var r in Root.GetComponentsInChildren<Renderer>(true))
+            {
+                r.shadowCastingMode = shadows;
+                if (r is SkinnedMeshRenderer smr) smr.updateWhenOffscreen = true;
+            }
+            Root.GetComponentsInChildren(false, m_Renderers);
+            foreach (var t in Root.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = layer;
+            m_LastHeadPos = HeadPosition;
+        }
+
+        Transform WeaponSocket(string name)
+        {
+            var t = new GameObject(name).transform;
+            t.SetParent(Root, false);
+            t.localPosition = new Vector3(0f, 1.2f, 0.3f);
+            t.localScale = Vector3.one * ModelWeaponScale;
+            return t;
+        }
+
+        bool HasAnimParam(int hash) => m_AnimParams.Contains(hash);
+
+        void ModelPose(float dt, RigFrame f)
+        {
+            if (m_Anim == null) return;
+            var flat = new Vector3(f.worldVelocity.x, 0f, f.worldVelocity.z);
+            if (HasAnimParam(AnimSpeed)) m_Anim.SetFloat(AnimSpeed, m_Dead ? 0f : flat.magnitude, 0.08f, dt);
+            if (HasAnimParam(AnimGrounded)) m_Anim.SetBool(AnimGrounded, f.grounded || m_Dead);
+            if (HasAnimParam(AnimDead)) m_Anim.SetBool(AnimDead, m_Dead);
+            if (m_Holder != null)
+            {
+                m_Holder.pitch = f.pitch;
+                m_Holder.holding = !m_Dead;
+            }
+
+            if (m_Dead)
+            {
+                m_DeadT = Mathf.Min(1.2f, m_DeadT + dt * 0.55f);   // ~1,8 s até o PlayerVisuals esconder o corpo
+                float shrink = m_DeadT > 0.95f ? Mathf.Clamp01(1f - (m_DeadT - 0.95f) / 0.2f) : 1f;
+                Root.localScale = Vector3.one * Mathf.Max(0.001f, shrink);
+                return;
+            }
+
+            // reaparecer: pequeno "pop"
+            if (m_Pop < 1f)
+            {
+                m_Pop = Mathf.Min(1f, m_Pop + dt * 3.2f);
+                float p = m_Pop;
+                float s = 1f + 0.18f * Mathf.Sin(p * Mathf.PI) * (1f - p) * 2f;
+                Root.localScale = Vector3.one * Mathf.Lerp(0.2f, 1f, Mathf.Clamp01(p * 1.6f)) * s;
+            }
+            else Root.localScale = Vector3.one;
+
+            // dano e coice: o corpo todo inclina-se para trás (a arma e as mãos acompanham)
+            m_Hurt = Mathf.MoveTowards(m_Hurt, 0f, dt * 4f);
+            m_BodyKick = Mathf.MoveTowards(m_BodyKick, 0f, dt * 6f);
+            float hurtCurve = Mathf.Sin(Mathf.Clamp01(m_Hurt) * Mathf.PI * 0.5f);
+            Root.localRotation = Quaternion.Euler(-11f * hurtCurve - 4f * m_BodyKick, 6f * hurtCurve, 0f);
+
+            // explosivos e arco: a arma "na mão" desaparece por instantes depois de lançar
+            bool held = Time.time >= m_HideHeldUntil;
+            SetHeldVisible(m_WeaponR, held);
+            SetHeldVisible(m_WeaponL, held);
         }
 
         void Create(BrawlerDefinition b, Transform parent, ShadowCastingMode shadows, int layer)
@@ -343,13 +479,23 @@ namespace FPSLAN
             WeaponModel w;
             if (dual) w = (Mathf.Abs(shotIndex) % 2 == 0) ? m_WeaponR : m_WeaponL;
             else w = m_WeaponR ?? m_WeaponL;
-            if (w == null) return Root.position + Vector3.up * 1.3f;
+            if (w == null)
+            {
+                if (m_IsModel && m_SocketR != null) return m_SocketR.position + Root.forward * 0.25f;
+                return Root.position + Vector3.up * 1.3f;
+            }
             return w.Muzzle(0);
         }
 
         /// <summary>Início de um ataque (principal ou Super).</summary>
         public void OnAttack(bool super, float duration)
         {
+            if (m_IsModel && m_Anim != null)
+            {
+                if (super && HasAnimParam(AnimSuper)) m_Anim.SetTrigger(AnimSuper);
+                else if (HasAnimParam(AnimAttack)) m_Anim.SetTrigger(AnimAttack);
+                if (m_Holder != null) m_Holder.Kick(super ? 1.6f : 1f, -1);
+            }
             m_AttackT = 0f;
             m_AttackDur = Mathf.Max(0.15f, duration);
             m_AttackSuper = super;
@@ -374,8 +520,10 @@ namespace FPSLAN
         /// <summary>Cada disparo de uma rajada (alterna as mãos nos estilos duplos).</summary>
         public void OnShot(int shotIndex)
         {
-            if (m_WeaponL != null && m_WeaponR != null && Mathf.Abs(shotIndex) % 2 == 1) m_KickL = 1f;
+            bool leftShot = m_WeaponL != null && m_WeaponR != null && Mathf.Abs(shotIndex) % 2 == 1;
+            if (leftShot) m_KickL = 1f;
             else m_KickR = 1f;
+            if (m_Holder != null) m_Holder.Kick(0.8f, leftShot ? 1 : 0);
             if (Style == RigStyle.Shotgun || Style == RigStyle.Sniper) m_BodyKick = 1f;
         }
 
@@ -383,6 +531,7 @@ namespace FPSLAN
         {
             m_Hurt = 1f;
             m_Flash = 1f;
+            if (m_IsModel && m_Anim != null && HasAnimParam(AnimHurt)) m_Anim.SetTrigger(AnimHurt);
         }
 
         public void SetDead(bool dead, bool instant)
@@ -395,7 +544,15 @@ namespace FPSLAN
                 m_Pop = instant ? 1f : 0f;
                 Root.localRotation = Quaternion.identity;
                 Root.localPosition = Vector3.zero;
+                Root.localScale = Vector3.one;
+                if (m_IsModel && m_Anim != null)
+                {
+                    if (HasAnimParam(AnimDead)) m_Anim.SetBool(AnimDead, false);
+                    m_Anim.Rebind();
+                    m_Anim.Update(0f);
+                }
             }
+            if (m_Holder != null) m_Holder.holding = !dead;
         }
 
         public void SetVisible(bool visible)
@@ -425,7 +582,8 @@ namespace FPSLAN
         public void Tick(float dt, RigFrame f)
         {
             if (Root == null) return;
-            Pose(dt, f);
+            if (m_IsModel) ModelPose(dt, f);
+            else Pose(dt, f);
             ApplyMaterialState(dt);
         }
 
