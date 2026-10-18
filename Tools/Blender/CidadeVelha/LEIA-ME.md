@@ -48,7 +48,7 @@ Os marcadores da timeline marcam as fases: 1 Espera · 2 Aviso · 3 Surgimento �
 | Elemento | No Blender | No FBX | No Unity |
 |---|---|---|---|
 | Arquitetura, Pelourinho, adereços | malhas | ✅ `CidadeVelha_Static.fbx` | prefab `PF_CidadeVelha` |
-| Arbustos `BUSH_*` (zona) + `BSHV_*` (folhagem de pré-visualização) | caixa + esferas | ✅ | `Bush` do projeto + `LeafBush`; sem colisor; `BSHV_*` removido |
+| Arbustos `BUSH_<nome>_S<seed>` (zona) + `BSHV_*` (folhas) | zona + folhas geradas pela porta do `LeafBush.cs` (`leafbush_port.py`, mesma seed e mesmo gerador aleatório do .NET) | ✅ só a zona | `Bush` + `LeafBush` do jogo com a mesma seed (`BSHV_*` fica em Preview e não é exportado) |
 | Colisores `COL_*` | caixas/prismas | ✅ (malhas) | convertidos em BoxCollider / MeshCollider convexo, malha removida |
 | Spawns, waypoints, `GEM_Spawn`, `GEM_Land_00…07` | empties | ✅ (nós vazios) | SpawnPoint por equipa, MapInfo, GemGrabManager |
 | Rotação do halo/anel (`ACT_Emissor_Espera`, `ACT_Emissor_Aviso`, `ACT_EmissorBase_Espera`) | NLA | ✅ `CidadeVelha_Emissor_Anim.fbx` (referência) | **refeito em C#** (GemGrabVisuals), sem Animator |
@@ -74,9 +74,16 @@ Não foi usado armature: nada no cenário precisa de deformação.
    aterragens livres e com chão, materiais em falta.
 4. **FPS-LAN ▸ Mapas ▸ Abrir cena Cidade Velha** → Play → Host (ou Treino com bots).
 
+## Detalhe do cenário (`--detail 2` ou 3)
+
+Floreiras nas janelas, soleiras de pedra nas portas, candeeiros de parede, chaminés, panos de terra nas bancas,
+balaios, potes de barro e bananas, estendais de roupa sobre os corredores exteriores (acima das cabeças),
+rosa de basalto na calçada da praça e, fora da área jogável, casas de palha, ruína de pedra, botes no mar,
+palmeiras e árvores. Nada disto acrescenta colisores nem altera rotas (a análise de rotas dá o mesmo resultado).
+
 ## Arbustos (esconderijos)
 
-12 arbustos de 2 m de altura substituem as árvores da área jogável: junções praça/corredor, cantos dos spawns e
+12 arbustos de 2 m de altura — os mesmos do jogo (`LeafBush` + material `M_BushLeaves`) — substituem as árvores da área jogável: junções praça/corredor, cantos dos spawns e
 faixas encostadas aos edifícios das bolsas laterais. Usam o sistema existente (`World/Bush.cs`):
 atravessam-se, as balas passam, quem está dentro fica oculto para adversários a mais de 3,4 m e é revelado ao atacar
 (1,3 s) ou ao levar dano (1 s). Ficam ocultos a personagem, a barra de vida, o nome, a coroa, o escudo, os passos,

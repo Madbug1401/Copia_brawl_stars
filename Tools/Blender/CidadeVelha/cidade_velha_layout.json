@@ -1262,7 +1262,7 @@
  ],
  "bushes": [
   {
-   "name": "BUSH_Juncao_EN",
+   "name": "BUSH_Juncao_EN_S225",
    "center": [
     7.0,
     12.5
@@ -1271,10 +1271,11 @@
     2.8,
     2.6,
     2.0
-   ]
+   ],
+   "seed": 225
   },
   {
-   "name": "BUSH_Spawn_EN",
+   "name": "BUSH_Spawn_EN_S232",
    "center": [
     6.9,
     21.4
@@ -1283,10 +1284,11 @@
     2.8,
     2.8,
     2.0
-   ]
+   ],
+   "seed": 232
   },
   {
-   "name": "BUSH_Bolsa_EN",
+   "name": "BUSH_Bolsa_EN_S238",
    "center": [
     15.0,
     2.8
@@ -1295,10 +1297,11 @@
     2.0,
     3.6,
     2.0
-   ]
+   ],
+   "seed": 238
   },
   {
-   "name": "BUSH_Juncao_ES",
+   "name": "BUSH_Juncao_ES_S235",
    "center": [
     7.0,
     -12.5
@@ -1307,10 +1310,11 @@
     2.8,
     2.6,
     2.0
-   ]
+   ],
+   "seed": 235
   },
   {
-   "name": "BUSH_Spawn_ES",
+   "name": "BUSH_Spawn_ES_S242",
    "center": [
     6.9,
     -21.4
@@ -1319,10 +1323,11 @@
     2.8,
     2.8,
     2.0
-   ]
+   ],
+   "seed": 242
   },
   {
-   "name": "BUSH_Bolsa_ES",
+   "name": "BUSH_Bolsa_ES_S248",
    "center": [
     15.0,
     -2.8
@@ -1331,10 +1336,11 @@
     2.0,
     3.6,
     2.0
-   ]
+   ],
+   "seed": 248
   },
   {
-   "name": "BUSH_Juncao_WN",
+   "name": "BUSH_Juncao_WN_S243",
    "center": [
     -7.0,
     12.5
@@ -1343,10 +1349,11 @@
     2.8,
     2.6,
     2.0
-   ]
+   ],
+   "seed": 243
   },
   {
-   "name": "BUSH_Spawn_WN",
+   "name": "BUSH_Spawn_WN_S250",
    "center": [
     -6.9,
     21.4
@@ -1355,10 +1362,11 @@
     2.8,
     2.8,
     2.0
-   ]
+   ],
+   "seed": 250
   },
   {
-   "name": "BUSH_Bolsa_WN",
+   "name": "BUSH_Bolsa_WN_S256",
    "center": [
     -15.0,
     2.8
@@ -1367,10 +1375,11 @@
     2.0,
     3.6,
     2.0
-   ]
+   ],
+   "seed": 256
   },
   {
-   "name": "BUSH_Juncao_WS",
+   "name": "BUSH_Juncao_WS_S253",
    "center": [
     -7.0,
     -12.5
@@ -1379,10 +1388,11 @@
     2.8,
     2.6,
     2.0
-   ]
+   ],
+   "seed": 253
   },
   {
-   "name": "BUSH_Spawn_WS",
+   "name": "BUSH_Spawn_WS_S260",
    "center": [
     -6.9,
     -21.4
@@ -1391,10 +1401,11 @@
     2.8,
     2.8,
     2.0
-   ]
+   ],
+   "seed": 260
   },
   {
-   "name": "BUSH_Bolsa_WS",
+   "name": "BUSH_Bolsa_WS_S266",
    "center": [
     -15.0,
     -2.8
@@ -1403,7 +1414,8 @@
     2.0,
     3.6,
     2.0
-   ]
+   ],
+   "seed": 266
   }
  ],
  "gem_spawn": [

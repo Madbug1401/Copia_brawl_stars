@@ -356,9 +356,26 @@ def make_materials(tex):
     material("MAT_Pano_Azul", (0.15, 0.42, 0.82), None)
     material("MAT_Pano_Verde", (0.15, 0.62, 0.42), None)
     material("MAT_Folhas", (0.22, 0.50, 0.20), None, rough=0.9)
+    # Folhas dos arbustos do jogo (LeafBush): a cor vem dos vértices, como no M_BushLeaves do Unity
+    m = material("MAT_Folhas_Arbusto", (1.0, 1.0, 1.0), None, rough=0.85)
+    nt = m.node_tree
+    ca = nt.nodes.new("ShaderNodeVertexColor")
+    ca.layer_name = "Col"
+    nt.links.new(ca.outputs[0], nt.nodes["Principled BSDF"].inputs["Base Color"])
     material("MAT_Folhas_Claras", (0.38, 0.64, 0.26), None, rough=0.9)
     material("MAT_Tronco", (0.40, 0.29, 0.20), None, rough=0.95)
     material("MAT_Mar", (0.10, 0.45, 0.70), None, rough=0.2)
+    material("MAT_Barro", (0.72, 0.38, 0.24), None, rough=0.9)
+    material("MAT_Flor_Vermelha", (0.92, 0.16, 0.20), None)
+    material("MAT_Flor_Rosa", (0.98, 0.45, 0.70), None)
+    material("MAT_Flor_Amarela", (1.0, 0.82, 0.18), None)
+    material("MAT_Vidro_Lanterna", (1.0, 0.86, 0.55), None, rough=0.3, emission=(1.0, 0.78, 0.45), strength=1.2)
+    material("MAT_Palha", (0.78, 0.64, 0.38), None, rough=1.0)
+    material("MAT_Cesto", (0.80, 0.62, 0.36), None, rough=0.95)
+    material("MAT_Bote_Azul", (0.12, 0.40, 0.80), None)
+    material("MAT_Bote_Amarelo", (0.98, 0.76, 0.16), None)
+    material("MAT_Bote_Vermelho", (0.85, 0.20, 0.18), None)
+    material("MAT_Basalto_Escuro", (0.22, 0.22, 0.25), T("T_Calcada_Basalto"), tile=1.2, rough=0.9)
     material("MAT_Monte", (0.56, 0.44, 0.32), None, rough=1.0)
     material("MAT_Monte_Verde", (0.42, 0.52, 0.28), None, rough=1.0)
     material("MAT_Spawn_Azul", (0.20, 0.50, 0.95), None, emission=(0.2, 0.5, 1.0), strength=0.4)
@@ -589,6 +606,13 @@ def build_modules(P):
             for k in range(4):                                                           # ripas
                 z = 0.2 + k * (h - 0.35) / 3
                 add_box(bm, w * 0.94, 0.02, 0.04, center=(0, -0.065, z), mi=1)
+        if det >= 2:  # floreira com flores no peitoril
+            mats += [MAT["MAT_Barro"], MAT["MAT_Folhas_Claras"], MAT["MAT_Flor_Vermelha" if color == "Verde" else "MAT_Flor_Rosa"]]
+            add_box(bm, w * 0.86, 0.2, 0.16, center=(0, -0.2, -0.04), mi=3)
+            for k in range(5 if det >= 3 else 4):
+                fx = -w * 0.34 + k * (w * 0.68 / (4 if det >= 3 else 3))
+                add_icosphere(bm, 0.09, (fx, -0.2, 0.15), mi=4, subdiv=1, squash=0.8)
+                add_icosphere(bm, 0.055, (fx + 0.03, -0.27, 0.2), mi=5, subdiv=1)
         MODULES["Janela_" + color] = mesh_from_bm(bm, "MOD_Janela_" + color, mats)
 
         # Porta: arco reto de pedra + folhas de madeira
@@ -601,7 +625,18 @@ def build_modules(P):
         if det >= 2:
             add_box(bm, 0.04, 0.03, h - 0.1, center=(0, -0.06, 0.05), mi=1)
             add_box(bm, 0.08, 0.04, 0.08, center=(0.18, -0.07, 1.05), mi=2)  # puxador
+            add_box(bm, w + 0.5, 0.42, 0.13, center=(0, -0.21, 0), mi=0)      # soleira/degrau de pedra (0.13 m: sobe-se)
         MODULES["Porta_" + color] = mesh_from_bm(bm, "MOD_Porta_" + color, mats)
+
+    # Candeeiro de parede (ferro + vidro aceso)
+    bm = new_bm()
+    mats = [MAT["MAT_Ferro"], MAT["MAT_Vidro_Lanterna"]]
+    add_box(bm, 0.05, 0.42, 0.05, center=(0, -0.21, 0.32), mi=0)
+    add_box(bm, 0.05, 0.05, 0.3, center=(0, -0.02, 0.05), mi=0)
+    add_box(bm, 0.2, 0.2, 0.26, center=(0, -0.42, 0.02), mi=1)
+    add_prism(bm, 4, 0.17, 0.12, z0=0.28, r_top=0.03, mi=0, center=(0, -0.42), rot=math.pi / 4)
+    add_box(bm, 0.24, 0.24, 0.03, center=(0, -0.42, 0.0), mi=0)
+    MODULES["Candeeiro"] = mesh_from_bm(bm, "MOD_Candeeiro", mats)
 
     # Varanda de ferro (sobrados)
     bm = new_bm()
@@ -759,6 +794,20 @@ def building(L, name, rect, height, plaster, roof='gable', storeys=1, faces=('S'
                     place(MODULES["Porta_" + shutters], f"{name}_PortaVaranda_{f}{b}", coll, (px, py, height * 0.5 + 0.14), rz, (0.85, 1, 0.82))
                 else:
                     place(MODULES["Janela_" + shutters], f"{name}_Janela2_{f}{b}", coll, (px, py, z2), rz)
+        if det >= 2 and bays >= 2:  # candeeiros entre os vãos (fora do alcance dos jogadores)
+            for b in range(1, bays):
+                t = b / bays - 0.5
+                along = t * length
+                px, py = (cx + along, cy + ny * sy / 2) if ny != 0 else (cx + nx * sx / 2, cy + along)
+                place(MODULES["Candeeiro"], f"{name}_Candeeiro_{f}{b}", coll, (px, py, min(height - 0.6, 2.75)), rz)
+    if det >= 2 and (storeys >= 2 or stable_seed(name) % 2 == 0):  # chaminé
+        bmc = new_bm()
+        add_box(bmc, 0.55, 0.55, roof_rise + 0.9, mi=0)
+        add_box(bmc, 0.7, 0.7, 0.1, center=(0, 0, roof_rise + 0.9), mi=1)
+        add_box(bmc, 0.18, 0.18, 0.12, center=(0, 0, roof_rise + 1.0), mi=1)
+        off = (sx * 0.22, sy * 0.12) if sx >= sy else (sx * 0.12, sy * 0.22)
+        place(mesh_from_bm(bmc, f"{name}_Chamine", [MAT[plaster], MAT["MAT_Pedra_Clara"]]), f"{name}_Chamine", coll,
+              (cx + off[0], cy + off[1], height - 0.2))
     # Colisor: corpo inteiro (telhado incluído na altura; ninguém sobe aos telhados)
     col_box(name, (sx, sy, height + roof_rise), (cx, cy, 0))
     return body
@@ -1033,11 +1082,21 @@ def stall(name, cx, cy, rot, cloth, det):
     if det >= 2:  # mercadoria/panos coloridos dobrados no tampo
         for k in range(5):
             add_box(bm, 0.36, 0.5, 0.10 + 0.04 * (k % 2), center=(-0.9 + k * 0.45, 0.05, 0.98), mi=2 + (k % 3))
-    if det >= 3:
+    if det >= 2:  # panos de terra pendurados à frente do toldo
         for k in range(3):
-            add_box(bm, 0.5, 0.02, 0.8, center=(-0.75 + k * 0.75, -0.76, 1.4), mi=2 + k)
+            add_box(bm, 0.5, 0.02, 0.62 if det < 3 else 0.8, center=(-0.75 + k * 0.75, -0.76, 1.62 if det < 3 else 1.44), mi=2 + k)
     me = mesh_from_bm(bm, name, mats)
     place(me, name, coll, (cx, cy, 0), rot)
+    if det >= 2:  # balaios, potes de barro e cachos de banana em cima do tampo
+        bg = new_bm()
+        add_lathe(bg, [(0.0, 0.0), (0.16, 0.02), (0.22, 0.16), (0.24, 0.2)], 10, mi=0)
+        bmesh.ops.translate(bg, verts=bg.verts, vec=(0.85, 0.32, 0.95))
+        add_lathe(bg, [(r_, z_ + 0.95) for r_, z_ in ((0.0, 0.0), (0.12, 0.02), (0.17, 0.14), (0.1, 0.3), (0.07, 0.36), (0.09, 0.4))],
+                  10, mi=1, center=(-0.95, 0.3))
+        for k in range(6):
+            add_box(bg, 0.06, 0.2, 0.05, center=(0.15 + k * 0.05, -0.25, 1.02), mi=2)
+        place(mesh_from_bm(bg, name + "_Mercadoria", [MAT["MAT_Cesto"], MAT["MAT_Barro"], MAT["MAT_Flor_Amarela"]]),
+              name + "_Mercadoria", coll, (cx, cy, 0), rot)
     col_box(name, (2.4, 1.1, 1.0), (cx, cy, 0), rot)
 
 
@@ -1094,30 +1153,45 @@ def tree(name, cx, cy, seed, det, scale=1.0, collide=True):
 BUSH_HEIGHT = 2.0   # tapa uma personagem em pé (CharacterController 1.8 m)
 
 
+def _leafbush_module():
+    """Importa a porta do LeafBush.cs (mesma pasta do script)."""
+    here = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else bpy.path.abspath("//")
+    if here not in sys.path:
+        sys.path.insert(0, here)
+    import leafbush_port
+    return leafbush_port
+
+
 def bush(name, cx, cy, w, d, seed, det, data):
-    """Arbusto denso de esconder (ao estilo Brawl Stars). NÃO tem colisor: atravessa-se e as balas passam.
-    BUSH_<nome>: caixa da zona (no Unity → componente Bush do projeto + folhas LeafBush; a caixa é removida).
-    BSHV_<nome>: folhagem só para a pré-visualização no Blender (no Unity é substituída pelas LeafBush)."""
+    """Arbusto de esconder com o MESMO arbusto do jogo (LeafBush.cs + sistema Bush). Sem colisor.
+    BUSH_<nome>_S<seed>: caixa da zona → no Unity vira componente Bush + folhas LeafBush com esta seed.
+    BSHV_<nome>: as mesmas folhas geradas aqui pela porta do LeafBush, só para ver no Blender (não exportado)."""
+    zname = f"BUSH_{name}_S{seed}"
     bm = new_bm()
     add_box(bm, w, d, BUSH_HEIGHT, mi=0)
-    me = mesh_from_bm(bm, "BUSH_" + name, [MAT["MAT_Colisor"]])
-    zone = place(me, "BUSH_" + name, C["Gameplay"], (cx, cy, 0))
+    zone = place(mesh_from_bm(bm, zname, [MAT["MAT_Colisor"]]), zname, C["Gameplay"], (cx, cy, 0))
     zone.display_type = 'WIRE'
     zone.hide_render = True
-    rng = random.Random(seed)
-    bm = new_bm()
-    nx = max(2, round(w / 0.9))
-    ny = max(2, round(d / 0.9))
-    for i in range(nx):
-        for j in range(ny):
-            x = (i + 0.5) / nx * w - w / 2 + rng.uniform(-0.15, 0.15)
-            y = (j + 0.5) / ny * d - d / 2 + rng.uniform(-0.15, 0.15)
-            r = rng.uniform(0.62, 0.8)
-            add_icosphere(bm, r, (x, y, rng.uniform(0.75, 1.0)), mi=(i + j) % 2, subdiv=1 if det < 3 else 2, squash=1.15)
-            if det >= 2:
-                add_icosphere(bm, r * 0.7, (x * 0.85, y * 0.85, BUSH_HEIGHT - r * 0.55), mi=1, subdiv=1, squash=0.9)
-    place(mesh_from_bm(bm, "BSHV_" + name, [MAT["MAT_Folhas"], MAT["MAT_Folhas_Claras"]]), "BSHV_" + name, C["Props"], (cx, cy, 0))
-    data["bushes"].append(dict(name="BUSH_" + name, center=[cx, cy], size=[w, d, BUSH_HEIGHT]))
+    lb = _leafbush_module()
+    # Unity: size = (2·meia largura X, altura do Bush − 0.2, 2·meia largura Z); Y do Unity = Z do Blender
+    V, Cl, T = lb.generate((w, BUSH_HEIGHT, d), seed)
+    verts = [(x, z, y) for (x, y, z) in V]               # troca Y↔Z (é um espelho: inverte-se a ordem dos triângulos)
+    faces = [(T[i], T[i + 2], T[i + 1]) for i in range(0, len(T), 3)]
+    me = bpy.data.meshes.new("BSHV_" + name)
+    me.from_pydata(verts, [], faces)
+    attr = me.color_attributes.new("Col", 'BYTE_COLOR', 'POINT')
+    flat = []
+    for c in Cl:
+        flat.extend((c[0], c[1], c[2], 1.0))
+    # BYTE_COLOR guarda sRGB; 'color_srgb' escreve os valores tal como o Unity os usa
+    if hasattr(attr.data[0], "color_srgb") if len(attr.data) else False:
+        attr.data.foreach_set("color_srgb", flat)
+    else:
+        attr.data.foreach_set("color", flat)
+    me.materials.append(MAT["MAT_Folhas_Arbusto"])
+    me.update()
+    place(me, "BSHV_" + name, C["Preview"], (cx, cy, 0))
+    data["bushes"].append(dict(name=zname, center=[cx, cy], size=[w, d, BUSH_HEIGHT], seed=seed))
 
 
 def palm(name, cx, cy, seed):
@@ -1181,6 +1255,80 @@ def chain_ring(P):
         col_box(f"Corrente_{i}", ((p1 - p0).length - 0.3, 0.12, 0.7), (mid.x, mid.y, 0), ang)
 
 
+def laundry(name, p0, p1, z, seed):
+    """Estendal com roupa colorida entre duas fachadas (acima das cabeças, sem colisão)."""
+    rng = random.Random(seed)
+    p0, p1 = Vector(p0), Vector(p1)
+    d = p1 - p0
+    L = d.length
+    ang = math.atan2(d.y, d.x)
+    bm = new_bm()
+    add_box(bm, L, 0.015, 0.015, center=(L / 2, 0, z), mi=0)
+    x = 0.4
+    k = 0
+    while x < L - 0.5:
+        wpc = rng.uniform(0.35, 0.7)
+        hpc = rng.uniform(0.35, 0.75)
+        sag = 0.12 * math.sin(math.pi * (x + wpc / 2) / L)
+        add_box(bm, wpc, 0.02, hpc, center=(x + wpc / 2, 0, z - sag - hpc), mi=1 + (k % 4))
+        x += wpc + rng.uniform(0.1, 0.3)
+        k += 1
+    mats = [MAT["MAT_Ferro"], MAT["MAT_Pano_Vermelho"], MAT["MAT_Pano_Amarelo"], MAT["MAT_Pano_Azul"], MAT["MAT_Reboco_Branco"]]
+    place(mesh_from_bm(bm, name, mats), name, C["Props"], (p0.x, p0.y, 0), ang)
+
+
+def plaza_pattern(P):
+    """Calçada decorativa da praça: rosa de 8 pontas de basalto escuro e anel à volta das correntes (plano, sem relevo)."""
+    bm = new_bm()
+    for i in range(8):
+        a = i * math.pi / 4 + math.pi / 8
+        tip = Vector((6.2 * math.cos(a), 6.2 * math.sin(a), 0.016))
+        l = Vector((3.4 * math.cos(a - 0.12), 3.4 * math.sin(a - 0.12), 0.016))
+        r = Vector((3.4 * math.cos(a + 0.12), 3.4 * math.sin(a + 0.12), 0.016))
+        bm.faces.new([bm.verts.new(v) for v in (l, r, tip)])
+    n = 48
+    for i in range(n):
+        a0, a1 = i * math.tau / n, (i + 1) * math.tau / n
+        vs = [bm.verts.new((R_ * math.cos(a), R_ * math.sin(a), 0.017)) for R_, a in ((5.85, a0), (6.05, a0), (6.05, a1), (5.85, a1))]
+        bm.faces.new(vs)
+    place(mesh_from_bm(bm, "GRD_Rosa_Calcada", [MAT["MAT_Basalto_Escuro"]]), "GRD_Rosa_Calcada", C["Ground"])
+
+
+def thatched_house(name, x, y, rot, seed):
+    """Casa de pedra com cobertura de palha (como as da Rua Banana), só no fundo."""
+    rng = random.Random(seed)
+    w, d, h = rng.uniform(4.0, 5.0), rng.uniform(3.2, 3.8), 2.6
+    bm = new_bm()
+    add_box(bm, w, d, h, mi=0)
+    add_box(bm, 0.9, 0.08, 1.9, center=(0, -d / 2 - 0.02, 0), mi=2)
+    hx, hy, top = w / 2 + 0.45, d / 2 + 0.45, h + 2.6
+    c = [bm.verts.new(p) for p in ((-hx, -hy, h - 0.2), (hx, -hy, h - 0.2), (hx, hy, h - 0.2), (-hx, hy, h - 0.2))]
+    t1, t2 = bm.verts.new((-w * 0.18, 0, top)), bm.verts.new((w * 0.18, 0, top))
+    for f in ((c[0], c[1], t2, t1), (c[2], c[3], t1, t2), (c[1], c[2], t2), (c[3], c[0], t1)):
+        bm.faces.new(f).material_index = 1
+    place(mesh_from_bm(bm, name, [MAT["MAT_Pedra_Escura"], MAT["MAT_Palha"], MAT["MAT_Madeira"]]), name, C["Props"], (x, y, 0), rot)
+
+
+def boat(name, x, y, rot, mat):
+    bm = new_bm()
+    prof = []
+    for k in range(9):
+        t = k / 8
+        prof.append(t)
+    L, W, H = 5.0, 1.5, 0.7
+    rows = []
+    for k in range(9):
+        t = k / 8
+        wx = W / 2 * math.sin(math.pi * t) ** 0.6
+        xx = -L / 2 + L * t
+        rows.append([bm.verts.new((xx, -wx, H)), bm.verts.new((xx, -wx * 0.6, 0.1)), bm.verts.new((xx, wx * 0.6, 0.1)), bm.verts.new((xx, wx, H))])
+    for a, b in zip(rows[:-1], rows[1:]):
+        for i in range(3):
+            bm.faces.new((a[i], b[i], b[i + 1], a[i + 1])).material_index = 0
+    add_box(bm, L * 0.8, 0.08, 0.08, center=(0, 0, H - 0.05), mi=1)
+    place(mesh_from_bm(bm, name, [MAT[mat], MAT["MAT_Madeira"]]), name, C["Props"], (x, y, -1.15), rot)
+
+
 def background(P):
     """Envolvente sem jogo: mar, montes, palmeiras e silhueta de fortaleza (sem colisão)."""
     coll = C["Props"]
@@ -1211,6 +1359,19 @@ def background(P):
     # Árvores fora da área jogável (a vista para lá dos parapeitos; sem colisão)
     for i, (x, y) in enumerate(((hx + 3.5, 20.5), (-hx - 3.5, -20.5), (hx + 4.0, -9.0), (-hx - 4.0, 9.0))):
         tree(f"BG_Arvore_{i}", x, y, 40 + i, det, scale=0.9, collide=False)
+    # Cidade Velha à volta: casas de palha, ruína de pedra e botes no mar
+    if det >= 2:
+        for i, (x, y, r) in enumerate(((hx + 12, -2, 0.3), (hx + 19, 6, -0.4), (-hx - 13, 3, 2.9), (-hx - 20, -7, 3.4),
+                                      (hx + 15, -15, 0.1), (-hx - 15, 16, 3.0))):
+            thatched_house(f"BG_CasaPalha_{i}", x, y, r, 70 + i)
+        bm = new_bm()
+        for k in range(4):
+            add_box(bm, 1.6, 1.2, 6.0 - k * 1.1, center=(k * 3.2, 0, 0), mi=0)
+        add_box(bm, 11.2, 1.2, 1.4, center=(4.8, 0, 4.0), mi=0)
+        place(mesh_from_bm(bm, "BG_Ruina", [MAT["MAT_Pedra_Muro"]]), "BG_Ruina", coll, (18, 70, 1.0), 0.3)
+        for i, (x, y, r, m) in enumerate(((-12, -hy - 30, 0.4, "MAT_Bote_Azul"), (-4, -hy - 36, -0.2, "MAT_Bote_Amarelo"),
+                                          (9, -hy - 32, 1.2, "MAT_Bote_Vermelho"), (20, -hy - 40, 0.8, "MAT_Bote_Azul"))):
+            boat(f"BG_Bote_{i}", x, y, r, m)
     # Palmeiras fora dos parapeitos
     for i, (x, y) in enumerate(((hx + 4, 15.5), (hx + 6, 11), (-hx - 4, -15.5), (-hx - 5, -11), (hx + 5, -16), (-hx - 6, 16))):
         palm(f"BG_Palmeira_{i}", x, y, i)
@@ -1249,6 +1410,8 @@ def build_map(P):
     data = dict(boxes=[], spawns=[], lands=[], waypoints=[], bushes=[])
 
     ground(L, P)
+    if det >= 2:
+        plaza_pattern(P)
     pel = pelourinho(P)
     gen = gem_generator(L, P, pel)
     chain_ring(P)
@@ -1282,6 +1445,9 @@ def build_map(P):
             bush(f"Juncao_{tag}", L.X(sx * 7.0), L.Y(sy * 12.5), L.X(2.8), L.Y(2.6), stable_seed(tag), det, data)
             bush(f"Spawn_{tag}", L.X(sx * 6.9), L.Y(sy * 21.4), L.X(2.8), L.Y(2.8), stable_seed(tag) + 7, det, data)
             bush(f"Bolsa_{tag}", L.X(sx * 15.0), L.Y(sy * 2.8), L.X(2.0), L.Y(3.6), stable_seed(tag) + 13, det, data)
+            # Estendal de roupa sobre o corredor exterior (entre a casa da fila e a casa de esquina)
+            if det >= 2:
+                laundry(f"PRP_Estendal_{tag}", (L.X(sx * 18.0), L.Y(sy * 12.0)), (L.X(sx * 18.0), L.Y(sy * 19.0)), 3.25, stable_seed(tag) + 3)
             # Waypoints dos bots
             for (wx, wy) in ((12.5, 13.6), (18.0, 17.3), (12.0, 0.0), (11.0, 5.8), (6.4, 7.2), (4.0, 13.6), (14.5, 4.8)):
                 if wx == 12.0 and sy < 0:

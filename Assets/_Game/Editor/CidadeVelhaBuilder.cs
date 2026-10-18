@@ -85,6 +85,17 @@ namespace FPSLAN.EditorTools
             new MatSpec("MAT_Marca_Aterragem", null, new Color(0.75f, 0.55f, 1f), false, new Color(0.15f, 0.08f, 0.25f), 0f),
             new MatSpec("MAT_Marca_Aterragem_Apagada", null, new Color(0.75f, 0.55f, 1f), false, new Color(0.15f, 0.08f, 0.25f), 0f),
             new MatSpec("MAT_Colisor", null, new Color(1f, 0.2f, 0.6f), false),
+            new MatSpec("MAT_Barro", null, new Color(0.72f, 0.38f, 0.24f)),
+            new MatSpec("MAT_Flor_Vermelha", null, new Color(0.92f, 0.16f, 0.2f), false),
+            new MatSpec("MAT_Flor_Rosa", null, new Color(0.98f, 0.45f, 0.7f), false),
+            new MatSpec("MAT_Flor_Amarela", null, new Color(1f, 0.82f, 0.18f), false),
+            new MatSpec("MAT_Vidro_Lanterna", null, new Color(1f, 0.86f, 0.55f), false, new Color(0.55f, 0.42f, 0.22f), 0f),
+            new MatSpec("MAT_Palha", null, new Color(0.78f, 0.64f, 0.38f)),
+            new MatSpec("MAT_Cesto", null, new Color(0.8f, 0.62f, 0.36f)),
+            new MatSpec("MAT_Bote_Azul", null, new Color(0.12f, 0.4f, 0.8f)),
+            new MatSpec("MAT_Bote_Amarelo", null, new Color(0.98f, 0.76f, 0.16f)),
+            new MatSpec("MAT_Bote_Vermelho", null, new Color(0.85f, 0.2f, 0.18f)),
+            new MatSpec("MAT_Basalto_Escuro", "T_Calcada_Basalto", new Color(0.22f, 0.22f, 0.25f), false, default, 0f),
         };
 
         // ================================================================== menus
@@ -330,7 +341,12 @@ namespace FPSLAN.EditorTools
                 var bush = go.AddComponent<Bush>();
                 bush.halfExtents = new Vector2(wb.extents.x, wb.extents.z);
                 bush.height = wb.size.y + 0.2f;
-                BushTools.AddLeaves(bush, BushTools.SeedFor(go.transform.position));
+                // Mesma seed que o Blender usou na pré-visualização (sufixo _S<seed>) → o mesmo arbusto LeafBush
+                int seed = BushTools.SeedFor(go.transform.position);
+                int sIdx = z.name.LastIndexOf("_S");
+                if (sIdx >= 0 && int.TryParse(z.name.Substring(sIdx + 2), out var parsed)) seed = parsed;
+                go.name = sIdx >= 0 ? z.name.Substring(0, sIdx) : z.name;
+                BushTools.AddLeaves(bush, seed);
             }
             foreach (var z in bushZones) Object.DestroyImmediate(z.gameObject);
             var previewLeaves = new List<Transform>();
