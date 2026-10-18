@@ -79,6 +79,12 @@ Nenhum armature: rocha e água não se deformam.
 
 ## 2. Unity (6000.6, Built-in RP, NGO 2.13)
 
+**Jogar a partir do menu (Arena.unity):** PLAY ONLINE / PLAY LOCAL → modo → mapa (ilha do Sal = Buracona,
+Santiago = Cidade Velha, primeira ilha = Pradaria) → personagem → JOGAR. Qualquer mapa joga-se em qualquer modo:
+o `MapLoader` carrega o pacote `Resources/Maps/Map_Buracona.prefab` por cima da arena (os clientes recebem o mapa
+do host) e as gemas, o halo e as marcas de aterragem só existem no modo GEM GRAB (`Resources/Maps/PF_PiqueGemas`).
+O construtor abaixo gera também esse pacote.
+
 1. FBX em `Assets/_Game/Art/Environment/Sal/Buracona/Models/`, PNG em `.../Buracona/Textures/` (já no repositório).
 2. Requer `PF_Gema.prefab` (criado pela Cidade Velha; já está no repositório).
 3. Menu **FPS-LAN ▸ Mapas ▸ Construir Buracona (Pique-Gemas)** → cria/atualiza `Materials/M_BU_*.mat`,

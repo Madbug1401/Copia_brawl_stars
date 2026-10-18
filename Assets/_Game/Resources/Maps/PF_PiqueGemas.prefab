@@ -1,0 +1,138 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4517643719546578529
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1408985559755334927}
+  - component: {fileID: 8608482314782057391}
+  - component: {fileID: 5000656656303739973}
+  - component: {fileID: 3917847001154223144}
+  - component: {fileID: 7969702460002761923}
+  m_Layer: 0
+  m_Name: PF_PiqueGemas
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1408985559755334927
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4517643719546578529}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8608482314782057391
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4517643719546578529}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 1116081633
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  m_InScenePlacedDisabledByDefault: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  m_InScenePlaced: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &5000656656303739973
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4517643719546578529}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d565461945614bac81b2eff94bc64fcc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.GemGrabManager
+  ShowTopMostFoldoutHeaderGroup: 1
+  firstSpawnDelay: 4
+  spawnInterval: 7
+  maxGemsOnField: 20
+  winGems: 10
+  holdSeconds: 15
+  pickupRadius: 1.2
+  pickupHeight: 2.2
+  spawnPoint: {fileID: 0}
+  landingPoints: []
+  arcSeconds: 1.1
+  arcHeight: 2.2
+  warningSeconds: 1.6
+  dropArcSeconds: 0.6
+  dropRadius: 1.8
+  gemFloatHeight: 0.6
+  maxGroundRise: 0.45
+  maxGroundDrop: 1
+  gemPrefab: {fileID: 5748521444635031477, guid: da09d5aae497d964791bbd360ab06cc8, type: 3}
+  emitterHalo: {fileID: 0}
+  emitterBase: {fileID: 0}
+  emitterRenderers: []
+  gemColor: {r: 0.72, g: 0.42, b: 1, a: 1}
+  emitterIdleEmission: {r: 0.25, g: 0.12, b: 0.45, a: 1}
+  emitterWarnEmission: {r: 1.1, g: 0.7, b: 1.6, a: 1}
+  Gems:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+  Carriers:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+  respawnPickupGrace: 0.75
+--- !u!114 &3917847001154223144
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4517643719546578529}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4a9de0145e14f498f05c7edeb95eafd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.GemGrabVisuals
+  style: 0
+  waterSurface: {fileID: 0}
+  waterRadius: 2.2
+  waterColor: {r: 0.45, g: 0.95, b: 0.95, a: 0.9}
+--- !u!114 &7969702460002761923
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4517643719546578529}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fcaae835e7445048e4339787d5d07b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.GemGrabHud
