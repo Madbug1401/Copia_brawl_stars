@@ -15,4 +15,16 @@ Foram mantidas as alterações da branch ao emissor aquático, água animada, se
 - 363 GUIDs de metadados em Assets/_Game verificados sem duplicação.
 - Referências externas da cena correspondem aos componentes do pacote Netcode: NetworkManager, UnityTransport e NetworkObject.
 
-A sessão de Play foi reiniciada após a recompilação para evitar estado transitório. Testes adicionais de retorno de queda, transições entre os três mapas e LAN dependem de uma sessão estável do Editor; há trabalho simultâneo noutro fluxo do projeto.
+## Sequência final confirmada no Unity
+
+- Terceiro cartão confirmado como sal, jogável.
+- Buracona: GemGrab, host, 4 jogadores, 1 NetworkManager e 0 scripts em falta.
+- 8 pontos de aterragem, 5 spawns azuis e 5 vermelhos; gemas geradas.
+- Queda simulada a y=-3 m: jogador recuperado para y≈0,04 m.
+- Buracona > CidadeVelha: GemGrab, 4 jogadores, 1 NetworkManager, 0 scripts em falta e geração de gemas confirmada.
+- CidadeVelha > Arena: Deathmatch, 4 jogadores, 1 NetworkManager e 0 scripts em falta.
+- Preferências anteriores repostas e Unity fora do Play no fim.
+
+A espera pelas gemas considera o tempo de carregamento do Editor. O resultado local está em Temp/buracona-smoke-result.txt. Ainda falta verificar a entrada de um segundo PC por LAN e uma build distribuível.
+
+As alterações simultâneas do cooperativo no menu e no gestor de ligação foram retiradas do resultado final do merge, mantendo integralmente o conteúdo local desses ficheiros. O relatório acima corresponde ao projeto aberto no Unity, incluindo esse trabalho local ainda em curso.
