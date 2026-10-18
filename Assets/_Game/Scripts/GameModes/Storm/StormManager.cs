@@ -206,19 +206,31 @@ namespace FPSLAN
                 var en = s.entrances[best];
                 float rOuter = Flat(en.outer - s.center);
                 float rMouth = Flat(en.mouth - s.center);
+                // cada etapa conta como feita quando o bot passa o raio dela (ou chega perto do ponto), e nunca volta atrás
+                float rLane = Flat(en.laneA - s.center);
                 if (dist > rOuter - 0.5f && Flat(pos - en.outer) > 2.5f && bestAng > 12f) { goal = en.outer; return true; }
-                if (dist > rMouth - 1.0f) { goal = en.mouth; return true; }
-                if (dist > s.innerRadius - 1f)
+                if (dist > rMouth + 0.6f && Flat(pos - en.mouth) > 1.5f) { goal = en.mouth; return true; }
+                if (dist > rLane + 0.6f)
                 {
-                    goal = Flat(pos - en.laneA) < Flat(pos - en.laneB) ? en.laneA : en.laneB;
-                    if (Flat(pos - goal) < 1.5f) goal = en.inner;
-                    return true;
+                    var lane = Flat(pos - en.laneA) < Flat(pos - en.laneB) ? en.laneA : en.laneB;
+                    if (Flat(pos - lane) > 1.2f) { goal = lane; return true; }
                 }
-                goal = en.inner;
+                goal = dist > Flat(en.inner - s.center) + 0.8f ? en.inner : s.center;
                 return true;
             }
             goal = dist > 0.1f ? s.center + d.normalized * Mathf.Min(dist, soon * 0.4f) : s.center;
             return true;
+        }
+
+        /// <summary>O bot está (ou vai ficar em breve) fora da zona segura? Então fugir da tempestade passa à frente
+        /// de perseguir alvos (continua a apontar e a disparar enquanto foge).</summary>
+        public static bool BotMustMove(Vector3 pos)
+        {
+            var s = Instance;
+            if (!IsActive || s == null) return false;
+            s.Evaluate(s.Now, out _, out bool shrinking, out float r, out float target, out float until, out _);
+            float soon = shrinking || until < 10f ? target : r;
+            return !s.IsSafe(pos, Mathf.Max(1.5f, soon - 1.2f));
         }
 
         static float Flat(Vector3 v) { v.y = 0f; return v.magnitude; }

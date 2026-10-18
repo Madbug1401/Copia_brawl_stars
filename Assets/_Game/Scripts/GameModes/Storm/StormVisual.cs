@@ -12,7 +12,7 @@ namespace FPSLAN
     [RequireComponent(typeof(StormManager))]
     public class StormVisual : MonoBehaviour
     {
-        public Color wallColor = new Color(0.42f, 0.38f, 0.36f, 0.62f);
+        public Color wallColor = new Color(0.4f, 0.36f, 0.34f, 0.78f);
         public float wallBottom = -12f, wallHeight = 60f;
 
         StormManager m_Storm;

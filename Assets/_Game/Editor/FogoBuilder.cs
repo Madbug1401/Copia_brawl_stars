@@ -129,7 +129,7 @@ namespace FPSLAN.EditorTools
         static Material BushMaterial(GemMapConfig cfg)
         {
             var m = LoadOrCreate(cfg.MaterialsPath + "/M_FG_Arbusto_Vulcanico.mat", Shader.Find("FPSLAN/Toon"));
-            m.color = Color.white;
+            m.color = new Color(0.66f, 0.6f, 0.52f);      // escurece as cores de vértice: mato seco, oliva/castanho com cinza
             Set(m, "_VertexColor", 1f);
             Set(m, "_TopLight", 0.25f);
             Set(m, "_ShadeColor", new Color(0.62f, 0.6f, 0.7f));
@@ -194,6 +194,8 @@ namespace FPSLAN.EditorTools
             foreach (var z in zones) Object.DestroyImmediate(z.gameObject);
             log.AppendLine($"Arbustos: {bushParent.childCount} (sistema Bush, sem colisores), {bushTris} triângulos de folhagem.");
 
+            MergeCovers(root.transform, log);
+
             // Spawns de sobrevivência (sem equipa)
             var spawns = new List<Transform>();
             GemMapBuilder.CollectDeep(root.transform, "SPAWN_", spawns);
@@ -227,6 +229,67 @@ namespace FPSLAN.EditorTools
             var prefab = PrefabUtility.SaveAsPrefabAsset(root, MapPrefabPath);
             Object.DestroyImmediate(root);
             return prefab;
+        }
+
+        /// <summary>
+        /// Desempenho: as ~300 peças de cobertura (muros, pedras, pilares, vedações) passam a 4 malhas (uma por
+        /// quadrante, um submesh por material). Os colisores continuam a ser as caixas COL_Box_* separadas.
+        /// </summary>
+        static void MergeCovers(Transform root, StringBuilder log)
+        {
+            var groups = new Dictionary<int, Dictionary<Material, List<CombineInstance>>>();
+            int pieces = 0;
+            var toLocal = root.worldToLocalMatrix;
+            foreach (var mr in root.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                if (!mr.name.StartsWith("CVR_")) continue;
+                var mf = mr.GetComponent<MeshFilter>();
+                if (mf == null || mf.sharedMesh == null) continue;
+                var c = mr.bounds.center;
+                int q = (c.x >= 0f ? 1 : 0) + (c.z >= 0f ? 2 : 0);
+                if (!groups.TryGetValue(q, out var byMat)) groups[q] = byMat = new Dictionary<Material, List<CombineInstance>>();
+                var mats = mr.sharedMaterials;
+                for (int sm = 0; sm < mf.sharedMesh.subMeshCount && sm < mats.Length; sm++)
+                {
+                    if (mats[sm] == null) continue;
+                    if (!byMat.TryGetValue(mats[sm], out var list)) byMat[mats[sm]] = list = new List<CombineInstance>();
+                    list.Add(new CombineInstance { mesh = mf.sharedMesh, subMeshIndex = sm, transform = toLocal * mr.localToWorldMatrix });
+                }
+                Object.DestroyImmediate(mr);
+                Object.DestroyImmediate(mf);
+                pieces++;
+            }
+            string folder = ArtRoot + "/Meshes";
+            GemMapBuilder.EnsureFolder(folder);
+            int draws = 0;
+            foreach (var kv in groups)
+            {
+                var parts = new List<CombineInstance>();
+                var mats = new List<Material>();
+                foreach (var m in kv.Value)
+                {
+                    var part = new Mesh { indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+                    part.CombineMeshes(m.Value.ToArray(), true, true);
+                    parts.Add(new CombineInstance { mesh = part, transform = Matrix4x4.identity });
+                    mats.Add(m.Key);
+                }
+                var mesh = new Mesh { name = "Fogo_Coberturas_Q" + kv.Key, indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+                mesh.CombineMeshes(parts.ToArray(), false, false);
+                mesh.RecalculateBounds();
+                foreach (var p in parts) Object.DestroyImmediate(p.mesh);
+                string path = folder + "/" + mesh.name + ".asset";
+                AssetDatabase.DeleteAsset(path);
+                AssetDatabase.CreateAsset(mesh, path);
+                var go = new GameObject("Coberturas_Q" + kv.Key);
+                go.transform.SetParent(root, false);
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                var r = go.AddComponent<MeshRenderer>();
+                r.sharedMaterials = mats.ToArray();
+                r.shadowCastingMode = ShadowCastingMode.On;
+                go.isStatic = true;
+                draws += mats.Count;
+            }
+            log.AppendLine($"Coberturas: {pieces} peças juntas em {groups.Count} malhas ({draws} submeshes/draw calls em vez de ≥{pieces}).");
         }
 
         static GameObject BuildLavaPrefab(GemMapConfig cfg, Dictionary<string, Material> mats, Layout layout, StringBuilder log)
@@ -422,9 +485,12 @@ namespace FPSLAN.EditorTools
 
         static Vector3 Ground(Vector3 p)
         {
-            if (Physics.Raycast(new Vector3(p.x, 40f, p.z), Vector3.down, out var hit, 80f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
-                return hit.point;
-            return p;
+            // o ponto mais baixo: o chão por baixo dos arcos de rocha das entradas (e não o topo do arco)
+            var hits = Physics.RaycastAll(new Vector3(p.x, 40f, p.z), Vector3.down, 80f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+            if (hits.Length == 0) return p;
+            var best = hits[0].point;
+            foreach (var h in hits) if (h.point.y < best.y) best = h.point;
+            return best;
         }
 
         static Material SkyMaterial(GemMapConfig cfg)

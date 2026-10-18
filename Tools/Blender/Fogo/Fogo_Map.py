@@ -61,8 +61,8 @@ GORGES = [45.0, 135.0, 225.0, 315.0]
 GORGE_HW = 3.2           # meia largura do desfiladeiro (6,4 m)
 GORGE_BLEND = 1.4
 
-LAVA_SURF_OUT, LAVA_FLOOR_OUT = -0.22, -0.45
-LAVA_SURF_IN, LAVA_FLOOR_IN = BOWL_Y - 0.22, BOWL_Y - 0.45
+LAVA_SURF_OUT, LAVA_FLOOR_OUT = -0.16, -0.38   # margem a 43° (< limite de 46° do CharacterController): sai-se da lava a andar
+LAVA_SURF_IN, LAVA_FLOOR_IN = BOWL_Y - 0.16, BOWL_Y - 0.38
 
 WALL_H, LOW_H, FENCE_H, POST_H, BUSH_H = 2.4, 1.1, 0.9, 1.8, 2.0
 
@@ -159,6 +159,33 @@ def build_grid(cls):
                     best, bc = k, c
             if bc >= 0.4 * win.size:
                 grid[i, j] = best
+    # limpeza da máscara de lava: sem ilhotas secas de uma célula dentro da lava (refúgio a salvo no meio da
+    # lava) nem salpicos de lava isolados (dano onde não se vê rio)
+    for _ in range(2):
+        lv = grid == LAVA
+        for i in range(NX):
+            for j in range(NY):
+                n = sum(1 for a, b in ((i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1))
+                        if 0 <= a < NX and 0 <= b < NY and lv[a, b])
+                if not lv[i, j] and grid[i, j] == BG and n >= 3:
+                    grid[i, j] = LAVA
+                elif lv[i, j] and n <= 1:
+                    grid[i, j] = BG
+    # pontes naturais: a lava da cratera é interrompida no eixo de cada entrada, para que quem desce a rampa
+    # chegue ao centro da arena por rocha seca (sem degrau de lava a meio do caminho)
+    for i in range(NX):
+        for j in range(NY):
+            if grid[i, j] != LAVA:
+                continue
+            x, y = cell_center(i, j)
+            if math.hypot(x, y) >= R_BOWL + 0.5:
+                continue
+            for g in GORGES:
+                a = math.radians(g)
+                along = x * math.cos(a) + y * math.sin(a)
+                lat = abs(-x * math.sin(a) + y * math.cos(a))
+                if along > 0 and lat < 2.0:
+                    grid[i, j] = BG
     return grid
 
 
@@ -542,6 +569,12 @@ def build_terrain(P, grid, volc, data):
                 else:
                     dark = patch(x * 0.21) + patch(y * 0.17 + 2.0) > 0.45  # manchas de escoada antiga
                     f.material_index = 4 if steep else (6 if dark else 0)
+        # simplificação: o planalto e os fundos planos têm milhares de quadrados quase coplanares; junta-os
+        # (sem atravessar mudanças de material) e volta a triangular. O colisor usa exatamente a mesma malha.
+        bm.normal_update()
+        bmesh.ops.dissolve_limit(bm, angle_limit=math.radians(2.5), verts=list(bm.verts), edges=list(bm.edges),
+                                 delimit={'MATERIAL'})
+        bmesh.ops.triangulate(bm, faces=list(bm.faces), quad_method='BEAUTY', ngon_method='BEAUTY')
         return bm
 
     me = cv.mesh_from_bm(terrain_bm(), "TER_Relevo", [MAT[n] for n in names])
@@ -690,6 +723,15 @@ def keep_mask(grid):
             x, y = cell_center(i, j)
             r = math.hypot(x, y)
             m[i, j] = r > R_FOOT + 0.8 or r < R_BOWL - 1.1
+            # corredor de cada entrada livre (de dentro da arena até 4 m fora do pé do cone): nada da planta
+            # tapa a aproximação nem a saída das rampas, por isso as 4 entradas são equivalentes
+            if 7.5 < r < R_FOOT + 4.5:
+                for g in GORGES:
+                    a = math.radians(g)
+                    along = x * math.cos(a) + y * math.sin(a)
+                    lat = abs(-x * math.sin(a) + y * math.cos(a))
+                    if along > 0 and lat < GORGE_HW + 0.7:
+                        m[i, j] = False
     return m
 
 
@@ -908,6 +950,9 @@ def build_markers(P, grid, cls, H, data):
         r = math.hypot(x, y)
         i, j = int((x + HALF_X) / CELL), int((y + HALF_Y) / CELL)
         if not (0 <= i < NX and 0 <= j < NY) or not allowed[i, j] or grid[i, j] in (LAVA, WALL, BOX):
+            continue
+        # o miolo escuro dos círculos de spawn da planta também é lido como poste: nunca pôr pilares em cima de um spawn
+        if any(math.hypot(x - s["pos"][0], y - s["pos"][1]) < 2.2 for s in data["spawns"]):
             continue
         z = ground_height(H, x, y)
         name = f"Pilar_{q:03d}"
