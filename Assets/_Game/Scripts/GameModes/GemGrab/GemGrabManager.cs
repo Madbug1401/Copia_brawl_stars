@@ -144,15 +144,23 @@ namespace FPSLAN
         /// </summary>
         void BindToMap()
         {
-            if (m_Bound) return;
-            if (spawnPoint != null && landingPoints != null && landingPoints.Length > 0) { m_Bound = true; return; }
+            // O emissor do mapa em jogo manda; se o mapa mudar (outro pacote carregado), volta a ligar-se.
             var cfg = GemEmitterConfig.Current;
-            if (cfg == null) cfg = GemEmitterConfig.EnsureFallback();
-            if (cfg == null) return;
+            if (cfg != null && cfg == m_BoundConfig) return;
+            if (cfg == null)
+            {
+                if (m_Bound) return;
+                if (spawnPoint != null && landingPoints != null && landingPoints.Length > 0) { m_Bound = true; return; }
+                cfg = GemEmitterConfig.EnsureFallback();
+                if (cfg == null) return;
+            }
             cfg.ApplyTo(this);
             BuildMirrorTable();
+            m_BoundConfig = cfg;
             m_Bound = true;
         }
+
+        GemEmitterConfig m_BoundConfig;
 
         public override void OnNetworkSpawn()
         {

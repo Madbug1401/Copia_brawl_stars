@@ -40,6 +40,14 @@ namespace FPSLAN
             return null;
         }
 
+        /// <summary>Chave do mapa a partir do MapInfo.mapName de uma cena (ex.: "Buracona" → "sal").</summary>
+        public static string KeyForMapName(string mapName)
+        {
+            if (mapName == BaseMapName) return BaseKey;
+            foreach (var e in Maps) if (e.displayName == mapName) return e.key;
+            return null;
+        }
+
         public static string DisplayName(string key)
         {
             foreach (var e in Maps) if (e.key == key) return e.displayName;

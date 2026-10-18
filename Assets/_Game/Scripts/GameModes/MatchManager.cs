@@ -114,10 +114,15 @@ namespace FPSLAN
             Mode.OnValueChanged += OnModeChanged;
             if (IsServer)
             {
-                // Mapa: o escolhido no menu deste PC (só na arena de arranque; uma cena dedicada já é o mapa)
-                MapKey.Value = MapLoader.SceneSupportsSwap ? new FixedString32Bytes(MapCatalog.MenuSelectedKey) : default;
+                // Mapa: o escolhido no menu deste PC; replica-se o que ficou mesmo carregado
+                if (MapLoader.SceneSupportsSwap)
+                {
+                    MapLoader.Apply(MapCatalog.MenuSelectedKey);
+                    MapKey.Value = new FixedString32Bytes(MapLoader.CurrentKey);
+                }
+                else MapKey.Value = default;
             }
-            MapLoader.Apply(MapKey.Value.ToString());
+            else MapLoader.Apply(MapKey.Value.ToString());
             if (IsServer)
             {
                 ServerStartMatch();
@@ -130,7 +135,7 @@ namespace FPSLAN
         {
             MapKey.OnValueChanged -= OnMapKeyChanged;
             Mode.OnValueChanged -= OnModeChanged;
-            MapLoader.Apply(MapCatalog.BaseKey);   // fora de partida volta a arena de arranque
+            MapLoader.Apply(MapLoader.SceneKey);   // fora de partida volta o mapa da própria cena
             m_SpawnedGemMode = null;
             base.OnNetworkDespawn();
         }

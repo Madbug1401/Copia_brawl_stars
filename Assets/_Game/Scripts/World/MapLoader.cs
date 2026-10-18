@@ -31,33 +31,49 @@ namespace FPSLAN
             s_BaseTheme = default;
         }
 
-        /// <summary>MapInfo da arena de arranque (null numa cena dedicada a um mapa).</summary>
+        /// <summary>
+        /// MapInfo do mapa próprio da cena aberta (Arena.unity = Pradaria; CidadeVelha.unity / Buracona.unity = esses
+        /// mapas). Qualquer uma destas cenas pode trocar para outro mapa empacotado; o mapa da cena fica escondido.
+        /// </summary>
         static MapInfo FindBaseInfo()
         {
             foreach (var mi in Object.FindObjectsByType<MapInfo>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-                if (mi.mapName == MapCatalog.BaseMapName && (s_Loaded == null || !mi.transform.IsChildOf(s_Loaded.transform)))
+                if ((s_Loaded == null || !mi.transform.IsChildOf(s_Loaded.transform)) && MapCatalog.KeyForMapName(mi.mapName) != null)
                     return mi;
             return null;
         }
 
-        /// <summary>Esta cena permite trocar de mapa (é a arena de arranque)?</summary>
+        /// <summary>Chave do mapa próprio da cena (o que se vê sem carregar nada).</summary>
+        public static string SceneKey
+        {
+            get
+            {
+                var mi = FindBaseInfo();
+                return mi != null ? MapCatalog.KeyForMapName(mi.mapName) : null;
+            }
+        }
+
+        /// <summary>Esta cena permite trocar de mapa?</summary>
         public static bool SceneSupportsSwap => FindBaseInfo() != null;
 
         public static void Apply(string key)
         {
-            if (string.IsNullOrEmpty(key) || !MapCatalog.IsPlayable(key)) key = MapCatalog.BaseKey;
             var baseInfo = FindBaseInfo();
-            if (baseInfo == null) return;                                   // cena dedicada: mapa fixo
-            if (key == CurrentKey && (key == MapCatalog.BaseKey || s_Loaded != null)) return;
+            if (baseInfo == null) return;                                   // cena sem mapa conhecido: não mexe
+            string sceneKey = MapCatalog.KeyForMapName(baseInfo.mapName);
+            if (string.IsNullOrEmpty(key) || !MapCatalog.IsPlayable(key)) key = sceneKey;
+            if (s_Loaded == null && CurrentKey != sceneKey && !string.IsNullOrEmpty(sceneKey)) CurrentKey = sceneKey;
+            if (key == CurrentKey) return;
 
-            Unload();
-            if (key == MapCatalog.BaseKey) return;
+            Unload(sceneKey);
+            if (key == sceneKey) return;
 
             var path = MapCatalog.ResourceFor(key);
             var prefab = path != null ? Resources.Load<GameObject>(path) : null;
             if (prefab == null)
             {
-                Debug.LogWarning("[Mapas] Pacote do mapa '" + key + "' não encontrado em Resources/" + path + " — fica a arena.");
+                Debug.LogWarning("[Mapas] O mapa '" + MapCatalog.DisplayName(key) + "' não pode ser carregado nesta cena " +
+                                 "(abre a Arena.unity para jogar todos os mapas). Fica " + MapCatalog.DisplayName(sceneKey) + ".");
                 return;
             }
 
@@ -95,7 +111,7 @@ namespace FPSLAN
             }
         }
 
-        static void Unload()
+        static void Unload(string sceneKey)
         {
             if (s_Loaded != null)
             {
@@ -108,7 +124,7 @@ namespace FPSLAN
             s_HiddenBase.Clear();
             foreach (var c in s_HiddenCovers) if (c != null) c.SetHiddenByMap(false);
             s_HiddenCovers.Clear();
-            CurrentKey = MapCatalog.BaseKey;
+            CurrentKey = sceneKey ?? MapCatalog.BaseKey;
             Physics.SyncTransforms();
         }
 
