@@ -25,8 +25,8 @@ namespace FPSLAN.EditorTools
         public const string LinceFolder = "Assets/_Game/Art/Characters/Lince";
         public const string LinceBrawlerId = "sniper";
 
-        [MenuItem("FPS-LAN/Personagens: montar MR.S (modelo Mixamo)", priority = 30)]
-        static void BuildMsMenu() => Report(Build(MsBrawlerId, MsFolder, "MS"));
+        [MenuItem("FPS-LAN/Personagens: montar MR.S (modelo + animações)", priority = 30)]
+        static void BuildMsMenu() => RosterModelBuilder.BuildMrS();
 
         [MenuItem("FPS-LAN/Personagens: montar Lince (modelo + animações)", priority = 31)]
         static void BuildLinceMenu() => Report(Build(LinceBrawlerId, LinceFolder, "Lince"));
@@ -123,7 +123,8 @@ namespace FPSLAN.EditorTools
             if (!Application.isBatchMode) EditorUtility.DisplayDialog("FPS-LAN", report, "OK");
         }
 
-        public static string Build(string brawlerId, string folder, string prefix)
+        public static string Build(string brawlerId, string folder, string prefix,
+            IReadOnlyDictionary<string, AnimationClip> fallbackClips = null, string texturePath = null)
         {
             if (!AssetDatabase.IsValidFolder(folder)) return "Pasta não encontrada: " + folder;
             var fbxs = Directory.GetFiles(folder, "*.fbx").Select(p => p.Replace('\\', '/')).ToList();
@@ -188,6 +189,9 @@ namespace FPSLAN.EditorTools
                 var role = RoleFor(Path.GetFileNameWithoutExtension(p));
                 if (role != null && !clips.ContainsKey(role)) clips[role] = clip;
             }
+            if (fallbackClips != null)
+                foreach (var entry in fallbackClips)
+                    if (!clips.ContainsKey(entry.Key) && entry.Value != null) clips.Add(entry.Key, entry.Value);
             if (!clips.ContainsKey("idle"))
             {
                 var diag = new System.Text.StringBuilder();
@@ -352,7 +356,7 @@ namespace FPSLAN.EditorTools
             EditorUtility.SetDirty(ctrl);
 
             // ---------------- 5. material cartoon com a textura
-            var tex = Directory.GetFiles(folder, "*.png").Select(p => p.Replace('\\', '/'))
+            var tex = texturePath ?? Directory.GetFiles(folder, "*.png").Select(p => p.Replace('\\', '/'))
                 .FirstOrDefault(p => p.ToLowerInvariant().Contains("diffuse") || p.ToLowerInvariant().Contains("albedo") || p.ToLowerInvariant().Contains("base"));
             var matPath = folder + "/" + prefix + "_Toon.mat";
             var mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);

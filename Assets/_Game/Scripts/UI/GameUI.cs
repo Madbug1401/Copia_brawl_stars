@@ -99,6 +99,7 @@ namespace FPSLAN
         {
             if (s_Instance == this) s_Instance = null;
             m_Preview?.Dispose();
+            ReleaseHudTextures();
         }
 
         // ================================================================== API estática
@@ -941,112 +942,16 @@ namespace FPSLAN
             var me = PlayerNetwork.Local;
             if (me == null) return;
             float s = Scale;
-            float cx = Screen.width / 2f, cy = Screen.height / 2f;
-            var b = me.Brawler;
-
-            if (me.Health.IsDead)
-            {
-                DrawDeathOverlay(me);
-            }
-            else
-            {
-                DrawCrosshair(me, cx, cy, s);
-            }
-
-            // ---------------- vida (canto inferior esquerdo)
-            float bw = 340 * s, bh = 34 * s;
-            var hpRect = new Rect(30 * s, Screen.height - 64 * s, bw, bh);
-            InkPanel(hpRect, new Color(0.12f, 0.13f, 0.22f, 0.95f), 3f * s);
-            float hp01 = Mathf.Clamp01(me.Health.Health.Value / (float)Mathf.Max(1, me.Health.MaxHealth));
-            var hpColor = Color.Lerp(new Color(0.95f, 0.25f, 0.2f), new Color(0.35f, 0.92f, 0.4f), hp01);
-            if (hp01 > 0f) Panel(new Rect(hpRect.x, hpRect.y, Mathf.Max(bh, hpRect.width * hp01), hpRect.height), hpColor);
-            Panel(new Rect(hpRect.x + 6 * s, hpRect.y + 4 * s, Mathf.Max(0f, hpRect.width * hp01 - 12 * s), 6 * s), new Color(1f, 1f, 1f, 0.3f));
-            Outlined(new Rect(hpRect.x + 12 * s, hpRect.y, bw, bh), me.Health.Health.Value + " / " + me.Health.MaxHealth, m_Label, Color.white);
-
-            // Retrato
-            float pr = 64 * s;
-            var portrait = new Rect(hpRect.x, hpRect.y - pr - 10 * s, pr, pr);
-            Tex(new Rect(portrait.x - 3 * s, portrait.y - 3 * s, pr + 6 * s, pr + 6 * s), m_Circle, Ink);
-            Tex(portrait, m_Circle, b != null ? b.Tint : Color.white);
-            Outlined(portrait, b != null ? FirstCharacterOrFallback(b.displayName) : "?", m_Initial, Color.white, 2f);
-            // Pet equipado (miniatura com o nível)
-            var petDef = GameExperience.Current.PetCatalog.FindByHash(me.Loadout.Value.petHash);
-            if (petDef != null)
-            {
-                float pd = pr * 0.48f;
-                var petRect = new Rect(portrait.xMax - pd * 0.55f, portrait.yMax - pd * 0.85f, pd, pd);
-                Tex(new Rect(petRect.x - 2 * s, petRect.y - 2 * s, petRect.width + 4 * s, petRect.height + 4 * s), m_Circle, Ink);
-                Tex(petRect, m_Circle, petDef.primaryColor);
-                Outlined(petRect, me.Loadout.Value.petLevel.ToString(), m_TinyCenter, Color.white, 1f);
-            }
-            Outlined(new Rect(portrait.xMax + 10 * s, portrait.y + 8 * s, 400 * s, 30 * s), b != null ? b.displayName.ToUpperInvariant() : "", m_Big, Color.white, 2f);
-            Outlined(new Rect(portrait.xMax + 12 * s, portrait.y + 40 * s, 400 * s, 22 * s), b != null ? ShortRole(b) : "", m_Small, new Color(0.85f, 0.9f, 1f), 1.2f);
-
-            // ---------------- botão de Super (canto inferior direito)
+            EnsureHudStyles(s);
+            if (me.Health.IsDead) DrawDeathOverlay(me);
+            else DrawCrosshair(me, Screen.width / 2f, Screen.height / 2f, s);
+            DrawHudVitals(me, s);
             DrawSuperButton(me, s);
-
-            // ---------------- topo: tempo + K/D + líder
-            var match = MatchManager.Instance;
-            if (match != null && match.IsSpawned)
-            {
-                float tr = match.TimeRemaining;
-                string time = match.Phase.Value == MatchPhase.Playing ? $"{(int)(tr / 60)}:{(int)(tr % 60):00}" : "FIM";
-                if (match.IsCoop && match.Phase.Value == MatchPhase.Playing)
-                    time = match.IsRoundIntermission.Value ? $"0:{Mathf.CeilToInt(tr):00}" : "";
-                var top = new Rect(cx - 170 * s, 12 * s, 340 * s, 52 * s);
-                InkPanel(top, PanelBlue, 3f * s);
-                string modeName = match.IsCoop ? "IT TAKES TWO" :
-                match.Mode.Value == GameMode.GemGrab ? "PIQUE-GEMAS" :
-                    match.Mode.Value == GameMode.Wipeout ? "WIPEOUT" :
-                    match.Mode.Value == GameMode.Knockout ? $"KNOCKOUT · RONDA {match.RoundNumber.Value}" :
-                    match.Mode.Value == GameMode.Showdown ? "SHOWDOWN" : "DEATHMATCH";
-                string modeScore = match.IsCoop
-                    ? match.CoopStage.Value >= CoopMissionStage.Puzzle ? match.CoopStageTitle : $"ONDA {Mathf.Max(1, match.CoopWave.Value)}/{match.coopTotalWaves}  ·  INIMIGOS {match.CoopEnemiesLeft.Value}"
-                    : match.Mode.Value == GameMode.Deathmatch
-                    ? $"K {me.Kills.Value}  ·  D {me.Deaths.Value}  ·  meta {match.killLimit}"
-                    : match.Mode.Value == GameMode.Showdown
-                        ? $"VIVOS {match.AlivePlayerCount}  ·  K {me.Kills.Value}"
-                        : $"AZUL {match.BlueScore.Value}  -  {match.RedScore.Value} VERMELHA";
-                Outlined(new Rect(top.x, top.y + 2 * s, top.width, 25 * s), $"{modeName}   {time}", m_BigCenter, Color.white, 2f);
-                Outlined(new Rect(top.x, top.y + 27 * s, top.width, 22 * s), modeScore, m_TinyCenter, new Color(1f, 0.9f, 0.6f), 1f);
-
-                if (match.IsCoop) DrawCoopHud(me, match, top, s);
-
-                if (match.Mode.Value == GameMode.Deathmatch)
-                {
-                    PlayerNetwork leader = null;
-                    foreach (var p in PlayerNetwork.All)
-                        if (p != null && p.IsSpawned && (leader == null || p.Kills.Value > leader.Kills.Value)) leader = p;
-                    if (leader != null && leader.Kills.Value > 0)
-                    {
-                        var lr = new Rect(cx - 160 * s, top.yMax + 8 * s, 320 * s, 22 * s);
-                        Outlined(lr, "LÍDER: " + leader.DisplayName + " — " + leader.Kills.Value, m_TinyCenter, Gold, 1.2f);
-                    }
-                }
-            }
-
-            // ---------------- kill feed
-            float ky = 14 * s;
-            foreach (var k in m_KillFeed)
-            {
-                var r = new Rect(Screen.width - 420 * s, ky, 400 * s, 30 * s);
-                float age = Time.time - k.time;
-                float a = Mathf.Clamp01((6f - age) * 2f);
-                Panel(r, new Color(0.05f, 0.05f, 0.12f, 0.7f * a));
-                float x = r.x + 10 * s;
-                if (!string.IsNullOrEmpty(k.killer))
-                {
-                    var kw = m_KillFeedStyle.CalcSize(new GUIContent(k.killer)).x;
-                    Outlined(new Rect(x, r.y, kw + 4, r.height), k.killer, m_KillFeedStyle, Art.WithAlpha(k.killerColor, a), 1.2f);
-                    x += kw + 10 * s;
-                    Outlined(new Rect(x, r.y, 40 * s, r.height), "»", m_KillFeedStyle, new Color(1f, 0.4f, 0.3f, a), 1.2f);
-                    x += 26 * s;
-                }
-                Outlined(new Rect(x, r.y, 260 * s, r.height), string.IsNullOrEmpty(k.killer) ? k.victim + " caiu" : k.victim, m_KillFeedStyle, Art.WithAlpha(k.victimColor, a), 1.2f);
-                ky += 34 * s;
-            }
-
-            Outlined(new Rect(16 * s, 12 * s, 460 * s, 24 * s), "Tab: placar · Esc: menu / personagem / bots", m_Small, new Color(1f, 1f, 1f, 0.75f), 1f);
+            DrawHudHeader(me, s);
+            DrawHudFeed(s);
+            HudLabel(new Rect(22 * s, 16 * s, 360 * s, 22 * s),
+                GameInputSettings.BindingLabel(GameAction.Scoreboard) + " · PLACAR    " +
+                GameInputSettings.BindingLabel(GameAction.Pause) + " · MENU", m_HudSmall, new Color(1, 1, 1, 0.65f));
         }
 
         void DrawCrosshair(PlayerNetwork me, float cx, float cy, float s)
@@ -1121,24 +1026,8 @@ namespace FPSLAN
                 GUI.matrix = m;
             }
 
-            // Munição segmentada debaixo da mira (estilo arcade)
-            var b = me.Brawler;
-            int maxCharges = b != null ? b.primary.maxCharges : 3;
-            float ammo = me.Combat.Ammo;
-            float segW = 34 * s, segH = 9 * s, gap = 4 * s;
-            float totalW = maxCharges * segW + (maxCharges - 1) * gap;
-            float ax = cx - totalW / 2f, ay = cy + 34 * s;
-            Panel(new Rect(ax - 4 * s, ay - 4 * s, totalW + 8 * s, segH + 8 * s), new Color(0.03f, 0.03f, 0.08f, 0.75f));
-            for (int i = 0; i < maxCharges; i++)
-            {
-                var r = new Rect(ax + i * (segW + gap), ay, segW, segH);
-                Fill(r, new Color(0.25f, 0.18f, 0.08f, 0.9f));
-                float fill = Mathf.Clamp01(ammo - i);
-                if (fill > 0f) Fill(new Rect(r.x, r.y, r.width * fill, r.height), fill >= 1f ? new Color(1f, 0.62f, 0.12f) : new Color(0.75f, 0.5f, 0.2f));
-                if (fill >= 1f) Fill(new Rect(r.x, r.y, r.width, 2 * s), new Color(1f, 0.9f, 0.6f, 0.8f));
-            }
-
-            float ly = ay + segH + 8 * s;
+            // A munição acompanha o retrato; mantêm-se os avisos de estado junto à mira.
+            float ly = cy + 48 * s;
             if (me.Health.IsProtected)
             {
                 Outlined(new Rect(cx - 150, ly, 300, 20 * s), "ESCUDO ATIVO (termina ao atacar)", m_TinyCenter, new Color(0.55f, 0.88f, 1f), 1f);
@@ -1170,32 +1059,14 @@ namespace FPSLAN
 
         void DrawSuperButton(PlayerNetwork me, float s)
         {
-            float d = 120 * s;
-            var r = new Rect(Screen.width - d - 36 * s, Screen.height - d - 30 * s, d, d);
+            float d = 116 * s;
+            var r = new Rect(Screen.width - d - 72 * s, Screen.height - d - 62 * s, d, d);
             float sup = Mathf.Clamp01(me.Combat.SuperCharge.Value);
             bool ready = me.Combat.SuperReady;
             var b = me.Brawler;
             var superCol = b != null ? Color.Lerp(b.vfx.superColor, new Color(1f, 0.85f, 0.2f), 0.55f) : Gold;
 
-            if (ready)
-            {
-                float pulse = 1f + 0.08f * Mathf.Sin(Time.time * 7f);
-                var glow = new Rect(r.center.x - d * 0.75f * pulse, r.center.y - d * 0.75f * pulse, d * 1.5f * pulse, d * 1.5f * pulse);
-                Tex(glow, Art.SoftTexture, Art.WithAlpha(superCol, 0.55f));
-            }
-            Tex(new Rect(r.x - 4 * s, r.y - 4 * s, d + 8 * s, d + 8 * s), m_Circle, Ink);
-            Tex(r, m_Circle, new Color(0.15f, 0.15f, 0.25f, 0.95f));
-
-            // Enchimento vertical do círculo (de baixo para cima)
-            if (sup > 0f && Event.current.type == EventType.Repaint)
-            {
-                var fillRect = new Rect(r.x, r.y + r.height * (1f - sup), r.width, r.height * sup);
-                var old = GUI.color;
-                GUI.color = ready ? superCol : Art.Darken(superCol, 0.75f);
-                GUI.DrawTextureWithTexCoords(fillRect, m_Circle, new Rect(0f, 0f, 1f, sup));
-                GUI.color = old;
-            }
-            Tex(r, m_Ring, new Color(1f, 1f, 1f, ready ? 0.9f : 0.35f));
+            DrawHudSuperChrome(r, sup, ready, me.Combat.InSuperMode, s);
 
             // Especial em modo: indicador de duração (Minigun) ou de "armado" (tiro fatal)
             var combat = me.Combat;
@@ -1216,18 +1087,20 @@ namespace FPSLAN
                 Outlined(new Rect(r.x - 20 * s, r.y + d * 0.26f, d + 40 * s, 30 * s), modeLabel, m_SuperLabel, Color.white, 2f);
                 string sub = mode.duration > 0f
                     ? combat.ModeRemaining.ToString("0.0") + "s · " + combat.ModeShotsRemaining + " rajadas"
-                    : (mode.cancellable ? "ARMADO · E cancela" : "ARMADO");
+                    : (mode.cancellable ? "ARMADO · " + GameInputSettings.BindingLabel(GameAction.Super) + " cancela" : "ARMADO");
                 Outlined(new Rect(r.x - 30 * s, r.y + d * 0.55f, d + 60 * s, 22 * s), sub, m_TinyCenter, Color.white, 1f);
                 if (combat.ModeActivation01 < 1f)
                     Outlined(new Rect(r.x - 40 * s, r.y - 52 * s, d + 80 * s, 22 * s), "A TRANSFORMAR...", m_TinyCenter, superCol, 1.2f);
                 return;
             }
 
-            m_SuperLabel.fontSize = Mathf.RoundToInt(24 * s);
-            string title = b != null && b.super.IsMode && !string.IsNullOrEmpty(b.super.mode.label) ? b.super.mode.label.ToUpperInvariant() : "SUPER";
-            if (title.Length > 8) m_SuperLabel.fontSize = Mathf.RoundToInt(18 * s);
-            Outlined(new Rect(r.x - 20 * s, r.y + d * 0.28f, d + 40 * s, 30 * s), title, m_SuperLabel, ready ? Color.white : new Color(1f, 1f, 1f, 0.7f), 2f);
-            Outlined(new Rect(r.x, r.y + d * 0.55f, d, 22 * s), ready ? "Botão dir. / E" : Mathf.RoundToInt(sup * 100) + "%", m_TinyCenter, Color.white, 1f);
+            string title = b != null && b.super.IsMode && !string.IsNullOrEmpty(b.super.mode.label)
+                ? b.super.mode.label.ToUpperInvariant() : "SUPER";
+            HudLabel(new Rect(r.x - 28 * s, r.y - 28 * s, d + 56 * s, 22 * s),
+                title, m_HudSmall, ready ? HudCyan : Color.white);
+            HudLabel(new Rect(r.x - 16 * s, r.yMax + 8 * s, d + 32 * s, 24 * s),
+                ready ? "[" + GameInputSettings.BindingLabel(GameAction.Super) + "] PRONTO" :
+                Mathf.RoundToInt(sup * 100) + "%", m_HudSmall, ready ? HudCyan : Color.white);
         }
 
         void DrawDeathOverlay(PlayerNetwork me)

@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace FPSLAN
 {
-    /// <summary>Visual partilhado pelos menus, definiÃ§Ãµes, progressÃ£o e resultados.</summary>
+    /// <summary>Visual partilhado pelos menus, definiÃƒÂ§ÃƒÂµes, progressÃƒÂ£o e resultados.</summary>
     public static class MenuTheme
     {
         public static readonly Color Deep = new Color(0.02f, 0.05f, 0.1f, 1f);
@@ -52,9 +52,11 @@ namespace FPSLAN
                 s_Skin.verticalScrollbar.normal.background = Surface(Deep, CyanDim);
                 foreach (var state in new[] { s_Skin.verticalScrollbarThumb.normal, s_Skin.verticalScrollbarThumb.hover, s_Skin.verticalScrollbarThumb.active }) state.background = thumb;
                 s_Skin.verticalScrollbarThumb.border = new RectOffset(16, 16, 16, 16);
+#if UNITY_EDITOR
                 foreach (var control in new[] { s_Skin.box, s_Skin.textField, s_Skin.textArea, s_Skin.horizontalSlider, s_Skin.horizontalSliderThumb, s_Skin.verticalScrollbar, s_Skin.verticalScrollbarThumb })
                     foreach (var state in new[] { control.normal, control.hover, control.active, control.focused, control.onNormal, control.onHover, control.onActive, control.onFocused })
                         state.scaledBackgrounds = System.Array.Empty<Texture2D>();
+#endif
             }
             if (!Mathf.Approximately(s_Scale, Scale))
             {
@@ -112,7 +114,12 @@ namespace FPSLAN
                 if (s_TextStyles.Count > 512) s_TextStyles.Clear();
                 clean = new GUIStyle { padding = new RectOffset(style.padding.left, style.padding.right, style.padding.top, style.padding.bottom) };
                 foreach (var state in new[] { clean.normal, clean.hover, clean.active, clean.focused, clean.onNormal, clean.onHover, clean.onActive, clean.onFocused })
-                { state.background = null; state.scaledBackgrounds = System.Array.Empty<Texture2D>(); }
+                {
+                    state.background = null;
+#if UNITY_EDITOR
+                    state.scaledBackgrounds = System.Array.Empty<Texture2D>();
+#endif
+                }
                 s_TextStyles[style] = clean;
             }
             clean.font = style.font;

@@ -44,12 +44,13 @@ namespace FPSLAN
             if (!GemGrabManager.IsActive || m_Mgr == null) return;
             var match = MatchManager.Instance;
             var me = PlayerNetwork.Local;
-            float s = Mathf.Clamp(Screen.height / 900f, 0.7f, 2f); // mesma escala do GameUI (fica por baixo do painel do topo)
+            float s = MenuTheme.Scale; // mesma escala e zona de objetivos do GameUI
             Styles(s);
             float cx = Screen.width / 2f;
 
             int blue = m_Mgr.TeamTotal(0), red = m_Mgr.TeamTotal(1);
-            var r = new Rect(cx - 220 * s, 72 * s, 440 * s, 30 * s);
+            float objectiveTop = GameUI.HudObjectiveTop(s);
+            var r = new Rect(cx - 220 * s, objectiveTop, 440 * s, 30 * s);
             Shadowed(new Rect(r.x, r.y, r.width / 2 - 10 * s, r.height), $"◆ {blue}", m_Mid, Blue);
             Shadowed(new Rect(cx + 10 * s, r.y, r.width / 2 - 10 * s, r.height), $"◆ {red}", m_Mid, Red);
             Shadowed(new Rect(cx - 30 * s, r.y, 60 * s, r.height), $"/{m_Mgr.winGems}", m_Small, Color.white);
@@ -68,8 +69,8 @@ namespace FPSLAN
                 int secs = Mathf.CeilToInt(m_Mgr.CountdownRemaining);
                 string who = blueWins ? "EQUIPA AZUL" : "EQUIPA VERMELHA";
                 bool mineTeam = me != null && me.TeamId.Value == m_Mgr.CountdownTeam.Value;
-                Shadowed(new Rect(cx - 300 * s, 110 * s, 600 * s, 46 * s), $"{who} VENCE EM {secs}", m_Big, blueWins ? Blue : Red);
-                Shadowed(new Rect(cx - 300 * s, 154 * s, 600 * s, 26 * s),
+                Shadowed(new Rect(cx - 300 * s, (objectiveTop + 38 * s), 600 * s, 46 * s), $"{who} VENCE EM {secs}", m_Big, blueWins ? Blue : Red);
+                Shadowed(new Rect(cx - 300 * s, (objectiveTop + 82 * s), 600 * s, 26 * s),
                     mineTeam ? "Protege os portadores!" : "Mata os portadores para parar a contagem!", m_Small, Color.white);
             }
 

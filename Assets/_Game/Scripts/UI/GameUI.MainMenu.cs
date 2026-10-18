@@ -158,8 +158,9 @@ namespace FPSLAN
                 UpdateBackgroundCamera(m_MDt);
             }
 
-            MenuInit();
             EnsureMenuStyles();
+            if (DrawOpeningIntro()) return;
+            MenuInit();
 
             bool connecting = NM != null && NM.IsListening;   // a ligar/criar (ainda sem jogador local)
             DrawMenuBackground();
@@ -962,13 +963,24 @@ namespace FPSLAN
             }
             if (m_BgT < 1f) m_BgT = Mathf.Min(1f, m_BgT + dt / BgTravelTime);
             float t = m_BgT;
-            float e = t * t * t * (t * (t * 6f - 15f) + 10f);              // smootherstep
+            float e = BgTravelEase(t);
             m_BgCur = Vector2.Lerp(m_BgFrom, m_BgTo, e);
             m_BgAW = Mathf.Lerp(m_BgAWFrom, m_BgAWTo, e);
             // zoom em escala logarítmica (aproximação uniforme) menos o "arco" do voo
-            float z = Mathf.Exp(Mathf.Lerp(Mathf.Log(m_BgZFrom), Mathf.Log(m_BgZTo), Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t * 1.15f - 0.1f))));
+            float z = BgTravelZoom(m_BgZFrom, m_BgZTo, t);
             m_BgZCur = Mathf.Max(1f, z - m_BgArc * Mathf.Sin(t * Mathf.PI));
         }
+
+        // A intro e a seleção de mapas usam a mesma aceleração e o mesmo zoom logarítmico.
+        static float BgTravelEase(float t)
+        {
+            t = Mathf.Clamp01(t);
+            return t * t * t * (t * (t * 6f - 15f) + 10f);
+        }
+
+        static float BgTravelZoom(float from, float to, float t) =>
+            Mathf.Exp(Mathf.Lerp(Mathf.Log(from), Mathf.Log(to),
+                Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t * 1.15f - 0.1f))));
 
         /// <summary>Retângulo UV visível para um foco/zoom (cobre o ecrã, sem sair da imagem).</summary>
         /// <param name="anchorOffset">Onde o foco deve aparecer, em píxeis a partir do centro do ecrã.</param>

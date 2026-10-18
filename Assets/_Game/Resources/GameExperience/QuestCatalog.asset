@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: bc896d21102a4c8c8fa80bf5b86735f7, type: 3}
   m_Name: QuestCatalog
-  m_EditorClassIdentifier: FPSLAN.Game:FPSLAN:QuestCatalog
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.QuestCatalog
   quests:
   - questId: daily_play3
     title: "Participar em tr\xEAs partidas"

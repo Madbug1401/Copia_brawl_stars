@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: b9275cee5e6c47139ee4b9d5d4f04dea, type: 3}
   m_Name: SkinCatalog
-  m_EditorClassIdentifier: FPSLAN.Game:FPSLAN:SkinCatalog
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SkinCatalog
   skins:
   - {fileID: 11400000, guid: 8fa99d029ad8b0949807d62aedd4e389, type: 2}
   - {fileID: 11400000, guid: 7099c09b1dba04947b6f071dcc8c929f, type: 2}

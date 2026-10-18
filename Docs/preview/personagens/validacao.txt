@@ -1,0 +1,10 @@
+Ekko / gunslinger / DualSMG: height=2,08, material=Ekko_Toon, avatar=True
+  idle/walk/run/jump/attack/hurt/death/respawn + FP idle/fire/sprint: OK
+Lupus Marinus / artillery / DualExplosives: height=1,98, material=LupusMarinus_Toon, avatar=True
+  idle/walk/run/jump/attack/hurt/death/respawn + FP idle/fire/sprint: OK
+Mr.S / sprayer / DualSprayCans: height=2,05, material=MrS_Toon, avatar=True
+  idle/walk/run/jump/attack/hurt/death/respawn + FP idle/fire/sprint: OK
+N.Cage / trapper / Bow: height=2,02, material=NCage_Toon, avatar=True
+  idle/walk/run/jump/attack/hurt/death/respawn + FP idle/fire/sprint: OK
+Riot / shotgunner / Shotgun: height=2,04, material=Riot_Toon, avatar=True
+  idle/walk/run/jump/attack/hurt/death/respawn + FP idle/fire/sprint: OK
