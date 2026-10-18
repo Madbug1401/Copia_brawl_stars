@@ -10,7 +10,7 @@ namespace FPSLAN
     /// com pré-visualização 3D, HUD (vida, munição segmentada, botão de Super), números de dano, avisos,
     /// barras de vida sobre os inimigos, placar, kill feed e pausa com troca de personagem.
     /// </summary>
-    public class GameUI : MonoBehaviour
+    public partial class GameUI : MonoBehaviour
     {
         static GameUI s_Instance;
         const int SettingsTabControls = 0;
@@ -224,7 +224,8 @@ namespace FPSLAN
             m_Toasts.RemoveAll(t => Time.time - t.time > 1.6f);
 
             // Pré-visualização 3D: só no menu ou na pausa (troca de personagem)
-            bool showPreview = !m_InGame || m_Paused;
+            // (o menu novo usa retratos 2D; a pré-visualização 3D fica só para a pausa)
+            bool showPreview = UseNewMenu ? (m_InGame && m_Paused) : (!m_InGame || m_Paused);
             if (showPreview)
             {
                 int idx = m_InGame && PlayerNetwork.Local != null ? PlayerNetwork.Local.HeroId.Value : m_Hero;
@@ -452,6 +453,7 @@ namespace FPSLAN
 
             if (!m_InGame)
             {
+                if (UseNewMenu) { DrawNewMainMenu(); return; }   // GameUI.MainMenu.cs
                 if (m_SettingsOpen) DrawSettingsMenu();
                 else DrawMainMenu();
                 return;
