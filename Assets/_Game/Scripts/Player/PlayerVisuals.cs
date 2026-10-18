@@ -525,6 +525,8 @@ namespace FPSLAN
                 // Abrandado: campo de visão mais fechado; sprint: ligeiramente mais aberto
                 bool scoped = !dead && GameUI.GameplayInputAllowed && m_Player.Brawler != null &&
                     m_Player.Brawler.firstPerson.rig == RigStyle.Sniper && InputReader.AimHeld;
+                // a mirar pela luneta: esconde a arma e as mãos (só se vê a mira no ecrã)
+                if (m_View != null) m_View.SetVisible(!dead && !scoped);
                 float fov = scoped ? GameSession.ScopeFieldOfView :
                     (m_Player.Health.IsSlowed ? 78f : (motor.IsSprinting && motor.IsMoving ? 90f : 85f));
                 if (motor.IsLaunched) fov = 92f;
