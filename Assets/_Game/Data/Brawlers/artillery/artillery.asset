@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: artillery
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.BrawlerDefinition
   brawlerId: artillery
-  displayName: Ekko
+  displayName: Lupus Marinus
   role: "Artilheiro \u2014 duas cargas em arco que explodem ap\xF3s um atraso; Super: barril com knockback"
   available: 1
   stats:

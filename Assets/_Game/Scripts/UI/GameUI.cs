@@ -35,7 +35,9 @@ namespace FPSLAN
         string m_Ip;
         int m_Hero;
         int m_MenuBots;
-        int m_PendingBots;
+        static int m_PendingBots;
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        public static void ClearPendingBots() => m_PendingBots = 0;
         List<string> m_LocalIps;
 
         float m_HitMarkerTimer;

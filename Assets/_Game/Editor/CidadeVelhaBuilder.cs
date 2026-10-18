@@ -473,7 +473,7 @@ namespace FPSLAN.EditorTools
             var matchGo = new GameObject("MatchManager");
             matchGo.AddComponent<NetworkObject>();
             var match = matchGo.AddComponent<MatchManager>();
-            match.overrideMenuMode = true;
+            match.overrideMenuMode = false;
             match.sceneMode = GameMode.GemGrab;
 
             // Pique-Gemas (NetworkObject da cena: estado replicado e sincronizado para quem entra a meio)

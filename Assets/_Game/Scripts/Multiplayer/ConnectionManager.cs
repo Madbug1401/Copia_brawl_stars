@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -8,6 +9,7 @@ using UnityEngine;
 namespace FPSLAN
 {
     /// <summary>Host / Join por IP na LAN, sobre Unity Transport (UDP).</summary>
+    [DefaultExecutionOrder(-1000)]
     public class ConnectionManager : MonoBehaviour
     {
         public const ushort DefaultPort = 7777;
@@ -22,7 +24,59 @@ namespace FPSLAN
 
         static NetworkManager NM => NetworkManager.Singleton;
 
-        void Awake() => Instance = this;
+        static bool s_HostAfterLoad;
+        static GameMode s_HostMode;
+        static ushort s_HostPort;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetPendingHost() => s_HostAfterLoad = false;
+
+        void Awake()
+        {
+            Instance = this;
+            // Netcode persists across scenes. Keep its transport and client connection.
+            if (NM != null)
+                foreach (var manager in FindObjectsByType<NetworkManager>())
+                    if (manager != NM)
+                    {
+                        manager.gameObject.SetActive(false);
+                        Destroy(manager.gameObject);
+                    }
+        }
+
+        public bool HostMap(string mapKey, ushort port = DefaultPort)
+        {
+            if (NM == null || NM.IsListening || IsConnecting) return false;
+            string scene = mapKey == "santiago" ? "CidadeVelha" : "Arena";
+            if (MatchManager.MenuSelectedMode == GameMode.GemGrab && mapKey != "santiago")
+            {
+                Status = "O Pique-Gemas só está disponível em Santiago.";
+                return false;
+            }
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == scene)
+                return Host(port);
+            if (!Application.CanStreamedLevelBeLoaded(scene))
+            {
+                Status = "Cena indisponível: " + scene;
+                return false;
+            }
+            s_HostMode = MatchManager.MenuSelectedMode;
+            s_HostPort = port;
+            s_HostAfterLoad = true;
+            IsConnecting = true;
+            UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(scene);
+            return true;
+        }
+
+        IEnumerator HostAfterSceneLoad()
+        {
+            yield return null; // UI and scene systems must finish initialization first.
+            if (!s_HostAfterLoad) yield break;
+            s_HostAfterLoad = false;
+            MatchManager.MenuSelectedMode = s_HostMode;
+            IsConnecting = false;
+            if (!Host(s_HostPort)) GameUI.ClearPendingBots();
+        }
 
         void Start()
         {
@@ -36,6 +90,7 @@ namespace FPSLAN
             NM.OnClientDisconnectCallback += OnClientDisconnected;
             NM.ConnectionApprovalCallback = ApproveConnection;
             NM.NetworkConfig.ConnectionApproval = true;
+            if (s_HostAfterLoad) StartCoroutine(HostAfterSceneLoad());
         }
 
         void OnDestroy()
@@ -61,6 +116,11 @@ namespace FPSLAN
         public bool Host(ushort port = DefaultPort)
         {
             if (NM == null || NM.IsListening) return false;
+            if (MatchManager.MenuSelectedMode == GameMode.GemGrab && GemGrabManager.Instance == null)
+            {
+                Status = "O Pique-Gemas requer o gerador de gemas de Santiago.";
+                return false;
+            }
 
             var utp = NM.GetComponent<UnityTransport>();
             utp.SetConnectionData("127.0.0.1", port, "0.0.0.0");
@@ -87,6 +147,7 @@ namespace FPSLAN
 
         public void Leave()
         {
+            GameUI.ClearPendingBots();
             if (NM == null) return;
             IsConnecting = false;
             if (CombatSystem.Instance != null) CombatSystem.Instance.ClearAll();

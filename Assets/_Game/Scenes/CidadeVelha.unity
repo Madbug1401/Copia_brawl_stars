@@ -156,8 +156,8 @@ MonoBehaviour:
   wipeoutTeamKillLimit: 10
   knockoutRoundSeconds: 90
   knockoutIntermissionSeconds: 4
-  overrideMenuMode: 1
-  sceneMode: 4
+  overrideMenuMode: 0
+  sceneMode: 5
 --- !u!114 &154285798
 MonoBehaviour:
   m_ObjectHideFlags: 0

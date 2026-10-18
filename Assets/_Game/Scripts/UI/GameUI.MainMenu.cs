@@ -32,11 +32,11 @@ namespace FPSLAN
         static readonly MenuCharacter[] s_Roster =
         {
             new MenuCharacter("LINCE", "lince", "sniper"),
-            new MenuCharacter("RIOT", "riot", "gunslinger"),
-            new MenuCharacter("LUPUS MARINUS", "lupus", "trapper"),
-            new MenuCharacter("MS", "mrs", "sprayer"),
-            new MenuCharacter("N.CAGE", "ncage", "shotgunner"),
-            new MenuCharacter("EKKO", "ekko", "artillery"),
+            new MenuCharacter("RIOT", "riot", "shotgunner"),
+            new MenuCharacter("LUPUS MARINUS", "lupus", "artillery"),
+            new MenuCharacter("MR.S", "mrs", "sprayer"),
+            new MenuCharacter("N.CAGE", "ncage", "trapper"),
+            new MenuCharacter("EKKO", "ekko", "gunslinger"),
         };
 
         struct MenuMode
@@ -70,12 +70,12 @@ namespace FPSLAN
 
         /// <summary>
         /// Mapas do carrossel (sem nomes no ecrã). Cada um aponta para uma ilha do fundo, para o efeito de aproximação.
-        /// Só o primeiro (a arena atual) é jogável por agora.
+        /// A Arena e Santiago (Cidade Velha) estão disponíveis.
         /// </summary>
         static readonly MenuMap[] s_Maps =
         {
             new MenuMap("pradaria", true, new Vector2(0.19f, 0.845f), 2.5f, "17°04'N  25°10'W"),
-            new MenuMap("santiago", false, new Vector2(0.606f, 0.306f), 2.2f, "15°05'N  23°37'W"),
+            new MenuMap("santiago", true, new Vector2(0.606f, 0.306f), 2.2f, "15°05'N  23°37'W"),
             new MenuMap("sal", false, new Vector2(0.775f, 0.772f), 2.7f, "16°45'N  22°57'W"),
             new MenuMap("boavista", false, new Vector2(0.8125f, 0.502f), 2.5f, "16°06'N  22°49'W"),
             new MenuMap("fogo", false, new Vector2(0.3125f, 0.264f), 2.8f, "14°55'N  24°23'W"),
@@ -390,7 +390,7 @@ namespace FPSLAN
 
             // ---------------- 2. mapa (online e criar servidor local)
             var actions = VR(1051, 579, 367, 196);
-            if (online)
+            if (!join)
             {
                 MText(VL(58, 528, 300, 40), "2  MAP", m_MT30, MWhite, TextAnchor.MiddleLeft);
                 DrawTechLine(VL(58, 568, 380, 2), false);
@@ -643,8 +643,10 @@ namespace FPSLAN
         {
             if (NM != null && NM.IsListening) return;
             if (ConnectionManager.Instance == null) { MenuNotice("Erro: sistema de rede não encontrado na cena."); return; }
+            if (MatchManager.MenuSelectedMode == GameMode.GemGrab && SelectedMapKey != "santiago")
+            { MenuNotice("GEM GRAB só está disponível em Santiago. Escolhe essa ilha no mapa."); return; }
             SaveMenuPrefs();
-            if (ConnectionManager.Instance.Host()) m_PendingBots = bots;
+            if (ConnectionManager.Instance.HostMap(SelectedMapKey)) m_PendingBots = bots;
             else MenuNotice(ConnectionManager.Instance.Status);
         }
 

@@ -65,7 +65,7 @@ namespace FPSLAN.EditorTools
         {
             const string id = "gunslinger";
             var b = Definition(id);
-            b.displayName = "Riot";
+            b.displayName = "Ekko";
             b.role = "Pistoleiro — rajada de 6 tiros de longo alcance; Super: tempestade de balas que destrói cobertura";
             b.stats = new BrawlerStats { maxHealth = 100, regenDelay = 3f, regenPercentPerSecond = 0.15f };
             b.movement = new MovementProfile { walkSpeed = 6.6f, sprintSpeed = 9.6f, jumpHeight = 1.3f };
@@ -123,7 +123,7 @@ namespace FPSLAN.EditorTools
         {
             const string id = "artillery";
             var b = Definition(id);
-            b.displayName = "Ekko";
+            b.displayName = "Lupus Marinus";
             b.role = "Artilheiro — duas cargas em arco que explodem após um atraso; Super: barril com knockback";
             b.stats = new BrawlerStats { maxHealth = 110, regenDelay = 3f, regenPercentPerSecond = 0.15f };
             b.movement = new MovementProfile { walkSpeed = 6.6f, sprintSpeed = 9.6f, jumpHeight = 1.3f };
@@ -184,7 +184,7 @@ namespace FPSLAN.EditorTools
         {
             const string id = "trapper";
             var b = Definition(id);
-            b.displayName = "Lupus Marinus";
+            b.displayName = "N.Cage";
             b.role = "Armadilheiro — três flechas explosivas em leque; Super: três minas escondidas";
             b.stats = new BrawlerStats { maxHealth = 125, regenDelay = 3f, regenPercentPerSecond = 0.15f };
             b.movement = new MovementProfile { walkSpeed = 6.6f, sprintSpeed = 9.6f, jumpHeight = 1.3f };
@@ -244,7 +244,7 @@ namespace FPSLAN.EditorTools
         {
             const string id = "sprayer";
             var b = Definition(id);
-            b.displayName = "MS";
+            b.displayName = "Mr.S";
             b.role = "Spray — nuvem em cone que causa mais dano à distância; Super: aura que abranda e causa dano";
             b.stats = new BrawlerStats { maxHealth = 120, regenDelay = 3f, regenPercentPerSecond = 0.15f };
             b.movement = new MovementProfile { walkSpeed = 6.4f, sprintSpeed = 9.4f, jumpHeight = 1.3f };
@@ -301,7 +301,7 @@ namespace FPSLAN.EditorTools
         {
             const string id = "shotgunner";
             var b = Definition(id);
-            b.displayName = "N.Cage";
+            b.displayName = "Riot";
             b.role = "Caçadeira — leque de bagos que arrasa de perto; Super: rajada gigante que empurra e destrói cobertura";
             b.stats = new BrawlerStats { maxHealth = 135, regenDelay = 3f, regenPercentPerSecond = 0.15f };
             b.movement = new MovementProfile { walkSpeed = 6.7f, sprintSpeed = 9.7f, jumpHeight = 1.3f };
