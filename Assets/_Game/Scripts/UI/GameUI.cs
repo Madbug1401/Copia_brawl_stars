@@ -196,6 +196,7 @@ namespace FPSLAN
         void Update()
         {
             m_InGame = NM != null && NM.IsListening && PlayerNetwork.Local != null;
+            MenuAudio.SetMenuMusic(!m_InGame);   // música do menu fora das partidas
 
             if (!m_InGame) m_Paused = false;
             if (InputReader.PausePressed && !m_CapturingBinding)
@@ -709,6 +710,7 @@ namespace FPSLAN
                     selected = idx;
                     GameSession.LocalHeroId = idx;
                     if (applyNow && PlayerNetwork.Local != null) PlayerNetwork.Local.ChangeHero(idx);
+                    MenuAudio.PlayVoiceForBrawler(b.brawlerId);
                 }
                 i++;
             }

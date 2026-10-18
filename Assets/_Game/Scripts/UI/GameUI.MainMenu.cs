@@ -194,7 +194,7 @@ namespace FPSLAN
             if (m_MModeSel < 0) SelectMode(FirstPlayableMode(), false);
             m_MMapSel = 0;
             for (int i = 0; i < s_Maps.Length; i++) if (s_Maps[i].key == SelectedMapKey && s_Maps[i].playable) m_MMapSel = i;
-            if (MenuCharIndexForHero(m_Hero) < 0) SelectMenuCharacter(0);
+            if (MenuCharIndexForHero(m_Hero) < 0) SelectMenuCharacter(0, false);
         }
 
         // ================================================================== ecrã principal
@@ -315,7 +315,7 @@ namespace FPSLAN
             m_MScreenT = 0f;
             m_MAudioOpen = false;
             GUI.FocusControl(null);
-            if (ctx == SetupContext.Online) FocusMapIsland(m_MMapSel);
+            if (ctx != SetupContext.LocalJoin) FocusMapIsland(m_MMapSel);
             else FocusOverview();
         }
 
@@ -331,7 +331,7 @@ namespace FPSLAN
         void DrawMenuSetupScreen(float ease)
         {
             var ctx = m_MSetupCtx;
-            bool online = ctx == SetupContext.Online;
+            bool online = ctx != SetupContext.LocalJoin;   // online e criar servidor local: modo · mapa · personagem
             bool join = ctx == SetupContext.LocalJoin;
             float slide = (1f - ease) * 30f * K;
             int step = 1;
@@ -389,7 +389,7 @@ namespace FPSLAN
             bool coop = !join && s_Modes[Mathf.Clamp(m_MModeSel, 0, s_Modes.Length - 1)].title == "IT TAKES TWO";
             DrawCharacterStage(stage, selChar, coop);
 
-            // ---------------- 2. mapa (só online)
+            // ---------------- 2. mapa (online e criar servidor local)
             var actions = VR(1051, 579, 367, 196);
             if (online)
             {
@@ -629,7 +629,7 @@ namespace FPSLAN
                     : "Escolhe um modo para jogar.");
                 return;
             }
-            if (ctx == SetupContext.Online && !s_Maps[m_MMapSel].playable)
+            if (ctx != SetupContext.LocalJoin && !s_Maps[m_MMapSel].playable)
             {
                 MenuNotice("Este mapa ainda não está disponível. Escolhe outro.");
                 return;
@@ -808,7 +808,7 @@ namespace FPSLAN
             { SelectMode((Mathf.Max(0, m_MModeSel) + 1) % s_Modes.Length, true); e.Use(); }
             else if (modes && (e.keyCode == KeyCode.UpArrow || e.keyCode == KeyCode.W))
             { SelectMode((Mathf.Max(0, m_MModeSel) + s_Modes.Length - 1) % s_Modes.Length, true); e.Use(); }
-            else if (m_MSetupCtx == SetupContext.Online && (e.keyCode == KeyCode.E || e.keyCode == KeyCode.Q))
+            else if (m_MSetupCtx != SetupContext.LocalJoin && (e.keyCode == KeyCode.E || e.keyCode == KeyCode.Q))
             {
                 int n = s_Maps.Length, next = (m_MMapSel + (e.keyCode == KeyCode.E ? 1 : n - 1)) % n;
                 FocusMapIsland(next);
@@ -837,7 +837,7 @@ namespace FPSLAN
             return -1;
         }
 
-        void SelectMenuCharacter(int menuIndex)
+        void SelectMenuCharacter(int menuIndex, bool voice = true)
         {
             var b = MenuCharacterBrawler(menuIndex);
             if (b == null) return;
@@ -847,6 +847,7 @@ namespace FPSLAN
             m_MCharT = 0f;
             m_Hero = b.runtimeIndex;
             GameSession.LocalHeroId = m_Hero;
+            if (voice) MenuAudio.PlayVoice(s_Roster[menuIndex].key);   // fala do personagem
         }
 
         static bool TryResolveMode(MenuMode m, out GameMode mode)
@@ -908,7 +909,7 @@ namespace FPSLAN
             if (m_BgReturnAt > 0f && Time.unscaledTime >= m_BgReturnAt)
             {
                 m_BgReturnAt = 0f;
-                if (m_MScreen == MenuScreen.Setup && m_MSetupCtx == SetupContext.Online) FocusMapIsland(m_MMapSel);
+                if (m_MScreen == MenuScreen.Setup && m_MSetupCtx != SetupContext.LocalJoin) FocusMapIsland(m_MMapSel);
             }
             if (m_BgT < 1f) m_BgT = Mathf.Min(1f, m_BgT + dt / BgTravelTime);
             float t = m_BgT;
