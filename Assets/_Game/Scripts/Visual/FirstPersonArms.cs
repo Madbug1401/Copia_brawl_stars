@@ -37,7 +37,7 @@ namespace FPSLAN
             if (drivenWeapon != null)
             {
                 ModelWeaponHolder.HoldFromHands(m_Anim, drivenWeapon, supportLocal, Vector3.zero, Quaternion.identity,
-                    m_View.forward, m_View.up, kick, out var rp, out var rr, out var lp, out var lr);
+                    m_View.forward, m_View.up, kick, out var rp, out var rr, out var lp, out var lr, m_View.forward * 0.3f);
                 foreach (var g in new[] { AvatarIKGoal.RightHand, AvatarIKGoal.LeftHand })
                 {
                     m_Anim.SetIKPositionWeight(g, 1f);
@@ -45,6 +45,8 @@ namespace FPSLAN
                 }
                 m_Anim.SetIKPosition(AvatarIKGoal.RightHand, rp); m_Anim.SetIKRotation(AvatarIKGoal.RightHand, rr);
                 m_Anim.SetIKPosition(AvatarIKGoal.LeftHand, lp); m_Anim.SetIKRotation(AvatarIKGoal.LeftHand, lr);
+                if (knife != null && knife.gameObject.activeInHierarchy)
+                    Goal(AvatarIKGoal.RightHand, AvatarIKHint.RightElbow, knife, elbowR, rightOffset, rightEuler, rightRotWeight);
                 return;
             }
             var right = knife != null && knife.gameObject.activeInHierarchy ? knife : rightTarget;

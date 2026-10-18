@@ -66,21 +66,47 @@ namespace FPSLAN
         /// Devolve os alvos de IK das duas mãos. Partilhado com a vista em 1.ª pessoa.
         /// </summary>
         public static void HoldFromHands(Animator anim, Transform weapon, Vector3 supportLocal, Vector3 pivot, Quaternion pitchRot,
-            Vector3 aimFwd, Vector3 upRef, float kick, out Vector3 rPos, out Quaternion rRot, out Vector3 lPos, out Quaternion lRot)
+            Vector3 aimFwd, Vector3 upRef, float kick, out Vector3 rPos, out Quaternion rRot, out Vector3 lPos, out Quaternion lRot, Vector3 handOffset = default)
         {
             rPos = anim.GetIKPosition(AvatarIKGoal.RightHand);
             rRot = anim.GetIKRotation(AvatarIKGoal.RightHand);
             lRot = anim.GetIKRotation(AvatarIKGoal.LeftHand);
-            rPos = pivot + pitchRot * (rPos - pivot);
+            rPos = pivot + pitchRot * (rPos - pivot) + handOffset;
             rRot = pitchRot * rRot; lRot = pitchRot * lRot;
             var fwd = (pitchRot * aimFwd).normalized;
             var up = Vector3.ProjectOnPlane(upRef, fwd);
             if (up.sqrMagnitude < 1e-6f) up = Vector3.up;
             var rot = Quaternion.LookRotation(fwd, up) * Quaternion.Euler(-10f * kick, 0f, 0f);
             rPos += -fwd * 0.06f * kick + up.normalized * 0.01f * kick;   // coice
-            var pos = rPos + rot * GripFromWrist;
+            // O apoio foi medido no espaço local da arma, que pode estar escalada.
+            var supportOffset = weapon != null ? Vector3.Scale(supportLocal, weapon.lossyScale) : supportLocal;
+            var gripOffset = rot * GripFromWrist;
+            var leftOffset = gripOffset + rot * supportOffset;
+            // As poses de corrida podem afastar o pulso direito do alcance do braço esquerdo.
+            // Ajusta o conjunto às duas cadeias, mantendo o cano alinhado com a mira.
+            for (int i = 0; i < 4; i++)
+            {
+                rPos += ReachCorrection(anim, HumanBodyBones.LeftUpperArm, HumanBodyBones.LeftLowerArm,
+                    HumanBodyBones.LeftHand, rPos + leftOffset);
+                rPos += ReachCorrection(anim, HumanBodyBones.RightUpperArm, HumanBodyBones.RightLowerArm,
+                    HumanBodyBones.RightHand, rPos);
+            }
+            var pos = rPos + gripOffset;
             if (weapon != null) weapon.SetPositionAndRotation(pos, rot);
-            lPos = pos + rot * supportLocal;
+            lPos = pos + rot * supportOffset;
+        }
+
+        static Vector3 ReachCorrection(Animator anim, HumanBodyBones upper, HumanBodyBones lower,
+            HumanBodyBones hand, Vector3 target)
+        {
+            var shoulder = anim.GetBoneTransform(upper);
+            var elbow = anim.GetBoneTransform(lower);
+            var wrist = anim.GetBoneTransform(hand);
+            if (shoulder == null || elbow == null || wrist == null) return Vector3.zero;
+            float reach = (Vector3.Distance(shoulder.position, elbow.position) +
+                Vector3.Distance(elbow.position, wrist.position)) * 0.97f;
+            var delta = target - shoulder.position;
+            return shoulder.position + Vector3.ClampMagnitude(delta, reach) - target;
         }
 
         /// <summary>Coice de um disparo. hand: 0 direita, 1 esquerda, -1 ambas.</summary>

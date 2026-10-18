@@ -36,7 +36,7 @@ namespace FPSLAN
         /// <summary>Braços da 1.ª pessoa um pouco maiores, para a mão esquerda chegar à frente da arma.</summary>
         const float ModelArmsScale = 1.12f;
         /// <summary>Animações com a arma nas mãos: onde fica a cabeça do modelo em relação à câmara. Público para afinar.</summary>
-        public static Vector3 ModelHeadOffset = new Vector3(-0.1f, -0.12f, -0.18f);
+        public static Vector3 ModelHeadOffset = new Vector3(0.1f, -0.02f, -0.14f);
         WeaponModel m_WeaponR, m_WeaponL;
         Vector3 m_GunRRest, m_GunLRest;
         Quaternion m_GunRRot = Quaternion.identity, m_GunLRot = Quaternion.identity;
