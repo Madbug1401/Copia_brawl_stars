@@ -19,6 +19,9 @@ namespace FPSLAN
         public Vector3[] waypoints = new Vector3[0];
 
         void Awake() => Instance = this;
+        // O MapLoader desativa a arena e ativa outro mapa: o MapInfo ativo é sempre o do mapa em jogo.
+        void OnEnable() => Instance = this;
+        void OnDisable() { if (Instance == this) Instance = null; }
         void OnDestroy() { if (Instance == this) Instance = null; }
 
         public static float HalfSize => Instance != null ? Instance.halfSize : 22f;

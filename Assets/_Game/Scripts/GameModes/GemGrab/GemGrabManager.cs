@@ -130,21 +130,34 @@ namespace FPSLAN
             if (m_Visuals == null) m_Visuals = gameObject.AddComponent<GemGrabVisuals>();
         }
 
-        void Start()
-        {
-            // Mapa dedicado: o menu mostra Pique-Gemas (a partida usa-o via MatchManager.overrideMenuMode)
-            MatchManager.MenuSelectedMode = GameMode.GemGrab;
-        }
-
         public override void OnDestroy()
         {
             if (Instance == this) Instance = null;
             base.OnDestroy();
         }
 
+        bool m_Bound;
+
+        /// <summary>
+        /// Liga o gerador ao emissor do mapa em jogo (pacote carregado pelo MapLoader ou mapa da cena dedicada).
+        /// Campos já preenchidos no Inspector têm prioridade. Na arena de arranque cria-se um emissor no totem.
+        /// </summary>
+        void BindToMap()
+        {
+            if (m_Bound) return;
+            if (spawnPoint != null && landingPoints != null && landingPoints.Length > 0) { m_Bound = true; return; }
+            var cfg = GemEmitterConfig.Current;
+            if (cfg == null) cfg = GemEmitterConfig.EnsureFallback();
+            if (cfg == null) return;
+            cfg.ApplyTo(this);
+            BuildMirrorTable();
+            m_Bound = true;
+        }
+
         public override void OnNetworkSpawn()
         {
             Instance = this;
+            BindToMap();
             BuildMirrorTable();
             if (IsServer) ServerResetRound();
         }
@@ -197,6 +210,7 @@ namespace FPSLAN
 
         void Update()
         {
+            if (IsSpawned) BindToMap();
             if (!IsSpawned || !IsServer) return;
 
             var match = MatchManager.Instance;

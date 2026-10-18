@@ -81,7 +81,7 @@ namespace FPSLAN
             m_Ip = GameSession.LastIp;
             m_Hero = BrawlerRegistry.Sanitize(GameSession.LocalHeroId);
             m_MenuBots = PlayerPrefs.GetInt("fpslan.bots", 0);
-            MatchManager.MenuSelectedMode = (GameMode)Mathf.Clamp(PlayerPrefs.GetInt("fpslan.mode", 0), 0, 3);
+            MatchManager.MenuSelectedMode = (GameMode)Mathf.Clamp(PlayerPrefs.GetInt("fpslan.mode", 0), 0, System.Enum.GetValues(typeof(GameMode)).Length - 1);
             BotManager.Difficulty = (BotDifficulty)PlayerPrefs.GetInt("fpslan.botdiff", (int)BotDifficulty.Normal);
             m_LocalIps = ConnectionManager.GetLocalIPv4();
             m_Preview = new BrawlerPreview();
@@ -753,7 +753,7 @@ namespace FPSLAN
 
         void CycleGameMode(int delta)
         {
-            int count = 4;
+            int count = System.Enum.GetValues(typeof(GameMode)).Length;
             int value = ((int)MatchManager.MenuSelectedMode + delta + count) % count;
             MatchManager.MenuSelectedMode = (GameMode)value;
             PlayerPrefs.SetInt("fpslan.mode", value);

@@ -86,6 +86,11 @@ namespace FPSLAN.EditorTools
         public float fallRecoveryY = -20f;
         public string expectedSize = "";            // texto para o relatório (ex.: "≈ 41 × 56")
 
+        /// <summary>Pacote do mapa para o menu (carregado por cima da arena pelo MapLoader).</summary>
+        public string PackagePath => GemMapBuilder.MapsResources + "/Map_" + filePrefix + ".prefab";
+        /// <summary>Objetos (nomes no FBX, prefixo) que só aparecem no modo de gemas.</summary>
+        public string[] gemModeOnlyPrefixes = { "GEN_Marca" };
+
         public string ModelsPath => artRoot + "/Models";
         public string TexturesPath => artRoot + "/Textures";
         public string MaterialsPath => artRoot + "/Materials";
@@ -109,6 +114,9 @@ namespace FPSLAN.EditorTools
     /// </summary>
     public static class GemMapBuilder
     {
+        public const string MapsResources = ProjectSetup.Root + "/Resources/Maps";
+        public const string GemModePrefabPath = MapsResources + "/PF_PiqueGemas.prefab";
+
         public static bool HasModels(GemMapConfig cfg, out string missing)
         {
             missing = null;
@@ -166,9 +174,11 @@ namespace FPSLAN.EditorTools
             var mapPrefab = BuildMapPrefab(cfg, log);
             var aux = new List<GameObject>();
             foreach (var a in cfg.auxModels) aux.Add(BuildAuxPrefab(cfg, a, mats, log));
+            EnsureGemModePrefab(gemPrefab, log);
             BuildScene(cfg, mapPrefab, aux, gemPrefab, log);
 
-            var summary = "Cena criada: " + cfg.scenePath + "\nPrefabs: " + cfg.mapPrefabPath + ", " + cfg.gemPrefabPath + "\n\n" + log;
+            var summary = "Cena criada: " + cfg.scenePath + "\nPrefabs: " + cfg.mapPrefabPath + ", " + cfg.gemPrefabPath +
+                "\nPacote do menu: " + cfg.PackagePath + "\n\n" + log;
             Debug.Log("[" + cfg.displayName + "] " + summary);
             return summary;
         }
@@ -471,6 +481,120 @@ namespace FPSLAN.EditorTools
             return prefab;
         }
 
+        // ------------------------------------------------------------------ pacote do menu
+
+        /// <summary>
+        /// Resources/Maps/Map_*.prefab: cenário + prefabs auxiliares + MapInfo + MapTheme + GemEmitterConfig.
+        /// O MapLoader instancia-o por cima da arena quando o host escolhe este mapa no menu.
+        /// </summary>
+        static GameObject BuildPackage(GemMapConfig cfg, GameObject mapPrefab, List<GameObject> auxPrefabs, StringBuilder log)
+        {
+            EnsureFolder(MapsResources);
+            var root = new GameObject(Path.GetFileNameWithoutExtension(cfg.PackagePath));
+            PrefabUtility.InstantiatePrefab(mapPrefab, root.transform);
+            foreach (var a in auxPrefabs) PrefabUtility.InstantiatePrefab(a, root.transform);
+
+            // Waypoints dos bots e limites a partir dos marcadores
+            var wps = new List<Transform>();
+            CollectDeep(root.transform, "WP_", wps);
+            var waypoints = new List<Vector3>();
+            foreach (var w in wps) waypoints.Add(w.position);
+            float half = 25.5f;
+            Collider floor = null;
+            foreach (var c in root.GetComponentsInChildren<Collider>(true))
+                if (c.name.StartsWith("COL_Box_Chao") || c.name.StartsWith("COL_Tri_Chao")) { floor = c; break; }
+            if (floor != null)
+            {
+                Physics.SyncTransforms();
+                var b = floor.bounds;
+                half = Mathf.Max(b.extents.x, b.extents.z) - 1.5f;
+                log.AppendLine($"Chão: {b.size.x:0.0} × {b.size.z:0.0} m, topo y={b.max.y:0.00} (esperado {cfg.expectedSize}, y=0).");
+                if (b.size.x > 400f || b.size.x < 10f) log.AppendLine("ATENÇÃO: escala do FBX inesperada — confirma 'Convert Units'.");
+            }
+            else log.AppendLine("ATENÇÃO: colisor de chão (COL_Box_Chao / COL_Tri_Chao) não encontrado.");
+            var info = root.AddComponent<MapInfo>();
+            info.mapName = cfg.mapName;
+            info.halfSize = half;
+            info.fallRecoveryY = cfg.fallRecoveryY;
+            info.waypoints = waypoints.ToArray();
+
+            var theme = root.AddComponent<MapTheme>();
+            theme.sunColor = cfg.sunColor;
+            theme.sunIntensity = cfg.sunIntensity;
+            theme.sunEuler = cfg.sunEuler;
+            theme.ambientSky = cfg.ambientSky;
+            theme.ambientEquator = cfg.ambientEquator;
+            theme.ambientGround = cfg.ambientGround;
+            theme.fogColor = cfg.fogColor;
+            theme.fogStart = cfg.fogStart;
+            theme.fogEnd = cfg.fogEnd;
+
+            var ec = root.AddComponent<GemEmitterConfig>();
+            ec.spawnPoint = FindDeep(root.transform, cfg.gemSpawnName);
+            var lands = new List<Transform>();
+            CollectDeep(root.transform, "GEM_Land_", lands);
+            lands.Sort((x, y) => string.CompareOrdinal(x.name, y.name));
+            ec.landingPoints = lands.ToArray();
+            ec.emitterHalo = string.IsNullOrEmpty(cfg.emitterHaloName) ? null : FindDeep(root.transform, cfg.emitterHaloName);
+            ec.emitterBase = string.IsNullOrEmpty(cfg.emitterBaseName) ? null : FindDeep(root.transform, cfg.emitterBaseName);
+            var emitterRenderers = new List<Renderer>();
+            if (ec.emitterHalo != null) emitterRenderers.AddRange(ec.emitterHalo.GetComponentsInChildren<Renderer>(true));
+            if (ec.emitterBase != null) emitterRenderers.AddRange(ec.emitterBase.GetComponentsInChildren<Renderer>(true));
+            foreach (var n in cfg.emitterRendererNames)
+            {
+                var t = FindDeep(root.transform, n);
+                if (t != null) foreach (var r in t.GetComponentsInChildren<Renderer>(true)) if (!emitterRenderers.Contains(r)) emitterRenderers.Add(r);
+            }
+            ec.emitterRenderers = emitterRenderers.ToArray();
+            ec.style = cfg.emitterStyle;
+            ec.waterSurface = string.IsNullOrEmpty(cfg.waterSurfaceName) ? null : FindDeep(root.transform, cfg.waterSurfaceName);
+            ec.arcHeight = cfg.arcHeight;
+            ec.emitterIdleEmission = cfg.emitterIdleEmission;
+            ec.emitterWarnEmission = cfg.emitterWarnEmission;
+            var only = new List<GameObject>();
+            foreach (var prefix in cfg.gemModeOnlyPrefixes)
+            {
+                var found = new List<Transform>();
+                CollectDeep(root.transform, prefix, found);
+                foreach (var t in found) only.Add(t.gameObject);
+            }
+            if (ec.emitterHalo != null && !only.Contains(ec.emitterHalo.gameObject)) only.Add(ec.emitterHalo.gameObject);
+            ec.gemModeOnly = only.ToArray();
+            if (ec.spawnPoint == null) log.AppendLine("ATENÇÃO: " + cfg.gemSpawnName + " não encontrado no FBX do gerador.");
+
+            var prefab = PrefabUtility.SaveAsPrefabAsset(root, cfg.PackagePath);
+            Object.DestroyImmediate(root);
+            log.AppendLine($"Pacote do menu: {cfg.PackagePath} ({waypoints.Count} waypoints, {lands.Count} aterragens, {only.Count} objetos só do modo gemas).");
+            return prefab;
+        }
+
+        /// <summary>Resources/Maps/PF_PiqueGemas.prefab: gerador de rede que o host cria quando o modo é Pique-Gemas.</summary>
+        static void EnsureGemModePrefab(GameObject gemPrefab, StringBuilder log)
+        {
+            EnsureFolder(MapsResources);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(GemModePrefabPath);
+            var existing = prefab != null ? prefab.GetComponent<GemGrabManager>() : null;
+            if (existing == null || existing.gemPrefab != gemPrefab)
+            {
+                var root = new GameObject("PF_PiqueGemas");
+                root.AddComponent<NetworkObject>();
+                var gm = root.AddComponent<GemGrabManager>();
+                root.AddComponent<GemGrabVisuals>();
+                root.AddComponent<GemGrabHud>();
+                gm.gemPrefab = gemPrefab;
+                prefab = PrefabUtility.SaveAsPrefabAsset(root, GemModePrefabPath);
+                Object.DestroyImmediate(root);
+            }
+            var list = AssetDatabase.LoadAssetAtPath<NetworkPrefabsList>("Assets/DefaultNetworkPrefabs.asset");
+            if (list != null && !list.Contains(prefab))
+            {
+                list.Add(new NetworkPrefab { Prefab = prefab });
+                EditorUtility.SetDirty(list);
+                AssetDatabase.SaveAssets();
+                log.AppendLine("PF_PiqueGemas registado em DefaultNetworkPrefabs.");
+            }
+        }
+
         // ------------------------------------------------------------------ cena
 
         static Transform FindInScene(List<GameObject> roots, string name)
@@ -510,39 +634,11 @@ namespace FPSLAN.EditorTools
             if (sky != null) RenderSettings.skybox = sky;
             RenderSettings.sun = sun;
 
-            var map = (GameObject)PrefabUtility.InstantiatePrefab(mapPrefab);
+            // O pacote (cenário + água + MapInfo + luz + emissor) é o mesmo que o menu carrega por cima da arena
+            var package = BuildPackage(cfg, mapPrefab, auxPrefabs, log);
+            var map = (GameObject)PrefabUtility.InstantiatePrefab(package);
             map.name = cfg.sceneRootName;
-            var roots = new List<GameObject> { map };
-            foreach (var a in auxPrefabs)
-            {
-                var inst = (GameObject)PrefabUtility.InstantiatePrefab(a);
-                inst.transform.SetParent(map.transform, true);
-                roots.Add(inst);
-            }
-
-            // Waypoints dos bots e limites a partir dos marcadores
-            var wps = new List<Transform>();
-            CollectDeep(map.transform, "WP_", wps);
-            var waypoints = new List<Vector3>();
-            foreach (var w in wps) waypoints.Add(w.position);
-            float half = 25.5f;
-            Collider floor = null;
-            foreach (var c in map.GetComponentsInChildren<Collider>(true))
-                if (c.name.StartsWith("COL_Box_Chao") || c.name.StartsWith("COL_Tri_Chao")) { floor = c; break; }
-            if (floor != null)
-            {
-                Physics.SyncTransforms();
-                var b = floor.bounds;
-                half = Mathf.Max(b.extents.x, b.extents.z) - 1.5f;
-                log.AppendLine($"Chão: {b.size.x:0.0} × {b.size.z:0.0} m, topo y={b.max.y:0.00} (esperado {cfg.expectedSize}, y=0).");
-                if (b.size.x > 400f || b.size.x < 10f) log.AppendLine("ATENÇÃO: escala do FBX inesperada — confirma 'Convert Units'.");
-            }
-            else log.AppendLine("ATENÇÃO: colisor de chão (COL_Box_Chao / COL_Tri_Chao) não encontrado.");
-            var info = new GameObject("MapInfo").AddComponent<MapInfo>();
-            info.mapName = cfg.mapName;
-            info.halfSize = half;
-            info.fallRecoveryY = cfg.fallRecoveryY;
-            info.waypoints = waypoints.ToArray();
+            var emitter = map.GetComponent<GemEmitterConfig>();
 
             var systems = new GameObject("Systems");
             systems.AddComponent<CombatSystem>();
@@ -578,7 +674,8 @@ namespace FPSLAN.EditorTools
             var matchGo = new GameObject("MatchManager");
             matchGo.AddComponent<NetworkObject>();
             var match = matchGo.AddComponent<MatchManager>();
-            match.overrideMenuMode = true;
+            // A cena dedicada segue o modo escolhido no menu: fora do Pique-Gemas o mapa é um campo normal
+            match.overrideMenuMode = false;
             match.sceneMode = GameMode.GemGrab;
 
             // Pique-Gemas (NetworkObject da cena: estado replicado e sincronizado para quem entra a meio)
@@ -588,29 +685,10 @@ namespace FPSLAN.EditorTools
             var vis = gemGo.AddComponent<GemGrabVisuals>();
             gemGo.AddComponent<GemGrabHud>();
             gm.gemPrefab = gemPrefab;
-            gm.arcHeight = cfg.arcHeight;
-            gm.emitterIdleEmission = cfg.emitterIdleEmission;
-            gm.emitterWarnEmission = cfg.emitterWarnEmission;
-            gm.spawnPoint = FindInScene(roots, cfg.gemSpawnName);
-            var lands = new List<Transform>();
-            CollectDeep(map.transform, "GEM_Land_", lands);
-            lands.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
-            gm.landingPoints = lands.ToArray();
-            gm.emitterHalo = FindInScene(roots, cfg.emitterHaloName);
-            gm.emitterBase = FindInScene(roots, cfg.emitterBaseName);
-            var emitterRenderers = new List<Renderer>();
-            if (gm.emitterHalo != null) emitterRenderers.AddRange(gm.emitterHalo.GetComponentsInChildren<Renderer>());
-            if (gm.emitterBase != null) emitterRenderers.AddRange(gm.emitterBase.GetComponentsInChildren<Renderer>());
-            foreach (var n in cfg.emitterRendererNames)
-            {
-                var t = FindInScene(roots, n);
-                if (t != null) foreach (var r in t.GetComponentsInChildren<Renderer>()) if (!emitterRenderers.Contains(r)) emitterRenderers.Add(r);
-            }
-            gm.emitterRenderers = emitterRenderers.ToArray();
-            vis.style = cfg.emitterStyle;
-            vis.waterSurface = FindInScene(roots, cfg.waterSurfaceName);
+            if (emitter != null) emitter.ApplyTo(gm);    // referências ao mapa da cena (no menu liga-se em runtime)
+            int landCount = gm.landingPoints != null ? gm.landingPoints.Length : 0;
             if (gm.spawnPoint == null) log.AppendLine("ATENÇÃO: " + cfg.gemSpawnName + " não encontrado no FBX do gerador.");
-            log.AppendLine($"Gerador ({cfg.emitterStyle}): {lands.Count} pontos de aterragem, {cfg.gemSpawnName} a y={(gm.spawnPoint != null ? gm.spawnPoint.position.y : 0f):0.00}.");
+            log.AppendLine($"Gerador ({cfg.emitterStyle}): {landCount} pontos de aterragem, {cfg.gemSpawnName} a y={(gm.spawnPoint != null ? gm.spawnPoint.position.y : 0f):0.00}.");
 
             Validate(map.transform, gm, log);
 

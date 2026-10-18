@@ -49,6 +49,14 @@ namespace FPSLAN
         public readonly NetworkVariable<int> RedScore = new NetworkVariable<int>(0);
         public readonly NetworkVariable<int> RoundNumber = new NetworkVariable<int>(1);
         public readonly NetworkVariable<bool> IsRoundIntermission = new NetworkVariable<bool>(false);
+        /// <summary>Mapa da partida (chave do <see cref="MapCatalog"/>), escolhido pelo host no menu. Vazio numa cena dedicada.</summary>
+        public readonly NetworkVariable<FixedString32Bytes> MapKey = new NetworkVariable<FixedString32Bytes>();
+
+        [Header("Pique-Gemas noutros mapas")]
+        [Tooltip("Prefab de rede (Resources) com GemGrabManager, criado pelo host quando o modo é Pique-Gemas e a cena não tem um.")]
+        public string gemModePrefab = "Maps/PF_PiqueGemas";
+        NetworkObject m_SpawnedGemMode;
+        bool m_CheckGemMode;
 
         public static bool IsMatchOver => Instance != null && Instance.IsSpawned && Instance.Phase.Value == MatchPhase.Ended;
         public static bool IsCombatActive => Instance == null || !Instance.IsSpawned ||
@@ -102,12 +110,71 @@ namespace FPSLAN
         public override void OnNetworkSpawn()
         {
             Instance = this;
-            if (IsServer) ServerStartMatch();
+            MapKey.OnValueChanged += OnMapKeyChanged;
+            Mode.OnValueChanged += OnModeChanged;
+            if (IsServer)
+            {
+                // Mapa: o escolhido no menu deste PC (só na arena de arranque; uma cena dedicada já é o mapa)
+                MapKey.Value = MapLoader.SceneSupportsSwap ? new FixedString32Bytes(MapCatalog.MenuSelectedKey) : default;
+            }
+            MapLoader.Apply(MapKey.Value.ToString());
+            if (IsServer)
+            {
+                ServerStartMatch();
+                m_CheckGemMode = true;   // o gerador de rede cria-se no primeiro Update (fora do ciclo de spawn)
+            }
+            MapLoader.RefreshGemPresentation(Mode.Value == GameMode.GemGrab);
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            MapKey.OnValueChanged -= OnMapKeyChanged;
+            Mode.OnValueChanged -= OnModeChanged;
+            MapLoader.Apply(MapCatalog.BaseKey);   // fora de partida volta a arena de arranque
+            m_SpawnedGemMode = null;
+            base.OnNetworkDespawn();
+        }
+
+        void OnMapKeyChanged(FixedString32Bytes previous, FixedString32Bytes current)
+        {
+            MapLoader.Apply(current.ToString());
+            MapLoader.RefreshGemPresentation(Mode.Value == GameMode.GemGrab);
+        }
+
+        void OnModeChanged(GameMode previous, GameMode current)
+        {
+            MapLoader.RefreshGemPresentation(current == GameMode.GemGrab);
+            if (IsServer) m_CheckGemMode = true;
+        }
+
+        /// <summary>
+        /// Host: no modo Pique-Gemas garante um GemGrabManager (o da cena, se existir, ou um criado da prefab de rede);
+        /// nos outros modos remove o que foi criado — o mapa fica um campo normal, sem gemas.
+        /// </summary>
+        void ServerEnsureGemMode()
+        {
+            m_CheckGemMode = false;
+            bool gems = Mode.Value == GameMode.GemGrab;
+            if (gems && GemGrabManager.Instance == null)
+            {
+                var prefab = Resources.Load<GameObject>(gemModePrefab);
+                if (prefab == null) { Debug.LogWarning("[Pique-Gemas] Falta Resources/" + gemModePrefab + ".prefab"); return; }
+                var go = Instantiate(prefab);
+                m_SpawnedGemMode = go.GetComponent<NetworkObject>();
+                m_SpawnedGemMode.Spawn(true);
+                if (GemGrabManager.Instance != null) GemGrabManager.Instance.ServerResetRound();
+            }
+            else if (!gems && m_SpawnedGemMode != null && m_SpawnedGemMode.IsSpawned)
+            {
+                m_SpawnedGemMode.Despawn(true);
+                m_SpawnedGemMode = null;
+            }
         }
 
         void Update()
         {
             if (!IsSpawned || !IsServer) return;
+            if (m_CheckGemMode) ServerEnsureGemMode();
 
             if (IsTeamMode(Mode.Value))
                 ServerAssignMissingTeams();

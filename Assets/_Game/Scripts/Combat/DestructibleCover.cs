@@ -28,6 +28,9 @@ namespace FPSLAN
 
         public bool IsDestroyed => IsSpawned && Health.Value == 0;
 
+        // Escondida porque a partida decorre noutro mapa (ver MapLoader): não se vê, não colide, não leva dano.
+        bool m_HiddenByMap;
+
         void Awake()
         {
             m_Renderers = GetComponentsInChildren<Renderer>(true);
@@ -90,8 +93,17 @@ namespace FPSLAN
             }
         }
 
+        /// <summary>Local (todas as máquinas): esconde/mostra a cobertura quando o mapa ativo não é a arena.</summary>
+        public void SetHiddenByMap(bool hidden)
+        {
+            m_HiddenByMap = hidden;
+            if (m_Colliders == null) return;
+            SetAlive(!IsSpawned || Health.Value != 0);
+        }
+
         void SetAlive(bool alive)
         {
+            alive &= !m_HiddenByMap;
             foreach (var c in m_Colliders) if (c != null) c.enabled = alive;
             foreach (var r in m_Renderers) if (r != null) r.enabled = alive;
         }
