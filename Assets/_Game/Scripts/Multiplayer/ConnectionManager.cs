@@ -44,13 +44,23 @@ namespace FPSLAN
                     }
         }
 
+        public static bool SupportsGemGrab(string mapKey) => mapKey == "santiago" || mapKey == "sal";
+
         public bool HostMap(string mapKey, ushort port = DefaultPort)
         {
             if (NM == null || NM.IsListening || IsConnecting) return false;
-            string scene = mapKey == "santiago" ? "CidadeVelha" : "Arena";
-            if (MatchManager.MenuSelectedMode == GameMode.GemGrab && mapKey != "santiago")
+            if (MatchManager.MenuSelectedMode == GameMode.ItTakesTwo) mapKey = "santiago";
+            string scene;
+            switch (mapKey)
             {
-                Status = "O Pique-Gemas só está disponível em Santiago.";
+                case "pradaria": scene = "Arena"; break;
+                case "santiago": scene = "CidadeVelha"; break;
+                case "sal": scene = "Buracona"; break;
+                default: Status = "Este mapa ainda não está disponível."; return false;
+            }
+            if (MatchManager.MenuSelectedMode == GameMode.GemGrab && !SupportsGemGrab(mapKey))
+            {
+                Status = "O Pique-Gemas está disponível em Santiago e no Sal.";
                 return false;
             }
             if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == scene)
@@ -116,9 +126,12 @@ namespace FPSLAN
         public bool Host(ushort port = DefaultPort)
         {
             if (NM == null || NM.IsListening) return false;
+            if (MatchManager.MenuSelectedMode == GameMode.ItTakesTwo &&
+                UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "CidadeVelha")
+                return HostMap("santiago", port);
             if (MatchManager.MenuSelectedMode == GameMode.GemGrab && GemGrabManager.Instance == null)
             {
-                Status = "O Pique-Gemas requer o gerador de gemas de Santiago.";
+                Status = "O Pique-Gemas requer um mapa com gerador de gemas (Santiago ou Sal).";
                 return false;
             }
 
@@ -158,12 +171,13 @@ namespace FPSLAN
 
         void ApproveConnection(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
         {
-            bool full = NM.ConnectedClientsIds.Count >= MaxPlayers;
+            int limit = MatchManager.IsCoopActive || MatchManager.MenuSelectedMode == GameMode.ItTakesTwo ? 2 : MaxPlayers;
+            bool full = NM.ConnectedClientsIds.Count >= limit;
             // Arena cheia de bots? Um humano tem sempre prioridade sobre um bot.
             if (!full && PlayerNetwork.All.Count >= BotManager.MaxTotalPlayers) BotManager.RemoveBot();
             response.Approved = !full;
             response.CreatePlayerObject = true;
-            response.Reason = full ? "Servidor cheio (máx. " + MaxPlayers + " jogadores)." : "";
+            response.Reason = full ? "Servidor cheio (máx. " + limit + " jogadores)." : "";
             response.Pending = false;
         }
 

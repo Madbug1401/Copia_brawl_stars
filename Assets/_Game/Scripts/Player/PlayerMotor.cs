@@ -182,7 +182,7 @@ namespace FPSLAN
             // Bateu numa parede durante o salto: perde o impulso horizontal
             if (m_Launched && (flags & CollisionFlags.Sides) != 0) m_LaunchVelocity *= 0.5f;
 
-            if (transform.position.y < -20f)
+            if (transform.position.y < MapInfo.FallRecoveryY) // -20 m por defeito; mapas com buracos definem mais alto
             {
                 SpawnPoint.Pick(m_Player, out var safe, out var safeYaw);
                 TeleportLocal(safe, safeYaw);
