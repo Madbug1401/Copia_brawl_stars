@@ -20,6 +20,12 @@ namespace FPSLAN
         Vector3 m_SupportLocal;      // ponto "Support" do modelo 3D da arma, se existir
         float m_KickR, m_KickL;
         float m_Weight;
+        bool m_FromHands;            // animações já seguram a arma (ex.: Mixamo "Rifle"): a arma segue as mãos
+
+        /// <summary>Parâmetro do Animator que indica animações com a arma nas mãos (criado pelo CharacterModelBuilder).</summary>
+        public const string HoldsWeaponParam = "HoldsWeapon";
+        /// <summary>Do pulso (alvo de IK da mão direita) ao punho da arma, no espaço da arma. Público para afinar em Play.</summary>
+        public static Vector3 GripFromWrist = new Vector3(0f, -0.05f, 0.04f);
 
         /// <summary>Inclinação da mira em graus (positivo = a olhar para baixo).</summary>
         [System.NonSerialized] public float pitch;
@@ -51,6 +57,30 @@ namespace FPSLAN
                 foreach (var t in weaponR.GetComponentsInChildren<Transform>(true))
                     if (t.name == "Support") { m_SupportLocal = weaponR.InverseTransformPoint(t.position); break; }
             m_Weight = 1f;
+            foreach (var p in anim.parameters) if (p.name == HoldsWeaponParam) m_FromHands = m_Grip == Grip.TwoHanded;
+        }
+
+        /// <summary>
+        /// Arma presa à mão direita da animação, mas sempre a apontar para a mira (aimFwd); a mão esquerda vai ao
+        /// ponto de apoio da arma. Roda o conjunto à volta do peito para olhar para cima/baixo e aplica o coice.
+        /// Devolve os alvos de IK das duas mãos. Partilhado com a vista em 1.ª pessoa.
+        /// </summary>
+        public static void HoldFromHands(Animator anim, Transform weapon, Vector3 supportLocal, Vector3 pivot, Quaternion pitchRot,
+            Vector3 aimFwd, Vector3 upRef, float kick, out Vector3 rPos, out Quaternion rRot, out Vector3 lPos, out Quaternion lRot)
+        {
+            rPos = anim.GetIKPosition(AvatarIKGoal.RightHand);
+            rRot = anim.GetIKRotation(AvatarIKGoal.RightHand);
+            lRot = anim.GetIKRotation(AvatarIKGoal.LeftHand);
+            rPos = pivot + pitchRot * (rPos - pivot);
+            rRot = pitchRot * rRot; lRot = pitchRot * lRot;
+            var fwd = (pitchRot * aimFwd).normalized;
+            var up = Vector3.ProjectOnPlane(upRef, fwd);
+            if (up.sqrMagnitude < 1e-6f) up = Vector3.up;
+            var rot = Quaternion.LookRotation(fwd, up) * Quaternion.Euler(-10f * kick, 0f, 0f);
+            rPos += -fwd * 0.06f * kick + up.normalized * 0.01f * kick;   // coice
+            var pos = rPos + rot * GripFromWrist;
+            if (weapon != null) weapon.SetPositionAndRotation(pos, rot);
+            lPos = pos + rot * supportLocal;
         }
 
         /// <summary>Coice de um disparo. hand: 0 direita, 1 esquerda, -1 ambas.</summary>
@@ -73,6 +103,29 @@ namespace FPSLAN
             var body = m_Anim.bodyPosition;
             var yaw = m_Root.rotation;
             var aim = yaw * Quaternion.Euler(Mathf.Clamp(pitch, -55f, 55f) * 0.8f, 0f, 0f);
+
+            if (m_FromHands)
+            {
+                var chest = m_Anim.GetBoneTransform(HumanBodyBones.Chest);
+                var pivot = chest != null ? chest.position : body + Vector3.up * 0.4f;
+                var pr = Quaternion.AngleAxis(Mathf.Clamp(pitch, -55f, 55f) * 0.85f, yaw * Vector3.right);
+                HoldFromHands(m_Anim, m_WeaponR, m_SupportLocal, pivot, pr, yaw * Vector3.forward, yaw * Vector3.up, m_KickR, out var rp, out var rr, out var lp, out var lr);
+                foreach (var g in new[] { AvatarIKGoal.RightHand, AvatarIKGoal.LeftHand })
+                {
+                    m_Anim.SetIKPositionWeight(g, m_Weight);
+                    m_Anim.SetIKRotationWeight(g, m_Weight);
+                }
+                m_Anim.SetIKPosition(AvatarIKGoal.RightHand, rp); m_Anim.SetIKRotation(AvatarIKGoal.RightHand, rr);
+                m_Anim.SetIKPosition(AvatarIKGoal.LeftHand, lp); m_Anim.SetIKRotation(AvatarIKGoal.LeftHand, lr);
+                // a cabeça acompanha a mira
+                var head = m_Anim.GetBoneTransform(HumanBodyBones.Head);
+                if (head != null)
+                {
+                    m_Anim.SetLookAtWeight(m_Weight, 0f, 0.7f, 0f, 0.5f);
+                    m_Anim.SetLookAtPosition(head.position + aim * Vector3.forward * 10f);
+                }
+                return;
+            }
 
             switch (m_Grip)
             {

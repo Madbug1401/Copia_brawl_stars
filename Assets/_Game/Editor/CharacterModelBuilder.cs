@@ -151,13 +151,29 @@ namespace FPSLAN.EditorTools
             if (avatar == null || !avatar.isHuman) return "O Avatar Humanoid não foi criado (o rig do Mixamo não foi reconhecido).";
 
             // ---------------- 2. animações (copiam o Avatar do modelo)
+            // nome do osso da anca do modelo: animações com o mesmo esqueleto copiam o Avatar do modelo;
+            // as de outro esqueleto (ex.: Mixamo) criam o seu e o Unity converte entre humanoides.
+            string hipsName = null;
+            foreach (var hb in avatar.humanDescription.human) if (hb.humanName == "Hips") hipsName = hb.boneName;
             foreach (var p in fbxs)
             {
                 if (p == modelPath) continue;
                 var ai = (ModelImporter)AssetImporter.GetAtPath(p);
                 ai.animationType = ModelImporterAnimationType.Human;
-                ai.avatarSetup = ModelImporterAvatarSetup.CopyFromOther;
-                ai.sourceAvatar = avatar;
+                bool sameSkeleton = false;
+                var animGo = AssetDatabase.LoadAssetAtPath<GameObject>(p);
+                if (animGo != null && hipsName != null)
+                    foreach (var t in animGo.GetComponentsInChildren<Transform>(true)) if (t.name == hipsName) { sameSkeleton = true; break; }
+                if (sameSkeleton)
+                {
+                    ai.avatarSetup = ModelImporterAvatarSetup.CopyFromOther;
+                    ai.sourceAvatar = avatar;
+                }
+                else
+                {
+                    ai.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+                    ai.sourceAvatar = null;
+                }
                 ai.materialImportMode = ModelImporterMaterialImportMode.None;
                 ConfigureClips(ai, Path.GetFileNameWithoutExtension(p));
                 ai.SaveAndReimport();
@@ -196,6 +212,9 @@ namespace FPSLAN.EditorTools
             ctrl.AddParameter("Attack", AnimatorControllerParameterType.Trigger);
             ctrl.AddParameter("Super", AnimatorControllerParameterType.Trigger);
             ctrl.AddParameter("Hurt", AnimatorControllerParameterType.Trigger);
+            // animações que já seguram uma espingarda (ex.: Mixamo "Rifle ..."): a arma passa a seguir as mãos
+            if (clips.TryGetValue("idle", out var idleClip) && AssetDatabase.GetAssetPath(idleClip).ToLowerInvariant().Contains("rifle"))
+                ctrl.AddParameter(ModelWeaponHolder.HoldsWeaponParam, AnimatorControllerParameterType.Bool);
             ctrl.parameters = ctrl.parameters.Select(p => { if (p.name == "Grounded") p.defaultBool = true; return p; }).ToArray();
 
             var baseSm = ctrl.layers[0].stateMachine;
@@ -247,6 +266,45 @@ namespace FPSLAN.EditorTools
                 revive.AddCondition(AnimatorConditionMode.IfNot, 0, "Dead");
             }
 
+            // Animações com espingarda: o tronco e os braços ficam sempre na pose de mira (idle) e só as pernas
+            // andam/correm — a arma aponta sempre para a frente, como nos jogos de tiro na 3.ª pessoa.
+            bool holdsWeapon = false;   // desativado: torcia o tronco nas animações de locomoção
+            if (holdsWeapon)
+            {
+                var aimMask = new AvatarMask();
+                for (int i = 0; i < (int)AvatarMaskBodyPart.LastBodyPart; i++)
+                {
+                    var part = (AvatarMaskBodyPart)i;
+                    aimMask.SetHumanoidBodyPartActive(part, part == AvatarMaskBodyPart.Body || part == AvatarMaskBodyPart.Head ||
+                        part == AvatarMaskBodyPart.LeftArm || part == AvatarMaskBodyPart.RightArm ||
+                        part == AvatarMaskBodyPart.LeftFingers || part == AvatarMaskBodyPart.RightFingers);
+                }
+                var aimMaskPath = folder + "/" + prefix + "_AimUpper.mask";
+                AssetDatabase.DeleteAsset(aimMaskPath);
+                AssetDatabase.CreateAsset(aimMask, aimMaskPath);
+                ctrl.AddLayer("AimUpper");
+                var ls = ctrl.layers;
+                var li = ls.Length - 1;
+                ls[li].avatarMask = aimMask;
+                ls[li].defaultWeight = 1f;
+                ls[li].blendingMode = AnimatorLayerBlendingMode.Override;
+                ctrl.layers = ls;
+                var aimSm = ctrl.layers[li].stateMachine;
+                var aimState = aimSm.AddState("Aim");
+                aimState.motion = clips["idle"];
+                aimState.writeDefaultValues = false;
+                aimSm.defaultState = aimState;
+                // morto: o tronco volta a seguir a animação de morte
+                var free = aimSm.AddState("Free");
+                free.writeDefaultValues = false;
+                var toFree = aimState.AddTransition(free);
+                toFree.hasExitTime = false; toFree.duration = 0.1f;
+                toFree.AddCondition(AnimatorConditionMode.If, 0, "Dead");
+                var back = free.AddTransition(aimState);
+                back.hasExitTime = false; back.duration = 0.05f;
+                back.AddCondition(AnimatorConditionMode.IfNot, 0, "Dead");
+            }
+
             // camada do tronco: ataque/dano por cima da corrida
             if (clips.ContainsKey("attack") || clips.ContainsKey("hurt"))
             {
@@ -265,11 +323,12 @@ namespace FPSLAN.EditorTools
 
                 ctrl.AddLayer("UpperBody");
                 var layers = ctrl.layers;
-                layers[1].avatarMask = mask;
-                layers[1].defaultWeight = 1f;
-                layers[1].blendingMode = AnimatorLayerBlendingMode.Override;
+                int ui = layers.Length - 1;
+                layers[ui].avatarMask = mask;
+                layers[ui].defaultWeight = 1f;
+                layers[ui].blendingMode = AnimatorLayerBlendingMode.Override;
                 ctrl.layers = layers;
-                var up = ctrl.layers[1].stateMachine;
+                var up = ctrl.layers[ui].stateMachine;
                 var empty = up.AddState("Empty");
                 empty.writeDefaultValues = false;
                 up.defaultState = empty;
@@ -341,7 +400,16 @@ namespace FPSLAN.EditorTools
             const string res = "Assets/_Game/Resources/Characters";
             if (!AssetDatabase.IsValidFolder(res)) AssetDatabase.CreateFolder("Assets/_Game/Resources", "Characters");
             var prefabPath = res + "/" + brawlerId + ".prefab";
+            AssetDatabase.SaveAssets();
             PrefabUtility.SaveAsPrefabAsset(inst, prefabPath);
+            // garantia: o prefab tem de ficar com o Animator Controller (o Unity às vezes perde a referência
+            // a um controller acabado de recriar no mesmo caminho)
+            using (var scope = new PrefabUtility.EditPrefabContentsScope(prefabPath))
+            {
+                var pa = scope.prefabContentsRoot.GetComponentInChildren<Animator>();
+                if (pa != null && pa.runtimeAnimatorController == null)
+                    pa.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(ctrlPath);
+            }
             Object.DestroyImmediate(inst);
             AssetDatabase.SaveAssets();
             var armsReport = BuildFirstPersonArms(brawlerId, folder, prefix);
@@ -366,7 +434,9 @@ namespace FPSLAN.EditorTools
                 c.loopPose = loop;
                 // tudo "baked into pose": o personagem não se desloca nem roda por causa da animação
                 c.lockRootRotation = true;
-                c.keepOriginalOrientation = true;
+                // locomoção: o corpo fica virado para a frente (as animações "Rifle" do Mixamo andam de lado);
+                // parado/ataque mantêm a orientação original (pose de mira com o tronco rodado)
+                c.keepOriginalOrientation = !(role == "walk" || role == "run" || role == "jump");
                 c.lockRootHeightY = role != "jump";
                 c.keepOriginalPositionY = true;
                 c.lockRootPositionXZ = true;

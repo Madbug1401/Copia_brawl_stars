@@ -24,6 +24,27 @@ namespace FPSLAN
                 return;
             }
 
+            // Cooperativo: os dois jogadores reaparecem juntos (no ponto mais perto do parceiro vivo)
+            if (MatchManager.IsCoopActive && MatchManager.IsCoopTeam(forPlayer))
+            {
+                PlayerNetwork mate = null;
+                foreach (var p in PlayerNetwork.All)
+                    if (p != forPlayer && MatchManager.IsCoopTeam(p) && !p.Health.IsDead) { mate = p; break; }
+                if (mate != null)
+                {
+                    SpawnPoint nearest = null;
+                    float best = float.MaxValue;
+                    foreach (var sp in s_All)
+                    {
+                        float d = Vector3.Distance(sp.transform.position, mate.transform.position);
+                        if (d < best) { best = d; nearest = sp; }
+                    }
+                    position = nearest.transform.position;
+                    yaw = nearest.transform.eulerAngles.y;
+                    return;
+                }
+            }
+
             s_Scored.Clear();
             foreach (var sp in s_All)
             {
@@ -31,6 +52,8 @@ namespace FPSLAN
                 foreach (var p in PlayerNetwork.All)
                 {
                     if (p == null || p == forPlayer || !p.IsSpawned || p.Health.IsDead) continue;
+                    // Cooperativo: os inimigos nascem longe dos jogadores (ignoram-se uns aos outros)
+                    if (MatchManager.IsCoopActive && !MatchManager.IsCoopTeam(forPlayer) && !MatchManager.IsCoopTeam(p)) continue;
                     minDist = Mathf.Min(minDist, Vector3.Distance(p.transform.position, sp.transform.position));
                 }
                 s_Scored.Add(new KeyValuePair<float, SpawnPoint>(minDist, sp));

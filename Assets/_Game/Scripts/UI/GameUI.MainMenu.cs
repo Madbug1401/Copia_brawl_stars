@@ -96,7 +96,7 @@ namespace FPSLAN
         float m_MScreenT = 0f;          // 0→1 entrada do ecrã atual
         bool m_MLocalOpen; float m_MLocalT;
         bool m_MAudioOpen; float m_MAudioT;
-        int m_MFocus = 1;               // foco do teclado no menu principal (começa em PLAY ONLINE)
+        int m_MFocus = 0;               // foco do teclado no menu principal (começa em PLAY ONLINE)
         int m_MModeSel = -1;
         int m_MMapSel;
         float m_MMapScroll, m_MMapScrollTarget;
@@ -202,17 +202,17 @@ namespace FPSLAN
         void DrawMenuMainScreen(float ease)
         {
             float slide = (1f - ease) * -40f * K;
-            var panel = V(82, 94, 484, 622);
+            var panel = V(82, 94, 484, 514);   // 3 botões (a história é contada dentro do IT TAKES TWO)
             panel.x += slide;
             DrawTechPanel(panel, true);
 
             MText(new Rect(panel.x, panel.y + 30 * K, panel.width, 56 * K), "MENU", m_MT40, MWhite);
 
-            string[] labels = { "STORY MODE", "PLAY ONLINE", "PLAY LOCAL", "QUIT" };
+            string[] labels = { "PLAY ONLINE", "PLAY LOCAL", "QUIT" };
             for (int i = 0; i < labels.Length; i++)
             {
                 var r = new Rect(panel.x + 48 * K, panel.y + 112 * K + i * 108 * K, panel.width - 96 * K, 86 * K);
-                bool selected = (i == 2 && m_MLocalOpen) || (m_MFocus == i && !m_MLocalOpen && GUI.enabled);
+                bool selected = (i == 1 && m_MLocalOpen) || (m_MFocus == i && !m_MLocalOpen && GUI.enabled);
                 var res = MenuButton(r, labels[i], 1000 + i, MBtn.Normal, selected, m_MT30);
                 if (GUI.enabled && Event.current.type == EventType.Repaint && r.Contains(Event.current.mousePosition)) m_MFocus = i;
                 if (res == MClick.Clicked) ActivateMainItem(i);
@@ -228,13 +228,12 @@ namespace FPSLAN
         {
             switch (i)
             {
-                case 0: MenuNotice("O STORY MODE chega em breve."); break;
-                case 1: m_MLocalOpen = false; OpenSetup(SetupContext.Online); break;
-                case 2:
+                case 0: m_MLocalOpen = false; OpenSetup(SetupContext.Online); break;
+                case 1:
                     m_MLocalOpen = !m_MLocalOpen;
                     m_MLocalError = null;
                     break;
-                case 3: QuitGame(); break;
+                case 2: QuitGame(); break;
             }
         }
 
@@ -795,8 +794,8 @@ namespace FPSLAN
             if (typing) return;
             if (m_MScreen == MenuScreen.Main)
             {
-                if (e.keyCode == KeyCode.DownArrow || e.keyCode == KeyCode.S) { m_MFocus = (m_MFocus + 1) % 4; e.Use(); }
-                else if (e.keyCode == KeyCode.UpArrow || e.keyCode == KeyCode.W) { m_MFocus = (m_MFocus + 3) % 4; e.Use(); }
+                if (e.keyCode == KeyCode.DownArrow || e.keyCode == KeyCode.S) { m_MFocus = (m_MFocus + 1) % 3; e.Use(); }
+                else if (e.keyCode == KeyCode.UpArrow || e.keyCode == KeyCode.W) { m_MFocus = (m_MFocus + 2) % 3; e.Use(); }
                 return;
             }
 

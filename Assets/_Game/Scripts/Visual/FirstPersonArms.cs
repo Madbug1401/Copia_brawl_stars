@@ -12,6 +12,10 @@ namespace FPSLAN
         Animator m_Anim;
         Transform m_View;                 // raiz do viewmodel (presa à câmara)
         [System.NonSerialized] public Transform rightTarget, leftTarget, knife;
+        /// <summary>Se definido, a pose vem da animação e esta arma é colocada entre as mãos (ver ModelWeaponHolder).</summary>
+        [System.NonSerialized] public Transform drivenWeapon;
+        [System.NonSerialized] public float kick;
+        [System.NonSerialized] public Vector3 supportLocal = new Vector3(0f, 0.06f, 0.26f);
 
         // Afinações (espaço local do alvo / da câmara). Públicas para se poderem ajustar em Play.
         // Mão esquerda por baixo da arma, palma para cima (afinado na vista em 1.ª pessoa).
@@ -30,6 +34,19 @@ namespace FPSLAN
         void OnAnimatorIK(int layerIndex)
         {
             if (layerIndex != 0 || m_Anim == null || m_View == null) return;
+            if (drivenWeapon != null)
+            {
+                ModelWeaponHolder.HoldFromHands(m_Anim, drivenWeapon, supportLocal, Vector3.zero, Quaternion.identity,
+                    m_View.forward, m_View.up, kick, out var rp, out var rr, out var lp, out var lr);
+                foreach (var g in new[] { AvatarIKGoal.RightHand, AvatarIKGoal.LeftHand })
+                {
+                    m_Anim.SetIKPositionWeight(g, 1f);
+                    m_Anim.SetIKRotationWeight(g, 1f);
+                }
+                m_Anim.SetIKPosition(AvatarIKGoal.RightHand, rp); m_Anim.SetIKRotation(AvatarIKGoal.RightHand, rr);
+                m_Anim.SetIKPosition(AvatarIKGoal.LeftHand, lp); m_Anim.SetIKRotation(AvatarIKGoal.LeftHand, lr);
+                return;
+            }
             var right = knife != null && knife.gameObject.activeInHierarchy ? knife : rightTarget;
             Goal(AvatarIKGoal.RightHand, AvatarIKHint.RightElbow, right, elbowR, rightOffset, rightEuler, rightRotWeight);
             Goal(AvatarIKGoal.LeftHand, AvatarIKHint.LeftElbow, leftTarget, elbowL, leftOffset, leftEuler, leftRotWeight);

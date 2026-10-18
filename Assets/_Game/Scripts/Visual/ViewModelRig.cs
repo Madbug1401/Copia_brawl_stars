@@ -35,6 +35,8 @@ namespace FPSLAN
         static readonly Vector3 ModelShoulders = new Vector3(0f, -0.36f, 0.3f);
         /// <summary>Braços da 1.ª pessoa um pouco maiores, para a mão esquerda chegar à frente da arma.</summary>
         const float ModelArmsScale = 1.12f;
+        /// <summary>Animações com a arma nas mãos: onde fica a cabeça do modelo em relação à câmara. Público para afinar.</summary>
+        public static Vector3 ModelHeadOffset = new Vector3(-0.1f, -0.12f, -0.18f);
         WeaponModel m_WeaponR, m_WeaponL;
         Vector3 m_GunRRest, m_GunLRest;
         Quaternion m_GunRRot = Quaternion.identity, m_GunLRot = Quaternion.identity;
@@ -183,6 +185,31 @@ namespace FPSLAN
             anim.applyRootMotion = false;
             anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             foreach (var smr in go.GetComponentsInChildren<SkinnedMeshRenderer>(true)) smr.updateWhenOffscreen = true;
+
+            // Animações que já seguram a arma (Mixamo "Rifle"): a pose vem da animação e a arma segue as mãos.
+            bool animatedHold = m_WeaponR != null && m_GunR != null &&
+                (Style == RigStyle.Sniper || Style == RigStyle.Shotgun || Style == RigStyle.Generic);
+            if (animatedHold)
+            {
+                animatedHold = false;
+                foreach (var p in anim.parameters) if (p.name == ModelWeaponHolder.HoldsWeaponParam) animatedHold = true;
+            }
+            if (animatedHold)
+            {
+                go.transform.SetParent(m_Sway, false);   // balanço e sway da câmara também nos braços
+                anim.Rebind();
+                anim.Update(0f);
+                var head = anim.GetBoneTransform(HumanBodyBones.Head);
+                if (head != null) go.transform.localPosition += ModelHeadOffset - m_Sway.InverseTransformPoint(head.position);
+                if (m_HandR != null) { Object.Destroy(m_HandR.gameObject); m_HandR = null; }
+                if (m_HandL != null) { Object.Destroy(m_HandL.gameObject); m_HandL = null; }
+                m_ModelArms = anim.gameObject.AddComponent<FirstPersonArms>();
+                m_ModelArms.Setup(anim, Root);
+                m_ModelArms.drivenWeapon = m_GunR;
+                foreach (var t in m_GunR.GetComponentsInChildren<Transform>(true))
+                    if (t.name == "Support") { m_ModelArms.supportLocal = m_GunR.InverseTransformPoint(t.position); break; }
+                return true;
+            }
 
             // ombros do modelo no sítio certo em relação à câmara
             go.transform.localScale *= ModelArmsScale;
@@ -456,8 +483,12 @@ namespace FPSLAN
                 {
                     float kickBack = Style == RigStyle.Sniper ? 0.11f : 0.09f;
                     float kickRot = Style == RigStyle.Sniper ? 18f : 14f;
-                    PoseGun(m_GunR, m_GunRRest, m_KickR, kickBack, kickRot, 0f);
-                    m_GunR.localRotation = m_GunRRot * m_GunR.localRotation;   // inclinação de descanso (braços do modelo)
+                    if (m_ModelArms != null && m_ModelArms.drivenWeapon != null) m_ModelArms.kick = m_KickR;   // a arma segue as mãos animadas
+                    else
+                    {
+                        PoseGun(m_GunR, m_GunRRest, m_KickR, kickBack, kickRot, 0f);
+                        m_GunR.localRotation = m_GunRRot * m_GunR.localRotation;   // inclinação de descanso (braços do modelo)
+                    }
                     if (m_WeaponR != null && m_WeaponR.pump != null)
                     {
                         m_Pump = Mathf.MoveTowards(m_Pump, 1f, dt * 2.2f);

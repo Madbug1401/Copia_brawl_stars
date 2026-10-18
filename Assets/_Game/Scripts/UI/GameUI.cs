@@ -81,7 +81,7 @@ namespace FPSLAN
             m_Ip = GameSession.LastIp;
             m_Hero = BrawlerRegistry.Sanitize(GameSession.LocalHeroId);
             m_MenuBots = PlayerPrefs.GetInt("fpslan.bots", 0);
-            MatchManager.MenuSelectedMode = (GameMode)Mathf.Clamp(PlayerPrefs.GetInt("fpslan.mode", 0), 0, 3);
+            MatchManager.MenuSelectedMode = (GameMode)Mathf.Clamp(PlayerPrefs.GetInt("fpslan.mode", 0), 0, System.Enum.GetValues(typeof(GameMode)).Length - 1);
             BotManager.Difficulty = (BotDifficulty)PlayerPrefs.GetInt("fpslan.botdiff", (int)BotDifficulty.Normal);
             m_LocalIps = ConnectionManager.GetLocalIPv4();
             m_Preview = new BrawlerPreview();
@@ -214,7 +214,9 @@ namespace FPSLAN
             // Bots pedidos no menu: adicionados assim que o host está pronto
             if (m_PendingBots > 0 && m_InGame && NM.IsServer)
             {
-                if (BotManager.AddBot()) m_PendingBots--;
+                // IT TAKES TWO: os inimigos (ondas) e o bot parceiro são geridos pelo próprio modo
+                if (MatchManager.MenuSelectedMode == GameMode.ItTakesTwo) m_PendingBots = 0;
+                else if (BotManager.AddBot()) m_PendingBots--;
                 else m_PendingBots = 0;
             }
 
@@ -753,7 +755,7 @@ namespace FPSLAN
 
         void CycleGameMode(int delta)
         {
-            int count = 4;
+            int count = System.Enum.GetValues(typeof(GameMode)).Length;
             int value = ((int)MatchManager.MenuSelectedMode + delta + count) % count;
             MatchManager.MenuSelectedMode = (GameMode)value;
             PlayerPrefs.SetInt("fpslan.mode", value);
@@ -766,6 +768,7 @@ namespace FPSLAN
                 case GameMode.Wipeout: return "WIPEOUT · Eliminações por equipa";
                 case GameMode.Knockout: return "KNOCKOUT · Melhor de três rondas";
                 case GameMode.Showdown: return "SHOWDOWN · Último Brawler vivo";
+                case GameMode.ItTakesTwo: return "IT TAKES TWO · Cooperativo a dois";
                 default: return "DEATHMATCH · Todos contra todos";
             }
         }
@@ -826,8 +829,11 @@ namespace FPSLAN
 
                 float hp01 = Mathf.Clamp01(p.Health.Health.Value / (float)Mathf.Max(1, p.Health.MaxHealth));
                 var barRect = new Rect(x, y, bw, bh);
-                InkPanel(barRect, new Color(0.2f, 0.05f, 0.08f, 0.95f), 2f * k);
-                if (hp01 > 0f) Panel(new Rect(x, y, Mathf.Max(bh, bw * hp01), bh), Color.Lerp(new Color(0.95f, 0.15f, 0.2f), new Color(1f, 0.35f, 0.3f), hp01));
+                bool mate = MatchManager.AreTeammates(me, p);
+                InkPanel(barRect, mate ? new Color(0.05f, 0.18f, 0.08f, 0.95f) : new Color(0.2f, 0.05f, 0.08f, 0.95f), 2f * k);
+                if (hp01 > 0f) Panel(new Rect(x, y, Mathf.Max(bh, bw * hp01), bh), mate
+                    ? Color.Lerp(new Color(0.25f, 0.75f, 0.3f), new Color(0.4f, 0.95f, 0.45f), hp01)
+                    : Color.Lerp(new Color(0.95f, 0.15f, 0.2f), new Color(1f, 0.35f, 0.3f), hp01));
                 if (p.Health.IsSlowed) Fill(new Rect(x + 3, y + bh - 3 * k, bw - 6, 2 * k), new Color(0.75f, 0.5f, 1f));
                 Outlined(new Rect(x, y - 1, bw, bh + 2), p.Health.Health.Value.ToString(), m_TinyCenter, Color.white, 1f);
 
@@ -930,18 +936,25 @@ namespace FPSLAN
             {
                 float tr = match.TimeRemaining;
                 string time = match.Phase.Value == MatchPhase.Playing ? $"{(int)(tr / 60)}:{(int)(tr % 60):00}" : "FIM";
+                if (match.IsCoop && match.Phase.Value == MatchPhase.Playing)
+                    time = match.IsRoundIntermission.Value ? $"0:{Mathf.CeilToInt(tr):00}" : "";
                 var top = new Rect(cx - 170 * s, 12 * s, 340 * s, 52 * s);
                 InkPanel(top, PanelBlue, 3f * s);
-                string modeName = match.Mode.Value == GameMode.Wipeout ? "WIPEOUT" :
+                string modeName = match.IsCoop ? $"ONDA {Mathf.Max(1, match.CoopWave.Value)}/{match.coopTotalWaves}" :
+                    match.Mode.Value == GameMode.Wipeout ? "WIPEOUT" :
                     match.Mode.Value == GameMode.Knockout ? $"KNOCKOUT · RONDA {match.RoundNumber.Value}" :
                     match.Mode.Value == GameMode.Showdown ? "SHOWDOWN" : "DEATHMATCH";
-                string modeScore = match.Mode.Value == GameMode.Deathmatch
+                string modeScore = match.IsCoop
+                    ? $"IT TAKES TWO  ·  INIMIGOS {match.CoopEnemiesLeft.Value}  ·  K {me.Kills.Value}"
+                    : match.Mode.Value == GameMode.Deathmatch
                     ? $"K {me.Kills.Value}  ·  D {me.Deaths.Value}  ·  meta {match.killLimit}"
                     : match.Mode.Value == GameMode.Showdown
                         ? $"VIVOS {match.AlivePlayerCount}  ·  K {me.Kills.Value}"
                         : $"AZUL {match.BlueScore.Value}  -  {match.RedScore.Value} VERMELHA";
                 Outlined(new Rect(top.x, top.y + 2 * s, top.width, 25 * s), $"{modeName}   {time}", m_BigCenter, Color.white, 2f);
                 Outlined(new Rect(top.x, top.y + 27 * s, top.width, 22 * s), modeScore, m_TinyCenter, new Color(1f, 0.9f, 0.6f), 1f);
+
+                if (match.IsCoop) DrawCoopHud(me, match, top, s);
 
                 if (match.Mode.Value == GameMode.Deathmatch)
                 {
@@ -1078,6 +1091,11 @@ namespace FPSLAN
         void DrawDeathOverlay(PlayerNetwork me)
         {
             float s = Scale;
+            if (MatchManager.IsCoopActive && !MatchManager.IsMatchOver)
+            {
+                DrawCoopDownedOverlay(me, s);
+                return;
+            }
             Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0.05f, 0.02f, 0.08f, 0.35f));
             var killer = PlayerNetwork.Find(me.Health.LastKiller.Value);
             string who = killer != null && killer != me ? "ELIMINADO POR " + killer.DisplayName.ToUpperInvariant() : "FOSTE ELIMINADO";
@@ -1091,6 +1109,109 @@ namespace FPSLAN
                 int secs = Mathf.CeilToInt(me.Health.RespawnRemaining);
                 Outlined(new Rect(0, r.yMax + 40 * s, Screen.width, 70 * s), secs > 0 ? secs.ToString() : "", m_Title, Color.white, 3f);
                 Outlined(new Rect(0, r.yMax + 110 * s, Screen.width, 30 * s), "Esc para trocar de Brawler", m_Center, new Color(1f, 1f, 1f, 0.8f), 1.5f);
+            }
+        }
+
+        // ================================================================== IT TAKES TWO (cooperativo)
+
+        static readonly Color CoopGreen = new Color(0.45f, 1f, 0.55f);
+
+        void DrawCoopHud(PlayerNetwork me, MatchManager match, Rect top, float s)
+        {
+            float cx = Screen.width / 2f;
+
+            // Laço: estado por baixo do painel do topo
+            var bond = new Rect(cx - 210 * s, top.yMax + 6 * s, 420 * s, 24 * s);
+            if (match.Phase.Value == MatchPhase.Playing)
+            {
+                if (match.HasBondPartner(me))
+                {
+                    float pulse = 0.75f + 0.25f * Mathf.Sin(Time.time * 4f);
+                    Panel(bond, new Color(0.1f, 0.4f, 0.2f, 0.75f));
+                    Outlined(bond, $"LAÇO ATIVO  ·  +{Mathf.RoundToInt((match.coopBondDamageMultiplier - 1f) * 100f)}% dano  ·  cura", m_TinyCenter, Color.Lerp(Color.white, CoopGreen, pulse), 1f);
+                }
+                else if (!me.Health.IsDead)
+                {
+                    Panel(bond, new Color(0.05f, 0.05f, 0.12f, 0.6f));
+                    Outlined(bond, $"Fiquem a menos de {Mathf.RoundToInt(match.coopBondRadius)} m para ativar o LAÇO", m_TinyCenter, new Color(1f, 1f, 1f, 0.75f), 1f);
+                }
+            }
+
+            // Entre ondas: contagem grande no centro
+            if (match.Phase.Value == MatchPhase.Playing && match.IsRoundIntermission.Value)
+            {
+                int secs = Mathf.CeilToInt(match.TimeRemaining);
+                string head = match.CoopWave.Value == 0 ? "PREPAREM-SE" : $"ONDA {match.CoopWave.Value} LIMPA!";
+                var r = new Rect(0, Screen.height * 0.24f, Screen.width, 60 * s);
+                m_DeathOverlay.fontSize = Mathf.RoundToInt(40 * s);
+                Outlined(r, head, m_DeathOverlay, match.CoopWave.Value == 0 ? Gold : CoopGreen, 3f);
+                Outlined(new Rect(0, r.yMax, Screen.width, 30 * s), $"Onda {match.CoopWave.Value + 1} de {match.coopTotalWaves} em {secs}s", m_Center, Color.white, 1.5f);
+            }
+
+            // Parceiro no chão: marcador no ecrã + barra de progresso quando estou perto
+            var cam = me.Visuals != null ? me.Visuals.PlayerCamera : null;
+            if (cam == null || me.Health.IsDead) return;
+            foreach (var p in PlayerNetwork.All)
+            {
+                if (p == me || !MatchManager.IsCoopTeam(p) || !p.Health.IsDead) continue;
+                var world = p.transform.position + Vector3.up * 1.2f;
+                var sp = cam.WorldToScreenPoint(world);
+                float dist = Vector3.Distance(me.transform.position, p.transform.position);
+                bool behind = sp.z <= 0f;
+                float x = behind ? Screen.width - sp.x : sp.x;
+                float y = behind ? Screen.height - 60 * s : Screen.height - sp.y;
+                x = Mathf.Clamp(x, 60 * s, Screen.width - 60 * s);
+                y = Mathf.Clamp(y, 90 * s, Screen.height - 60 * s);
+
+                float pulse = 0.6f + 0.4f * Mathf.Sin(Time.time * 6f);
+                float d = 34 * s;
+                Tex(new Rect(x - d / 2f - 3 * s, y - d / 2f - 3 * s, d + 6 * s, d + 6 * s), m_Circle, Ink);
+                Tex(new Rect(x - d / 2f, y - d / 2f, d, d), m_Circle, new Color(1f, 0.35f, 0.3f, pulse));
+                Outlined(new Rect(x - d / 2f, y - d / 2f, d, d), "+", m_BigCenter, Color.white, 2f);
+                Outlined(new Rect(x - 120 * s, y + d / 2f + 2 * s, 240 * s, 20 * s), $"LEVANTA {p.DisplayName.ToUpperInvariant()}  ·  {Mathf.RoundToInt(dist)} m", m_TinyCenter, Color.white, 1f);
+
+                float prog = p.Health.ReviveProgress.Value;
+                if (prog > 0.001f)
+                {
+                    var bar = new Rect(cx - 160 * s, Screen.height * 0.62f, 320 * s, 20 * s);
+                    InkPanel(bar, new Color(0.08f, 0.1f, 0.16f, 0.95f), 2f * s);
+                    Panel(new Rect(bar.x, bar.y, Mathf.Max(bar.height, bar.width * prog), bar.height), CoopGreen);
+                    Outlined(new Rect(bar.x, bar.y - 24 * s, bar.width, 22 * s), "A LEVANTAR " + p.DisplayName.ToUpperInvariant() + "…", m_TinyCenter, Color.white, 1f);
+                }
+                else if (dist > match.coopReviveRadius)
+                {
+                    Outlined(new Rect(0, Screen.height * 0.62f, Screen.width, 24 * s), "O teu parceiro caiu! Vai até ele e fica perto para o levantar.", m_Center, new Color(1f, 0.75f, 0.6f), 1.5f);
+                }
+            }
+        }
+
+        void DrawCoopDownedOverlay(PlayerNetwork me, float s)
+        {
+            var match = MatchManager.Instance;
+            Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0.12f, 0.02f, 0.04f, 0.35f));
+            var r = new Rect(0, Screen.height * 0.26f, Screen.width, 60 * s);
+            m_DeathOverlay.fontSize = Mathf.RoundToInt(38 * s);
+            Outlined(r, "CAÍSTE!", m_DeathOverlay, new Color(1f, 0.4f, 0.35f), 3f);
+
+            PlayerNetwork mate = null;
+            foreach (var p in PlayerNetwork.All)
+                if (p != me && MatchManager.IsCoopTeam(p) && !p.Health.IsDead) { mate = p; break; }
+
+            string hint = mate != null
+                ? mate.DisplayName + " pode levantar-te: tem de ficar perto de ti."
+                : "Ninguém para te levantar…";
+            Outlined(new Rect(0, r.yMax + 4 * s, Screen.width, 30 * s), hint, m_Center, Color.white, 1.5f);
+
+            float prog = me.Health.ReviveProgress.Value;
+            var bar = new Rect(Screen.width / 2f - 180 * s, r.yMax + 50 * s, 360 * s, 24 * s);
+            InkPanel(bar, new Color(0.08f, 0.1f, 0.16f, 0.95f), 2f * s);
+            if (prog > 0.001f) Panel(new Rect(bar.x, bar.y, Mathf.Max(bar.height, bar.width * prog), bar.height), CoopGreen);
+            Outlined(bar, prog > 0.001f ? "A LEVANTAR… " + Mathf.RoundToInt(prog * 100f) + "%" : "À espera do parceiro", m_TinyCenter, Color.white, 1f);
+
+            if (match != null && mate != null)
+            {
+                float dist = Vector3.Distance(me.transform.position, mate.transform.position);
+                Outlined(new Rect(0, bar.yMax + 8 * s, Screen.width, 24 * s), $"Parceiro a {Mathf.RoundToInt(dist)} m  ·  limpar a onda também te levanta", m_Center, new Color(1f, 1f, 1f, 0.75f), 1f);
             }
         }
 
@@ -1134,6 +1255,17 @@ namespace FPSLAN
         {
             float s = Scale;
             Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0.02f, 0.02f, 0.08f, 0.5f));
+            if (match.IsCoop)
+            {
+                bool win = match.CoopVictory.Value;
+                string title = win ? "VITÓRIA A DOIS!" : "DERROTA";
+                string sub = win ? $"Sobreviveram às {match.coopTotalWaves} ondas — juntos é melhor."
+                                 : $"Caíram os dois na onda {Mathf.Max(1, match.CoopWave.Value)}. Fiquem mais perto um do outro!";
+                Outlined(new Rect(0, Screen.height * 0.03f, Screen.width, 70 * s), title, m_Title, win ? Gold : new Color(1f, 0.4f, 0.35f), 3f);
+                Outlined(new Rect(0, Screen.height * 0.03f + 64 * s, Screen.width, 30 * s), sub + "   ·   Nova partida em " + Mathf.CeilToInt(match.TimeRemaining) + "s", m_Center, Color.white, 1.5f);
+                DrawScoreboard();
+                return;
+            }
             Outlined(new Rect(0, Screen.height * 0.03f, Screen.width, 70 * s), "VENCEDOR: " + match.WinnerName.Value.ToString().ToUpperInvariant(), m_Title, Gold, 3f);
             Outlined(new Rect(0, Screen.height * 0.03f + 64 * s, Screen.width, 30 * s), "Nova partida em " + Mathf.CeilToInt(match.TimeRemaining) + "s", m_Center, Color.white, 1.5f);
             DrawScoreboard();

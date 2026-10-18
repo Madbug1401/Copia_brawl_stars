@@ -34,25 +34,29 @@ namespace FPSLAN
         }
 
         /// <summary>Host: adiciona um bot. heroId &lt; 0 = personagem aleatório.</summary>
-        public static bool AddBot(int heroId = -1)
+        public static bool AddBot(int heroId = -1) => SpawnBot(heroId, Difficulty) != null;
+
+        /// <summary>Host: cria um bot com dificuldade própria (usado pelas ondas do cooperativo). Devolve null se não houver lugar.</summary>
+        public static PlayerNetwork SpawnBot(int heroId, BotDifficulty difficulty, string namePrefix = "Bot")
         {
             var nm = NetworkManager.Singleton;
-            if (!CanAdd) return false;
+            if (!CanAdd) return null;
 
             var prefab = nm.NetworkConfig.PlayerPrefab;
-            if (prefab == null) return false;
+            if (prefab == null) return null;
 
             int hero = heroId >= 0 ? BrawlerRegistry.Sanitize(heroId) : BrawlerRegistry.RandomAvailableIndex();
             s_Counter++;
             string heroName = BrawlerRegistry.Get(hero).displayName;
             // os nomes têm no máximo 16 letras: "Lupus Marinus" fica "Bot Lupus 3"
-            if (("Bot " + heroName + " " + s_Counter).Length > 16) heroName = heroName.Split(' ')[0];
-            string botName = "Bot " + heroName + " " + s_Counter;
+            if ((namePrefix + " " + heroName + " " + s_Counter).Length > 16) heroName = heroName.Split(' ')[0];
+            string botName = namePrefix + " " + heroName + " " + s_Counter;
 
             var go = Object.Instantiate(prefab, new Vector3(0f, 4f, 0f), Quaternion.identity);
-            go.GetComponent<PlayerNetwork>().ConfigureAsBot(botName, hero, Difficulty);
+            var player = go.GetComponent<PlayerNetwork>();
+            player.ConfigureAsBot(botName, hero, difficulty);
             go.GetComponent<NetworkObject>().Spawn(true);
-            return true;
+            return player;
         }
 
         /// <summary>Host: remove o bot mais recente.</summary>
