@@ -1,0 +1,341 @@
+fileFormatVersion: 2
+guid: 50a2afcfff1041c4a2a7063fcb66a67e
+ModelImporter:
+  serializedVersion: 24600
+  internalIDToNameTable: []
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Barro
+    second: {fileID: 2100000, guid: c564e0e8c89798940bda5a70b47eec4e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Basalto_Escuro
+    second: {fileID: 2100000, guid: 1c283d30febc4fe4c86de250b93a4fdc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Bote_Amarelo
+    second: {fileID: 2100000, guid: 0d5bace31c1663c4296dc6a465165945, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Bote_Azul
+    second: {fileID: 2100000, guid: 3de22e37d641a0c41a2e9863809b008f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Bote_Vermelho
+    second: {fileID: 2100000, guid: 7840344c19eaede4abf6af7ec39717a6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Calcada_Basalto
+    second: {fileID: 2100000, guid: 00e8cd185661ac6468535aef0d30b268, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Cesto
+    second: {fileID: 2100000, guid: 0874f20a5c3b1fb4db0e14243f344839, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Colisor
+    second: {fileID: 2100000, guid: a850512a3eb845a4189aa604b8866bd8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Degraus
+    second: {fileID: 2100000, guid: ad3b9f8bef5c43f4f93cf844d160501f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Emissor
+    second: {fileID: 2100000, guid: 5488f20da340435468a50d0899e71733, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Ferro
+    second: {fileID: 2100000, guid: 2df19586905eba643bff7111d2390a7b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Flor_Amarela
+    second: {fileID: 2100000, guid: 6949e1e535f148e4fa9a451d7d91ccc1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Flor_Rosa
+    second: {fileID: 2100000, guid: 1f0e6fd8e89a908449ce71727fca9fd5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Flor_Vermelha
+    second: {fileID: 2100000, guid: 51d7921a488dbb546ae805e77107c670, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Folhas
+    second: {fileID: 2100000, guid: a9b0c252bccac61458035badeb2735bb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Folhas_Claras
+    second: {fileID: 2100000, guid: e4fbf7761e74a104391a6d0cb2ee7898, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Gema
+    second: {fileID: 2100000, guid: 4b21041e79536be47a44053542aaeace, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Lajes_Claras
+    second: {fileID: 2100000, guid: 26b1f26497b1c23449d623d5c01a7e60, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Madeira
+    second: {fileID: 2100000, guid: 4f5268017525acb4c98dc1f979667b69, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Madeira_Azul
+    second: {fileID: 2100000, guid: b847ff125bd1457409d738c3dff29ef1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Madeira_Verde
+    second: {fileID: 2100000, guid: 9fd853e2b2250d54f8b6ff801960f202, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Mar
+    second: {fileID: 2100000, guid: 1bcd7a0a7da7aa84a9cd4cf0f57a8c7d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Marca_Aterragem
+    second: {fileID: 2100000, guid: 062649b55bf508443b6463df6c58977c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Marca_Aterragem_Apagada
+    second: {fileID: 2100000, guid: 429ed2fd6e8ab424cabc24f8a2a90df7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Monte
+    second: {fileID: 2100000, guid: 98f3b5919cc89ab46b42434412868264, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Monte_Verde
+    second: {fileID: 2100000, guid: 9c8cf2e42ffad2b46b956e68a34162fe, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Palha
+    second: {fileID: 2100000, guid: 520c71ef09b916f4e9910e7f9e644e39, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Pano_Amarelo
+    second: {fileID: 2100000, guid: 8a099691c23bd8c43b9619643e5430d8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Pano_Azul
+    second: {fileID: 2100000, guid: 5fe6646103f77d74e8a99970fa087489, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Pano_Verde
+    second: {fileID: 2100000, guid: 347da7f878b40d248b4f271cc24e0e5b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Pano_Vermelho
+    second: {fileID: 2100000, guid: beb21516c813b5b418199105528f824a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Pedra_Clara
+    second: {fileID: 2100000, guid: 71f7875b5dd0d034980dd205f42a9b1c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Pedra_Escura
+    second: {fileID: 2100000, guid: 262b1bbed3d3dab4bae748479a359800, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Pedra_Muro
+    second: {fileID: 2100000, guid: a1e65ba033ec0e44ab151755da39c1bb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Reboco_Azul
+    second: {fileID: 2100000, guid: 07fbe96a8176f5243b25519c6dff88bb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Reboco_Branco
+    second: {fileID: 2100000, guid: 53a5bd04b7c1d9a41b6eccea17022757, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Reboco_Ocre
+    second: {fileID: 2100000, guid: f08687353c6a21e4c9645255239b4012, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Reboco_Rosa
+    second: {fileID: 2100000, guid: 94a9ac6b410715a49ac5c465012714c9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Reboco_Terracota
+    second: {fileID: 2100000, guid: a656d22707e3e1d42a5a717fb1340570, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Spawn_Azul
+    second: {fileID: 2100000, guid: b6538fa10f8ffc245a1a6fa73726c8f0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Spawn_Vermelho
+    second: {fileID: 2100000, guid: 572d47dedf8fa1e42b3ffd3ea5d028ca, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Telha
+    second: {fileID: 2100000, guid: 131837f228aa12244b7f03ab4333a3ec, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Terra
+    second: {fileID: 2100000, guid: 292fdec5c63f4ef449befd5a8de23067, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Tronco
+    second: {fileID: 2100000, guid: 6c909f42d8b4481478b01543ce9b076c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MAT_Vidro_Lanterna
+    second: {fileID: 2100000, guid: 16c30faba27ed4a4a801ce689fc37a2c, type: 2}
+  materials:
+    materialImportMode: 2
+    materialName: 3
+    materialSearch: 1
+    materialLocation: 1
+    searchTexturesGlobally: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 0
+    preBakeConvexCollisionMesh: 0
+    preBakeTriangleCollisionMesh: 0
+    importPhysicalCameras: 0
+    importVisibility: 0
+    importBlendShapes: 1
+    importCameras: 0
+    importLights: 0
+    nodeNameCollisionStrategy: 0
+    fileIdsGeneration: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 1
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    importUVs: -1
+    importVertexColors: 1
+    meshOptimizationFlags: -1
+    indexFormat: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 0
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    strictVertexDataChecks: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 4
+    normalCalculationMode: 0
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+    calculateBlendshapeNormalsDeltaFromImportedNormals: 1
+  referencedClips: []
+  importAnimation: 0
+  humanDescription:
+    serializedVersion: 3
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 0
+  humanoidOversampling: 1
+  avatarSetup: 0
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  importBlendShapeDeformPercent: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

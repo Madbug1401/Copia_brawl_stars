@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: trapper
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.BrawlerDefinition
   brawlerId: trapper
-  displayName: Lupus Marinus
+  displayName: N.Cage
   role: "Armadilheiro \u2014 tr\xEAs flechas explosivas em leque; Super: tr\xEAs minas escondidas"
   available: 1
   stats:

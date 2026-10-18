@@ -39,3 +39,6 @@
 *.dll   binary
 *.exe   binary
 *.docx  binary
+
+# Keep source code line endings stable across platforms.
+*.cs text eol=lf

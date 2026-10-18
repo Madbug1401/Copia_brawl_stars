@@ -3,11 +3,18 @@ using UnityEngine;
 
 namespace FPSLAN
 {
-    /// <summary>Ponto de spawn. Escolhe-se o mais afastado dos inimigos vivos (com alguma variação).</summary>
+    /// <summary>Ponto de spawn. Escolhe-se o mais afastado dos inimigos vivos (com alguma variação).
+    /// Em modos de equipa, se o mapa tiver spawns marcados com equipa, cada jogador só usa os da sua.</summary>
     public class SpawnPoint : MonoBehaviour
     {
+        [Tooltip("-1 = qualquer equipa; 0 = azul; 1 = vermelha.")]
+        public int team = -1;
+
         static readonly List<SpawnPoint> s_All = new List<SpawnPoint>();
         static readonly List<KeyValuePair<float, SpawnPoint>> s_Scored = new List<KeyValuePair<float, SpawnPoint>>();
+
+        /// <summary>Spawns ativos na cena.</summary>
+        public static IReadOnlyList<SpawnPoint> All => s_All;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() => s_All.Clear();
@@ -44,10 +51,20 @@ namespace FPSLAN
                     return;
                 }
             }
+            // Spawns da equipa do jogador (se o mapa os tiver e o modo for por equipas)
+            int myTeam = -1;
+            if (forPlayer != null && MatchManager.Instance != null && MatchManager.Instance.IsSpawned &&
+                MatchManager.IsTeamMode(MatchManager.Instance.Mode.Value))
+                myTeam = forPlayer.TeamId.Value;
+            bool teamSpawns = false;
+            if (myTeam >= 0)
+                foreach (var sp in s_All)
+                    if (sp.team == myTeam) { teamSpawns = true; break; }
 
             s_Scored.Clear();
             foreach (var sp in s_All)
             {
+                if (teamSpawns && sp.team != myTeam) continue;
                 float minDist = 999f;
                 foreach (var p in PlayerNetwork.All)
                 {
@@ -69,7 +86,7 @@ namespace FPSLAN
 
         void OnDrawGizmos()
         {
-            Gizmos.color = new Color(0.2f, 1f, 0.4f, 0.8f);
+            Gizmos.color = team == 0 ? new Color(0.25f, 0.5f, 1f, 0.9f) : team == 1 ? new Color(1f, 0.3f, 0.25f, 0.9f) : new Color(0.2f, 1f, 0.4f, 0.8f);
             Gizmos.DrawWireCube(transform.position + Vector3.up * 0.9f, new Vector3(0.8f, 1.8f, 0.8f));
             Gizmos.DrawLine(transform.position + Vector3.up, transform.position + Vector3.up + transform.forward * 1.5f);
         }

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: sprayer
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.BrawlerDefinition
   brawlerId: sprayer
-  displayName: MS
+  displayName: Mr.S
   role: "Spray \u2014 nuvem em cone que causa mais dano \xE0 dist\xE2ncia; Super: aura que abranda e causa dano"
   available: 1
   stats:

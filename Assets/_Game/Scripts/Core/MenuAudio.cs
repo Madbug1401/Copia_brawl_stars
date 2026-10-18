@@ -26,11 +26,11 @@ namespace FPSLAN
             switch (brawlerId)
             {
                 case "sniper": return "lince";
-                case "gunslinger": return "riot";
-                case "trapper": return "lupus";
+                case "gunslinger": return "ekko";
+                case "trapper": return "ncage";
                 case "sprayer": return "mrs";
-                case "shotgunner": return "ncage";
-                case "artillery": return "ekko";
+                case "shotgunner": return "riot";
+                case "artillery": return "lupus";
                 default: return brawlerId;
             }
         }
