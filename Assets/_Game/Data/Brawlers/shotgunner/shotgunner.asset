@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: shotgunner
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.BrawlerDefinition
   brawlerId: shotgunner
-  displayName: Brasa
+  displayName: N.Cage
   role: "Ca\xE7adeira \u2014 leque de bagos que arrasa de perto; Super: rajada gigante que empurra e destr\xF3i cobertura"
   available: 1
   stats:

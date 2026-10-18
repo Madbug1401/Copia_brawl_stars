@@ -8,8 +8,11 @@ namespace FPSLAN
     /// nem referências manuais: as imagens vêm de Resources/UI/Menu e a lógica reutiliza ConnectionManager, GameSession,
     /// BrawlerRegistry, MatchManager e BotManager.
     ///
-    /// Ecrãs: Principal (Story Mode · Play Online · Start Server · Quit) com painel "Join a server" ao lado,
-    /// Configuração da partida (modos · personagem · mapa) e painel rápido de áudio no canto superior direito.
+    /// Fluxos:
+    ///  • PLAY ONLINE → modo → mapa → personagem → JOGAR
+    ///  • PLAY LOCAL  → criar servidor (modo → personagem) ou ligar a um servidor (código → personagem)
+    /// O nome do jogador edita-se em Definições → Perfil. Ao escolher um mapa, o fundo aproxima-se da ilha
+    /// correspondente (sem nunca mostrar o nome dela).
     /// O menu antigo continua em <c>DrawMainMenu()</c>; basta pôr <see cref="UseNewMenu"/> a false para voltar a ele.
     /// </summary>
     public partial class GameUI
@@ -25,57 +28,57 @@ namespace FPSLAN
             public MenuCharacter(string name, string key, string brawlerId) { this.name = name; this.key = key; this.brawlerId = brawlerId; }
         }
 
-        /// <summary>
-        /// Personagens do menu → brawler jogável (por brawlerId). LIGAÇÃO PROVISÓRIA: só o Lince corresponde de origem;
-        /// os restantes foram associados por ordem. Ajustar aqui (uma linha por personagem) quando a equipa decidir.
-        /// </summary>
+        /// <summary>Personagens do menu → brawler jogável (por brawlerId). Os nomes em jogo vêm do próprio brawler.</summary>
         static readonly MenuCharacter[] s_Roster =
         {
             new MenuCharacter("LINCE", "lince", "sniper"),
             new MenuCharacter("RIOT", "riot", "gunslinger"),
             new MenuCharacter("LUPUS MARINUS", "lupus", "trapper"),
-            new MenuCharacter("MR.S", "mrs", "sprayer"),
+            new MenuCharacter("MS", "mrs", "sprayer"),
             new MenuCharacter("N.CAGE", "ncage", "shotgunner"),
             new MenuCharacter("EKKO", "ekko", "artillery"),
         };
 
         struct MenuMode
         {
-            public string title, subtitle, pendingLabel;
+            public string title, subtitle, unavailableMessage;
             public string[] enumNames;
-            public MenuMode(string title, string subtitle, string pendingLabel, params string[] enumNames)
-            { this.title = title; this.subtitle = subtitle; this.pendingLabel = pendingLabel; this.enumNames = enumNames; }
+            public MenuMode(string title, string subtitle, string unavailableMessage, params string[] enumNames)
+            { this.title = title; this.subtitle = subtitle; this.unavailableMessage = unavailableMessage; this.enumNames = enumNames; }
         }
 
         /// <summary>
         /// Um modo fica jogável automaticamente quando existir um valor com um destes nomes no enum GameMode
-        /// (ex.: quando o Pique Gema for adicionado como GameMode.GemRush). Até lá aparece como "em desenvolvimento".
+        /// (ex.: GameMode.GemGrab). Até lá, ao clicar aparece só a mensagem.
         /// </summary>
         static readonly MenuMode[] s_Modes =
         {
-            new MenuMode("GEM RUSH", "Pique Gema · apanha e segura as gemas com a tua equipa", "EM DESENVOLVIMENTO", "GemRush", "GemGrab", "PiqueGema"),
-            new MenuMode("IT TAKES TWO", "Cooperativo a dois · descobre a história das ilhas", "EM BREVE", "ItTakesTwo", "Coop"),
+            new MenuMode("IT TAKES TWO", "Cooperativo a dois", "O modo IT TAKES TWO chega em breve.", "ItTakesTwo", "Coop"),
             new MenuMode("DEATHMATCH", "Todos contra todos", null, "Deathmatch"),
-            new MenuMode("WIPEOUT", "Eliminações por equipa", null, "Wipeout"),
-            new MenuMode("KNOCKOUT", "Equipas · melhor de três rondas", null, "Knockout"),
-            new MenuMode("SHOWDOWN", "Sem respawn · vence o último vivo", null, "Showdown"),
+            new MenuMode("GEM GRAB", "Apanha e segura as gemas", "O modo GEM GRAB chega em breve.", "GemGrab", "GemRush", "PiqueGema"),
         };
 
         struct MenuMap
         {
-            public string name, place, key;
+            public string key, coords;
             public bool playable;
-            public MenuMap(string name, string place, string key, bool playable) { this.name = name; this.place = place; this.key = key; this.playable = playable; }
+            public Vector2 focus;   // ponto da ilha no fundo (UV, y para cima)
+            public float zoom;
+            public MenuMap(string key, bool playable, Vector2 focus, float zoom, string coords)
+            { this.key = key; this.playable = playable; this.focus = focus; this.zoom = zoom; this.coords = coords; }
         }
 
-        /// <summary>Só a Pradaria (cena Arena) é jogável por agora; as ilhas são pré-visualizações.</summary>
+        /// <summary>
+        /// Mapas do carrossel (sem nomes no ecrã). Cada um aponta para uma ilha do fundo, para o efeito de aproximação.
+        /// Só o primeiro (a arena atual) é jogável por agora.
+        /// </summary>
         static readonly MenuMap[] s_Maps =
         {
-            new MenuMap("PRADARIA", "Arena atual", "pradaria", true),
-            new MenuMap("SANTIAGO", "Cidade Velha · Pelourinho", "santiago", false),
-            new MenuMap("SAL", "Buracona · Olho Azul", "sal", false),
-            new MenuMap("BOA VISTA", "Deserto de Viana", "boavista", false),
-            new MenuMap("FOGO", "Pico do Fogo", "fogo", false),
+            new MenuMap("pradaria", true, new Vector2(0.19f, 0.845f), 2.5f, "17°04'N  25°10'W"),
+            new MenuMap("santiago", false, new Vector2(0.606f, 0.306f), 2.2f, "15°05'N  23°37'W"),
+            new MenuMap("sal", false, new Vector2(0.775f, 0.772f), 2.7f, "16°45'N  22°57'W"),
+            new MenuMap("boavista", false, new Vector2(0.8125f, 0.502f), 2.5f, "16°06'N  22°49'W"),
+            new MenuMap("fogo", false, new Vector2(0.3125f, 0.264f), 2.8f, "14°55'N  24°23'W"),
         };
 
         const string KeyMenuMap = "fpslan.map";
@@ -86,12 +89,12 @@ namespace FPSLAN
         // ================================================================== estado
 
         enum MenuScreen { Main, Setup }
-        enum SetupContext { Host, Join }
+        enum SetupContext { Online, LocalHost, LocalJoin }
 
         MenuScreen m_MScreen = MenuScreen.Main;
-        SetupContext m_MSetupCtx = SetupContext.Host;
+        SetupContext m_MSetupCtx = SetupContext.Online;
         float m_MScreenT = 0f;          // 0→1 entrada do ecrã atual
-        bool m_MJoinOpen; float m_MJoinT;
+        bool m_MLocalOpen; float m_MLocalT;
         bool m_MAudioOpen; float m_MAudioT;
         int m_MFocus = 1;               // foco do teclado no menu principal (começa em PLAY ONLINE)
         int m_MModeSel = -1;
@@ -99,12 +102,20 @@ namespace FPSLAN
         float m_MMapScroll, m_MMapScrollTarget;
         int m_MCharPrev = -1; float m_MCharT = 1f;
         string m_MNotice; float m_MNoticeTime = -10f;
-        string m_MJoinError;
+        string m_MLocalError;
         float m_MLastTime, m_MDt;
         float m_MAlpha = 1f;
         readonly Dictionary<int, float> m_MHover = new Dictionary<int, float>();
         readonly Dictionary<string, Texture2D> m_MTex = new Dictionary<string, Texture2D>();
         bool m_MInit;
+
+        // fundo: câmara virtual sobre o arquipélago (foco em UV + zoom), com transição suave
+        Vector2 m_BgFrom = new Vector2(0.5f, 0.5f), m_BgTo = new Vector2(0.5f, 0.5f), m_BgCur = new Vector2(0.5f, 0.5f);
+        float m_BgZFrom = 1.06f, m_BgZTo = 1.06f, m_BgZCur = 1.06f, m_BgT = 1f, m_BgArc;
+        int m_BgMap = -1;               // mapa em foco (-1 = vista geral)
+        Vector2 m_BgAnchor;             // ponto do ecrã onde a ilha em foco deve ficar (por baixo do personagem)
+        float m_BgAW, m_BgAWFrom, m_BgAWTo;
+        float m_BgReturnAt;             // depois de espreitar um mapa indisponível, volta ao mapa escolhido
 
         // geometria base do layout (referência 1440×810)
         float K;
@@ -139,10 +150,11 @@ namespace FPSLAN
                 m_MDt = Mathf.Clamp(now - m_MLastTime, 0f, 0.1f);
                 m_MLastTime = now;
                 m_MScreenT = Mathf.MoveTowards(m_MScreenT, 1f, m_MDt * 4f);
-                m_MJoinT = Mathf.MoveTowards(m_MJoinT, m_MJoinOpen ? 1f : 0f, m_MDt * 6f);
+                m_MLocalT = Mathf.MoveTowards(m_MLocalT, m_MLocalOpen ? 1f : 0f, m_MDt * 6f);
                 m_MAudioT = Mathf.MoveTowards(m_MAudioT, m_MAudioOpen ? 1f : 0f, m_MDt * 7f);
                 m_MCharT = Mathf.MoveTowards(m_MCharT, 1f, m_MDt * 5f);
                 m_MMapScroll = Mathf.Lerp(m_MMapScroll, m_MMapScrollTarget, 1f - Mathf.Exp(-m_MDt * 10f));
+                UpdateBackgroundCamera(m_MDt);
             }
 
             MenuInit();
@@ -153,7 +165,7 @@ namespace FPSLAN
 
             if (m_SettingsOpen)
             {
-                DrawSettingsMenu();   // definições completas existentes (teclas, jogabilidade, áudio)
+                DrawSettingsMenu();   // definições completas (perfil, teclas, jogabilidade, áudio)
                 return;
             }
 
@@ -177,14 +189,11 @@ namespace FPSLAN
         {
             if (m_MInit) return;
             m_MInit = true;
-            // Modo inicial = o que estava guardado (se existir na lista)
             for (int i = 0; i < s_Modes.Length; i++)
                 if (TryResolveMode(s_Modes[i], out var gm) && gm == MatchManager.MenuSelectedMode) { m_MModeSel = i; break; }
-            if (m_MModeSel < 0) m_MModeSel = FirstPlayableMode();
-            // Mapa inicial
+            if (m_MModeSel < 0) SelectMode(FirstPlayableMode(), false);
             m_MMapSel = 0;
             for (int i = 0; i < s_Maps.Length; i++) if (s_Maps[i].key == SelectedMapKey && s_Maps[i].playable) m_MMapSel = i;
-            // Personagem inicial = brawler guardado (se pertencer ao roster)
             if (MenuCharIndexForHero(m_Hero) < 0) SelectMenuCharacter(0);
         }
 
@@ -199,79 +208,73 @@ namespace FPSLAN
 
             MText(new Rect(panel.x, panel.y + 30 * K, panel.width, 56 * K), "MENU", m_MT40, MWhite);
 
-            string[] labels = { "STORY MODE", "PLAY ONLINE", "START SERVER", "QUIT" };
+            string[] labels = { "STORY MODE", "PLAY ONLINE", "PLAY LOCAL", "QUIT" };
             for (int i = 0; i < labels.Length; i++)
             {
                 var r = new Rect(panel.x + 48 * K, panel.y + 112 * K + i * 108 * K, panel.width - 96 * K, 86 * K);
-                bool storyDisabled = i == 0;
-                bool selected = (i == 1 && m_MJoinOpen) || (m_MFocus == i && !m_MJoinOpen && GUI.enabled);
-                var res = MenuButton(r, labels[i], 1000 + i, storyDisabled ? MBtn.Disabled : MBtn.Normal, selected, m_MT30,
-                    storyDisabled ? "EM DESENVOLVIMENTO" : null);
+                bool selected = (i == 2 && m_MLocalOpen) || (m_MFocus == i && !m_MLocalOpen && GUI.enabled);
+                var res = MenuButton(r, labels[i], 1000 + i, MBtn.Normal, selected, m_MT30);
                 if (GUI.enabled && Event.current.type == EventType.Repaint && r.Contains(Event.current.mousePosition)) m_MFocus = i;
                 if (res == MClick.Clicked) ActivateMainItem(i);
-                else if (res == MClick.DisabledClicked) MenuNotice("Story Mode ainda está em desenvolvimento.");
             }
 
-            // linha decorativa por baixo do painel
             var deco = new Rect(panel.x + 16 * K, panel.yMax + 34 * K, panel.width - 30 * K, 2 * K);
             DrawTechLine(deco, true);
 
-            // painel "Join a server" ao lado
-            if (m_MJoinT > 0.001f) DrawMenuJoinPanel(new Rect(panel.xMax + 14 * K, panel.y + 80 * K, 330 * K, 380 * K));
-
-            // rodapé com o IP local (útil para quem cria a sala)
-            var ips = m_LocalIps != null && m_LocalIps.Count > 0 ? string.Join("  ·  ", m_LocalIps) : "desconhecido";
-            MText(new Rect(panel.x, panel.yMax + 46 * K, panel.width + 400 * K, 24 * K),
-                "O TEU IP NA REDE: " + ips + "   ·   UDP " + ConnectionManager.DefaultPort, m_MT12, MMuted, TextAnchor.MiddleLeft);
+            if (m_MLocalT > 0.001f) DrawMenuLocalPanel(new Rect(panel.xMax + 14 * K, panel.y + 150 * K, 350 * K, 352 * K));
         }
 
         void ActivateMainItem(int i)
         {
             switch (i)
             {
-                case 0: MenuNotice("Story Mode ainda está em desenvolvimento."); break;
-                case 1:
-                    m_MJoinOpen = !m_MJoinOpen;
-                    m_MJoinError = null;
-                    if (m_MJoinOpen) GUI.FocusControl("mm_name");
+                case 0: MenuNotice("O STORY MODE chega em breve."); break;
+                case 1: m_MLocalOpen = false; OpenSetup(SetupContext.Online); break;
+                case 2:
+                    m_MLocalOpen = !m_MLocalOpen;
+                    m_MLocalError = null;
                     break;
-                case 2: OpenSetup(SetupContext.Host); break;
                 case 3: QuitGame(); break;
             }
         }
 
-        void DrawMenuJoinPanel(Rect r)
+        /// <summary>PLAY LOCAL: criar um servidor na rede local ou ligar a um com o código (IP).</summary>
+        void DrawMenuLocalPanel(Rect r)
         {
-            float t = EaseOut(m_MJoinT);
+            float t = EaseOut(m_MLocalT);
             float oldA = m_MAlpha;
             m_MAlpha *= t;
             r.x -= (1f - t) * 30f * K;
             DrawTechPanel(r, false);
 
-            MText(new Rect(r.x, r.y + 16 * K, r.width, 34 * K), "JOIN A SERVER", m_MT20, MCyan);
-            if (MenuIconButton(new Rect(r.xMax - 40 * K, r.y + 14 * K, 28 * K, 28 * K), "×", 1100)) { m_MJoinOpen = false; m_MAlpha = oldA; return; }
+            MText(new Rect(r.x, r.y + 14 * K, r.width, 34 * K), "PLAY LOCAL", m_MT20, MCyan);
+            if (MenuIconButton(new Rect(r.xMax - 40 * K, r.y + 14 * K, 28 * K, 28 * K), "×", 1100)) { m_MLocalOpen = false; m_MAlpha = oldA; return; }
 
-            float x = r.x + 22 * K, w = r.width - 44 * K, y = r.y + 62 * K;
-            m_Name = MenuField(new Rect(x, y, w, 46 * K), "mm_name", m_Name, "Nome do jogador", 16);
-            y += 58 * K;
+            float x = r.x + 22 * K, w = r.width - 44 * K, y = r.y + 60 * K;
+            if (MenuButton(new Rect(x, y, w, 58 * K), "CRIAR SERVIDOR", 1101, MBtn.Primary, false, m_MT20) == MClick.Clicked)
+            {
+                m_MLocalOpen = false;
+                OpenSetup(SetupContext.LocalHost);
+            }
+            y += 66 * K;
+            MText(new Rect(x, y, w, 20 * K), "O teu código: " + LocalCode(), m_MT12, MMuted);
+            y += 34 * K;
+
+            // separador "OU"
+            MFill(new Rect(x, y + 10 * K, w * 0.4f, 1.5f * K), Fade(MCyanDim, 1f));
+            MFill(new Rect(x + w * 0.6f, y + 10 * K, w * 0.4f, 1.5f * K), Fade(MCyanDim, 1f));
+            MText(new Rect(x, y, w, 22 * K), "OU", m_MT14, MMuted);
+            y += 34 * K;
+
+            MText(new Rect(x, y, w, 20 * K), "LIGAR A UM SERVIDOR", m_MT14, MWhite, TextAnchor.MiddleLeft);
+            y += 26 * K;
             m_Ip = MenuField(new Rect(x, y, w, 46 * K), "mm_code", m_Ip, "Código do servidor (IP do host)", 40);
             y += 58 * K;
+            if (MenuButton(new Rect(r.x + (r.width - 200 * K) / 2f, y, 200 * K, 48 * K), "LIGAR", 1102, MBtn.Coral, false, m_MT20) == MClick.Clicked)
+                TryOpenLocalJoin();
+            y += 56 * K;
 
-            // personagem escolhido (abre a seleção)
-            int ci = Mathf.Max(0, MenuCharIndexForHero(m_Hero));
-            var chip = new Rect(x, y, w, 50 * K);
-            if (MenuButton(chip, "", 1101, MBtn.Normal, false, m_MT14) == MClick.Clicked) OpenSetup(SetupContext.Join);
-            var portrait = MenuTexture("portrait_" + s_Roster[ci].key);
-            if (portrait != null) MTex(new Rect(chip.x + 6 * K, chip.y + 4 * K, 42 * K, 42 * K), portrait, Color.white, ScaleMode.ScaleAndCrop);
-            MText(new Rect(chip.x + 58 * K, chip.y + 4 * K, chip.width - 70 * K, 22 * K), "PERSONAGEM", m_MT12, MMuted, TextAnchor.MiddleLeft);
-            MText(new Rect(chip.x + 58 * K, chip.y + 22 * K, chip.width - 70 * K, 26 * K), s_Roster[ci].name + "   ›", m_MT17, MWhite, TextAnchor.MiddleLeft);
-            y += 66 * K;
-
-            var join = new Rect(r.x + (r.width - 200 * K) / 2f, y, 200 * K, 48 * K);
-            if (MenuButton(join, "JOIN GAME", 1102, MBtn.Coral, false, m_MT20) == MClick.Clicked) TryJoin();
-            y += 58 * K;
-
-            string status = m_MJoinError;
+            string status = m_MLocalError;
             if (string.IsNullOrEmpty(status) && ConnectionManager.Instance != null) status = ConnectionManager.Instance.Status;
             if (!string.IsNullOrEmpty(status))
                 MText(new Rect(x - 6 * K, y, w + 12 * K, 40 * K), status, m_MT12, new Color(1f, 0.75f, 0.65f), TextAnchor.UpperCenter, true);
@@ -279,23 +282,31 @@ namespace FPSLAN
             m_MAlpha = oldA;
         }
 
-        void TryJoin()
+        string LocalCode() => m_LocalIps != null && m_LocalIps.Count > 0 ? m_LocalIps[0] : "127.0.0.1";
+
+        /// <summary>Valida o código e passa à escolha de personagem (a ligação só acontece no fim).</summary>
+        void TryOpenLocalJoin()
         {
-            m_MJoinError = null;
-            var name = (m_Name ?? "").Trim();
+            m_MLocalError = null;
             var code = (m_Ip ?? "").Trim();
-            if (name.Length == 0) { m_MJoinError = "Escreve o teu nome."; GUI.FocusControl("mm_name"); return; }
-            if (code.Length == 0) { m_MJoinError = "Escreve o código do servidor (IP do host, ex.: 192.168.1.20)."; GUI.FocusControl("mm_code"); return; }
+            if (code.Length == 0) { m_MLocalError = "Escreve o código do servidor (IP do host, ex.: 192.168.1.20)."; GUI.FocusControl("mm_code"); return; }
             if (code != "localhost" && !System.Net.IPAddress.TryParse(code, out _))
-            { m_MJoinError = "Código inválido. Usa o IP mostrado no ecrã do host (ex.: 192.168.1.20)."; GUI.FocusControl("mm_code"); return; }
-            if (ConnectionManager.Instance == null) { m_MJoinError = "Erro: sistema de rede não encontrado na cena."; return; }
-            if (NM != null && NM.IsListening) return; // já a ligar
-            m_Name = name; m_Ip = code;
+            { m_MLocalError = "Código inválido. Usa o código mostrado no ecrã de quem criou o servidor."; GUI.FocusControl("mm_code"); return; }
+            m_Ip = code;
+            m_MLocalOpen = false;
+            OpenSetup(SetupContext.LocalJoin);
+        }
+
+        void JoinLocal()
+        {
+            if (NM != null && NM.IsListening) return;
+            if (ConnectionManager.Instance == null) { MenuNotice("Erro: sistema de rede não encontrado na cena."); return; }
+            var code = (m_Ip ?? "").Trim();
             SaveMenuPrefs();
             ConnectionManager.Instance.Join(code == "localhost" ? "127.0.0.1" : code);
         }
 
-        // ================================================================== ecrã de configuração (modos · personagem · mapa)
+        // ================================================================== ecrã de configuração
 
         void OpenSetup(SetupContext ctx)
         {
@@ -304,93 +315,113 @@ namespace FPSLAN
             m_MScreenT = 0f;
             m_MAudioOpen = false;
             GUI.FocusControl(null);
+            if (ctx == SetupContext.Online) FocusMapIsland(m_MMapSel);
+            else FocusOverview();
         }
 
         void BackToMain()
         {
+            m_MLocalOpen = m_MSetupCtx != SetupContext.Online;
             m_MScreen = MenuScreen.Main;
             m_MScreenT = 0f;
-            m_MJoinOpen = m_MSetupCtx == SetupContext.Join;
             GUI.FocusControl(null);
+            FocusOverview();
         }
 
         void DrawMenuSetupScreen(float ease)
         {
-            bool hostCtx = m_MSetupCtx == SetupContext.Host;
+            var ctx = m_MSetupCtx;
+            bool online = ctx == SetupContext.Online;
+            bool join = ctx == SetupContext.LocalJoin;
             float slide = (1f - ease) * 30f * K;
+            int step = 1;
 
-            // ---------------- modos (esquerda)
-            var title = VL(58, 70, 400, 56);
+            // ---------------- 1. modo (esquerda) ou dados do servidor (ao ligar)
+            var title = VL(58, 64, 420, 56);
             title.x -= slide;
-            MText(title, "GAME MODES", m_MT40, MWhite, TextAnchor.MiddleLeft);
-            DrawTechLine(VL(58, 130, 360, 2), false);
-
-            float my = 154;
-            for (int i = 0; i < s_Modes.Length; i++)
+            if (!join)
             {
-                var r = VL(83, my + i * 50, 324, 44);
-                r.x -= slide;
-                bool playable = TryResolveMode(s_Modes[i], out _);
-                bool sel = m_MModeSel == i;
-                var kind = !hostCtx ? MBtn.Disabled : (playable ? MBtn.Normal : MBtn.Muted);
-                var res = MenuButton(r, s_Modes[i].title, 2000 + i, kind, sel && hostCtx, m_MT17, playable ? null : s_Modes[i].pendingLabel);
-                if (res == MClick.Clicked) SelectMode(i);
-                else if (res == MClick.DisabledClicked)
-                    MenuNotice("No modo JOIN é o host quem escolhe o modo e o mapa.");
+                MText(title, (step++) + "  GAME MODE", m_MT40, MWhite, TextAnchor.MiddleLeft);
+                DrawTechLine(VL(58, 124, 360, 2), false);
+                for (int i = 0; i < s_Modes.Length; i++)
+                {
+                    var r = VL(83, 150 + i * 70, 324, 58);
+                    r.x -= slide;
+                    bool sel = m_MModeSel == i;
+                    var res = MenuButton(r, s_Modes[i].title, 2000 + i, MBtn.Normal, sel, m_MT20);
+                    if (res == MClick.Clicked) SelectMode(i, true);
+                }
+                var mode = s_Modes[Mathf.Clamp(m_MModeSel, 0, s_Modes.Length - 1)];
+                MText(VL(83, 362, 324, 24), mode.subtitle, m_MT14, MMuted, TextAnchor.MiddleLeft);
+            }
+            else
+            {
+                MText(title, "SERVIDOR", m_MT40, MWhite, TextAnchor.MiddleLeft);
+                DrawTechLine(VL(58, 124, 360, 2), false);
+                var info = VL(83, 150, 324, 124);
+                DrawTechPanel(info, false);
+                MText(new Rect(info.x + 18 * K, info.y + 14 * K, info.width - 36 * K, 20 * K), "CÓDIGO", m_MT12, MMuted, TextAnchor.MiddleLeft);
+                MText(new Rect(info.x + 18 * K, info.y + 34 * K, info.width - 36 * K, 30 * K), m_Ip, m_MT24, MCyan, TextAnchor.MiddleLeft);
+                MText(new Rect(info.x + 18 * K, info.y + 74 * K, info.width - 36 * K, 60 * K),
+                    "Quem criou o servidor escolhe o modo e o mapa. Aqui escolhes o teu personagem.", m_MT12, MMuted, TextAnchor.UpperLeft, true);
             }
 
-            // nome do jogador
-            var nameRect = VL(83, my + s_Modes.Length * 50 + 10, 324, 40);
-            nameRect.x -= slide;
-            MText(new Rect(nameRect.x, nameRect.y - 2 * K, nameRect.width, 18 * K), "NOME DO JOGADOR", m_MT12, MMuted, TextAnchor.UpperLeft);
-            nameRect.y += 16 * K;
-            m_Name = MenuField(nameRect, "mm_name_setup", m_Name, "Nome do jogador", 16);
-
             // ---------------- personagens (direita)
-            var charPanel = VR(1051, 75, 367, 461);
+            var charPanel = VR(1051, 64, 367, 472);
             charPanel.x += slide;
             DrawTechPanel(charPanel, false);
-            MText(new Rect(charPanel.x, charPanel.y + 10 * K, charPanel.width, 36 * K), "CHARACTERS", m_MT24, MWhite);
+            int charStep = online ? 3 : (join ? 1 : 2);
+            MText(new Rect(charPanel.x, charPanel.y + 10 * K, charPanel.width, 36 * K), charStep + "  CHARACTER", m_MT24, MWhite);
             DrawTechLine(new Rect(charPanel.x + 40 * K, charPanel.y + 48 * K, charPanel.width - 80 * K, 2 * K), false);
             int selChar = Mathf.Max(0, MenuCharIndexForHero(m_Hero));
-            float cw = (charPanel.width - 40 * K) / 2f, ch = (charPanel.height - 70 * K) / 3f;
+            float cw = (charPanel.width - 30 * K) / 2f, ch = (charPanel.height - 66 * K) / 3f;
             for (int i = 0; i < s_Roster.Length; i++)
             {
-                var cell = new Rect(charPanel.x + 20 * K + (i % 2) * cw, charPanel.y + 60 * K + (i / 2) * ch, cw, ch);
+                var cell = new Rect(charPanel.x + 15 * K + (i % 2) * cw, charPanel.y + 60 * K + (i / 2) * ch, cw, ch);
                 if (DrawCharacterCell(cell, i, i == selChar)) SelectMenuCharacter(i);
             }
 
             // ---------------- personagem em destaque (centro)
-            float leftEdge = VL(407, 0, 0, 0).x, rightEdge = charPanel.x;
-            var stage = new Rect(leftEdge + 10 * K, Y(70), rightEdge - leftEdge - 20 * K, 470 * K);
-            DrawCharacterStage(stage, selChar, s_Modes[Mathf.Clamp(m_MModeSel, 0, s_Modes.Length - 1)].title == "IT TAKES TWO");
+            float leftEdge = X(407), rightEdge = charPanel.x;
+            float stageTop = online ? 14f : 40f, stageH = online ? 514f : 720f;
+            var stage = new Rect(leftEdge + 10 * K, Y(stageTop), rightEdge - leftEdge - 20 * K, stageH * K);
+            m_BgAnchor = new Vector2(stage.center.x, stage.y + stage.height * 0.5f);
+            bool coop = !join && s_Modes[Mathf.Clamp(m_MModeSel, 0, s_Modes.Length - 1)].title == "IT TAKES TWO";
+            DrawCharacterStage(stage, selChar, coop);
 
-            // ---------------- mapas (fundo)
-            var mapTitle = VL(58, 532, 300, 40);
-            MText(mapTitle, "MAP", m_MT30, MWhite, TextAnchor.MiddleLeft);
-            DrawTechLine(VL(58, 572, 380, 2), false);
+            // ---------------- 2. mapa (só online)
             var actions = VR(1051, 579, 367, 196);
-            var strip = new Rect(X(58), Y(588), actions.x - X(58) - 24 * K, 172 * K);
-            DrawMapCarousel(strip, hostCtx);
+            if (online)
+            {
+                MText(VL(58, 528, 300, 40), "2  MAP", m_MT30, MWhite, TextAnchor.MiddleLeft);
+                DrawTechLine(VL(58, 568, 380, 2), false);
+                var strip = new Rect(X(58), Y(586), actions.x - X(58) - 24 * K, 176 * K);
+                DrawMapCarousel(strip);
+            }
 
             // ---------------- ações (canto inferior direito)
             actions.x += slide;
-            DrawSetupActions(actions, hostCtx);
+            DrawSetupActions(actions, ctx);
 
-            // voltar
-            if (MenuButton(new Rect(Screen.width - 250 * K, 26 * K, 150 * K, 44 * K), "‹  VOLTAR", 2900, MBtn.Normal, false, m_MT17) == MClick.Clicked)
+            if (MenuButton(new Rect(Screen.width - 250 * K, 14 * K, 150 * K, 40 * K), "‹  VOLTAR", 2900, MBtn.Normal, false, m_MT17) == MClick.Clicked)
                 BackToMain();
         }
 
-        void SelectMode(int i)
+        void SelectMode(int i, bool notify)
         {
-            m_MModeSel = i;
             if (TryResolveMode(s_Modes[i], out var gm))
             {
+                m_MModeSel = i;
                 MatchManager.MenuSelectedMode = gm;
                 PlayerPrefs.SetInt("fpslan.mode", (int)gm);
             }
-            else MenuNotice(s_Modes[i].title + ": " + s_Modes[i].pendingLabel.ToLowerInvariant() + ".");
+            else
+            {
+                // modo ainda não existe: mostra a mensagem e mantém o modo jogável escolhido
+                // (o IT TAKES TWO fica selecionado para se ver a pré-visualização a dois)
+                if (s_Modes[i].title == "IT TAKES TWO") m_MModeSel = i;
+                if (notify) MenuNotice(s_Modes[i].unavailableMessage);
+            }
         }
 
         bool DrawCharacterCell(Rect cell, int i, bool selected)
@@ -399,21 +430,19 @@ namespace FPSLAN
             bool hover = GUI.enabled && cell.Contains(e.mousePosition);
             float h = HoverAnim(3000 + i, hover || selected ? 1f : 0f);
             var portrait = MenuTexture("portrait_" + s_Roster[i].key);
-            float size = Mathf.Min(cell.width, cell.height - 24 * K) * (0.82f + 0.08f * h);
+            float size = Mathf.Min(cell.width - 10 * K, cell.height - 26 * K) * (0.9f + 0.08f * h);
             var pr = new Rect(cell.center.x - size / 2f, cell.y + (cell.height - 24 * K - size) / 2f, size, size);
-            if (selected)
-            {
-                MDraw9(m_MGlow, Expand(pr, 10 * K), Fade(MCyan, 0.55f));
-                MDraw9(m_MLine, pr, Fade(MCyan, 0.9f));
-            }
-            else if (h > 0.01f) MDraw9(m_MLine, pr, Fade(MCyanDim, h));
-            if (portrait != null) MTex(pr, portrait, Color.white, ScaleMode.ScaleAndCrop);
+            if (selected) MDraw9(m_MGlow, Expand(pr, 12 * K), Fade(MCyan, 0.5f));
+            MDraw9(m_MFill, pr, Fade(new Color(0.08f, 0.14f, 0.26f, 1f), 1f));
+            if (portrait != null) MTex(Expand(pr, -3 * K), portrait, Color.white, ScaleMode.ScaleAndCrop);
+            if (selected) MDraw9(m_MLine, pr, Fade(MCyan, 1f));
+            else MDraw9(m_MLine, pr, Fade(MCyanDim, 0.25f + 0.6f * h));
             bool available = MenuCharacterBrawler(i) != null;
             MText(new Rect(cell.x - 10 * K, pr.yMax + 2 * K, cell.width + 20 * K, 22 * K), s_Roster[i].name, m_MT14,
                 selected ? MCyan : (available ? MWhite : MMuted));
             if (GUI.enabled && GUI.Button(cell, GUIContent.none, GUIStyle.none))
             {
-                if (!available) { MenuNotice(s_Roster[i].name + " ainda não está ligado a um brawler jogável."); return false; }
+                if (!available) { MenuNotice(s_Roster[i].name + " ainda não está disponível."); return false; }
                 return true;
             }
             return false;
@@ -422,30 +451,37 @@ namespace FPSLAN
         void DrawCharacterStage(Rect stage, int selChar, bool coopPreview)
         {
             var b = MenuCharacterBrawler(selChar);
+            // durante a viagem até à ilha o personagem esbate-se para o fundo ganhar protagonismo
+            float reveal = m_BgT < 1f && m_BgMap >= 0 ? 1f - 0.8f * Mathf.Sin(Mathf.Clamp01(m_BgT * 1.1f) * Mathf.PI) : 1f;
+            float oldA = m_MAlpha;
+            m_MAlpha *= reveal;
+            DrawCharacterStageInner(stage, selChar, coopPreview, b);
+            m_MAlpha = oldA;
+        }
+
+        void DrawCharacterStageInner(Rect stage, int selChar, bool coopPreview, BrawlerDefinition b)
+        {
             if (coopPreview)
             {
-                // Pré-visualização do cooperativo (página 5 do PDF): jogador 1 e jogador 2
                 int second = (selChar + 1) % s_Roster.Length;
                 float half = stage.width / 2f;
-                DrawCharacterArt(new Rect(stage.x, stage.y + 30 * K, half, stage.height - 70 * K), selChar, 1f);
-                DrawCharacterArt(new Rect(stage.x + half, stage.y + 30 * K, half, stage.height - 70 * K), second, 1f);
+                DrawCharacterArt(new Rect(stage.x, stage.y + 34 * K, half, stage.height - 74 * K), selChar, 1f);
+                DrawCharacterArt(new Rect(stage.x + half, stage.y + 34 * K, half, stage.height - 74 * K), second, 1f);
                 MText(new Rect(stage.x, stage.y, half, 30 * K), "1", m_MT24, MWhite);
                 MText(new Rect(stage.x + half, stage.y, half, 30 * K), "2", m_MT24, MWhite);
-                MText(new Rect(stage.x, stage.yMax - 34 * K, stage.width, 30 * K), "MODO COOPERATIVO  ·  EM BREVE", m_MT17, MCyan);
+                MText(new Rect(stage.x, stage.yMax - 34 * K, stage.width, 30 * K), "COOPERATIVO A DOIS", m_MT17, MCyan);
                 return;
             }
 
-            // cross-fade entre personagens
             float t = EaseOut(m_MCharT);
-            var art = new Rect(stage.x, stage.y, stage.width, stage.height - 64 * K);
+            var art = new Rect(stage.x, stage.y, stage.width, stage.height - 46 * K);
             if (m_MCharPrev >= 0 && m_MCharPrev != selChar && t < 1f)
                 DrawCharacterArt(art, m_MCharPrev, 1f - t);
             DrawCharacterArt(new Rect(art.x, art.y + (1f - t) * 20f * K, art.width, art.height), selChar, t);
 
-            MText(new Rect(stage.x, stage.yMax - 62 * K, stage.width, 40 * K), s_Roster[selChar].name, m_MT30, MWhite);
+            MText(new Rect(stage.x, stage.yMax - 64 * K, stage.width, 42 * K), s_Roster[selChar].name, m_MT40, MWhite);
             if (b != null)
-                MText(new Rect(stage.x, stage.yMax - 26 * K, stage.width, 24 * K),
-                    RoleTitle(b) + "  ·  joga como " + b.displayName, m_MT14, MCyan);
+                MText(new Rect(stage.x, stage.yMax - 24 * K, stage.width, 22 * K), RoleTitle(b), m_MT14, MCyan);
         }
 
         void DrawCharacterArt(Rect r, int index, float alpha)
@@ -454,14 +490,13 @@ namespace FPSLAN
             if (tex == null || alpha <= 0.001f) return;
             float bob = Mathf.Sin(Time.unscaledTime * 1.6f + index) * 4f * K;
             var rr = new Rect(r.x, r.y + bob, r.width, r.height);
-            // halo ciano por trás (cópia ligeiramente maior e transparente)
-            MTex(Expand(rr, 8 * K), tex, new Color(MCyan.r, MCyan.g, MCyan.b, 0.22f * alpha), ScaleMode.ScaleToFit);
+            MTex(Expand(rr, 8 * K), tex, new Color(MCyan.r, MCyan.g, MCyan.b, 0.2f * alpha), ScaleMode.ScaleToFit);
             MTex(rr, tex, new Color(1f, 1f, 1f, alpha), ScaleMode.ScaleToFit);
         }
 
-        void DrawMapCarousel(Rect strip, bool hostCtx)
+        void DrawMapCarousel(Rect strip)
         {
-            float cardW = 270 * K, gap = 22 * K, cardH = strip.height;
+            float cardW = 250 * K, gap = 20 * K, cardH = strip.height;
             float total = s_Maps.Length * cardW + (s_Maps.Length - 1) * gap;
             float maxScroll = Mathf.Max(0f, total - strip.width);
             m_MMapScrollTarget = Mathf.Clamp(m_MMapScrollTarget, 0f, maxScroll);
@@ -478,11 +513,10 @@ namespace FPSLAN
             {
                 var r = new Rect(i * (cardW + gap) - m_MMapScroll, 0, cardW, cardH);
                 if (r.xMax < 0 || r.x > strip.width) continue;
-                if (DrawMapCard(r, i, hostCtx)) SelectMap(i);
+                if (DrawMapCard(r, i)) SelectMap(i);
             }
             GUI.EndGroup();
 
-            // setas
             if (maxScroll > 1f)
             {
                 if (m_MMapScrollTarget > 1f &&
@@ -494,7 +528,8 @@ namespace FPSLAN
             }
         }
 
-        bool DrawMapCard(Rect r, int i, bool hostCtx)
+        /// <summary>Cartão de mapa só com a imagem (sem nome): o jogador descobre a ilha pela aproximação do fundo.</summary>
+        bool DrawMapCard(Rect r, int i)
         {
             var m = s_Maps[i];
             var e = Event.current;
@@ -505,60 +540,64 @@ namespace FPSLAN
             if (sel) MDraw9(m_MGlow, Expand(frame, 10 * K), Fade(MCyan, 0.45f));
             MDraw9(m_MFill, frame, Fade(new Color(0.1f, 0.16f, 0.28f, 0.95f), 1f));
             var img = MenuTexture("map_" + m.key);
-            var inner = Expand(frame, -10 * K);
-            if (img != null)
+            if (img != null) MTex(Expand(frame, -8 * K), img, Color.white, ScaleMode.ScaleAndCrop);
+            if (sel)
             {
-                var tint = m.playable ? Color.white : new Color(0.55f, 0.6f, 0.7f, 1f);
-                MTex(inner, img, tint, ScaleMode.ScaleAndCrop);
-            }
-            // faixa com o nome
-            var band = new Rect(inner.x, inner.yMax - 46 * K, inner.width, 46 * K);
-            MFill(band, new Color(0.02f, 0.05f, 0.1f, 0.72f));
-            MText(new Rect(band.x + 10 * K, band.y + 2 * K, band.width - 20 * K, 24 * K), m.name, m_MT17, sel ? MCyan : MWhite, TextAnchor.MiddleLeft);
-            MText(new Rect(band.x + 10 * K, band.y + 22 * K, band.width - 20 * K, 20 * K), m.place, m_MT12, MMuted, TextAnchor.MiddleLeft);
-            if (!m.playable)
-            {
-                var badge = new Rect(inner.xMax - 96 * K, inner.y + 8 * K, 88 * K, 24 * K);
-                MDraw9(m_MFill, badge, Fade(new Color(0.05f, 0.1f, 0.2f, 0.9f), 1f));
-                MText(badge, "EM BREVE", m_MT12, MCoral);
+                // marcador discreto no canto (sem texto)
+                var dot = new Rect(frame.xMax - 26 * K, frame.y + 12 * K, 14 * K, 14 * K);
+                MTex(Expand(dot, 4 * K), Art.CircleTexture, Fade(new Color(0f, 0f, 0f, 0.5f), 1f), ScaleMode.StretchToFill);
+                MTex(dot, Art.CircleTexture, Fade(MCyan, 1f), ScaleMode.StretchToFill);
             }
             MDraw9(m_MLine, frame, Fade(sel ? MCyan : MCyanDim, sel ? 1f : 0.35f + 0.5f * h));
 
             if (GUI.enabled && GUI.Button(r, GUIContent.none, GUIStyle.none))
             {
-                if (!hostCtx) { MenuNotice("No modo JOIN é o host quem escolhe o mapa."); return false; }
-                if (!m.playable) { MenuNotice(m.name + " ainda não está jogável. Por agora joga-se na Pradaria."); return false; }
+                FocusMapIsland(i);   // a aproximação acontece sempre: mostra de que ilha se trata
+                if (!m.playable) { PeekUnavailableMap(); return false; }
                 return true;
             }
             return false;
         }
 
+        /// <summary>Mapa ainda fechado: mostra a ilha, avisa e depois a câmara regressa ao mapa escolhido.</summary>
+        void PeekUnavailableMap()
+        {
+            MenuNotice("Este mapa ainda não está disponível.");
+            m_BgReturnAt = Time.unscaledTime + BgTravelTime + 1.6f;
+        }
+
         void SelectMap(int i)
         {
+            m_BgReturnAt = 0f;
             m_MMapSel = i;
             PlayerPrefs.SetString(KeyMenuMap, s_Maps[i].key);
         }
 
-        void DrawSetupActions(Rect r, bool hostCtx)
+        void DrawSetupActions(Rect r, SetupContext ctx)
         {
             DrawTechPanel(r, false);
             float x = r.x + 18 * K, w = r.width - 36 * K, y = r.y + 12 * K;
 
-            if (!hostCtx)
+            if (ctx == SetupContext.LocalJoin)
             {
-                MText(new Rect(x, y, w, 40 * K), "O host escolhe o modo e o mapa.\nAqui escolhes só o teu personagem.", m_MT12, MMuted, TextAnchor.UpperCenter, true);
+                MText(new Rect(x, y, w, 20 * K), "PRONTO PARA ENTRAR", m_MT12, MMuted, TextAnchor.MiddleLeft);
+                MText(new Rect(x, y + 18 * K, w, 28 * K), "Servidor " + m_Ip, m_MT17, MCyan, TextAnchor.MiddleLeft);
                 y += 70 * K;
-                if (MenuButton(new Rect(x, y, w, 56 * K), "CONFIRMAR PERSONAGEM", 5000, MBtn.Coral, false, m_MT17) == MClick.Clicked)
-                {
-                    SaveMenuPrefs();
-                    BackToMain();
-                }
+                if (MenuButton(new Rect(x, y, w, 64 * K), "ENTRAR NA PARTIDA", 5000, MBtn.Coral, false, m_MT20) == MClick.Clicked)
+                    JoinLocal();
                 return;
             }
 
-            var ips = m_LocalIps != null && m_LocalIps.Count > 0 ? m_LocalIps[0] : "127.0.0.1";
-            MText(new Rect(x, y, w, 20 * K), "CÓDIGO DO SERVIDOR (LAN)", m_MT12, MMuted, TextAnchor.MiddleLeft);
-            MText(new Rect(x, y + 16 * K, w, 26 * K), ips + "  ·  UDP " + ConnectionManager.DefaultPort, m_MT17, MCyan, TextAnchor.MiddleLeft);
+            if (ctx == SetupContext.LocalHost)
+            {
+                MText(new Rect(x, y, w, 20 * K), "CÓDIGO DO SERVIDOR", m_MT12, MMuted, TextAnchor.MiddleLeft);
+                MText(new Rect(x, y + 16 * K, w, 26 * K), LocalCode() + "  ·  UDP " + ConnectionManager.DefaultPort, m_MT17, MCyan, TextAnchor.MiddleLeft);
+            }
+            else
+            {
+                MText(new Rect(x, y, w, 20 * K), "PARTIDA", m_MT12, MMuted, TextAnchor.MiddleLeft);
+                MText(new Rect(x, y + 16 * K, w, 26 * K), "Contigo + bots  ·  código " + LocalCode(), m_MT14, MCyan, TextAnchor.MiddleLeft);
+            }
             y += 48 * K;
 
             // bots
@@ -576,23 +615,35 @@ namespace FPSLAN
             }
             y += 46 * K;
 
-            bool modeOk = m_MModeSel >= 0 && TryResolveMode(s_Modes[m_MModeSel], out _);
-            bool mapOk = s_Maps[m_MMapSel].playable;
-            var kind = modeOk && mapOk ? MBtn.Normal : MBtn.Disabled;
-            float bw = (w - 10 * K) / 2f;
-            var host = MenuButton(new Rect(x, y, bw, 56 * K), "START SERVER", 5004, kind == MBtn.Normal ? MBtn.Primary : MBtn.Disabled, false, m_MT14);
-            var train = MenuButton(new Rect(x + bw + 10 * K, y, bw, 56 * K), "TREINO + BOTS", 5005, kind == MBtn.Normal ? MBtn.Coral : MBtn.Disabled, false, m_MT14);
-            if (host == MClick.Clicked) StartHost(m_MenuBots);
-            else if (train == MClick.Clicked) StartHost(Mathf.Max(3, m_MenuBots));
-            else if (host == MClick.DisabledClicked || train == MClick.DisabledClicked)
-                MenuNotice(!modeOk ? "Escolhe um modo disponível (o " + s_Modes[m_MModeSel].title + " ainda não está pronto)." : "Escolhe um mapa disponível.");
+            string label = ctx == SetupContext.Online ? "JOGAR" : "CRIAR SERVIDOR";
+            if (MenuButton(new Rect(x, y, w, 58 * K), label, 5004, MBtn.Primary, false, m_MT20) == MClick.Clicked)
+                TryStartFromSetup(ctx);
+        }
+
+        void TryStartFromSetup(SetupContext ctx)
+        {
+            if (m_MModeSel < 0 || !TryResolveMode(s_Modes[m_MModeSel], out _))
+            {
+                MenuNotice(m_MModeSel >= 0 && s_Modes[m_MModeSel].unavailableMessage != null
+                    ? s_Modes[m_MModeSel].unavailableMessage + " Escolhe outro modo."
+                    : "Escolhe um modo para jogar.");
+                return;
+            }
+            if (ctx == SetupContext.Online && !s_Maps[m_MMapSel].playable)
+            {
+                MenuNotice("Este mapa ainda não está disponível. Escolhe outro.");
+                return;
+            }
+            // Online: ainda sem servidor na Internet — a partida corre neste PC (com bots) e quem estiver na
+            // mesma rede pode entrar com o código.
+            int bots = ctx == SetupContext.Online ? Mathf.Max(1, m_MenuBots) : m_MenuBots;
+            StartHost(bots);
         }
 
         void StartHost(int bots)
         {
             if (NM != null && NM.IsListening) return;
             if (ConnectionManager.Instance == null) { MenuNotice("Erro: sistema de rede não encontrado na cena."); return; }
-            if (string.IsNullOrWhiteSpace(m_Name)) { MenuNotice("Escreve o teu nome antes de criar o servidor."); GUI.FocusControl("mm_name_setup"); return; }
             SaveMenuPrefs();
             if (ConnectionManager.Instance.Host()) m_PendingBots = bots;
             else MenuNotice(ConnectionManager.Instance.Status);
@@ -631,7 +682,6 @@ namespace FPSLAN
             float oldA = m_MAlpha;
             m_MAlpha = t;
 
-            // linha de ícones (página 2 do PDF)
             var row = new Rect(Screen.width - 250 * K, 22 * K + (1f - t) * -10f * K, 186 * K, 52 * K);
             DrawSolidPanel(row);
             bool muted = GameSession.Muted;
@@ -642,7 +692,6 @@ namespace FPSLAN
             if (MenuSpeakerButton(new Rect(row.x + 122 * K, row.y + 6 * K, 52 * K, 40 * K), false, false, 6102, "+"))
                 SetMenuVolume(GameSession.MasterVolume + 0.1f);
 
-            // barra vertical de volume
             var pill = new Rect(Screen.width - 104 * K, 96 * K + (1f - t) * -14f * K, 64 * K, 270 * K);
             DrawSolidPanel(pill);
             var track = new Rect(pill.center.x - 14 * K, pill.y + 18 * K, 28 * K, pill.height - 90 * K);
@@ -652,7 +701,7 @@ namespace FPSLAN
             MText(new Rect(pill.x, track.yMax + 6 * K, pill.width, 22 * K), Mathf.RoundToInt(v * 100f) + "%", m_MT14, muted ? MCoral : MWhite);
             MText(new Rect(pill.x, track.yMax + 26 * K, pill.width, 20 * K), muted ? "MUDO" : "VOLUME", m_MT12, MMuted);
 
-            // mais definições (teclas, sensibilidade…)
+            // perfil, teclas, sensibilidade…
             if (MenuButton(new Rect(Screen.width - 250 * K, pill.yMax + 12 * K, 210 * K, 40 * K), "DEFINIÇÕES", 6104, MBtn.Normal, false, m_MT14) == MClick.Clicked)
             {
                 m_MAudioOpen = false;
@@ -696,8 +745,7 @@ namespace FPSLAN
             var r = new Rect((Screen.width - 460 * K) / 2f, (Screen.height - 220 * K) / 2f, 460 * K, 220 * K);
             DrawTechPanel(r, true);
             bool server = NM != null && NM.IsServer;
-            MText(new Rect(r.x, r.y + 26 * K, r.width, 36 * K), server ? "A INICIAR O SERVIDOR" : "A LIGAR AO SERVIDOR", m_MT24, MWhite);
-            // pontos animados
+            MText(new Rect(r.x, r.y + 26 * K, r.width, 36 * K), server ? "A PREPARAR A PARTIDA" : "A LIGAR AO SERVIDOR", m_MT24, MWhite);
             for (int i = 0; i < 5; i++)
             {
                 float p = Mathf.Repeat(Time.unscaledTime * 1.4f - i * 0.18f, 1f);
@@ -722,7 +770,7 @@ namespace FPSLAN
             {
                 if (m_MAudioOpen) m_MAudioOpen = false;
                 else if (m_MScreen == MenuScreen.Setup) BackToMain();
-                else if (m_MJoinOpen) m_MJoinOpen = false;
+                else if (m_MLocalOpen) m_MLocalOpen = false;
                 GUI.FocusControl(null);
                 e.Use();
                 return;
@@ -730,12 +778,15 @@ namespace FPSLAN
 
             if (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter)
             {
-                if (m_MScreen == MenuScreen.Main && m_MJoinOpen && (typing || m_MFocus == 1)) TryJoin();
-                else if (m_MScreen == MenuScreen.Main && !typing) ActivateMainItem(m_MFocus);
-                else if (m_MScreen == MenuScreen.Setup && !typing)
+                if (m_MScreen == MenuScreen.Main)
                 {
-                    if (m_MSetupCtx == SetupContext.Join) { SaveMenuPrefs(); BackToMain(); }
-                    else if (m_MModeSel >= 0 && TryResolveMode(s_Modes[m_MModeSel], out _) && s_Maps[m_MMapSel].playable) StartHost(m_MenuBots);
+                    if (m_MLocalOpen && typing) TryOpenLocalJoin();
+                    else if (!typing) ActivateMainItem(m_MFocus);
+                }
+                else if (!typing)
+                {
+                    if (m_MSetupCtx == SetupContext.LocalJoin) JoinLocal();
+                    else TryStartFromSetup(m_MSetupCtx);
                 }
                 e.Use();
                 return;
@@ -746,16 +797,23 @@ namespace FPSLAN
             {
                 if (e.keyCode == KeyCode.DownArrow || e.keyCode == KeyCode.S) { m_MFocus = (m_MFocus + 1) % 4; e.Use(); }
                 else if (e.keyCode == KeyCode.UpArrow || e.keyCode == KeyCode.W) { m_MFocus = (m_MFocus + 3) % 4; e.Use(); }
+                return;
             }
-            else
+
+            int c = Mathf.Max(0, MenuCharIndexForHero(m_Hero));
+            bool modes = m_MSetupCtx != SetupContext.LocalJoin;
+            if (e.keyCode == KeyCode.RightArrow || e.keyCode == KeyCode.D) { SelectMenuCharacter((c + 1) % s_Roster.Length); e.Use(); }
+            else if (e.keyCode == KeyCode.LeftArrow || e.keyCode == KeyCode.A) { SelectMenuCharacter((c + s_Roster.Length - 1) % s_Roster.Length); e.Use(); }
+            else if (modes && (e.keyCode == KeyCode.DownArrow || e.keyCode == KeyCode.S))
+            { SelectMode((Mathf.Max(0, m_MModeSel) + 1) % s_Modes.Length, true); e.Use(); }
+            else if (modes && (e.keyCode == KeyCode.UpArrow || e.keyCode == KeyCode.W))
+            { SelectMode((Mathf.Max(0, m_MModeSel) + s_Modes.Length - 1) % s_Modes.Length, true); e.Use(); }
+            else if (m_MSetupCtx == SetupContext.Online && (e.keyCode == KeyCode.E || e.keyCode == KeyCode.Q))
             {
-                int c = Mathf.Max(0, MenuCharIndexForHero(m_Hero));
-                if (e.keyCode == KeyCode.RightArrow || e.keyCode == KeyCode.D) { SelectMenuCharacter((c + 1) % s_Roster.Length); e.Use(); }
-                else if (e.keyCode == KeyCode.LeftArrow || e.keyCode == KeyCode.A) { SelectMenuCharacter((c + s_Roster.Length - 1) % s_Roster.Length); e.Use(); }
-                else if (m_MSetupCtx == SetupContext.Host && (e.keyCode == KeyCode.DownArrow || e.keyCode == KeyCode.S))
-                { SelectMode((m_MModeSel + 1) % s_Modes.Length); e.Use(); }
-                else if (m_MSetupCtx == SetupContext.Host && (e.keyCode == KeyCode.UpArrow || e.keyCode == KeyCode.W))
-                { SelectMode((m_MModeSel + s_Modes.Length - 1) % s_Modes.Length); e.Use(); }
+                int n = s_Maps.Length, next = (m_MMapSel + (e.keyCode == KeyCode.E ? 1 : n - 1)) % n;
+                FocusMapIsland(next);
+                if (s_Maps[next].playable) SelectMap(next); else PeekUnavailableMap();
+                e.Use();
             }
         }
 
@@ -810,7 +868,75 @@ namespace FPSLAN
             return 0;
         }
 
-        // ================================================================== fundo
+        // ================================================================== fundo: câmara sobre o arquipélago
+
+        const float BgOverviewZoom = 1.06f;
+        const float BgTravelTime = 1.9f;
+
+        /// <summary>Volta à vista geral do arquipélago.</summary>
+        void FocusOverview()
+        {
+            m_BgReturnAt = 0f;
+            StartBgTravel(new Vector2(0.5f, 0.5f), BgOverviewZoom, -1);
+        }
+
+        /// <summary>Viaja até à ilha do mapa <paramref name="i"/> (sem mostrar o nome dela).</summary>
+        void FocusMapIsland(int i)
+        {
+            if (i < 0 || i >= s_Maps.Length) return;
+            StartBgTravel(s_Maps[i].focus, s_Maps[i].zoom, i);
+        }
+
+        void StartBgTravel(Vector2 focus, float zoom, int map)
+        {
+            if (map == m_BgMap && (m_BgTo - focus).sqrMagnitude < 1e-6f) return;
+            m_BgFrom = m_BgCur;
+            m_BgZFrom = m_BgZCur;
+            m_BgTo = focus;
+            m_BgZTo = zoom;
+            m_BgMap = map;
+            m_BgT = 0f;
+            m_BgAWFrom = m_BgAW;
+            m_BgAWTo = map >= 0 ? 1f : 0f;
+            // salto entre duas ilhas: a câmara afasta-se um pouco a meio do caminho (efeito de voo)
+            float dist = (focus - m_BgFrom).magnitude;
+            m_BgArc = Mathf.Clamp01(dist * 2.2f) * Mathf.Min(m_BgZFrom, zoom) * 0.38f;
+        }
+
+        void UpdateBackgroundCamera(float dt)
+        {
+            if (m_BgReturnAt > 0f && Time.unscaledTime >= m_BgReturnAt)
+            {
+                m_BgReturnAt = 0f;
+                if (m_MScreen == MenuScreen.Setup && m_MSetupCtx == SetupContext.Online) FocusMapIsland(m_MMapSel);
+            }
+            if (m_BgT < 1f) m_BgT = Mathf.Min(1f, m_BgT + dt / BgTravelTime);
+            float t = m_BgT;
+            float e = t * t * t * (t * (t * 6f - 15f) + 10f);              // smootherstep
+            m_BgCur = Vector2.Lerp(m_BgFrom, m_BgTo, e);
+            m_BgAW = Mathf.Lerp(m_BgAWFrom, m_BgAWTo, e);
+            // zoom em escala logarítmica (aproximação uniforme) menos o "arco" do voo
+            float z = Mathf.Exp(Mathf.Lerp(Mathf.Log(m_BgZFrom), Mathf.Log(m_BgZTo), Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t * 1.15f - 0.1f))));
+            m_BgZCur = Mathf.Max(1f, z - m_BgArc * Mathf.Sin(t * Mathf.PI));
+        }
+
+        /// <summary>Retângulo UV visível para um foco/zoom (cobre o ecrã, sem sair da imagem).</summary>
+        /// <param name="anchorOffset">Onde o foco deve aparecer, em píxeis a partir do centro do ecrã.</param>
+        static Rect BgView(Rect screen, Texture t, Vector2 focus, float zoom, Vector2 anchorOffset)
+        {
+            float sa = screen.width / Mathf.Max(1f, screen.height), ta = t.width / (float)Mathf.Max(1, t.height);
+            float uw = 1f, uh = 1f;
+            if (sa > ta) uh = ta / sa; else uw = sa / ta;
+            uw /= zoom; uh /= zoom;
+            float fx = focus.x - anchorOffset.x / Mathf.Max(1f, screen.width) * uw;
+            float fy = focus.y + anchorOffset.y / Mathf.Max(1f, screen.height) * uh;
+            float cx = Mathf.Clamp(fx, uw / 2f, 1f - uw / 2f);
+            float cy = Mathf.Clamp(fy, uh / 2f, 1f - uh / 2f);
+            return new Rect(cx - uw / 2f, cy - uh / 2f, uw, uh);
+        }
+
+        static Vector2 UVToScreen(Rect view, Vector2 uv) =>
+            new Vector2((uv.x - view.x) / view.width * Screen.width, (1f - (uv.y - view.y) / view.height) * Screen.height);
 
         void DrawMenuBackground()
         {
@@ -820,43 +946,149 @@ namespace FPSLAN
             GUI.color = MDeep;
             GUI.DrawTexture(screen, Texture2D.whiteTexture);
 
+            float time = Time.unscaledTime;
+            float travel = m_BgT < 1f ? Mathf.Sin(m_BgT * Mathf.PI) : 0f;   // 0 parado · 1 a meio do voo
             var bg = MenuTexture("bg_archipelago");
+            Rect view = new Rect(0, 0, 1, 1);
             if (bg != null)
             {
-                float t = Time.unscaledTime;
-                float zoom = 1.06f + 0.03f * Mathf.Sin(t * 0.05f);
-                var pan = new Vector2(Mathf.Sin(t * 0.031f) * 0.012f, Mathf.Cos(t * 0.027f) * 0.01f);
-                GUI.color = new Color(0.85f, 0.92f, 1f, 1f);
-                GUI.DrawTextureWithTexCoords(screen, bg, CoverUV(screen, bg, zoom, pan));
+                // deriva lenta e "respiração" por cima da câmara
+                var drift = new Vector2(Mathf.Sin(time * 0.031f) * 0.012f, Mathf.Cos(time * 0.027f) * 0.01f) / m_BgZCur;
+                float breathe = 1f + 0.02f * Mathf.Sin(time * 0.05f);
+                var anchor = (m_BgAnchor - screen.center) * m_BgAW;
+                view = BgView(screen, bg, m_BgCur + drift, m_BgZCur * breathe, anchor);
+                float focusTint = m_BgMap >= 0 ? 1f : 0f;
+                GUI.color = Color.Lerp(new Color(0.85f, 0.92f, 1f, 1f), new Color(0.95f, 1f, 1f, 1f), focusTint * 0.6f);
+                GUI.DrawTextureWithTexCoords(screen, bg, view);
             }
 
-            // escurecer à esquerda (legibilidade dos painéis) e vinheta
-            GUI.color = new Color(0.01f, 0.03f, 0.08f, 0.55f);
+            // vinheta (mais fechada quando há uma ilha em foco, para a destacar)
+            float vig = 0.55f + (m_BgMap >= 0 ? 0.15f * EaseOut(m_BgT) : 0f);
+            GUI.color = new Color(0.01f, 0.03f, 0.08f, vig);
             if (m_Vignette != null) GUI.DrawTexture(screen, m_Vignette);
 
-            // nuvens nos cantos, a derivar devagar
+            // marcador da ilha escolhida: anel ciano a "fixar o alvo" (sem nome)
+            if (bg != null && m_BgMap >= 0) DrawIslandMarker(view, time);
+
+            // nuvens: nos cantos em repouso; durante o voo atravessam o ecrã
             var clouds = MenuTexture("fx_clouds");
             if (clouds != null)
             {
-                float t = Time.unscaledTime;
                 float cw = Screen.height * 0.95f, chh = cw * 0.56f;
-                GUI.color = new Color(1f, 1f, 1f, 0.42f);
-                GUI.DrawTexture(new Rect(-cw * 0.45f + Mathf.Sin(t * 0.07f) * 18f, -chh * 0.35f, cw, chh), clouds);
-                GUI.color = new Color(1f, 1f, 1f, 0.3f);
-                GUI.DrawTexture(new Rect(-cw * 0.55f + Mathf.Cos(t * 0.05f) * 22f, Screen.height - chh * 0.6f, cw, chh), clouds);
+                GUI.color = new Color(1f, 1f, 1f, 0.42f * (1f - travel * 0.5f));
+                GUI.DrawTexture(new Rect(-cw * 0.45f + Mathf.Sin(time * 0.07f) * 18f, -chh * 0.35f, cw, chh), clouds);
+                GUI.color = new Color(1f, 1f, 1f, 0.3f * (1f - travel * 0.5f));
+                GUI.DrawTexture(new Rect(-cw * 0.55f + Mathf.Cos(time * 0.05f) * 22f, Screen.height - chh * 0.6f, cw, chh), clouds);
+
+                if (travel > 0.001f)
+                {
+                    // camadas de nuvens que crescem e se afastam do centro: sensação de atravessar o céu
+                    float p = m_BgT;
+                    for (int i = 0; i < 4; i++)
+                    {
+                        float layer = Mathf.Repeat(p * 1.6f + i * 0.25f, 1f);
+                        float scale = Mathf.Lerp(0.7f, 3.2f, layer * layer);
+                        float w = Screen.width * scale, h = w * 0.56f;
+                        float side = (i % 2 == 0 ? -1f : 1f);
+                        float cx = Screen.width * 0.5f + side * Screen.width * (0.15f + 0.55f * layer);
+                        float cy = Screen.height * (0.5f + ((i / 2) == 0 ? -0.18f : 0.2f) * (0.4f + layer));
+                        float a = travel * Mathf.Sin(layer * Mathf.PI) * 0.55f;
+                        GUI.color = new Color(1f, 1f, 1f, a);
+                        if (side < 0) GUI.DrawTexture(new Rect(cx - w / 2f, cy - h / 2f, w, h), clouds);
+                        else GUI.DrawTextureWithTexCoords(new Rect(cx - w / 2f, cy - h / 2f, w, h), clouds, new Rect(1, 0, -1, 1));
+                    }
+                    // véu branco suave no ponto mais alto do voo
+                    GUI.color = new Color(0.9f, 0.96f, 1f, 0.16f * travel * travel);
+                    GUI.DrawTexture(screen, Texture2D.whiteTexture);
+                }
             }
             GUI.color = old;
         }
 
-        static Rect CoverUV(Rect screen, Texture t, float zoom, Vector2 pan)
+        void DrawIslandMarker(Rect view, float time)
         {
-            float sa = screen.width / Mathf.Max(1f, screen.height), ta = t.width / (float)Mathf.Max(1, t.height);
-            float uw = 1f, uh = 1f;
-            if (sa > ta) uh = ta / sa; else uw = sa / ta;
-            uw /= zoom; uh /= zoom;
-            float cx = Mathf.Clamp(0.5f + pan.x, uw / 2f, 1f - uw / 2f);
-            float cy = Mathf.Clamp(0.5f + pan.y, uh / 2f, 1f - uh / 2f);
-            return new Rect(cx - uw / 2f, cy - uh / 2f, uw, uh);
+            var map = s_Maps[m_BgMap];
+            var p = UVToScreen(view, map.focus);
+            float arrive = Mathf.Clamp01((m_BgT - 0.55f) / 0.45f);       // aparece no fim da viagem
+            if (arrive <= 0f) return;
+            float a = EaseOut(arrive);
+            float lockIn = Mathf.Lerp(2.2f, 1f, a);                        // o anel fecha sobre a ilha
+            float baseR = Screen.height * 0.27f * lockIn;   // o anel enquadra a ilha e o personagem por cima dela
+
+            var ring = MenuRingTexture();
+            var old = GUI.color;
+
+            // pulso que se expande
+            float pulse = Mathf.Repeat(time * 0.6f, 1f);
+            float pr = baseR * (1f + pulse * 0.35f);
+            GUI.color = new Color(MCyan.r, MCyan.g, MCyan.b, 0.3f * a * (1f - pulse));
+            GUI.DrawTexture(new Rect(p.x - pr, p.y - pr, pr * 2f, pr * 2f), ring);
+
+            // anel principal + anel interior a rodar
+            GUI.color = new Color(MCyan.r, MCyan.g, MCyan.b, 0.6f * a);
+            GUI.DrawTexture(new Rect(p.x - baseR, p.y - baseR, baseR * 2f, baseR * 2f), ring);
+            var segs = MenuRingSegmentsTexture();
+            var m = GUI.matrix;
+            GUIUtility.RotateAroundPivot(time * 25f, p);
+            float ir = baseR * 0.78f;
+            GUI.color = new Color(MWhite.r, MWhite.g, MWhite.b, 0.35f * a);
+            GUI.DrawTexture(new Rect(p.x - ir, p.y - ir, ir * 2f, ir * 2f), segs);
+            GUI.matrix = m;
+
+            // marcas de mira nos quatro lados
+            float tick = baseR * 0.12f, th = Mathf.Max(2f, Screen.height * 0.003f);
+            GUI.color = new Color(MCyan.r, MCyan.g, MCyan.b, 0.85f * a);
+            GUI.DrawTexture(new Rect(p.x - baseR - tick * 0.6f, p.y - th / 2f, tick, th), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(p.x + baseR - tick * 0.4f, p.y - th / 2f, tick, th), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(p.x - th / 2f, p.y - baseR - tick * 0.6f, th, tick), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(p.x - th / 2f, p.y + baseR - tick * 0.4f, th, tick), Texture2D.whiteTexture);
+            GUI.color = old;
+
+            // coordenadas discretas (pista, não o nome)
+            if (!string.IsNullOrEmpty(map.coords) && m_MT12 != null)
+            {
+                float oldA = m_MAlpha; m_MAlpha = a * 0.85f;
+                // canto inferior esquerdo do anel (fica na zona livre entre os modos e os mapas)
+                var lr = new Rect(p.x - baseR * 0.74f - 210 * K, p.y + baseR * 0.74f, 200 * K, 20 * K);
+                MFill(new Rect(lr.xMax - 60 * K, lr.yMax + 2 * K, 66 * K, 1.5f * K), MCyanDim);
+                MText(lr, map.coords, m_MT12, MCyan, TextAnchor.MiddleRight);
+                m_MAlpha = oldA;
+            }
+        }
+
+        Texture2D m_MRingTex, m_MRingSegTex;
+
+        Texture2D MenuRingTexture()
+        {
+            if (m_MRingTex != null) return m_MRingTex;
+            const int n = 256;
+            m_MRingTex = MakeMenuTex(n, (x, y) =>
+            {
+                float dx = x + 0.5f - n / 2f, dy = y + 0.5f - n / 2f;
+                float d = Mathf.Sqrt(dx * dx + dy * dy);
+                float r = n / 2f - 6f;
+                float line = Mathf.Clamp01(1.6f - Mathf.Abs(d - r));
+                float glow = Mathf.Clamp01(1f - Mathf.Abs(d - r) / 7f) * 0.35f;
+                return new Color(1f, 1f, 1f, Mathf.Max(line, glow));
+            });
+            return m_MRingTex;
+        }
+
+        Texture2D MenuRingSegmentsTexture()
+        {
+            if (m_MRingSegTex != null) return m_MRingSegTex;
+            const int n = 256;
+            m_MRingSegTex = MakeMenuTex(n, (x, y) =>
+            {
+                float dx = x + 0.5f - n / 2f, dy = y + 0.5f - n / 2f;
+                float d = Mathf.Sqrt(dx * dx + dy * dy);
+                float r = n / 2f - 4f;
+                float ang = Mathf.Atan2(dy, dx) * Mathf.Rad2Deg + 180f;      // 0..360
+                bool seg = Mathf.Repeat(ang, 90f) < 52f;                       // 4 arcos
+                float line = Mathf.Clamp01(1.8f - Mathf.Abs(d - r) * 0.6f);
+                return new Color(1f, 1f, 1f, seg ? line : 0f);
+            });
+            return m_MRingSegTex;
         }
 
         // ================================================================== componentes

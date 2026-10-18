@@ -16,6 +16,7 @@ namespace FPSLAN
         const int SettingsTabControls = 0;
         const int SettingsTabGameplay = 1;
         const int SettingsTabAudio = 2;
+        const int SettingsTabProfile = 3;
 
         public static bool GameplayInputAllowed => s_Instance != null && s_Instance.m_InGame &&
             !s_Instance.m_Paused && !s_Instance.m_SettingsOpen;
@@ -1139,7 +1140,8 @@ namespace FPSLAN
         void OpenSettings()
         {
             m_SettingsOpen = true;
-            m_SettingsTab = SettingsTabControls;
+            m_SettingsTab = UseNewMenu && !m_InGame ? SettingsTabProfile : SettingsTabControls;
+            m_Name = GameSession.LocalName;
             m_CapturingBinding = false;
             m_SettingsMessage = null;
         }
@@ -1149,6 +1151,7 @@ namespace FPSLAN
             m_SettingsOpen = false;
             m_CapturingBinding = false;
             m_SettingsMessage = null;
+            SaveProfileName();
             PlayerPrefs.Save();
         }
 
@@ -1198,6 +1201,9 @@ namespace FPSLAN
             GUILayout.Space(8f * s);
 
             GUILayout.BeginHorizontal();
+            if (LayoutButton("PERFIL", m_SettingsTab == SettingsTabProfile ? PanelBlue : new Color(0.22f, 0.24f, 0.34f),
+                GUILayout.Height(40f * s)))
+                ChangeSettingsTab(SettingsTabProfile);
             if (LayoutButton("TECLAS", m_SettingsTab == SettingsTabControls ? PanelBlue : new Color(0.22f, 0.24f, 0.34f),
                 GUILayout.Height(40f * s)))
                 ChangeSettingsTab(SettingsTabControls);
@@ -1215,6 +1221,8 @@ namespace FPSLAN
                 DrawGameplaySettings(s);
             else if (m_SettingsTab == SettingsTabAudio)
                 DrawAudioSettings(s);
+            else if (m_SettingsTab == SettingsTabProfile)
+                DrawProfileSettings(s);
             GUILayout.EndArea();
         }
 
@@ -1293,6 +1301,49 @@ namespace FPSLAN
                 GameSession.AimSensitivity = 0.5f;
                 GameSession.ScopeFieldOfView = 32f;
             }
+        }
+
+        void DrawProfileSettings(float s)
+        {
+            GUILayout.Space(14f * s);
+            GUILayout.Label("NOME DO JOGADOR", m_Small);
+            GUILayout.Label("É o nome que os outros jogadores veem no placar e por cima do teu personagem.", m_Tiny);
+            GUILayout.Space(4f * s);
+            GUI.SetNextControlName("profile_name");
+            m_Name = GUILayout.TextField(m_Name ?? "", 16, m_Field, GUILayout.Height(42f * s));
+            GUILayout.Space(8f * s);
+            GUILayout.BeginHorizontal();
+            if (LayoutButton("GUARDAR NOME", PanelBlue, GUILayout.Height(40f * s)))
+            {
+                SaveProfileName();
+                GUI.FocusControl(null);
+                m_SettingsMessage = "Nome guardado: " + m_Name;
+            }
+            GUILayout.EndHorizontal();
+            if (m_InGame)
+                GUILayout.Label("O novo nome é usado a partir da próxima partida.", m_Tiny);
+
+            var hero = BrawlerRegistry.Get(m_Hero);
+            if (hero != null)
+            {
+                GUILayout.Space(18f * s);
+                GUILayout.Label("PERSONAGEM ESCOLHIDO", m_Small);
+                GUILayout.Label(hero.displayName + "  ·  " + RoleTitle(hero), m_Label);
+            }
+            if (!string.IsNullOrEmpty(m_SettingsMessage))
+            {
+                GUILayout.Space(8f * s);
+                GUILayout.Label(m_SettingsMessage, m_Small);
+            }
+        }
+
+        /// <summary>Guarda o nome do perfil (vazio volta ao nome anterior).</summary>
+        void SaveProfileName()
+        {
+            var n = (m_Name ?? "").Trim();
+            if (n.Length == 0) { m_Name = GameSession.LocalName; return; }
+            GameSession.LocalName = n;
+            m_Name = GameSession.LocalName;
         }
 
         void DrawAudioSettings(float s)
