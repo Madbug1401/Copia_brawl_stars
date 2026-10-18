@@ -17,6 +17,7 @@ namespace FPSLAN
         Transform m_Root, m_WeaponR, m_WeaponL;
         Grip m_Grip;
         float m_SupportZ;            // ponto do cano onde pousa a mão esquerda (espaço local da arma)
+        Vector3 m_SupportLocal;      // ponto "Support" do modelo 3D da arma, se existir
         float m_KickR, m_KickL;
         float m_Weight;
 
@@ -45,6 +46,10 @@ namespace FPSLAN
                 default: m_Grip = Grip.TwoHanded; break;
             }
             m_SupportZ = style == RigStyle.Sniper ? 0.2f : style == RigStyle.Shotgun ? 0.16f : 0.1f;
+            m_SupportLocal = new Vector3(0f, -0.02f, m_SupportZ);
+            if (weaponR != null)
+                foreach (var t in weaponR.GetComponentsInChildren<Transform>(true))
+                    if (t.name == "Support") { m_SupportLocal = weaponR.InverseTransformPoint(t.position); break; }
             m_Weight = 1f;
         }
 
@@ -73,9 +78,9 @@ namespace FPSLAN
             {
                 case Grip.TwoHanded:
                     // espingarda ao ombro direito, a apontar para a mira
-                    PlaceWeapon(m_WeaponR, body + yaw * ShoulderR, aim, new Vector3(-0.06f, -0.07f, 0.22f), m_KickR);
+                    PlaceWeapon(m_WeaponR, body + yaw * ShoulderR, aim, new Vector3(-0.05f, -0.12f, 0.25f), m_KickR);
                     HandTo(AvatarIKGoal.RightHand, m_WeaponR, Vector3.zero);
-                    HandTo(AvatarIKGoal.LeftHand, m_WeaponR, new Vector3(0f, -0.02f, m_SupportZ));
+                    HandTo(AvatarIKGoal.LeftHand, m_WeaponR, m_SupportLocal);
                     Elbow(AvatarIKHint.RightElbow, body + yaw * new Vector3(0.38f, 0.12f, -0.12f));
                     Elbow(AvatarIKHint.LeftElbow, body + yaw * new Vector3(-0.28f, 0.1f, 0.1f));
                     break;
