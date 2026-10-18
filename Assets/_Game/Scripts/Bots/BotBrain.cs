@@ -192,6 +192,8 @@ namespace FPSLAN
             }
             else
             {
+                // Tempestade (Fogo): ir para a zona segura pelos desfiladeiros em vez de vaguear
+                if (StormManager.TryGetBotGoal(pos, out var stormGoal)) m_WanderPoint = stormGoal;
                 var flat = m_WanderPoint - pos;
                 flat.y = 0f;
                 if (flat.magnitude < 2f) PickWanderPoint();
@@ -200,6 +202,7 @@ namespace FPSLAN
 
             if (moveWorld.sqrMagnitude > 1f) moveWorld.Normalize();
             moveWorld = AvoidObstacles(pos, moveWorld, out bool wantJump);
+            if (LavaArea.Instance != null) moveWorld = LavaArea.Instance.SteerAway(pos, moveWorld);   // não entrar na lava
 
             // Preso? Tenta outra direção e salta
             m_StuckTimer += dt;

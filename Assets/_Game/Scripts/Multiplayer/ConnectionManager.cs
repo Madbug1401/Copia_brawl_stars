@@ -56,6 +56,7 @@ namespace FPSLAN
                 case "pradaria": scene = "Arena"; break;
                 case "santiago": scene = "CidadeVelha"; break;
                 case "sal": scene = "Buracona"; break;
+                case "fogo": scene = "Fogo"; break;
                 default: Status = "Este mapa ainda não está disponível."; return false;
             }
             if (MatchManager.MenuSelectedMode == GameMode.GemGrab && !SupportsGemGrab(mapKey))
