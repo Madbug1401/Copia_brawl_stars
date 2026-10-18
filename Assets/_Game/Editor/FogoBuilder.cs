@@ -278,8 +278,15 @@ namespace FPSLAN.EditorTools
                 mesh.RecalculateBounds();
                 foreach (var p in parts) Object.DestroyImmediate(p.mesh);
                 string path = folder + "/" + mesh.name + ".asset";
-                AssetDatabase.DeleteAsset(path);
-                AssetDatabase.CreateAsset(mesh, path);
+                var existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+                if (existing != null)
+                {
+                    EditorUtility.CopySerialized(mesh, existing);      // mantém o GUID (sem .meta novos a cada construção)
+                    Object.DestroyImmediate(mesh);
+                    mesh = existing;
+                    EditorUtility.SetDirty(mesh);
+                }
+                else AssetDatabase.CreateAsset(mesh, path);
                 var go = new GameObject("Coberturas_Q" + kv.Key);
                 go.transform.SetParent(root, false);
                 go.AddComponent<MeshFilter>().sharedMesh = mesh;

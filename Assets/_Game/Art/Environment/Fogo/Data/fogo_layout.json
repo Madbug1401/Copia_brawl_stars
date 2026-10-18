@@ -5971,12 +5971,12 @@
  ],
  "triangles": {
   "Terrain": 20003,
-  "Volcano": 5142,
+  "Volcano": 3862,
   "Lava": 18256,
   "Cover": 17850,
   "Bushes": 27620,
   "Markers": 0,
-  "Collision": 20063,
+  "Collision": 20015,
   "FX": 968,
   "Preview": 0
  },

@@ -783,7 +783,7 @@ def volcano_details(P, volc, H, data):
         placed += 1
     cv.place(cv.mesh_from_bm(bm, "VOL_Fragas", [MAT["MAT_Basalto_Escuro"], MAT["MAT_Vulcao"]]), "VOL_Fragas", C["Volcano"])
 
-    # Entradas: penedo central (divide o desfiladeiro em duas faixas) e arco de rocha na boca exterior
+    # Entradas: penedo central (divide o desfiladeiro em duas faixas)
     data["entrances"] = []
     for gi, ang in enumerate(GORGES):
         a = math.radians(ang)
@@ -796,26 +796,14 @@ def volcano_details(P, volc, H, data):
         ob.location.z = z
         bpy.data.objects["COL_Box_" + name].location.z = z
         data["boxes"].append(dict(name="COL_Box_" + name, loc=[c.x, c.y, z], size=[1.35, 1.35, 2.2]))
-        # arco: blocos em semicírculo entre as paredes do desfiladeiro, a 4,8–7 m de altura
-        bm = bmesh.new()
+        # (o antigo arco de rocha sobre a boca da entrada foi retirado: visto de dentro parecia uma pedra a
+        # flutuar). Os blocos continuam a ser sorteados e descartados para manter a mesma sequência aleatória,
+        # e assim o resto do mapa fica igual.
         mouth = u * 20.8
-        span = GORGE_HW + 1.0
-        for s in range(9):
-            tt = -1 + 2 * s / 8
-            p = mouth + t * (tt * span)
-            zz = 4.9 + 1.8 * math.sqrt(max(0.0, 1 - tt * tt)) + ground_height(H, mouth.x, mouth.y)
+        for s_ in range(9):
             b = bu.lava_block(rng, 1.3, 1.6, 1.5, 2)
-            bmesh.ops.rotate(b, verts=b.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(a + rng.uniform(-0.2, 0.2), 3, 'Z'))
-            bmesh.ops.translate(b, verts=b.verts, vec=(p.x, p.y, zz - 0.6))
-            bu.bm_join(bm, b)
-        cv.place(cv.mesh_from_bm(bm, f"VOL_Arco_{gi}", [MAT["MAT_Basalto_Escuro"]]), f"VOL_Arco_{gi}", C["Volcano"])
-        # colisor do arco (só acima de 4,6 m: não trava passagem nem tiros à altura do jogador)
-        cb = bmesh.new()
-        cv.add_box(cb, 2.0, span * 2 + 1.0, 2.4, center=(0, 0, 0), mi=0)
-        me = cv.mesh_from_bm(cb, f"COL_Box_Arco_{gi}", [MAT["MAT_Colisor"]])
-        oc = cv.place(me, f"COL_Box_Arco_{gi}", C["Collision"], (mouth.x, mouth.y, 4.6 + ground_height(H, mouth.x, mouth.y)), a)
-        oc.display_type = 'WIRE'
-        oc.hide_render = True
+            rng.uniform(-0.2, 0.2)
+            b.free()
         data["entrances"].append(dict(angle=ang, outer=[*(u * 24.5)[:2]], mouth=[*(u * 21.0)[:2]], middle=[*(u * 17.6)[:2]],
                                       inner=[*(u * 11.5)[:2]], lanes=[[*(u * 17.6 + t * 2.1)[:2]], [*(u * 17.6 - t * 2.1)[:2]]]))
         # marcador para o Unity (luz e brasas à entrada, para se reconhecer de longe)
