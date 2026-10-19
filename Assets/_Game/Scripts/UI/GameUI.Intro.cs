@@ -7,6 +7,7 @@ namespace FPSLAN
     {
         // Pode ser atribuído no Inspector ou colocado em Resources/UI/Menu/team_logo.png.
         [SerializeField] Texture2D m_IntroTeamLogo;
+        [SerializeField] Texture2D m_IntroGameLogo;
 
         const float IntroLogoDuration = 3.2f;
         const float IntroWorldHold = 1.1f;
@@ -29,7 +30,7 @@ namespace FPSLAN
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetOpeningIntro() => s_OpeningIntroComplete = false;
 
-        /// <summary>Uma vez por execução: splash Unity → equipa → mundo → Cabo Verde → menu.</summary>
+        /// <summary>Uma vez por execução: Unity → BRABUZ → Chiefs & Gems → mundo → Cabo Verde → menu.</summary>
         bool DrawOpeningIntro()
         {
             if (s_OpeningIntroComplete) return false;
@@ -43,10 +44,13 @@ namespace FPSLAN
             {
                 m_IntroLoaded = true;
                 if (m_IntroTeamLogo == null) m_IntroTeamLogo = Resources.Load<Texture2D>("UI/Menu/team_logo");
+                if (m_IntroGameLogo == null) m_IntroGameLogo = Resources.Load<Texture2D>("UI/Menu/game_logo");
                 m_IntroWorld = MenuTexture("bg_world");
                 m_IntroRegion = MenuTexture("bg_cape_verde");
                 if (m_IntroTeamLogo == null)
                     Debug.LogWarning("Intro: falta o logo da equipa. Coloca-o em Resources/UI/Menu/team_logo.png ou atribui-o no GameUI.");
+                if (m_IntroGameLogo == null)
+                    Debug.LogWarning("Intro: falta o logo do jogo. Coloca-o em Resources/UI/Menu/game_logo.jpg ou atribui-o no GameUI.");
             }
 
             var screen = new Rect(0, 0, Screen.width, Screen.height);
@@ -63,13 +67,15 @@ namespace FPSLAN
                 }
                 if (m_IntroStartedAt < 0f)
                 {
-                    IntroTexture(screen, Texture2D.whiteTexture, Color.black);
+                    IntroTexture(screen, Texture2D.whiteTexture, Color.white);
                     if (Event.current.type == EventType.Repaint) m_IntroStartedAt = Time.unscaledTime;
                     return true;
                 }
 
                 float elapsed = Time.unscaledTime - m_IntroStartedAt;
-                float logoDuration = m_IntroTeamLogo != null ? IntroLogoDuration : 0f;
+                float teamDuration = m_IntroTeamLogo != null ? IntroLogoDuration : 0f;
+                float gameDuration = m_IntroGameLogo != null ? IntroLogoDuration : 0f;
+                float logoDuration = teamDuration + gameDuration;
                 float mapTime = elapsed - logoDuration;
                 float dissolveAt = IntroWorldHold + IntroFlightDuration + IntroArrivalHold;
                 float dissolve = Mathf.SmoothStep(0f, 1f,
@@ -83,8 +89,10 @@ namespace FPSLAN
                     return true;
                 }
 
-                IntroTexture(screen, Texture2D.whiteTexture, Color.black);
-                if (mapTime < 0f) DrawIntroLogo(screen, elapsed);
+                bool showingLogo = mapTime < 0f;
+                IntroTexture(screen, Texture2D.whiteTexture, showingLogo ? Color.white : Color.black);
+                if (elapsed < teamDuration) DrawIntroLogo(screen, m_IntroTeamLogo, elapsed, false);
+                else if (showingLogo) DrawIntroLogo(screen, m_IntroGameLogo, elapsed - teamDuration, true);
                 else if (m_IntroWorld != null) DrawIntroWorld(screen, mapTime, dissolve);
                 else DrawMenuBackground(); // recurso ausente nunca bloqueia a entrada no jogo
 
@@ -92,8 +100,11 @@ namespace FPSLAN
                 {
                     GUI.color = Color.white;
                     MText(new Rect(24 * K, Screen.height - 58 * K, 360 * K, 32 * K),
-                        "SPACE / ENTER / ESC TO SKIP", m_MT12, MMuted);
+                        "SPACE / ENTER / ESC TO SKIP", m_MT12, showingLogo ? Color.gray : MMuted);
                     var skip = new Rect(Screen.width - 150 * K, Screen.height - 62 * K, 126 * K, 38 * K);
+                    // Mantém o botão legível também sobre os cartões brancos dos logos.
+                    if (showingLogo) IntroTexture(skip, Texture2D.whiteTexture, MDeep);
+                    GUI.color = Color.white;
                     bool keySkip = Event.current.type == EventType.KeyDown &&
                         (Event.current.keyCode == KeyCode.Escape || Event.current.keyCode == KeyCode.Space ||
                          Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter);
@@ -120,16 +131,16 @@ namespace FPSLAN
             m_MLastTime = Time.unscaledTime;
         }
 
-        void DrawIntroLogo(Rect screen, float elapsed)
+        void DrawIntroLogo(Rect screen, Texture2D logo, float elapsed, bool gameLogo)
         {
             float fade = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / 0.65f)) *
                 (1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((elapsed - 2.45f) / 0.75f)));
             float scale = Mathf.Lerp(0.96f, 1f, BgTravelEase(elapsed / IntroLogoDuration));
-            var bounds = new Rect(screen.center.x - screen.width * 0.24f * scale,
-                screen.center.y - screen.height * 0.24f * scale,
-                screen.width * 0.48f * scale, screen.height * 0.48f * scale);
+            float width = screen.width * (gameLogo ? 0.64f : 0.7f) * scale;
+            float height = screen.height * (gameLogo ? 0.76f : 0.48f) * scale;
+            var bounds = new Rect(screen.center.x - width / 2f, screen.center.y - height / 2f, width, height);
             GUI.color = new Color(1f, 1f, 1f, fade);
-            GUI.DrawTexture(bounds, m_IntroTeamLogo, ScaleMode.ScaleToFit, true);
+            GUI.DrawTexture(bounds, logo, ScaleMode.ScaleToFit, true);
         }
 
         void DrawIntroWorld(Rect screen, float mapTime, float dissolve)

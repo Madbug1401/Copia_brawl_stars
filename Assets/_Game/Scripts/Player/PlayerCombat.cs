@@ -493,7 +493,7 @@ namespace FPSLAN
             GameUI.AddDamageNumber(victimPosition + Vector3.up * 2.1f, damage, headshot, killed);
             if (executed)
             {
-                Sfx.Play2D(Sound.FatalShot, 1f);
+                // O tiro fatal já tocou no disparo; o acerto usa a confirmação abaixo.
                 GameUI.ShowHeadshot(true);
             }
             else if (headshot) GameUI.ShowHeadshot(false);

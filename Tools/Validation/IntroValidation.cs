@@ -11,7 +11,8 @@ public static class IntroValidation
         var world = Resources.Load<Texture2D>("UI/Menu/bg_world");
         var regional = Resources.Load<Texture2D>("UI/Menu/bg_cape_verde");
         var logo = Resources.Load<Texture2D>("UI/Menu/team_logo");
-        Require(world != null && regional != null && logo != null, "Faltam imagens da intro.");
+        var gameLogo = Resources.Load<Texture2D>("UI/Menu/game_logo");
+        Require(world != null && regional != null && logo != null && gameLogo != null, "Faltam imagens da intro.");
         const BindingFlags flags = BindingFlags.Static | BindingFlags.NonPublic;
         var flight = typeof(GameUI).GetMethod("IntroFlight", flags);
         var maxZoom = typeof(GameUI).GetMethod("IntroMaxZoom", flags);
@@ -45,7 +46,7 @@ public static class IntroValidation
             Require(view.Contains(new Vector2(154.5f / 360f, 104.75f / 180f)) &&
                 view.Contains(new Vector2(157.5f / 360f, 107.25f / 180f)), "O enquadramento cortou ilhas.");
         }
-        return "PASS: imagens carregadas; 1001 amostras de voo; foco, pausas e chegada; todas as ilhas em 16:9, 4:3, 21:9 e 9:16.";
+        return "PASS: logos BRABUZ e Chiefs & Gems carregados; 1001 amostras de voo; foco, pausas e chegada; todas as ilhas em 16:9, 4:3, 21:9 e 9:16.";
     }
 
     static void Require(bool condition, string message)

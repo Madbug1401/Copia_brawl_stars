@@ -124,7 +124,7 @@ namespace FPSLAN
         public static bool Btn(Rect r, string text, Color c, bool enabled = true, GUIStyle style = null)
         {
             bool clicked = MenuTheme.Button(r, text, c, enabled, style ?? Button);
-            if (clicked) Sfx.Play2D(Sound.Reload, 0.35f);
+            if (clicked) Sfx.Play2D(Sound.UiClick, 0.35f);
             return clicked;
         }
 

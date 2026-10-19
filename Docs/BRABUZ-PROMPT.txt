@@ -1,0 +1,6 @@
+Ferramenta: image_gen integrada (modo built-in), 18 de outubro de 2026.
+Asset no projeto: Assets/_Game/Resources/UI/Menu/team_logo.png
+Cópia da equipa: C:/Users/nicol/Desktop/Jogos/GameJam/logo/BRABUZ.png
+
+Prompt final:
+Use case: logo-brand. Asset type: final game studio splash wordmark. Create a simple flat logo consisting ONLY of the exact uppercase word "BRABUZ" (B R A B U Z), black solid letters on a pure white background. Typography inspired by the iconic Batman movie title lettering: very bold, wide, angular geometric uppercase forms, chamfered corners, distinctive sharp cuts, clean legible spacing. No bat symbol, no illustration, no extra words, no border, no shadows, no gradient, no texture. Single horizontal centered wordmark, filling approximately 80 percent of the canvas width; restrained white margin. Wide landscape image approximately 3:1. Pure black ink and pure white background.

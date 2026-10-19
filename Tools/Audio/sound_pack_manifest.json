@@ -1,0 +1,552 @@
+{
+  "cues": [
+    {
+      "sound": "Shot",
+      "source": "armas/REVOLVER.wav",
+      "sourceSha256": "b86142c3d2eb0f7e43729b4a5e75ff87c378d6dad19b994885e646f4b50914e0",
+      "gain": 1.01279,
+      "volume": 0.85,
+      "pitchVariation": 0.025,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Armas/Shot_01.wav",
+          "sourceWindow": [
+            0.08,
+            0.48
+          ],
+          "seconds": 0.4
+        },
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Armas/Shot_02.wav",
+          "sourceWindow": [
+            0.48,
+            1.22
+          ],
+          "seconds": 0.74
+        }
+      ]
+    },
+    {
+      "sound": "Shotgun",
+      "source": "armas/SHOTGUN.wav",
+      "sourceSha256": "8d18be66a1ea3de9974111789107a82730439638b3aa3368e6e6b6612cf0dd03",
+      "gain": 0.71548,
+      "volume": 0.85,
+      "pitchVariation": 0.02,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Armas/Shotgun.wav",
+          "sourceWindow": [
+            0.025,
+            1.25
+          ],
+          "seconds": 1.225
+        }
+      ]
+    },
+    {
+      "sound": "Sniper",
+      "source": "armas/SNIPER.wav",
+      "sourceSha256": "b7bbab7c831460450d56d9b4992b8a9e678a3fa41e0370eda3dcfec0a26d9319",
+      "gain": 0.80813,
+      "volume": 0.85,
+      "pitchVariation": 0.015,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Armas/Sniper.wav",
+          "sourceWindow": [
+            0.19,
+            1.95
+          ],
+          "seconds": 1.76
+        }
+      ]
+    },
+    {
+      "sound": "Smg",
+      "source": "armas/SUBMATRELHADORA.wav",
+      "sourceSha256": "5d99e4db6aa6979e6d80663d58e0aea3d9fd1ad0069232b4805e005fa2481b23",
+      "gain": 0.71,
+      "volume": 0.78,
+      "pitchVariation": 0.025,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Armas/Smg.wav",
+          "sourceWindow": [
+            0.04,
+            0.4
+          ],
+          "seconds": 0.36
+        }
+      ]
+    },
+    {
+      "sound": "MinigunSpin",
+      "source": "armas/Minigun_Sound_Test_SFM.wav",
+      "sourceSha256": "fba379e5091e89a58b61399ac618297eaece51a550cc2d07fa81ed1733b2d1dc",
+      "gain": 0.70587,
+      "volume": 0.65,
+      "pitchVariation": 0.01,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Armas/MinigunSpin.wav",
+          "sourceWindow": [
+            1.79,
+            2.19
+          ],
+          "seconds": 0.4
+        }
+      ]
+    },
+    {
+      "sound": "Minigun",
+      "source": "armas/Minigun_Sound_Test_SFM.wav",
+      "sourceSha256": "fba379e5091e89a58b61399ac618297eaece51a550cc2d07fa81ed1733b2d1dc",
+      "gain": 0.71,
+      "volume": 0.72,
+      "pitchVariation": 0.015,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Armas/Minigun_01.wav",
+          "sourceWindow": [
+            2.22,
+            2.51
+          ],
+          "seconds": 0.29
+        },
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Armas/Minigun_02.wav",
+          "sourceWindow": [
+            2.6,
+            2.89
+          ],
+          "seconds": 0.29
+        },
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Armas/Minigun_03.wav",
+          "sourceWindow": [
+            3.2,
+            3.49
+          ],
+          "seconds": 0.29
+        }
+      ]
+    },
+    {
+      "sound": "PoisonHiss",
+      "source": "explosivos e armadilhas/ARMADILHA GAZ VENENO.wav",
+      "sourceSha256": "8c78642377a25c6dba19112c7dfb24214f20082a550bf22ea3590755b57314e9",
+      "gain": 0.68592,
+      "volume": 0.65,
+      "pitchVariation": 0.025,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/ExplosivosArmadilhas/PoisonHiss.wav",
+          "sourceWindow": [
+            0.47,
+            2.1
+          ],
+          "seconds": 1.63
+        }
+      ]
+    },
+    {
+      "sound": "MineArm",
+      "source": "explosivos e armadilhas/ARMAR MINA.wav",
+      "sourceSha256": "1d39b2206ef0f15a741ed755244a7109fb6db255c8ce09ba3f9180e22763cfdb",
+      "gain": 0.63,
+      "volume": 0.65,
+      "pitchVariation": 0.015,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/ExplosivosArmadilhas/MineArm.wav",
+          "sourceWindow": [
+            0.06,
+            0.26
+          ],
+          "seconds": 0.2
+        }
+      ]
+    },
+    {
+      "sound": "Explosion",
+      "source": "explosivos e armadilhas/EXPLOSAO.wav",
+      "sourceSha256": "57d5c69f13d8471d1edce07178a2713c6caf986cb947d80b67e49b88e3c8a0ef",
+      "gain": 0.71,
+      "volume": 0.72,
+      "pitchVariation": 0.035,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/ExplosivosArmadilhas/Explosion.wav",
+          "sourceWindow": [
+            0.14,
+            3.5
+          ],
+          "seconds": 3.36
+        }
+      ]
+    },
+    {
+      "sound": "Hit",
+      "source": "impactos e combates/ACERTO NO CORPO.wav",
+      "sourceSha256": "23afdfd14426bfb1f62cf7ad594514a07480361525bb614ece853ecebf139f9b",
+      "gain": 0.89054,
+      "volume": 0.65,
+      "pitchVariation": 0,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/ImpactosCombate/Hit.wav",
+          "sourceWindow": [
+            0.11,
+            0.5
+          ],
+          "seconds": 0.39
+        }
+      ]
+    },
+    {
+      "sound": "Crate",
+      "source": "impactos e combates/CAIXA A PARTIR.wav",
+      "sourceSha256": "5877955f58d1173d1bf27453581b863efaf5f7c9264cef42e86b37601e2b95fd",
+      "gain": 0.90866,
+      "volume": 0.75,
+      "pitchVariation": 0.04,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/ImpactosCombate/Crate.wav",
+          "sourceWindow": [
+            0.05,
+            0.85
+          ],
+          "seconds": 0.8
+        }
+      ]
+    },
+    {
+      "sound": "Kill",
+      "source": "impactos e combates/ELIMINACAO.wav",
+      "sourceSha256": "bc46d65da33205eb48e51d4a1dc221a3655aa406e0aa19abc5b7a6e739001bb1",
+      "gain": 0.56,
+      "volume": 0.65,
+      "pitchVariation": 0,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/ImpactosCombate/Kill.wav",
+          "sourceWindow": [
+            0,
+            2.3
+          ],
+          "seconds": 2.3
+        }
+      ]
+    },
+    {
+      "sound": "HeadHit",
+      "source": "impactos e combates/HEADSHOT.wav",
+      "sourceSha256": "89768839257c6c2d1e2ac0fe02ddbf0cf5f78be6fe0573636dfac98ff532a1d0",
+      "gain": 0.91822,
+      "volume": 0.72,
+      "pitchVariation": 0,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/ImpactosCombate/HeadHit.wav",
+          "sourceWindow": [
+            0.05,
+            0.52
+          ],
+          "seconds": 0.47
+        }
+      ]
+    },
+    {
+      "sound": "FatalShot",
+      "source": "impactos e combates/TIRO FATAL.wav",
+      "sourceSha256": "ff5b4822d844ee8ad900d442967459706365382a97fa6e8eba12bdd59d68f54a",
+      "gain": 0.77704,
+      "volume": 0.85,
+      "pitchVariation": 0.01,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/ImpactosCombate/FatalShot.wav",
+          "sourceWindow": [
+            0.21,
+            1.18
+          ],
+          "seconds": 0.97
+        }
+      ]
+    },
+    {
+      "sound": "Empty",
+      "source": "manuseamento/GATILHO SEM MUNICAO.wav",
+      "sourceSha256": "010529b91e187638d764ae4fb210d8ca6332b96437455a4c0b1f1fd274428138",
+      "gain": 0.95372,
+      "volume": 0.65,
+      "pitchVariation": 0.015,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Manuseamento/Empty.wav",
+          "sourceWindow": [
+            0.1,
+            0.28
+          ],
+          "seconds": 0.18
+        }
+      ]
+    },
+    {
+      "sound": "Reload",
+      "source": "manuseamento/RECARGA.wav",
+      "sourceSha256": "b8f9bef1049fa043a393937298cd6ca3ecdae8fe89d50e59db36c837da810965",
+      "gain": 0.73921,
+      "volume": 0.6,
+      "pitchVariation": 0.015,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Manuseamento/Reload.wav",
+          "sourceWindow": [
+            0.46,
+            1.7
+          ],
+          "seconds": 1.24
+        }
+      ]
+    },
+    {
+      "sound": "Bow",
+      "source": "outros ataques/ARCO E FLECHA.wav",
+      "sourceSha256": "fe0d94f875336f7ccf6befd47c89bcc83b35f86c65bb84d1d5c4b6b2a769f75b",
+      "gain": 0.64333,
+      "volume": 0.8,
+      "pitchVariation": 0.03,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/OutrosAtaques/Bow.wav",
+          "sourceWindow": [
+            0.01,
+            0.7
+          ],
+          "seconds": 0.69
+        }
+      ]
+    },
+    {
+      "sound": "Melee",
+      "source": "outros ataques/GOLPE DE CORPO.wav",
+      "sourceSha256": "c30b66974f189e67fe8adf27b449a88ffd11d46d17eff60eca1bc315649c2ebe",
+      "gain": 0.64343,
+      "volume": 0.8,
+      "pitchVariation": 0.04,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/OutrosAtaques/Melee.wav",
+          "sourceWindow": [
+            0.09,
+            0.44
+          ],
+          "seconds": 0.35
+        }
+      ]
+    },
+    {
+      "sound": "Lob",
+      "source": "outros ataques/Grenade_Sound_Effect_Free_Fire_Whatsapp_Status_Grenade_Bomb_Sound_Effect_shorts.wav",
+      "sourceSha256": "e8a5714beea3b2d778d7fba94132da48c584df05a03c88a6b0cbe62a68fa6a78",
+      "gain": 0.68259,
+      "volume": 0.75,
+      "pitchVariation": 0.03,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/OutrosAtaques/Lob.wav",
+          "sourceWindow": [
+            0.15,
+            0.45
+          ],
+          "seconds": 0.3
+        }
+      ]
+    },
+    {
+      "sound": "Spray",
+      "source": "outros ataques/SPRAY.wav",
+      "sourceSha256": "9818d1c79255e54daeb8f61abc7a87b9af3dfa81fafd46131013226c66b0fb76",
+      "gain": 0.63002,
+      "volume": 0.75,
+      "pitchVariation": 0.025,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/OutrosAtaques/Spray.wav",
+          "sourceWindow": [
+            0.02,
+            0.48
+          ],
+          "seconds": 0.46
+        }
+      ]
+    },
+    {
+      "sound": "Step",
+      "source": "personagem/Footsteps_Grass_Sound_Effect_HD.wav",
+      "sourceSha256": "0b3e58c2cd9bd78a91aec809c55336001295363454dca95813570d0b6ee1564d",
+      "gain": 1.48355,
+      "volume": 0.85,
+      "pitchVariation": 0.06,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Personagem/Step_01.wav",
+          "sourceWindow": [
+            0.08,
+            0.36
+          ],
+          "seconds": 0.28
+        },
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Personagem/Step_02.wav",
+          "sourceWindow": [
+            0.7,
+            0.98
+          ],
+          "seconds": 0.28
+        },
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Personagem/Step_03.wav",
+          "sourceWindow": [
+            1.32,
+            1.6
+          ],
+          "seconds": 0.28
+        },
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Personagem/Step_04.wav",
+          "sourceWindow": [
+            1.96,
+            2.24
+          ],
+          "seconds": 0.28
+        },
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Personagem/Step_05.wav",
+          "sourceWindow": [
+            2.62,
+            2.9
+          ],
+          "seconds": 0.28
+        },
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Personagem/Step_06.wav",
+          "sourceWindow": [
+            2.96,
+            3.2
+          ],
+          "seconds": 0.24
+        },
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Personagem/Step_07.wav",
+          "sourceWindow": [
+            3.32,
+            3.6
+          ],
+          "seconds": 0.28
+        },
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Personagem/Step_08.wav",
+          "sourceWindow": [
+            3.98,
+            4.27
+          ],
+          "seconds": 0.29
+        }
+      ]
+    },
+    {
+      "sound": "Death",
+      "source": "personagem/MORTE.wav",
+      "sourceSha256": "7689147fe695cbed26925cf49400017877b74080915fc8fb4d622b3d00355058",
+      "gain": 5.50062,
+      "volume": 0.8,
+      "pitchVariation": 0.025,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Personagem/Death.wav",
+          "sourceWindow": [
+            0.06,
+            1.5
+          ],
+          "seconds": 1.44
+        }
+      ]
+    },
+    {
+      "sound": "Hurt",
+      "source": "personagem/REACAO DOR.wav",
+      "sourceSha256": "12c9a0969a6b04b0696748c6bcbfd1c39dc6e98dddb911ce07067e4425e358b5",
+      "gain": 1.04529,
+      "volume": 0.7,
+      "pitchVariation": 0.03,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Personagem/Hurt.wav",
+          "sourceWindow": [
+            0.16,
+            0.65
+          ],
+          "seconds": 0.49
+        }
+      ]
+    },
+    {
+      "sound": "Unlock",
+      "source": "recompensa/DESBLOQUEAR.wav",
+      "sourceSha256": "fd722453b63e6c7b8979382c113cb2eba2b02797816a70638ba33e1b8f330699",
+      "gain": 1.12127,
+      "volume": 0.75,
+      "pitchVariation": 0,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Recompensas/Unlock.wav",
+          "sourceWindow": [
+            0.08,
+            0.65
+          ],
+          "seconds": 0.57
+        }
+      ]
+    },
+    {
+      "sound": "Reward",
+      "source": "recompensa/RECEBER RECOMPENSA.wav",
+      "sourceSha256": "6d505190d1dc92e52fd05f718fbe167bc865068b8429c3cf9f658fe4876b0bab",
+      "gain": 1.1483,
+      "volume": 0.7,
+      "pitchVariation": 0,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Recompensas/Reward.wav",
+          "sourceWindow": [
+            0.05,
+            0.44
+          ],
+          "seconds": 0.39
+        }
+      ]
+    },
+    {
+      "sound": "LevelUp",
+      "source": "recompensa/SUBIR NIVEL.wav",
+      "sourceSha256": "cdcdafe08c4b088c5ac32bb7ebb6d4f0b5b872bf54710a4d83c16e1d70bb1e3c",
+      "gain": 1.10449,
+      "volume": 0.8,
+      "pitchVariation": 0,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Recompensas/LevelUp.wav",
+          "sourceWindow": [
+            0.17,
+            0.56
+          ],
+          "seconds": 0.39
+        }
+      ]
+    }
+  ]
+}

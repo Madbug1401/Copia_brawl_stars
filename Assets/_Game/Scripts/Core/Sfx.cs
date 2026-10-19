@@ -44,25 +44,28 @@ namespace FPSLAN
         PetHappy,
         PetAlert,
         Evolve,
+        UiClick,
         Count
     }
 
     /// <summary>
-    /// Sons placeholder gerados por código (sem assets). Substituir por clips reais na fase de game feel.
+    /// Clips do catálogo em Resources/Audio, com variações e níveis por efeito.
+    /// Os sons ainda sem gravação mantêm o fallback gerado por código.
     /// </summary>
     public static class Sfx
     {
         const int Rate = 44100;
 
         static AudioClip[] s_Clips;
-        static AudioSource s_2D;
-        static AudioSource[] s_3D;
-        static int s_Next;
+        static AudioSource[] s_2D, s_3D;
+        static SfxCatalog.Cue[] s_Imported;
+        static int[] s_LastVariant;
+        static int s_Next2D, s_Next3D;
         static readonly System.Random s_Rng = new System.Random(1234);
 
         static void Init()
         {
-            if (s_Clips != null && s_2D != null) return;
+            if (s_Clips != null && s_2D != null && s_2D[0] != null) return;
 
             s_Clips = new AudioClip[(int)Sound.Count];
             // Revólver: estalo seco + "thump" grave
@@ -127,45 +130,111 @@ namespace FPSLAN
             s_Clips[(int)Sound.PetAlert] = Make("petalert", 0.5f, t =>
                 (Sq(t, t < 0.12f ? 700f : (t < 0.22f ? 1050f : 820f)) * 0.25f + Sin(t, t < 0.22f ? 1400f : 1640f) * 0.3f) * Env(t, 0.5f, 5f) * 0.4f);
             s_Clips[(int)Sound.Evolve] = MakeLow("evolve", 1.0f, t => (Sin(t, 300f + t * 1200f) * 0.5f + Sin(t, 600f + t * 2400f) * 0.2f + Noise() * 0.1f) * Env(t, 1f, 2.5f) * 0.4f, t => 2000f + t * 6000f);
+            // O menu tem um clique curto próprio, independente da recarga real.
+            s_Clips[(int)Sound.UiClick] = MakeLow("uiclick", 0.04f, t => Noise() * Env(t, 0.04f, 120f) * 0.25f, t => 2600f);
+
+            s_Imported = new SfxCatalog.Cue[(int)Sound.Count];
+            s_LastVariant = new int[(int)Sound.Count];
+            for (int i = 0; i < s_LastVariant.Length; i++) s_LastVariant[i] = -1;
+            var catalog = Resources.Load<SfxCatalog>("Audio/SfxCatalog");
+            if (catalog != null && catalog.cues != null)
+                foreach (var cue in catalog.cues)
+                {
+                    if (cue == null || (int)cue.sound < 0 || cue.sound >= Sound.Count || cue.clips == null || cue.clips.Length == 0) continue;
+                    bool valid = true;
+                    foreach (var clip in cue.clips) if (clip == null) { valid = false; break; }
+                    if (!valid) continue;
+                    int index = (int)cue.sound;
+                    s_Imported[index] = cue;
+                    // As gravações substituem os placeholders sem os deixar em memória.
+                    UnityEngine.Object.Destroy(s_Clips[index]);
+                    s_Clips[index] = cue.clips[0];
+                }
 
             var go = new GameObject("[Sfx]");
             UnityEngine.Object.DontDestroyOnLoad(go);
-            s_2D = go.AddComponent<AudioSource>();
-            s_2D.spatialBlend = 0f;
-            s_2D.playOnAwake = false;
+            s_2D = CreatePool(go.transform, "Sfx2D_", 16, false);
+            s_3D = CreatePool(go.transform, "Sfx3D_", 32, true);
+            s_Next2D = s_Next3D = 0;
+        }
 
-            s_3D = new AudioSource[16];
-            for (int i = 0; i < s_3D.Length; i++)
+        static AudioSource[] CreatePool(Transform parent, string prefix, int count, bool spatial)
+        {
+            var pool = new AudioSource[count];
+            for (int i = 0; i < count; i++)
             {
-                var c = new GameObject("Sfx3D_" + i);
-                c.transform.SetParent(go.transform);
+                var c = new GameObject(prefix + i);
+                c.transform.SetParent(parent);
                 var src = c.AddComponent<AudioSource>();
-                src.spatialBlend = 1f;
+                src.spatialBlend = spatial ? 1f : 0f;
                 src.rolloffMode = AudioRolloffMode.Linear;
                 src.minDistance = 2f;
                 src.maxDistance = 45f;
+                src.dopplerLevel = 0f;
+                src.priority = spatial ? 128 : 64;
                 src.playOnAwake = false;
-                s_3D[i] = src;
+                pool[i] = src;
             }
+            return pool;
+        }
+
+        static AudioClip SelectClip(Sound sound, out float gain, out float pitch)
+        {
+            int index = (int)sound;
+            var cue = s_Imported[index];
+            gain = cue != null ? Mathf.Clamp01(cue.volume) : 1f;
+            float variation = cue != null ? cue.pitchVariation : 0f;
+            pitch = 1f + ((float)s_Rng.NextDouble() * 2f - 1f) * variation;
+            if (cue == null) return s_Clips[index];
+            int count = cue.clips.Length;
+            int next = s_LastVariant[index] < 0 ? s_Rng.Next(count) : s_Rng.Next(Mathf.Max(1, count - 1));
+            if (count > 1 && next >= s_LastVariant[index] && s_LastVariant[index] >= 0) next++;
+            s_LastVariant[index] = next;
+            return cue.clips[next];
+        }
+
+        static AudioSource NextVoice(AudioSource[] pool, ref int next)
+        {
+            // Usar primeiro uma voz livre. Se o pool encher, parar a voz antiga
+            // antes de a mover: o som anterior nunca salta para a posição do novo.
+            for (int i = 0; i < pool.Length; i++)
+            {
+                int index = (next + i) % pool.Length;
+                if (pool[index].isPlaying) continue;
+                next = (index + 1) % pool.Length;
+                return pool[index];
+            }
+            var src = pool[next];
+            next = (next + 1) % pool.Length;
+            src.Stop();
+            return src;
         }
 
         public static void Play2D(Sound sound, float volume = 1f)
         {
+            if ((int)sound < 0 || sound >= Sound.Count || volume <= 0f) return;
             Init();
-            var clip = s_Clips[(int)sound];
-            if (clip != null) s_2D.PlayOneShot(clip, volume);
+            var clip = SelectClip(sound, out float gain, out float pitch);
+            if (clip == null) return;
+            var src = NextVoice(s_2D, ref s_Next2D);
+            src.clip = clip;
+            src.volume = Mathf.Clamp01(volume * gain);
+            src.pitch = pitch;
+            src.Play();
         }
 
         public static void PlayAt(Sound sound, Vector3 position, float volume = 1f)
         {
+            if ((int)sound < 0 || sound >= Sound.Count || volume <= 0f) return;
             Init();
-            var clip = s_Clips[(int)sound];
+            var clip = SelectClip(sound, out float gain, out float pitch);
             if (clip == null) return;
-            var src = s_3D[s_Next];
-            s_Next = (s_Next + 1) % s_3D.Length;
+            var src = NextVoice(s_3D, ref s_Next3D);
             src.transform.position = position;
-            src.pitch = 0.95f + (float)s_Rng.NextDouble() * 0.1f;
-            src.PlayOneShot(clip, volume);
+            src.clip = clip;
+            src.volume = Mathf.Clamp01(volume * gain);
+            src.pitch = pitch;
+            src.Play();
         }
 
         static AudioClip Make(string name, float duration, Func<float, float> f)

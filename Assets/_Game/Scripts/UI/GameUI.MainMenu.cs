@@ -226,7 +226,12 @@ namespace FPSLAN
 
             DrawProgressionHub();
 
-            if (m_MLocalT > 0.001f) DrawMenuLocalPanel(new Rect(panel.xMax + 14 * K, panel.y + 150 * K, 350 * K, 352 * K));
+            if (m_MLocalT > 0.001f)
+            {
+                float localH = LocalPanelHeight();
+                float localY = Mathf.Max(panel.y, panel.y + 150 * K - Mathf.Max(0f, localH - 352 * K));
+                DrawMenuLocalPanel(new Rect(panel.xMax + 14 * K, localY, 350 * K, localH));
+            }
         }
 
         void ActivateMainItem(int i)
@@ -270,7 +275,32 @@ namespace FPSLAN
             MText(new Rect(x, y, w, 22 * K), "OR", m_MT14, MMuted);
             y += 34 * K;
 
-            MText(new Rect(x, y, w, 20 * K), "JOIN A SERVER", m_MT14, MWhite, TextAnchor.MiddleLeft);
+            // Servidores encontrados automaticamente na rede (LanDiscovery): basta clicar.
+            MText(new Rect(x, y, w, 20 * K), "SERVERS ON YOUR NETWORK", m_MT14, MWhite, TextAnchor.MiddleLeft);
+            y += 26 * K;
+            var found = LanDiscovery.Servers;
+            if (found.Count == 0)
+            {
+                int dots = 1 + (int)(Time.unscaledTime * 2f) % 3;
+                MText(new Rect(x, y, w, 40 * K), "Searching" + new string('.', dots) + "  Ask the host to press CREATE SERVER.", m_MT12, MMuted, TextAnchor.UpperLeft, true);
+                y += 44 * K;
+            }
+            else
+            {
+                for (int i = 0; i < found.Count && i < MaxLocalServerRows; i++)
+                {
+                    var sv = found[i];
+                    string label = sv.HostName + " · " + sv.Map + " · " + sv.Mode + " · " + sv.Players + "/" + sv.MaxPlayers;
+                    if (!sv.SameVersion) label += " · OTHER BUILD";
+                    var kind = sv.IsFull ? MBtn.Muted : (sv.SameVersion ? MBtn.Primary : MBtn.Normal);
+                    if (MenuButton(new Rect(x, y, w, 38 * K), label, 1110 + i, kind, false, m_MT12) == MClick.Clicked)
+                        JoinDiscoveredServer(sv);
+                    y += 44 * K;
+                }
+            }
+            y += 4 * K;
+
+            MText(new Rect(x, y, w, 20 * K), "OR JOIN BY CODE", m_MT14, MWhite, TextAnchor.MiddleLeft);
             y += 26 * K;
             m_Ip = MenuField(new Rect(x, y, w, 46 * K), "mm_code", m_Ip, "Server code (host IP)", 40);
             y += 58 * K;
@@ -279,14 +309,47 @@ namespace FPSLAN
             y += 56 * K;
 
             string status = m_MLocalError;
+            if (string.IsNullOrEmpty(status) && !string.IsNullOrEmpty(ConnectionManager.FirewallMessage)) status = ConnectionManager.FirewallMessage;
             if (string.IsNullOrEmpty(status) && ConnectionManager.Instance != null) status = ConnectionManager.Instance.Status;
             if (!string.IsNullOrEmpty(status))
                 MText(new Rect(x - 6 * K, y, w + 12 * K, 40 * K), status, m_MT12, new Color(1f, 0.75f, 0.65f), TextAnchor.UpperCenter, true);
+            y += 44 * K;
+
+            // Corrige a causa mais comum: a firewall do Windows a bloquear o jogo (rede "Pública" ou "Cancelar" no aviso).
+            if (ConnectionManager.CanFixFirewall)
+            {
+                string fw = ConnectionManager.FixingFirewall ? "FIXING FIREWALL..." : "FIX FIREWALL";
+                if (MenuButton(new Rect(r.x + (r.width - 200 * K) / 2f, y, 200 * K, 34 * K), fw, 1103, MBtn.Normal, false, m_MT12) == MClick.Clicked)
+                {
+                    m_MLocalError = null;
+                    ConnectionManager.FixFirewall();
+                }
+            }
 
             m_MAlpha = oldA;
         }
 
         string LocalCode() => m_LocalIps != null && m_LocalIps.Count > 0 ? m_LocalIps[0] : "127.0.0.1";
+
+        const int MaxLocalServerRows = 3;
+
+        float LocalPanelHeight()
+        {
+            int rows = Mathf.Clamp(LanDiscovery.Servers.Count, 0, MaxLocalServerRows);
+            float list = rows == 0 ? 44f : rows * 44f;
+            float firewall = ConnectionManager.CanFixFirewall ? 44f : 0f;
+            return (352f + 60f + list + firewall) * K;
+        }
+
+        /// <summary>Servidor encontrado na rede: preenche o código e passa à escolha de personagem.</summary>
+        void JoinDiscoveredServer(LanDiscovery.ServerInfo sv)
+        {
+            if (sv.IsFull) { m_MLocalError = sv.HostName + "'s server is full."; return; }
+            m_Ip = sv.Code;
+            TryOpenLocalJoin();
+            if (!sv.SameVersion)
+                MenuNotice("Warning: " + sv.HostName + " has a different build of the game. If joining fails, use the same build on both PCs.");
+        }
 
         /// <summary>Valida o código e passa à escolha de personagem (a ligação só acontece no fim).</summary>
         void TryOpenLocalJoin()
@@ -294,7 +357,7 @@ namespace FPSLAN
             m_MLocalError = null;
             var code = (m_Ip ?? "").Trim();
             if (code.Length == 0) { m_MLocalError = "Enter the server code (host IP, e.g. 192.168.1.20)."; GUI.FocusControl("mm_code"); return; }
-            if (code != "localhost" && !System.Net.IPAddress.TryParse(code, out _))
+            if (!ConnectionManager.TryParseCode(code, out _, out _))
             { m_MLocalError = "Invalid code. Use the code shown on the host's screen."; GUI.FocusControl("mm_code"); return; }
             m_Ip = code;
             m_MLocalOpen = false;

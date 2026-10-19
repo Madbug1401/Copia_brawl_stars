@@ -42,3 +42,7 @@ crashlytics-build.properties
 # --- Capturas temporárias ---
 /Assets/Screenshots/
 /Assets/Screenshots.meta
+
+# Relatorios exportados e copias locais de testes (nao fazem parte do jogo)
+/output/
+/tmp/

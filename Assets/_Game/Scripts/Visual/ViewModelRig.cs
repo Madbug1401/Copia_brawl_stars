@@ -672,7 +672,8 @@ namespace FPSLAN
                             {
                                 m_Shell.gameObject.SetActive(false);
                                 m_Pump = 0f; // bombeia depois de meter o cartucho
-                                Sfx.Play2D(Sound.Reload, 0.5f);
+                                // PlayerCombat já toca a recarga desta carga.
+                                // A animação não deve repetir o clip completo.
                             }
                             m_GunR.localRotation *= Quaternion.Euler(0f, 0f, -18f * Mathf.Clamp01((1f - t) * 2f));
                         }
