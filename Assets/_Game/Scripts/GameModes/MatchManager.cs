@@ -232,6 +232,9 @@ namespace FPSLAN
 
             // Gemas e temporizadores do Pique-Gemas recomeçam do zero em cada partida
             if (GemGrabManager.Instance != null) GemGrabManager.Instance.ServerResetRound();
+            // Fogo: tempestade de cinza e jatos de lava recomeçam com a partida
+            if (StormManager.Instance != null) StormManager.Instance.ServerRestart();
+            if (LavaJets.Instance != null) LavaJets.Instance.ServerRestart();
 
             if (Mode.Value == GameMode.Knockout)
                 ServerStartKnockoutRound();

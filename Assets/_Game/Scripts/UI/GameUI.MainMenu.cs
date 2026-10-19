@@ -56,6 +56,7 @@ namespace FPSLAN
             new MenuMode("IT TAKES TWO", "The Pelourinho Heist · Lince & Riot", null, "ItTakesTwo", "Coop"),
             new MenuMode("DEATHMATCH", "Free for all", null, "Deathmatch"),
             new MenuMode("GEM RUSH", "Collect and hold the gems", "GEM RUSH is coming soon.", "GemGrab", "GemRush", "PiqueGema"),
+            new MenuMode("SHOWDOWN", "Last one standing · ash storm on Fogo", null, "Showdown"),
         };
 
         struct MenuMap
@@ -78,7 +79,7 @@ namespace FPSLAN
             new MenuMap("santiago", true, new Vector2(0.606f, 0.306f), 2.2f, "15°05'N  23°37'W"),
             new MenuMap("sal", true, new Vector2(0.775f, 0.772f), 2.7f, "16°45'N  22°57'W"),
             new MenuMap("boavista", false, new Vector2(0.8125f, 0.502f), 2.5f, "16°06'N  22°49'W"),
-            new MenuMap("fogo", false, new Vector2(0.3125f, 0.264f), 2.8f, "14°55'N  24°23'W"),
+            new MenuMap("fogo", true, new Vector2(0.3125f, 0.264f), 2.8f, "14°55'N  24°23'W"),
         };
 
         const string KeyMenuMap = "fpslan.map";
@@ -412,16 +413,17 @@ namespace FPSLAN
             {
                 MText(title, (step++) + "  GAME MODE", m_MT40, MWhite, TextAnchor.MiddleLeft);
                 DrawTechLine(VL(58, 124, 360, 2), false);
+                float modeStep = s_Modes.Length > 3 ? 54f : 70f, modeH = s_Modes.Length > 3 ? 46f : 58f;
                 for (int i = 0; i < s_Modes.Length; i++)
                 {
-                    var r = VL(83, 150 + i * 70, 324, 58);
+                    var r = VL(83, 150 + i * modeStep, 324, modeH);
                     r.x -= slide;
                     bool sel = m_MModeSel == i;
                     var res = MenuButton(r, s_Modes[i].title, 2000 + i, MBtn.Normal, sel, m_MT20);
                     if (res == MClick.Clicked) SelectMode(i, true);
                 }
                 var mode = s_Modes[Mathf.Clamp(m_MModeSel, 0, s_Modes.Length - 1)];
-                MText(VL(83, 362, 324, 24), mode.subtitle, m_MT14, MMuted, TextAnchor.MiddleLeft);
+                MText(VL(83, 150 + s_Modes.Length * modeStep + 2, 324, 24), mode.subtitle, m_MT14, MMuted, TextAnchor.MiddleLeft);
             }
             else
             {
@@ -750,7 +752,7 @@ namespace FPSLAN
             if (NM != null && NM.IsListening) return;
             if (ConnectionManager.Instance == null) { MenuNotice("Network system not found in this scene."); return; }
             if (MatchManager.MenuSelectedMode == GameMode.GemGrab && !ConnectionManager.SupportsGemGrab(SelectedMapKey))
-            { MenuNotice("GEM RUSH is available in Santiago and Sal. Choose one of these islands."); return; }
+            { MenuNotice("GEM RUSH is available in Santiago, Sal and Fogo. Choose one of these islands."); return; }
             if (MatchManager.MenuSelectedMode == GameMode.ItTakesTwo) MatchManager.MenuSelectedCompetitive = false;
             SaveMenuPrefs();
             if (MatchManager.MenuSelectedMode == GameMode.ItTakesTwo)

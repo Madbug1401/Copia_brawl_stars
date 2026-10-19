@@ -48,7 +48,7 @@ namespace FPSLAN
                     }
         }
 
-        public static bool SupportsGemGrab(string mapKey) => mapKey == "santiago" || mapKey == "sal";
+        public static bool SupportsGemGrab(string mapKey) => mapKey == "santiago" || mapKey == "sal" || mapKey == "fogo";
 
         public bool HostMap(string mapKey, ushort port = DefaultPort)
         {
@@ -60,11 +60,12 @@ namespace FPSLAN
                 case "pradaria": scene = "Arena"; break;
                 case "santiago": scene = "CidadeVelha"; break;
                 case "sal": scene = "Buracona"; break;
+                case "fogo": scene = "Fogo"; break;
                 default: Status = "This map is not available yet."; return false;
             }
             if (MatchManager.MenuSelectedMode == GameMode.GemGrab && !SupportsGemGrab(mapKey))
             {
-                Status = "GEM RUSH is available in Santiago and Sal.";
+                Status = "GEM RUSH is available in Santiago, Sal and Fogo.";
                 return false;
             }
             if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == scene)
@@ -137,7 +138,7 @@ namespace FPSLAN
                 return HostMap("santiago", port);
             if (MatchManager.MenuSelectedMode == GameMode.GemGrab && GemGrabManager.Instance == null)
             {
-                Status = "GEM RUSH requires a map with a gem emitter (Santiago or Sal).";
+                Status = "GEM RUSH requires a map with a gem emitter (Santiago, Sal or Fogo).";
                 return false;
             }
 
