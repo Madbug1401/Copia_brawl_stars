@@ -95,6 +95,8 @@ namespace FPSLAN
             MatchManager.MenuSelectedCompetitive = PlayerPrefs.GetInt("fpslan.competitive", 0) == 1;
             // Ecrãs de progressão (perfil, personagens, skins, pets, missões, recompensas)
             if (GetComponent<ProgressionUI>() == null) gameObject.AddComponent<ProgressionUI>();
+            // armas, mãos e projéteis da 1.ª pessoa carregados no menu (não no 1.º spawn)
+            StartCoroutine(ViewModelRig.PrewarmRoutine());
         }
 
         void OnDestroy()

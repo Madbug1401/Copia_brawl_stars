@@ -51,7 +51,16 @@ namespace FPSLAN
         public PlayerMotor Motor { get; private set; }
         public PlayerHealth Health { get; private set; }
         public PlayerCombat Combat { get; private set; }
-        public PlayerVisuals Visuals { get; private set; }
+        /// <summary>
+        /// Visual do jogador. Devolve um null "verdadeiro" depois de o componente ser destruído, para que os muitos
+        /// 'Visuals?.X()' do código não chamem métodos num objeto destruído (o '?.' não vê o null falso do Unity).
+        /// </summary>
+        public PlayerVisuals Visuals
+        {
+            get => m_Visuals != null ? m_Visuals : null;
+            private set => m_Visuals = value;
+        }
+        PlayerVisuals m_Visuals;
         public BotBrain Bot { get; private set; }
         public StatusEffects Status { get; private set; }
 

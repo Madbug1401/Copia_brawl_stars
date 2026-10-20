@@ -52,6 +52,8 @@ namespace FPSLAN
         float m_Hurt, m_Flash;
         float m_Draw = 1f;
         float m_HideHeldUntil;
+        /// <summary>Dinamite: mão que lança a seguir (0 = direita) e a que está a lançar agora — alternam.</summary>
+        int m_NextThrowSide, m_ThrowSide;
         float m_Pump;
         float m_Pop = 1f;
         float m_SuperPose;
@@ -223,9 +225,11 @@ namespace FPSLAN
             Root.localRotation = Quaternion.Euler(-11f * hurtCurve - 4f * m_BodyKick, 6f * hurtCurve, 0f);
 
             // explosivos e arco: a arma "na mão" desaparece por instantes depois de lançar
+            // (dinamite: só a mão que lançou fica vazia)
             bool held = Time.time >= m_HideHeldUntil;
-            SetHeldVisible(m_WeaponR, held);
-            SetHeldVisible(m_WeaponL, held);
+            bool tnt = Style == RigStyle.DualExplosives;
+            SetHeldVisible(m_WeaponR, held || (tnt && m_ThrowSide != 0));
+            SetHeldVisible(m_WeaponL, held || (tnt && m_ThrowSide == 0));
         }
 
         void Create(BrawlerDefinition b, Transform parent, ShadowCastingMode shadows, int layer, SkinDefinition skin)
@@ -516,6 +520,8 @@ namespace FPSLAN
             if (m_SuperMode && m_Minigun != null) return m_Minigun.Muzzle(0);
             bool dual = m_WeaponL != null && m_WeaponR != null;
             WeaponModel w;
+            // dinamite: o 1.º disparo sai antes de OnAttack, por isso usa a mão "seguinte"
+            if (dual && Style == RigStyle.DualExplosives) shotIndex += m_NextThrowSide;
             if (dual) w = (Mathf.Abs(shotIndex) % 2 == 0) ? m_WeaponR : m_WeaponL;
             else w = m_WeaponR ?? m_WeaponL;
             if (w == null)
@@ -547,6 +553,8 @@ namespace FPSLAN
                     break;
                 case RigStyle.DualExplosives:
                     m_HideHeldUntil = Time.time + 0.7f;
+                    m_ThrowSide = m_NextThrowSide;
+                    m_NextThrowSide ^= 1;
                     break;
                 case RigStyle.Shotgun:
                 case RigStyle.Sniper:
@@ -827,13 +835,15 @@ namespace FPSLAN
 
                 case RigStyle.DualExplosives:
                 {
-                    float throwR = attacking ? ThrowCurve(atk) : 0f;
-                    float throwL = attacking ? ThrowCurve(Mathf.Clamp01((m_AttackT - 0.08f) / m_AttackDur)) : 0f;
-                    m_ArmR.localRotation = Quaternion.Euler(aim + 30f + throwR + idleArm, -12f, 0f);
-                    m_ArmL.localRotation = Quaternion.Euler(aim + 30f + throwL - idleArm, 12f, 0f);
+                    // lança com uma mão de cada vez (alternam); a outra acompanha um pouco
+                    float throwMain = attacking ? ThrowCurve(atk) : 0f;
+                    float throwOther = throwMain * 0.25f;
+                    bool rightThrows = m_ThrowSide == 0;
+                    m_ArmR.localRotation = Quaternion.Euler(aim + 30f + (rightThrows ? throwMain : throwOther) + idleArm, -12f, 0f);
+                    m_ArmL.localRotation = Quaternion.Euler(aim + 30f + (rightThrows ? throwOther : throwMain) - idleArm, 12f, 0f);
                     bool hide = time < m_HideHeldUntil && time > m_HideHeldUntil - 0.55f;
-                    SetHeldVisible(m_WeaponR, !hide);
-                    SetHeldVisible(m_WeaponL, !hide);
+                    SetHeldVisible(m_WeaponR, !(hide && rightThrows));
+                    SetHeldVisible(m_WeaponL, !(hide && !rightThrows));
                     break;
                 }
 
