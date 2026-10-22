@@ -17,6 +17,8 @@ Nao e preciso estar na mesma rede, nem abrir portas, nem saber IPs.
 4. Quem cria a sala e o anfitriao: se sair, a sala fecha para todos.
    A latencia depende da distancia ao servidor do Unity Relay (Europa),
    por isso nota-se mais do que na LAN.
+5. O ping aparece no canto superior esquerdo (verde < 80 ms, amarelo
+   < 150 ms, vermelho acima) e na coluna "Ping" do placar (Tab).
 
 JOGAR EM REDE LOCAL (LAN)
 1. Todos os PCs ligados a MESMA rede Wi-Fi/cabo e com a MESMA build do jogo
@@ -72,6 +74,9 @@ Recebe 6 unidades iniciais e 2 por partida valida concluida. No menu PETS,
 
 DEFINICOES
 No menu principal ou durante a pausa, abre DEFINICOES.
+GRAPHICS: escolher a qualidade (VERY LOW a ULTRA), a resolucao e ecra
+inteiro/janela. Em PCs fracos, VERY LOW ou LOW e uma resolucao mais baixa
+(ex.: 1280 x 720) dao muito mais FPS. "SHOW FPS IN GAME" mostra os FPS.
 As abas TECLAS, JOGABILIDADE e AUDIO permitem reatribuir controlos,
 ajustar a mira e o volume. O HUD pode ser reposicionado na aba HUD.
 As alteracoes ficam guardadas localmente. REPOR restaura os valores padrao.

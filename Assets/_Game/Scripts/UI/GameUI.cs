@@ -17,6 +17,7 @@ namespace FPSLAN
         const int SettingsTabGameplay = 1;
         const int SettingsTabAudio = 2;
         const int SettingsTabProfile = 3;
+        const int SettingsTabGraphics = 4;
 
         public static bool GameplayInputAllowed => s_Instance != null && s_Instance.m_InGame &&
             !s_Instance.m_Paused && !s_Instance.m_SettingsOpen && !ProgressionUI.IsOpen;
@@ -91,7 +92,7 @@ namespace FPSLAN
             m_LocalIps = ConnectionManager.GetLocalIPv4();
             m_Preview = new BrawlerPreview();
             GameSession.ApplyAudioSettings();
-            if (!Application.isEditor) Screen.fullScreenMode = FullScreenMode.FullScreenWindow;
+            GraphicsOptions.ApplyDisplay();   // resolução e ecrã inteiro/janela escolhidos em SETTINGS → GRAPHICS
             MatchManager.MenuSelectedCompetitive = PlayerPrefs.GetInt("fpslan.competitive", 0) == 1;
             // Ecrãs de progressão (perfil, personagens, skins, pets, missões, recompensas)
             if (GetComponent<ProgressionUI>() == null) gameObject.AddComponent<ProgressionUI>();
@@ -968,6 +969,7 @@ namespace FPSLAN
             DrawSuperButton(me, s);
             DrawHudHeader(me, s);
             DrawHudFeed(s);
+            DrawHudNetwork(s);
             HudLabel(new Rect(22 * s, 16 * s, 360 * s, 22 * s),
                 GameInputSettings.BindingLabel(GameAction.Scoreboard) + " · SCOREBOARD    " +
                 GameInputSettings.BindingLabel(GameAction.Pause) + " · MENU", m_HudSmall, new Color(1, 1, 1, 0.65f));
@@ -1239,7 +1241,7 @@ namespace FPSLAN
 
             Outlined(new Rect(area.x, area.y + 10 * s, w, 40 * s), "SCOREBOARD", m_BigCenter, Gold, 2f);
             float y = area.y + 56 * s;
-            DrawRow(area.x, y, w, "Player", "Brawler", "K", "A", "D", m_Small, Color.clear, Color.white);
+            DrawRow(area.x, y, w, "Player", "Brawler", "K", "A", "D", m_Small, Color.clear, Color.white, "Ping");
             y += 28 * s;
             int rank = 1;
             foreach (var p in players)
@@ -1248,17 +1250,32 @@ namespace FPSLAN
                 var name = (rank++) + ". " + (p.IsBot ? p.DisplayName + " (bot)" : p.DisplayName);
                 var tint = p.Brawler != null ? Color.Lerp(p.Brawler.Tint, Color.white, 0.35f) : Color.white;
                 DrawRow(area.x, y, w, name, p.Brawler != null ? p.Brawler.displayName : "?", p.Kills.Value.ToString(), p.Assists.Value.ToString(),
-                    p.Deaths.Value.ToString(), m_Label, bg, tint);
+                    p.Deaths.Value.ToString(), m_Label, bg, tint, PingLabel(p));
                 y += rowH;
             }
         }
 
-        void DrawRow(float x, float y, float w, string a, string b, string k, string assists, string d, GUIStyle style, Color bg, Color tint)
+        static string PingLabel(PlayerNetwork p)
+        {
+            if (p.IsBot) return "BOT";
+            if (p.OwnerClientId == Unity.Netcode.NetworkManager.ServerClientId) return "HOST";
+            return p.PingMs.Value < 0 ? "-" : p.PingMs.Value.ToString();
+        }
+
+        static Color PingColor(int ms) => ms < 80 ? new Color(0.6f, 1f, 0.6f) : ms < 150 ? new Color(1f, 0.85f, 0.4f) : new Color(1f, 0.5f, 0.45f);
+
+        void DrawRow(float x, float y, float w, string a, string b, string k, string assists, string d, GUIStyle style, Color bg, Color tint, string ping = "")
         {
             float s = Scale;
             if (bg.a > 0f) Panel(new Rect(x + 12 * s, y, w - 24 * s, 36 * s), bg);
             Outlined(new Rect(x + 26 * s, y + 5 * s, w * 0.44f, 30 * s), a, style, Color.white, 1.2f);
-            Outlined(new Rect(x + w * 0.47f, y + 5 * s, w * 0.28f, 30 * s), b, style, tint, 1.2f);
+            Outlined(new Rect(x + w * 0.47f, y + 5 * s, w * 0.19f, 30 * s), b, style, tint, 1.2f);
+            if (!string.IsNullOrEmpty(ping))
+            {
+                int ms;
+                var pc = int.TryParse(ping, out ms) ? PingColor(ms) : new Color(0.75f, 0.8f, 0.9f);
+                Outlined(new Rect(x + w * 0.665f, y + 5 * s, w * 0.09f, 30 * s), ping, style, pc, 1.2f);
+            }
             Outlined(new Rect(x + w * 0.76f, y + 5 * s, 60 * s, 30 * s), k, style, new Color(0.6f, 1f, 0.6f), 1.2f);
             Outlined(new Rect(x + w * 0.84f, y + 5 * s, 60 * s, 30 * s), assists, style, new Color(0.6f, 0.85f, 1f), 1.2f);
             Outlined(new Rect(x + w * 0.92f, y + 5 * s, 60 * s, 30 * s), d, style, new Color(1f, 0.6f, 0.6f), 1.2f);
@@ -1302,6 +1319,7 @@ namespace FPSLAN
             m_Name = GameSession.LocalName;
             m_CapturingBinding = false;
             m_SettingsMessage = null;
+            m_GfxResIndex = -1;
         }
 
         void CloseSettings()
@@ -1373,6 +1391,9 @@ namespace FPSLAN
             if (LayoutButton("AUDIO", m_SettingsTab == SettingsTabAudio ? PanelBlue : new Color(0.22f, 0.24f, 0.34f),
                 GUILayout.Height(40f * s)))
                 ChangeSettingsTab(SettingsTabAudio);
+            if (LayoutButton("GRAPHICS", m_SettingsTab == SettingsTabGraphics ? PanelBlue : new Color(0.22f, 0.24f, 0.34f),
+                GUILayout.Height(40f * s)))
+                ChangeSettingsTab(SettingsTabGraphics);
             GUILayout.EndHorizontal();
 
             if (m_SettingsTab == SettingsTabControls)
@@ -1383,6 +1404,8 @@ namespace FPSLAN
                 DrawAudioSettings(s);
             else if (m_SettingsTab == SettingsTabProfile)
                 DrawProfileSettings(s);
+            else if (m_SettingsTab == SettingsTabGraphics)
+                DrawGraphicsSettings(s);
             GUILayout.EndArea();
         }
 
@@ -1518,6 +1541,98 @@ namespace FPSLAN
             GUILayout.Label("Changes apply immediately and are saved on this device.", m_Tiny);
             if (LayoutButton("RESET VOLUME", new Color(0.4f, 0.46f, 0.6f), GUILayout.Height(38f * s)))
                 GameSession.MasterVolume = 1f;
+        }
+
+        // ------------------------------------------------------------------ GRAPHICS
+
+        int m_GfxResIndex = -1;
+        bool m_GfxWindowed;
+        List<Vector2Int> m_GfxResolutions;
+        GUIStyle m_GfxCenter;
+        GUIStyle GfxCenterStyle => m_GfxCenter != null && m_GfxCenter.fontSize == m_Label.fontSize ? m_GfxCenter
+            : (m_GfxCenter = new GUIStyle(m_Label) { alignment = TextAnchor.MiddleCenter });
+
+        void DrawGraphicsSettings(float s)
+        {
+            if (m_GfxResIndex < 0 || m_GfxResolutions == null)
+            {
+                m_GfxResolutions = GraphicsOptions.AvailableResolutions();
+                m_GfxResIndex = Mathf.Max(0, m_GfxResolutions.IndexOf(GraphicsOptions.SavedResolution));
+                m_GfxWindowed = GraphicsOptions.Windowed;
+            }
+            var off = new Color(0.22f, 0.24f, 0.34f);
+
+            GUILayout.Space(14f * s);
+            GUILayout.Label("QUALITY", m_Small);
+            GUILayout.Label("Lower quality = more FPS on weaker PCs (fewer shadows, lights and effects). Applies immediately.", m_Tiny);
+            GUILayout.Space(4f * s);
+            var names = GraphicsOptions.QualityNames;
+            int current = GraphicsOptions.Quality;
+            GUILayout.BeginHorizontal();
+            for (int i = 0; i < names.Length; i++)
+                if (LayoutButton(names[i].ToUpperInvariant(), i == current ? PanelBlue : off, GUILayout.Height(38f * s)))
+                    GraphicsOptions.Quality = i;
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(18f * s);
+            GUILayout.Label("RESOLUTION", m_Small);
+            GUILayout.Label("Lower resolution = more FPS. The image is stretched to fill the screen.", m_Tiny);
+            GUILayout.Space(4f * s);
+            m_GfxResIndex = Mathf.Clamp(m_GfxResIndex, 0, m_GfxResolutions.Count - 1);
+            var res = m_GfxResolutions[m_GfxResIndex];
+            var native = GraphicsOptions.Native;
+            GUILayout.BeginHorizontal();
+            if (LayoutButton("<", off, GUILayout.Width(64f * s), GUILayout.Height(40f * s)))
+                m_GfxResIndex = Mathf.Max(0, m_GfxResIndex - 1);
+            GUILayout.Label(res.x + " × " + res.y + (res == native ? "  (native)" : ""), GfxCenterStyle, GUILayout.ExpandWidth(true), GUILayout.Height(40f * s));
+            if (LayoutButton(">", off, GUILayout.Width(64f * s), GUILayout.Height(40f * s)))
+                m_GfxResIndex = Mathf.Min(m_GfxResolutions.Count - 1, m_GfxResIndex + 1);
+            GUILayout.EndHorizontal();
+            GUILayout.Space(6f * s);
+            GUILayout.BeginHorizontal();
+            if (LayoutButton(m_GfxWindowed ? "WINDOWED" : "FULLSCREEN", off, GUILayout.Height(40f * s)))
+                m_GfxWindowed = !m_GfxWindowed;
+            if (LayoutButton("APPLY", PanelBlue, GUILayout.Height(40f * s)))
+            {
+                GraphicsOptions.SetDisplay(res, m_GfxWindowed);
+                m_SettingsMessage = Application.isEditor
+                    ? "Saved. Resolution changes only take effect in the built game."
+                    : "Display set to " + res.x + " × " + res.y + (m_GfxWindowed ? " (windowed)." : ".");
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(18f * s);
+            GUILayout.BeginHorizontal();
+            bool showFps = GraphicsOptions.ShowFps;
+            if (LayoutButton(showFps ? "SHOW FPS IN GAME: ON" : "SHOW FPS IN GAME: OFF", showFps ? PanelBlue : off, GUILayout.Height(38f * s)))
+                GraphicsOptions.ShowFps = !showFps;
+            GUILayout.EndHorizontal();
+            GUILayout.Label("Now: " + Screen.width + " × " + Screen.height + "  ·  " + Mathf.RoundToInt(GraphicsOptions.Fps) + " FPS  ·  " + names[current], m_Label);
+            if (!string.IsNullOrEmpty(m_SettingsMessage))
+                GUILayout.Label(m_SettingsMessage, m_Small);
+        }
+
+        /// <summary>Canto superior esquerdo do HUD: ping ao host (online/LAN) e, se ativado, FPS.</summary>
+        void DrawHudNetwork(float s)
+        {
+            string text = null;
+            var color = new Color(1f, 1f, 1f, 0.8f);
+            var nm = NM;
+            if (nm != null && nm.IsListening)
+            {
+                if (!nm.IsServer)
+                {
+                    int ms = (int)System.Math.Min(9999UL, nm.NetworkConfig.NetworkTransport.GetCurrentRtt(Unity.Netcode.NetworkManager.ServerClientId));
+                    text = "PING " + ms + " ms";
+                    color = PingColor(ms);
+                }
+                else if (nm.ConnectedClientsIds.Count > 1 || (ConnectionManager.Instance != null && ConnectionManager.Instance.IsOnline))
+                    text = "HOST";
+            }
+            if (GraphicsOptions.ShowFps)
+                text = (text == null ? "" : text + "    ") + "FPS " + Mathf.RoundToInt(GraphicsOptions.Fps);
+            if (text != null)
+                HudLabel(new Rect(22 * s, 40 * s, 320 * s, 20 * s), text, m_HudFeed, color);
         }
 
         void HandleBindingCapture()

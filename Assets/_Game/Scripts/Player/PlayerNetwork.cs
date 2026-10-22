@@ -42,6 +42,9 @@ namespace FPSLAN
         public readonly NetworkVariable<int> Kills = new NetworkVariable<int>(0);
         public readonly NetworkVariable<int> Deaths = new NetworkVariable<int>(0);
         public readonly NetworkVariable<int> Assists = new NetworkVariable<int>(0);
+        /// <summary>Ping (ida e volta, ms) deste jogador ao host, medido pelo host. 0 = host, -1 = bot/desconhecido.</summary>
+        public readonly NetworkVariable<int> PingMs = new NetworkVariable<int>(-1);
+        float m_NextPingSample;
 
         /// <summary>0 = equipa azul, 1 = equipa vermelha, -1 = ainda não atribuída.</summary>
         public readonly NetworkVariable<int> TeamId = new NetworkVariable<int>(-1);
@@ -183,9 +186,22 @@ namespace FPSLAN
         void Update()
         {
             TickPetFood();
+            if (IsSpawned && IsServer) ServerSamplePing();
             if (!IsSpawned || !IsLocalHuman) return;
             bool held = MatchManager.IsCoopActive && !Health.IsDead && GameUI.GameplayInputAllowed && InputReader.InteractHeld;
             if (CoopInteractHeld.Value != held) CoopInteractHeld.Value = held;
+        }
+
+        /// <summary>Host: uma vez por segundo, publica o ping de cada jogador para o placar.</summary>
+        void ServerSamplePing()
+        {
+            if (Time.unscaledTime < m_NextPingSample) return;
+            m_NextPingSample = Time.unscaledTime + 1f;
+            int ms;
+            if (IsBot) ms = -1;
+            else if (OwnerClientId == NetworkManager.ServerClientId) ms = 0;
+            else ms = (int)System.Math.Min(9999UL, NetworkManager.NetworkConfig.NetworkTransport.GetCurrentRtt(OwnerClientId));
+            if (PingMs.Value != ms) PingMs.Value = ms;
         }
 
         [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
