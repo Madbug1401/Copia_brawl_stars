@@ -21,6 +21,7 @@ namespace FPSLAN
         Aim,
         Interact,
         FeedPet,
+        Emote,
     }
 
     public static class GameInputSettings
@@ -90,6 +91,7 @@ namespace FPSLAN
                 case GameAction.Aim: return KeyCode.Mouse1;
                 case GameAction.Interact: return KeyCode.F;
                 case GameAction.FeedPet: return KeyCode.T;
+                case GameAction.Emote: return KeyCode.Y;
                 default: return KeyCode.None;
             }
         }

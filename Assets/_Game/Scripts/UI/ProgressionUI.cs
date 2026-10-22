@@ -38,6 +38,8 @@ namespace FPSLAN
         string m_SkinTarget = "";
         string m_SelectedSkin = "";
         string m_SelectedPet = "";
+        float m_UpraBoughtAt = -10f;
+        Vector2 m_UpraBuyFrom, m_UpraBuyTo;
         bool m_PetEvolution;
         bool m_ConfirmReset;
         Vector2 m_Scroll1, m_Scroll2;
@@ -770,12 +772,54 @@ namespace FPSLAN
         void DrawUpraStock(Rect r)
         {
             float s = Scale;
-            float buyWidth = Mathf.Min(220 * s, r.width * 0.56f);
-            Outlined(new Rect(r.x, r.y, r.width - buyWidth - 8*s, 20*s), "UPRA " + m_Ctx.PetFood.Stock, Label, Gold, 1f);
-            Outlined(new Rect(r.x, r.y + 20*s, r.width - buyWidth - 8*s, 14*s), "PET FOOD · +2 PER MATCH", Tiny, Muted, 1f);
+            float buyWidth = Mathf.Min(230 * s, r.width * 0.5f);
+            float icon = r.height + 14 * s;
+            var iconRect = new Rect(r.x, r.y - 8 * s, icon, icon);
+            // Contador "salta" quando chegam sacos novos
+            float since = Time.unscaledTime - m_UpraBoughtAt;
+            float pop = since > 0.45f && since < 0.75f ? 1f + 0.25f * Mathf.Sin((since - 0.45f) / 0.3f * Mathf.PI) : 1f;
+            var ir = new Rect(iconRect.center.x - icon * pop / 2f, iconRect.center.y - icon * pop / 2f, icon * pop, icon * pop);
+            Tex(ir, Branding.UpraSack, Color.white);
+            float tx = iconRect.xMax + 6 * s, tw = r.width - buyWidth - icon - 14 * s;
+            Outlined(new Rect(tx, r.y - 2 * s, tw, 22 * s), "UPRA × " + m_Ctx.PetFood.Stock, Label, Gold, 1f);
+            Outlined(new Rect(tx, r.y + 17 * s, tw, 14 * s), "RAÇÕES UPR ANIMAL · +2 PER MATCH", Tiny, Muted, 1f);
             bool affordable = m_Ctx.Inventory.Coins >= PetFoodRules.PackCost && m_Ctx.PetFood.Stock <= PetFoodRules.MaxStock - PetFoodRules.PackSize;
-            if (Btn(new Rect(r.xMax - buyWidth, r.y, buyWidth, r.height), "+3 UPRA · 15 COINS", PanelBlue, affordable, ButtonSmall) && m_Ctx.PetFood.BuyPack())
-                Say("UPRA added. Earn 2 more after each completed match.");
+            var btn = new Rect(r.xMax - buyWidth, r.y, buyWidth, r.height);
+            if (Btn(btn, "     BUY 3 SACKS · " + PetFoodRules.PackCost + " COINS", Branding.UpraBlue, affordable, ButtonSmall) && m_Ctx.PetFood.BuyPack())
+            {
+                m_UpraBoughtAt = Time.unscaledTime;
+                m_UpraBuyFrom = btn.center;
+                m_UpraBuyTo = iconRect.center;
+                Sfx.Play2D(Sound.Reward, 0.5f);
+                Say("+3 UPRA! Feed your pet in a match with [" + GameInputSettings.BindingLabel(GameAction.FeedPet) + "].");
+            }
+            Tex(new Rect(btn.x + 6 * s, btn.y + 2 * s, btn.height - 4 * s, btn.height - 4 * s), Branding.UpraSack, Color.white);
+
+            // Sacos a voar do botão para o contador
+            for (int i = 0; i < PetFoodRules.PackSize; i++)
+            {
+                float k = (since - i * 0.08f) / 0.45f;
+                if (k <= 0f || k >= 1f) continue;
+                var p = Vector2.Lerp(m_UpraBuyFrom, m_UpraBuyTo, k) + Vector2.up * (-Mathf.Sin(k * Mathf.PI) * 60f * s);
+                float sz = Mathf.Lerp(30f, 22f, k) * s;
+                Tex(new Rect(p.x - sz / 2f, p.y - sz / 2f, sz, sz), Branding.UpraSack, Color.white);
+            }
+        }
+
+        /// <summary>Cartão UPRA do pet: saco ilustrado, fórmula da espécie e o bónus do pet ao comer.</summary>
+        void DrawUpraCard(Rect r, PetDefinition pet)
+        {
+            float s = Scale;
+            Fill(r, new Color(0.07f, 0.16f, 0.32f, 0.92f));
+            Fill(new Rect(r.x, r.y, 5 * s, r.height), Branding.UpraBlue);
+            float icon = r.height - 8 * s;
+            Tex(new Rect(r.x + 8 * s, r.y + 4 * s, icon, icon), Branding.UpraSack, Color.white);
+            float x = r.x + icon + 16 * s, w = r.xMax - x - 8 * s;
+            Outlined(new Rect(x, r.y + 4 * s, w, 22 * s), Branding.UpraFormula(pet.species).ToUpperInvariant(), Label, Color.white, 1.2f);
+            Outlined(new Rect(x, r.y + 25 * s, w, 16 * s), Branding.UpraFormulaTagline(pet.species), Tiny, new Color(0.6f, 0.8f, 1f), 1f);
+            Outlined(new Rect(x, r.y + 42 * s, w, 18 * s), PetFoodRules.BoostText(pet.ability) + " · 20s", Small, Good, 1f);
+            Outlined(new Rect(x, r.y + 63 * s, w, 16 * s), "[" + GameInputSettings.BindingLabel(GameAction.FeedPet) + "] in match · pet eats 2s, you stand still", Tiny, Muted, 1f);
+            Outlined(new Rect(x, r.y + 80 * s, w, 16 * s), "90s cooldown · 3 per match · casual only", Tiny, Muted, 1f);
         }
 
         void DrawPetDetail(Rect r, PetDefinition pet)
@@ -786,6 +830,10 @@ namespace FPSLAN
             int lv = Mathf.Max(1, ctx.PetProgression.Level(pet.petId));
             var tex = new Rect(r.x + 10 * s, r.y + 6 * s, r.width * 0.45f, r.height * 0.6f);
             if (m_Preview.Texture != null) GUI.DrawTexture(tex, m_Preview.Texture, ScaleMode.ScaleToFit, true);
+            if (Btn(new Rect(tex.x + tex.width * 0.1f, tex.yMax + 4 * s, tex.width * 0.8f, 30 * s),
+                    m_Preview.IsFeeding ? "YUM!" : "FEED WITH UPRA", Branding.UpraBlue, !m_Preview.IsFeeding, ButtonSmall))
+                m_Preview.PlayFeed();
+            Outlined(new Rect(tex.x, tex.yMax + 38 * s, tex.width, 16 * s), Branding.UpraSlogan, Tiny, new Color(0.55f, 0.75f, 1f), 1f);
             float x = tex.xMax + 10 * s, w = r.xMax - x - 14 * s;
             float y = r.y + 14 * s;
             Outlined(new Rect(x, y, w, 34 * s), pet.displayName.ToUpperInvariant(), Big, Color.Lerp(pet.primaryColor, Color.white, 0.35f), 2f);
@@ -803,7 +851,7 @@ namespace FPSLAN
                 Outlined(new Rect(x, y, w, 40 * s), "Lv " + (lv + 1) + ": " + pet.AbilityText(lv + 1), Wrap, Good, 1f);
                 y += 42 * s;
             }
-            Outlined(new Rect(x, y, w, 64 * s), "UPRA · " + PetFoodRules.BoostText(pet.ability) + " for 20s.\n[" + GameInputSettings.BindingLabel(GameAction.FeedPet) + "] feed in match · 90s cooldown · 3 uses.\nCompetitive: cosmetic only.", Wrap, Muted, 1f);
+            DrawUpraCard(new Rect(x - 4 * s, y, w + 8 * s, 104 * s), pet);
 
             float by = r.yMax - 128 * s;
             if (state != PetState.Locked)

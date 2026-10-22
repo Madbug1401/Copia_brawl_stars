@@ -65,6 +65,7 @@ Tab        Placar
 Esc        Menu de pausa
 F          Reanimar parceiro (manter premido no cooperativo)
 T          Alimentar o pet com UPRA
+Y          Roda de sprays SITA (manter premido)
 
 UPRA E PETS
 Equipe um pet no menu PETS. Alimentar custa 1 UPRA e ativa um boost leve
@@ -76,7 +77,8 @@ DEFINICOES
 No menu principal ou durante a pausa, abre DEFINICOES.
 GRAPHICS: escolher a qualidade (VERY LOW a ULTRA), a resolucao e ecra
 inteiro/janela. Em PCs fracos, VERY LOW ou LOW e uma resolucao mais baixa
-(ex.: 1280 x 720) dao muito mais FPS. "SHOW FPS IN GAME" mostra os FPS.
+(ex.: 1280 x 720) dao muito mais FPS. Na secao HUD, PING e FPS ligam ou
+desligam o ping e os FPS no canto do ecra durante o jogo.
 As abas TECLAS, JOGABILIDADE e AUDIO permitem reatribuir controlos,
 ajustar a mira e o volume. O HUD pode ser reposicionado na aba HUD.
 As alteracoes ficam guardadas localmente. REPOR restaura os valores padrao.

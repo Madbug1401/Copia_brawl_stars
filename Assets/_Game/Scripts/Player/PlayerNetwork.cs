@@ -184,12 +184,29 @@ namespace FPSLAN
             if (MatchManager.IsCoopActive && cmd.interact && MatchManager.FindDownedTeammate(this,
                 MatchManager.Instance.coopReviveRadius) != null)
                 cmd.fire = cmd.meleePressed = cmd.superPressed = false;
+            if (ScriptedCommands == null && IsLocalHuman)
+            {
+                // A alimentar o pet com UPRA: fica parado (pode olhar à volta) durante a animação
+                if (IsFeedingAnim || m_FeedPending)
+                {
+                    var look = cmd.lookDelta;
+                    cmd = default;
+                    cmd.lookDelta = look;
+                }
+                // Roda de sprays aberta: o rato escolhe a cor, a câmara e as armas ficam paradas
+                if (SprayWheelOpen)
+                {
+                    cmd.lookDelta = Vector2.zero;
+                    cmd.fire = cmd.meleePressed = cmd.superPressed = false;
+                }
+            }
             return cmd;
         }
 
         void Update()
         {
             TickPetFood();
+            TickSpray();
             if (IsSpawned && IsServer) ServerSamplePing();
             if (IsSpawned && IsOwner && !IsServer && !IsBot && Time.unscaledTimeAsDouble >= m_NextPingSend)
             {

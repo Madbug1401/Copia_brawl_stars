@@ -14,6 +14,7 @@ namespace FPSLAN
         const string KeyHeight = "fpslan.gfx.height";
         const string KeyWindowed = "fpslan.gfx.windowed";
         const string KeyShowFps = "fpslan.gfx.showfps";
+        const string KeyShowPing = "fpslan.hud.showping";
 
         /// <summary>Resoluções abaixo disto ficam ilegíveis com a interface atual.</summary>
         const int MinWidth = 640, MinHeight = 360;
@@ -110,6 +111,13 @@ namespace FPSLAN
         }
 
         // ------------------------------------------------------------------ FPS
+
+        /// <summary>Mostrar o ping (ou HOST) no canto do HUD durante o jogo. Ligado por defeito.</summary>
+        public static bool ShowPing
+        {
+            get => PlayerPrefs.GetInt(KeyShowPing, 1) == 1;
+            set { PlayerPrefs.SetInt(KeyShowPing, value ? 1 : 0); PlayerPrefs.Save(); }
+        }
 
         public static bool ShowFps
         {

@@ -34,6 +34,42 @@ namespace FPSLAN
         float m_NextAttack;
         int m_Shot;
 
+        // Montra UPRA (ecrã de pets): saco e tigela da UPR Animal; "alimentar" toca uma animação curta
+        Transform m_Upra, m_UpraSack, m_UpraBowl, m_UpraFood;
+        float m_FeedT = -1f;
+        bool m_FeedHappy;
+        const float FeedLength = 2.4f;
+        static readonly Vector3 BowlPos = new Vector3(0.52f, 0f, 0.42f);
+        static readonly Vector3 SackPos = new Vector3(-0.66f, 0f, -0.4f);
+
+        public bool IsFeeding => m_FeedT >= 0f;
+
+        /// <summary>Ecrã de pets: o pet come da tigela UPRA.</summary>
+        public void PlayFeed()
+        {
+            if (m_Pet == null || !m_PetOnly) return;
+            m_FeedT = 0f;
+            m_FeedHappy = false;
+            Sfx.Play2D(Sound.Crate, 0.4f);
+        }
+
+        void EnsureUpra(bool show)
+        {
+            if (show && m_Upra == null && m_Root != null)
+            {
+                m_Upra = new GameObject("UpraShowcase").transform;
+                m_Upra.SetParent(m_Root, false);
+                m_UpraSack = Branding.BuildSack(m_Upra, 1.05f);
+                m_UpraSack.localPosition = SackPos;
+                m_UpraSack.localRotation = Quaternion.Euler(0f, 22f, 0f);
+                m_UpraBowl = Branding.BuildBowl(m_Upra, 1.0f, out m_UpraFood);
+                m_UpraBowl.localPosition = BowlPos;
+                m_UpraBowl.localRotation = Quaternion.Euler(0f, 180f, 0f);
+            }
+            if (m_Upra != null && m_Upra.gameObject.activeSelf != show) m_Upra.gameObject.SetActive(show);
+            if (!show) m_FeedT = -1f;
+        }
+
         public Texture Texture => m_Texture;
 
         /// <summary>Brawler (com skin opcional) e, opcionalmente, o pet equipado ao lado.</summary>
@@ -57,6 +93,7 @@ namespace FPSLAN
                     foreach (var r in m_Podium.GetComponentsInChildren<Renderer>()) Art.SetEmission(r, Art.Darken(b.Tint, 0.15f));
                 m_PetLevel = -1; // reposiciona o pet
             }
+            EnsureUpra(false);
             SetPet(pet, petLevel, petSkin, false);
         }
 
@@ -73,6 +110,7 @@ namespace FPSLAN
                 m_Index = -1;
                 m_PetLevel = -1;
             }
+            EnsureUpra(true);
             SetPet(pet, level, petSkin, true);
         }
 
@@ -89,7 +127,7 @@ namespace FPSLAN
             if (pet == null) return;
             m_Pet = PetVisualBuilder.Build(pet, level, petSkin, m_Root, ShadowCastingMode.On);
             m_Pet.root.localPosition = centered ? new Vector3(0f, 0f, 0.3f) : new Vector3(0.85f, 0f, 0.55f);
-            m_Pet.root.localScale = Vector3.one * (centered ? 2.3f : 1f);
+            m_Pet.root.localScale = Vector3.one * (centered ? 1.95f : 1f);
             m_Pet.root.localRotation = Quaternion.Euler(0f, centered ? 200f : 210f, 0f);
         }
 
@@ -110,7 +148,13 @@ namespace FPSLAN
                 m_Pet.body.localPosition = Vector3.up * Mathf.Abs(Mathf.Sin(t * 2.4f)) * 0.03f;
                 if (m_Pet.tail != null) m_Pet.tail.localRotation = Quaternion.Euler(0f, Mathf.Sin(t * 9f) * 25f, 0f);
                 if (m_Pet.head != null) m_Pet.head.localRotation = Quaternion.Euler(0f, Mathf.Sin(t * 0.8f) * 20f, 0f);
-                if (m_PetOnly) m_Pet.root.localRotation = Quaternion.Euler(0f, m_Spin, 0f);
+                if (m_PetOnly && m_FeedT >= 0f) TickFeed(dt);
+                else if (m_PetOnly)
+                {
+                    m_Pet.root.localPosition = Vector3.Lerp(m_Pet.root.localPosition, new Vector3(0f, 0f, 0.3f), 1f - Mathf.Exp(-8f * dt));
+                    m_Pet.root.localRotation = Quaternion.Euler(0f, m_Spin, 0f);
+                    if (m_UpraFood != null) m_UpraFood.localScale = new Vector3(0.32f, 0.07f, 0.32f);
+                }
                 if (m_Pet.aura && Random.value < dt * 6f)
                     Fx.Glow(m_Pet.root.position + Vector3.up * 0.6f + Random.insideUnitSphere * 0.5f, Vector3.up * 0.5f, Color.Lerp(m_Pet.accent, Color.yellow, 0.5f), 0.07f, 0.6f);
             }
@@ -126,6 +170,50 @@ namespace FPSLAN
                 m_Rig.OnShot(m_Shot++);
                 m_NextAttack = Time.time + 2.6f;
             }
+        }
+
+        void TickFeed(float dt)
+        {
+            m_FeedT += dt;
+            float t = m_FeedT;
+            var root = m_Pet.root;
+            // Vai até à tigela e vira-se para ela
+            var spot = BowlPos + new Vector3(-0.62f, 0f, -0.1f);
+            root.localPosition = Vector3.Lerp(root.localPosition, spot, 1f - Mathf.Exp(-9f * dt));
+            float yaw = Mathf.MoveTowardsAngle(root.localEulerAngles.y, 90f, 600f * dt);
+            root.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            m_Spin = yaw;
+
+            // Saco salta e "despeja" (0–0,8 s)
+            float pour = Mathf.Sin(Mathf.Clamp01(t / 0.8f) * Mathf.PI);
+            if (m_UpraSack != null)
+            {
+                m_UpraSack.localPosition = SackPos + Vector3.up * 0.12f * pour;
+                m_UpraSack.localRotation = Quaternion.Euler(0f, 22f, -28f * pour);
+            }
+            float fill = Mathf.Clamp01(t / 0.7f) * (1f - 0.85f * Mathf.Clamp01((t - 0.9f) / 1.1f));
+            if (m_UpraFood != null) m_UpraFood.localScale = new Vector3(0.3f + 0.04f * fill, Mathf.Max(0.002f, 0.09f * fill), 0.3f + 0.04f * fill);
+            if (t < 0.7f && Random.value < dt * 40f && m_UpraBowl != null)
+                Fx.Puff(m_UpraBowl.position + Vector3.up * (0.25f + Random.value * 0.35f), Vector3.down * 1.5f, Branding.GrainColor, 0.06f, 0.3f);
+
+            // Come (0,8–2,0 s)
+            if (t > 0.8f && t < 2f)
+            {
+                float chew = Mathf.Sin(t * 24f);
+                if (m_Pet.head != null) m_Pet.head.localRotation = Quaternion.Euler(36f + chew * 12f, 0f, 0f);
+                m_Pet.body.localRotation = Quaternion.Euler(10f, 0f, 0f);
+                if (m_Pet.tail != null) m_Pet.tail.localRotation = Quaternion.Euler(0f, Mathf.Sin(t * 20f) * 35f, 0f);
+            }
+            else m_Pet.body.localRotation = Quaternion.identity;
+
+            if (!m_FeedHappy && t >= 2f)
+            {
+                m_FeedHappy = true;
+                Sfx.Play2D(Sound.PetHappy, 0.5f);
+                if (m_UpraBowl != null) Fx.Ring(m_UpraBowl.position + Vector3.up * 0.05f, Branding.UpraBlue, 1.3f, 0.4f);
+            }
+            if (t >= 2f) m_Pet.body.localPosition = Vector3.up * Mathf.Sin(Mathf.Clamp01((t - 2f) / (FeedLength - 2f)) * Mathf.PI) * 0.25f;
+            if (t >= FeedLength) m_FeedT = -1f;
         }
 
         void Create()
@@ -171,6 +259,8 @@ namespace FPSLAN
             m_Root = null;
             m_Rig = null;
             m_Pet = null;
+            m_Upra = null;
+            m_FeedT = -1f;
             m_Index = -1;
         }
     }

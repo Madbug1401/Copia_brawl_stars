@@ -15,10 +15,27 @@ namespace FPSLAN
         public float UpraRemaining => UpraActive ? PetFeeding.Value.Remaining(PetFoodTime) : 0;
         public float UpraCooldown => PetFeeding.Value.Cooldown(PetFoodTime);
 
+        /// <summary>Segundos desde que começou a animação de alimentar (todas as máquinas), ou -1 fora dela.</summary>
+        public float FeedAnimTime
+        {
+            get
+            {
+                if (!IsSpawned || Health == null || Health.IsDead) return -1f;
+                var st = PetFeeding.Value;
+                if (st.endsAt <= 0) return -1f;
+                float t = (float)(PetFoodTime - (st.endsAt - PetFoodRules.Duration));
+                return t >= -0.05f && t < PetFoodRules.FeedAnimDuration ? Mathf.Max(0f, t) : -1f;
+            }
+        }
+        public bool IsFeedingAnim => FeedAnimTime >= 0f;
+        /// <summary>À espera da resposta do host ao pedido de alimentar (o jogador já fica parado).</summary>
+        public bool FeedPending => m_FeedPending;
+
         public string UpraStatus
         {
             get
             {
+                if (IsFeedingAnim || m_FeedPending) return "FEEDING WITH UPRA...";
                 if (Effective.Value.competitive) return "UPRA · CASUAL ONLY";
                 if (UpraActive) return "UPRA · " + Mathf.CeilToInt(UpraRemaining) + "s · " +
                     PetFoodRules.BoostText((PetAbilityType)PetFeeding.Value.ability);

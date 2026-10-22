@@ -23,6 +23,8 @@ namespace FPSLAN
         public const int StarterFood = 6, FoodPerMatch = 2, MaxStock = 999;
         public const int MaxUsesPerMatch = 3, PackSize = 3, PackCost = 15;
         public const float Duration = 20f, Cooldown = 90f;
+        /// <summary>Animação de alimentar (o jogador fica parado, o pet come da tigela UPRA).</summary>
+        public const float FeedAnimDuration = 2f;
 
         public static bool TryStart(ref PetFeedingState state, double now, int stock, int petHash,
             PetAbilityType ability, bool alive, bool playing, bool competitive)

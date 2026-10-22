@@ -974,6 +974,7 @@ namespace FPSLAN
             DrawHudHeader(me, s);
             DrawHudFeed(s);
             DrawHudNetwork(s);
+            DrawHudEmotes(me, s);
             HudLabel(new Rect(22 * s, 16 * s, 360 * s, 22 * s),
                 GameInputSettings.BindingLabel(GameAction.Scoreboard) + " · SCOREBOARD    " +
                 GameInputSettings.BindingLabel(GameAction.Pause) + " · MENU", m_HudSmall, new Color(1, 1, 1, 0.65f));
@@ -1360,6 +1361,7 @@ namespace FPSLAN
                 case GameAction.Aim: return "Aim (Lince)";
                 case GameAction.Interact: return "Revive partner (hold)";
                 case GameAction.FeedPet: return "Feed pet (UPRA)";
+                case GameAction.Emote: return "SITA spray wheel (hold)";
                 default: return action.ToString();
             }
         }
@@ -1424,7 +1426,7 @@ namespace FPSLAN
             {
                 GameAction.MoveForward, GameAction.MoveBackward, GameAction.MoveLeft, GameAction.MoveRight,
                 GameAction.Fire, GameAction.Melee, GameAction.Super, GameAction.Jump, GameAction.Sprint,
-                GameAction.Scoreboard, GameAction.Pause, GameAction.Aim, GameAction.Interact, GameAction.FeedPet,
+                GameAction.Scoreboard, GameAction.Pause, GameAction.Aim, GameAction.Interact, GameAction.FeedPet, GameAction.Emote,
             };
             foreach (var action in actions)
             {
@@ -1606,9 +1608,15 @@ namespace FPSLAN
             GUILayout.EndHorizontal();
 
             GUILayout.Space(18f * s);
+            GUILayout.Label("HUD", m_Small);
+            GUILayout.Label("Shown in the top-left corner during the match.", m_Tiny);
+            GUILayout.Space(4f * s);
             GUILayout.BeginHorizontal();
+            bool showPing = GraphicsOptions.ShowPing;
+            if (LayoutButton(showPing ? "PING: ON" : "PING: OFF", showPing ? PanelBlue : off, GUILayout.Height(38f * s)))
+                GraphicsOptions.ShowPing = !showPing;
             bool showFps = GraphicsOptions.ShowFps;
-            if (LayoutButton(showFps ? "SHOW FPS IN GAME: ON" : "SHOW FPS IN GAME: OFF", showFps ? PanelBlue : off, GUILayout.Height(38f * s)))
+            if (LayoutButton(showFps ? "FPS: ON" : "FPS: OFF", showFps ? PanelBlue : off, GUILayout.Height(38f * s)))
                 GraphicsOptions.ShowFps = !showFps;
             GUILayout.EndHorizontal();
             GUILayout.Label("Now: " + Screen.width + " × " + Screen.height + "  ·  " + Mathf.RoundToInt(GraphicsOptions.Fps) + " FPS  ·  " + names[current], m_Label);
@@ -1622,7 +1630,7 @@ namespace FPSLAN
             string text = null;
             var color = new Color(1f, 1f, 1f, 0.8f);
             var nm = NM;
-            if (nm != null && nm.IsListening)
+            if (GraphicsOptions.ShowPing && nm != null && nm.IsListening)
             {
                 if (!nm.IsServer)
                 {

@@ -59,6 +59,11 @@ namespace FPSLAN
         float m_NextEffect;
         readonly HashSet<ulong> m_Detected = new HashSet<ulong>();
 
+        // Alimentação UPRA: corre até à tigela e come
+        bool m_Feeding;
+        Vector3 m_Bowl;
+        float m_NextCrumbFx;
+
         static readonly RaycastHit[] s_Hits = new RaycastHit[12];
 
         public PetDefinition Definition => m_Def;
@@ -102,6 +107,83 @@ namespace FPSLAN
             if (m_Visible) Sfx.PlayAt(Sound.PetHappy, m_Pos + Vector3.up * 0.4f, 0.8f);
         }
 
+        /// <summary>O dono pousou uma tigela UPRA: o pet vai até ela e come (fim em <see cref="EndFeeding"/>).</summary>
+        public void BeginFeeding(Vector3 bowl)
+        {
+            m_Feeding = true;
+            m_Bowl = bowl;
+            m_Crumbs.Clear();
+            m_StuckTime = 0f;
+            var stand = FeedSpot();
+            // Longe ou com paredes pelo meio: aparece junto da tigela
+            if (Flat(stand - m_Pos).magnitude > 6f || Blocked(m_Pos, stand))
+            {
+                if (m_Visible) Fx.Puff(m_Pos + Vector3.up * 0.3f, Vector3.up, Art.WithAlpha(Color.white, 0.5f), 0.45f, 0.35f);
+                m_Pos = stand;
+                m_GroundY = FindGround(stand, out float gy) ? gy : bowl.y;
+                m_Pos.y = m_GroundY;
+                transform.position = m_Pos;
+            }
+        }
+
+        public void EndFeeding(bool celebrate)
+        {
+            if (!m_Feeding) return;
+            m_Feeding = false;
+            m_Crumbs.Clear();
+            m_StuckTime = 0f;
+            if (celebrate) Celebrate();
+        }
+
+        /// <summary>Lugar do pet: do outro lado da tigela, virado para o dono.</summary>
+        Vector3 FeedSpot()
+        {
+            var away = Flat(m_Bowl - (m_Owner != null ? m_Owner.transform.position : m_Bowl - Vector3.forward));
+            if (away.sqrMagnitude < 0.0001f) away = Vector3.forward;
+            float r = 0.28f + 0.3f * (m_Model != null ? m_Model.scale : 1f);
+            return m_Bowl + away.normalized * r;
+        }
+
+        void FeedFollow(float dt)
+        {
+            var stand = FeedSpot();
+            var to = Flat(stand - m_Pos);
+            float dist = to.magnitude;
+            float wanted = dist < 0.05f ? 0f : Mathf.Min(10f, dist * 6f);
+            m_Speed = Mathf.MoveTowards(m_Speed, wanted, 40f * dt);
+            if (dist > 0.001f) m_Pos += to / dist * Mathf.Min(dist, m_Speed * dt);
+            if (Time.time >= m_NextGround)
+            {
+                m_NextGround = Time.time + 0.1f;
+                if (FindGround(m_Pos, out float gy)) m_GroundY = gy;
+                else m_GroundY = m_Bowl.y;
+            }
+            m_Pos.y = Mathf.Lerp(m_Pos.y, m_GroundY, 1f - Mathf.Exp(-14f * dt));
+            // A correr: para onde vai; a comer: para a tigela
+            var face = dist > 0.25f ? to : Flat(m_Bowl - m_Pos);
+            if (face.sqrMagnitude > 0.0001f)
+                m_Yaw = Mathf.MoveTowardsAngle(m_Yaw, Mathf.Atan2(face.x, face.z) * Mathf.Rad2Deg, 720f * dt);
+            transform.SetPositionAndRotation(m_Pos, Quaternion.Euler(0f, m_Yaw, 0f));
+        }
+
+        /// <summary>Por cima da animação normal: cabeça na tigela a mastigar.</summary>
+        void AnimateEating()
+        {
+            float t = m_Owner != null ? m_Owner.FeedAnimTime : -1f;
+            if (t < 0.75f || t > 1.85f || Flat(FeedSpot() - m_Pos).magnitude > 0.3f) return;
+            var m = m_Model;
+            float chew = Mathf.Sin(Time.time * 24f);
+            if (m.head != null) m.head.localRotation = Quaternion.Euler(38f + chew * 12f, Mathf.Sin(Time.time * 5f) * 6f, 0f);
+            m.body.localRotation = Quaternion.Euler(10f, 0f, 0f) * m.body.localRotation;
+            m.body.localPosition += Vector3.up * Mathf.Abs(chew) * 0.012f;
+            if (m.tail != null) m.tail.localRotation = Quaternion.Euler(0f, Mathf.Sin(Time.time * 20f) * 35f, 0f);
+            if (m_Visible && Time.time >= m_NextCrumbFx)
+            {
+                m_NextCrumbFx = Time.time + 0.18f;
+                Fx.Puff(m_Bowl + Vector3.up * 0.15f + Random.insideUnitSphere * 0.08f, Vector3.up * 0.4f, Art.WithAlpha(Branding.GrainColor, 0.7f), 0.08f, 0.35f);
+            }
+        }
+
         public void ReactToOwnerHurt()
         {
             m_React = 1f;
@@ -136,8 +218,10 @@ namespace FPSLAN
                 return;
             }
 
-            Follow(dt);
+            if (m_Feeding) FeedFollow(dt);
+            else Follow(dt);
             Animate(dt);
+            if (m_Feeding) AnimateEating();
             if (m_Owner.IsLocalHuman) RunLocalAbility();
             EmitEffects();
         }
