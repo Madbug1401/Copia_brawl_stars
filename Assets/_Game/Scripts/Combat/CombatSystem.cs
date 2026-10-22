@@ -144,8 +144,10 @@ namespace FPSLAN
             var p = new PendingAttack { ctx = ctx, fired = 0, nextTime = Time.time };
             m_Pending.Add(p);
             bool keep;
+            bool rewound = ctx.authoritative && LagCompensation.Begin(ctx.shooter, ctx.lag);
             try { keep = ProcessPending(p, Time.time); } // o primeiro disparo sai já neste frame
             catch (System.Exception e) { LogStepError(e); keep = false; }
+            finally { if (rewound) LagCompensation.End(); }
             if (!keep || p.fired >= ctx.attack.delivery.ShotCount) m_Pending.Remove(p);
         }
 
@@ -612,8 +614,10 @@ namespace FPSLAN
             {
                 var p = m_Pending[i];
                 bool keep;
+                bool rewound = p.ctx.authoritative && LagCompensation.Begin(p.ctx.shooter, p.ctx.lag);
                 try { keep = ProcessPending(p, now); }
                 catch (System.Exception e) { LogStepError(e); keep = false; }
+                finally { if (rewound) LagCompensation.End(); }
                 if (!keep) m_Pending.RemoveAt(i);
             }
 
@@ -623,8 +627,11 @@ namespace FPSLAN
             {
                 var p = m_Projectiles[i];
                 bool alive;
+                // Enquanto voa, o projétil de um cliente vê os outros com o mesmo atraso com que ele os via ao disparar
+                bool rewound = p.ctx != null && p.ctx.authoritative && LagCompensation.Begin(p.ctx.shooter, p.ctx.lag);
                 try { alive = StepProjectile(p, dt); }
                 catch (System.Exception e) { LogStepError(e); alive = false; }
+                finally { if (rewound) LagCompensation.End(); }
                 if (!alive)
                 {
                     try { ReleaseProjectile(p); } catch (System.Exception e) { LogStepError(e); }
@@ -640,7 +647,9 @@ namespace FPSLAN
                 {
                     if (f.visual != null) ProjectileVisuals.Blink(f.visual, 1f - f.timer / Mathf.Max(0.01f, f.total));
                     if (f.timer > 0f) continue;
-                    Detonate(f.ctx, f.position + Vector3.up * 0.3f, true);
+                    bool rewound = f.ctx.authoritative && LagCompensation.Begin(f.ctx.shooter, f.ctx.lag);
+                    try { Detonate(f.ctx, f.position + Vector3.up * 0.3f, true); }
+                    finally { if (rewound) LagCompensation.End(); }
                     ProjectileVisuals.Release(f.visual);
                 }
                 catch (System.Exception e) { LogStepError(e); }
@@ -650,8 +659,11 @@ namespace FPSLAN
             for (int i = m_Cones.Count - 1; i >= 0; i--)
             {
                 bool keep;
+                var coneCtx = m_Cones[i].ctx;
+                bool rewound = coneCtx != null && coneCtx.authoritative && LagCompensation.Begin(coneCtx.shooter, coneCtx.lag);
                 try { keep = StepCone(m_Cones[i], dt); }
                 catch (System.Exception e) { LogStepError(e); keep = false; }
+                finally { if (rewound) LagCompensation.End(); }
                 if (keep) continue;
                 try { ReleaseSpray(m_Cones[i]); } catch (System.Exception e) { LogStepError(e); }
                 m_Cones.RemoveAt(i);

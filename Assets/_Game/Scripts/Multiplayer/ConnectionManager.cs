@@ -123,6 +123,9 @@ namespace FPSLAN
             NM.OnClientDisconnectCallback += OnClientDisconnected;
             NM.ConnectionApprovalCallback = ApproveConnection;
             NM.NetworkConfig.ConnectionApproval = true;
+            // Host que cai sem avisar (crash, Wi-Fi): os clientes sabem em 10 s em vez de 30 s
+            var transport = NM.GetComponent<UnityTransport>();
+            if (transport != null) transport.DisconnectTimeoutMS = 10000;
             if (s_HostAfterLoad) StartCoroutine(HostAfterSceneLoad());
             else if (!s_CommandLineJoinDone) StartCoroutine(JoinFromCommandLine());
         }
@@ -140,6 +143,20 @@ namespace FPSLAN
                     yield return null;
                     yield return null;
                     JoinOnline(args[i + 1]);
+                    yield break;
+                }
+                else if (args[i] == "-hostonline")
+                {
+                    // Testes: "-hostonline 3" cria uma sala online com 3 bots e escreve o código no log
+                    yield return null;
+                    yield return null;
+                    int.TryParse(args[i + 1], out int bots);
+                    if (Host(DefaultPort, true))
+                    {
+                        while (m_RelayPending) yield return null;
+                        for (int b = 0; b < bots && NM.IsServer; b++) BotManager.AddBot();
+                        Debug.Log("[Online] ROOMCODE=" + RoomCode);
+                    }
                     yield break;
                 }
         }
@@ -346,8 +363,9 @@ namespace FPSLAN
                 await EnsureSignedInAsync();
                 if (!StillPending()) return;
                 // Lugares para os outros humanos (os bots correm no host e não contam).
-                var allocation = await RelayService.Instance.CreateAllocationAsync(MaxPlayers - 1);
-                var code = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+                var allocation = await WithRetry(() => RelayService.Instance.CreateAllocationAsync(MaxPlayers - 1));
+                if (!StillPending()) return;
+                var code = await WithRetry(() => RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId));
                 if (!StillPending()) return;
 
                 NM.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, "dtls"));
@@ -382,7 +400,7 @@ namespace FPSLAN
             {
                 await EnsureSignedInAsync();
                 if (!StillPending()) return;
-                var allocation = await RelayService.Instance.JoinAllocationAsync(code);
+                var allocation = await WithRetry(() => RelayService.Instance.JoinAllocationAsync(code));
                 if (!StillPending()) return;
 
                 NM.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, "dtls"));
@@ -400,6 +418,31 @@ namespace FPSLAN
                 if (StillPending()) FailOnline(FriendlyOnlineError(e, true));
                 Debug.LogWarning("[Online] Join room failed: " + e);
             }
+        }
+
+        /// <summary>
+        /// Pedidos ao Relay com até 2 novas tentativas quando a internet está lenta (timeout/erro do servidor).
+        /// Erros definitivos (código errado, sala cheia) não se repetem.
+        /// </summary>
+        async Task<T> WithRetry<T>(System.Func<Task<T>> request)
+        {
+            for (int attempt = 0; ; attempt++)
+            {
+                try { return await request(); }
+                catch (System.Exception e) when (attempt < 2 && IsTransient(e) && StillPending())
+                {
+                    Status = "Slow connection, retrying...";
+                    Debug.LogWarning("[Online] Relay request failed (attempt " + (attempt + 1) + "), retrying: " + e.Message);
+                    await Task.Delay(700 * (attempt + 1));
+                }
+            }
+        }
+
+        static bool IsTransient(System.Exception e)
+        {
+            var m = (e.Message ?? "").ToLowerInvariant();
+            return m.Contains("timeout") || m.Contains("timed out") || m.Contains("503") || m.Contains("502") ||
+                   m.Contains("500") || m.Contains("unavailable") || m.Contains("network");
         }
 
         /// <summary>Falso se o pedido foi cancelado (Leave/CANCEL) ou a cena mudou enquanto se esperava.</summary>

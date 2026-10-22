@@ -45,6 +45,10 @@ namespace FPSLAN
         /// <summary>Ping (ida e volta, ms) deste jogador ao host, medido pelo host. 0 = host, -1 = bot/desconhecido.</summary>
         public readonly NetworkVariable<int> PingMs = new NetworkVariable<int>(-1);
         float m_NextPingSample;
+        double m_NextPingSend;
+        float m_LocalRttMs = -1f;
+        /// <summary>Dono (cliente): ping medido pelo próprio jogo (ida e volta ao host, ms). -1 enquanto não houver medição.</summary>
+        public int LocalPingMs => m_LocalRttMs < 0f ? -1 : Mathf.RoundToInt(m_LocalRttMs);
 
         /// <summary>0 = equipa azul, 1 = equipa vermelha, -1 = ainda não atribuída.</summary>
         public readonly NetworkVariable<int> TeamId = new NetworkVariable<int>(-1);
@@ -187,6 +191,11 @@ namespace FPSLAN
         {
             TickPetFood();
             if (IsSpawned && IsServer) ServerSamplePing();
+            if (IsSpawned && IsOwner && !IsServer && !IsBot && Time.unscaledTimeAsDouble >= m_NextPingSend)
+            {
+                m_NextPingSend = Time.unscaledTimeAsDouble + 0.5;
+                PingServerRpc(Time.unscaledTimeAsDouble, LocalPingMs);
+            }
             if (!IsSpawned || !IsLocalHuman) return;
             bool held = MatchManager.IsCoopActive && !Health.IsDead && GameUI.GameplayInputAllowed && InputReader.InteractHeld;
             if (CoopInteractHeld.Value != held) CoopInteractHeld.Value = held;
@@ -197,11 +206,27 @@ namespace FPSLAN
         {
             if (Time.unscaledTime < m_NextPingSample) return;
             m_NextPingSample = Time.unscaledTime + 1f;
-            int ms;
-            if (IsBot) ms = -1;
-            else if (OwnerClientId == NetworkManager.ServerClientId) ms = 0;
-            else ms = (int)System.Math.Min(9999UL, NetworkManager.NetworkConfig.NetworkTransport.GetCurrentRtt(OwnerClientId));
-            if (PingMs.Value != ms) PingMs.Value = ms;
+            // Clientes humanos: o valor vem do próprio cliente (PingServerRpc), medido pelo jogo
+            if (IsBot) { if (PingMs.Value != -1) PingMs.Value = -1; }
+            else if (OwnerClientId == NetworkManager.ServerClientId && PingMs.Value != 0) PingMs.Value = 0;
+        }
+
+        // Ping medido pelo jogo (e não pelo transporte, que perde a noção com perda de pacotes): o dono envia a sua
+        // hora, o host devolve-a; a diferença é a ida e volta real, incluindo o tempo de frame do host.
+        [Rpc(SendTo.Server, Delivery = RpcDelivery.Unreliable)]
+        void PingServerRpc(double clientTime, int lastRttMs, RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
+            if (lastRttMs >= 0) { int v = Mathf.Clamp(lastRttMs, 0, 9999); if (PingMs.Value != v) PingMs.Value = v; }
+            PongRpc(clientTime);
+        }
+
+        [Rpc(SendTo.Owner, Delivery = RpcDelivery.Unreliable, InvokePermission = RpcInvokePermission.Server)]
+        void PongRpc(double clientTime)
+        {
+            float rtt = (float)((Time.unscaledTimeAsDouble - clientTime) * 1000.0);
+            if (rtt < 0f || rtt > 10000f) return;
+            m_LocalRttMs = m_LocalRttMs < 0f ? rtt : Mathf.Lerp(m_LocalRttMs, rtt, 0.3f);
         }
 
         [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]

@@ -103,6 +103,8 @@ namespace FPSLAN
         public static void ApplyDisplay()
         {
             if (Application.isEditor) return;
+            // Linha de comando ("-screen-fullscreen 0", testes) manda, se não houver escolha guardada
+            if (!HasSavedResolution && System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-screen-fullscreen") >= 0) return;
             var r = SavedResolution;
             Screen.SetResolution(r.x, r.y, Windowed ? FullScreenMode.Windowed : FullScreenMode.FullScreenWindow);
         }

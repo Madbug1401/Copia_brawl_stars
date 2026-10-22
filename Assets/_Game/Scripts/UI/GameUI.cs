@@ -109,8 +109,12 @@ namespace FPSLAN
 
         // ================================================================== API estática
 
+        /// <summary>Acertos confirmados pelo host neste PC (testes de rede).</summary>
+        public static int HitConfirmCount;
+
         public static void ShowHitMarker(bool headshot, bool killed)
         {
+            HitConfirmCount++;
             if (s_Instance == null) return;
             s_Instance.m_HitMarkerTimer = killed ? 0.35f : 0.18f;
             s_Instance.m_HitMarkerHead = headshot;
@@ -1622,9 +1626,10 @@ namespace FPSLAN
             {
                 if (!nm.IsServer)
                 {
-                    int ms = (int)System.Math.Min(9999UL, nm.NetworkConfig.NetworkTransport.GetCurrentRtt(Unity.Netcode.NetworkManager.ServerClientId));
-                    text = "PING " + ms + " ms";
-                    color = PingColor(ms);
+                    var local = PlayerNetwork.Local;
+                    int ms = local != null ? local.LocalPingMs : -1;
+                    text = ms < 0 ? "PING ..." : "PING " + ms + " ms";
+                    if (ms >= 0) color = PingColor(ms);
                 }
                 else if (nm.ConnectedClientsIds.Count > 1 || (ConnectionManager.Instance != null && ConnectionManager.Instance.IsOnline))
                     text = "HOST";
@@ -1633,6 +1638,17 @@ namespace FPSLAN
                 text = (text == null ? "" : text + "    ") + "FPS " + Mathf.RoundToInt(GraphicsOptions.Fps);
             if (text != null)
                 HudLabel(new Rect(22 * s, 40 * s, 320 * s, 20 * s), text, m_HudFeed, color);
+
+            // Host lento = jogo pior para todos (menos atualizações por segundo e colisões menos precisas)
+            var match = MatchManager.Instance;
+            bool othersPlaying = nm != null && nm.IsListening && (!nm.IsServer || nm.ConnectedClientsIds.Count > 1);
+            if (match != null && match.IsSpawned && othersPlaying && match.HostFps.Value < 30)
+            {
+                string warn = nm.IsServer
+                    ? "YOU ARE HOSTING AT " + match.HostFps.Value + " FPS · LOWER SETTINGS > GRAPHICS SO EVERYONE PLAYS SMOOTHLY"
+                    : "HOST IS RUNNING AT " + match.HostFps.Value + " FPS · THE GAME MAY STUTTER";
+                HudLabel(new Rect(22 * s, 60 * s, 620 * s, 20 * s), warn, m_HudFeed, new Color(1f, 0.75f, 0.35f));
+            }
         }
 
         void HandleBindingCapture()

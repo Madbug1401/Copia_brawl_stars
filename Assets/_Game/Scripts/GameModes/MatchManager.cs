@@ -56,6 +56,9 @@ namespace FPSLAN
         public readonly NetworkVariable<bool> Competitive = new NetworkVariable<bool>(false);
         /// <summary>Id único da partida atual (as recompensas são aplicadas uma vez por id).</summary>
         public readonly NetworkVariable<FixedString64Bytes> MatchId = new NetworkVariable<FixedString64Bytes>();
+        /// <summary>FPS do host: o jogo de todos corre ao ritmo dele (física, projéteis, envio de estados).</summary>
+        public readonly NetworkVariable<int> HostFps = new NetworkVariable<int>(60);
+        float m_NextHostFpsSample;
 
         // Servidor: recompensas e objetivos
         bool m_RewardsSent;
@@ -121,6 +124,13 @@ namespace FPSLAN
         void Update()
         {
             if (!IsSpawned || !IsServer) return;
+
+            if (Time.unscaledTime >= m_NextHostFpsSample)
+            {
+                m_NextHostFpsSample = Time.unscaledTime + 1f;
+                int fps = Mathf.RoundToInt(GraphicsOptions.Fps);
+                if (Mathf.Abs(fps - HostFps.Value) >= 2) HostFps.Value = fps;
+            }
 
             if (Mode.Value == GameMode.ItTakesTwo)
             {

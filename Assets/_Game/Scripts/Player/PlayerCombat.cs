@@ -331,7 +331,24 @@ namespace FPSLAN
             CombatSystem.Instance.StartAttack(ctx);
             attack.delivery.OnOwnerFire(m_Player, ctx);
             m_Player.Visuals?.OnAttackStarted(attack, super);
-            FireRpc(super, origin, dir, target, seed);
+            FireRpc(super, origin, dir, target, seed, ViewTime());
+        }
+
+        /// <summary>
+        /// Cliente: hora (relógio do servidor) a que estava a ver os outros jogadores neste frame. O host usa-a para os
+        /// recuar ao validar o ataque (compensação de latência). Host e bots: -1 (testam no próprio PC).
+        /// </summary>
+        double ViewTime()
+        {
+            if (IsServer) return -1;
+            double sum = 0; int n = 0;
+            foreach (var p in PlayerNetwork.All)
+            {
+                if (p == null || p == m_Player || !p.IsSpawned || p.Motor == null || p.Motor.IsOwner) continue;
+                sum += p.Motor.RenderTime;
+                n++;
+            }
+            return n > 0 ? sum / n : -1;
         }
 
         void MeleeLocal()
@@ -340,11 +357,11 @@ namespace FPSLAN
             var direction = m_Player.Motor.AimDirection;
             m_Player.Visuals?.OnMeleeStarted();
             Sfx.PlayAt(Sound.Melee, origin, m_Player.IsLocalHuman ? 0.75f : 1f);
-            MeleeRpc(origin, direction);
+            MeleeRpc(origin, direction, ViewTime());
         }
 
         [Rpc(SendTo.Server)]
-        void MeleeRpc(Vector3 origin, Vector3 direction)
+        void MeleeRpc(Vector3 origin, Vector3 direction, double viewTime)
         {
             var b = Brawler;
             if (b == null || m_Player.Health.IsDead || !MatchManager.IsCombatActive || MatchManager.IsMatchOver) return;
@@ -358,7 +375,9 @@ namespace FPSLAN
             direction.Normalize();
 
             m_Player.Health.ServerNotifyAttacked();
-            CombatSystem.Instance.TraceMelee(m_Player, origin, direction, profile);
+            bool rewound = LagCompensation.Begin(m_Player, LagCompensation.LagFor(m_Player, viewTime));
+            try { CombatSystem.Instance.TraceMelee(m_Player, origin, direction, profile); }
+            finally { if (rewound) LagCompensation.End(); }
             RemoteMeleeRpc();
         }
 
@@ -370,7 +389,7 @@ namespace FPSLAN
         }
 
         [Rpc(SendTo.Server)]
-        void FireRpc(bool super, Vector3 origin, Vector3 direction, Vector3 target, int seed)
+        void FireRpc(bool super, Vector3 origin, Vector3 direction, Vector3 target, int seed, double viewTime)
         {
             var b = Brawler;
             if (b == null || m_Player.Health.IsDead || !MatchManager.IsCombatActive || MatchManager.IsMatchOver) return;
@@ -418,7 +437,9 @@ namespace FPSLAN
             if (toTarget.magnitude > maxRange) target = origin + toTarget.normalized * attack.Range;
 
             m_Player.Health.ServerNotifyAttacked();
-            CombatSystem.Instance.StartAttack(MakeContext(attack, super, true, origin, direction, target, seed));
+            var serverCtx = MakeContext(attack, super, true, origin, direction, target, seed);
+            serverCtx.lag = LagCompensation.LagFor(m_Player, viewTime);
+            CombatSystem.Instance.StartAttack(serverCtx);
             RemoteFireRpc(super, origin, direction, target, seed);
         }
 
