@@ -99,3 +99,32 @@ python analisar_rotas.py out/cidade_velha_layout.json out/Renders/planta_rotas.p
 
 Rasteriza os colisores inflacionados pelo raio do CharacterController (0.4 m) e confirma ligação entre spawns,
 acesso às 8 aterragens, 3 rotas independentes e largura mínima de cada rota. Não substitui o teste com o jogador.
+
+## 4. Interiores: igreja e sobrado (Unity)
+
+**FPS-LAN ▸ Mapas ▸ Cidade Velha: interiores (igreja e sobrado)** (`Editor/CidadeVelhaInteriores.cs`) troca os dois
+blocos maciços do fundo da praça por edifícios com interior. Corre-se depois de reconstruir a Cidade Velha a partir do
+Blender (como o menu da costa) e pode repetir-se. Os blocos originais ficam no prefab, inativos.
+
+- **Igreja (−Z)**: nave com 8 bancos (livros, genuflexórios), passadeira vermelha, teia de comunhão, presbitério com
+  altar (toalha com renda, sacrário, castiçais, missal), arco azul com fundo estrelado e crucifixo, 4 nichos com imagens,
+  estandartes vermelho e azul, ventoinhas de parede, via-sacra, lustre de velas, lâmpada do Santíssimo, ambão, cadeiras,
+  confessionário, pias de água benta, velas votivas, teto branco com vigas verde-água.
+  **Coro alto** a 3,3 m sobre a entrada, com **duas escadas** (uma de cada lado) e balaustrada: os olhos ficam à altura
+  do **óculo** da fachada (4,9 m), agora aberto, e há duas janelas do coro na fachada (x = ±5,5) — posições de atirador.
+- **Sobrado (+Z)**: interior rústico em troncos. Rés-do-chão com fogão de ferro (panelas, tacho de cobre, chaleira,
+  lume), lenha, prateleiras com louça e frascos, bancada, mesa posta com cadeiras e candeeiro de petróleo, berço,
+  cadeiras de baloiço, baús, cristaleira, barris, relógio, quadros, vasos nas janelas (com grades).
+  **Escada de madeira** (16 degraus) para o 1.º andar (quarto: cama com colcha de retalhos, guarda-roupa, lavatório,
+  roca de fiar, secretária). As **5 janelas de cima e a varanda** (alargada, com guarda de ferro) abrem para a praça,
+  viradas para a igreja.
+- **Luz e sombras**: 3 luzes pontuais por edifício (altar e candeeiro da cozinha com sombras suaves), sol a entrar pelas
+  janelas, oclusão nos vértices e sombras de contacto debaixo da mobília. Cada edifício é desenhado com uma malha por
+  material (~40k triângulos cada).
+- **Jogo**: colisores em caixa (paredes com vãos, rampas suaves nas escadas, móveis); não se sai pelas janelas nem pelo
+  óculo, mas as balas passam. Os limites invisíveis N/S do mapa deixaram de atravessar as fachadas e o `MapInfo`
+  passou a ter `extraAreas` (saltos e gemas largadas dentro dos edifícios não são puxados para a praça).
+
+**FPS-LAN ▸ Mapas ▸ Validar interiores da Cidade Velha** anda com o CharacterController do jogador desde os spawns até
+ao coro (pelas duas escadas), ao 1.º andar e à varanda, confirma que as janelas não deixam sair e testa as linhas de tiro
+óculo/coro ↔ janelas/varanda. Imagens em `Docs/preview/cidade_velha/interior_*.jpg`.
