@@ -1547,7 +1547,9 @@ namespace FPSLAN
         {
             DrawSharedMenuBackground();
             float s = Scale;
-            float w = Mathf.Min(350 * s, Screen.width - 40 * s), h = 330 * s;
+            string room = ConnectionManager.Instance != null ? ConnectionManager.Instance.RoomCode : "";
+            bool hasRoom = !string.IsNullOrEmpty(room);
+            float w = Mathf.Min(350 * s, Screen.width - 40 * s), h = (hasRoom ? 400 : 330) * s;
             var panel = new Rect((Screen.width - w) * 0.5f, (Screen.height - h) * 0.5f, w, h);
             EnsureMenuStyles();
             DrawTechPanel(panel, true);
@@ -1560,6 +1562,14 @@ namespace FPSLAN
                 m_Paused = false;
                 PlayerPrefs.Save();
                 ConnectionManager.Instance?.Leave();
+            }
+            if (hasRoom)
+            {
+                // Sala online: o código para os amigos entrarem (PLAY ONLINE → JOIN WITH ROOM CODE).
+                MText(new Rect(x, panel.y + 288 * s, bw, 18 * s), "ROOM CODE", m_MT12, MMuted, TextAnchor.MiddleLeft);
+                MText(new Rect(x, panel.y + 306 * s, bw - 96 * s, 40 * s), room, m_MT24, MCyan, TextAnchor.MiddleLeft);
+                if (MenuButton(new Rect(x + bw - 90 * s, panel.y + 308 * s, 90 * s, 36 * s), "COPY", 8104, MBtn.Normal, false, m_MT14) == MClick.Clicked)
+                    GUIUtility.systemCopyBuffer = room;
             }
         }
 
