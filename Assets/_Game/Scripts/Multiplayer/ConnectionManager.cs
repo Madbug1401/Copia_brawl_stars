@@ -2,13 +2,21 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
+using Unity.Services.Authentication;
+using Unity.Services.Core;
+using Unity.Services.Relay;
+using Unity.Services.Relay.Models;
 using UnityEngine;
 
 namespace FPSLAN
 {
-    /// <summary>Host / Join na LAN, sobre Unity Transport (UDP). Os servidores aparecem sozinhos via LanDiscovery.</summary>
+    /// <summary>
+    /// Host / Join na LAN, sobre Unity Transport (UDP). Os servidores aparecem sozinhos via LanDiscovery.
+    /// Online: Unity Relay — o host cria uma sala e partilha o código; não é preciso abrir portas nem IPs.
+    /// </summary>
     [DefaultExecutionOrder(-1000)]
     public class ConnectionManager : MonoBehaviour
     {
@@ -23,17 +31,24 @@ namespace FPSLAN
         /// <summary>Porta em que este PC está a servir (anunciada aos clientes pela LanDiscovery).</summary>
         public ushort HostPort { get; private set; } = DefaultPort;
 
+        /// <summary>A sessão atual (ou a que está a ser criada) passa pelo Unity Relay.</summary>
+        public bool IsOnline { get; private set; }
+        /// <summary>Código da sala online (vazio na LAN). O host partilha-o; os outros escrevem-no em PLAY ONLINE.</summary>
+        public string RoomCode { get; private set; } = "";
+
         float m_ConnectStartedAt;
         string m_ConnectTarget = "";
+        bool m_RelayPending;   // a pedir sala/entrada ao Relay (antes de o Netcode arrancar)
 
         static NetworkManager NM => NetworkManager.Singleton;
 
         static bool s_HostAfterLoad;
         static GameMode s_HostMode;
         static ushort s_HostPort;
+        static bool s_HostOnline;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetPendingHost() => s_HostAfterLoad = false;
+        static void ResetPendingHost() { s_HostAfterLoad = false; s_HostOnline = false; s_SignIn = null; s_CommandLineJoinDone = false; }
 
         void Awake()
         {
@@ -50,7 +65,7 @@ namespace FPSLAN
 
         public static bool SupportsGemGrab(string mapKey) => mapKey == "santiago" || mapKey == "sal" || mapKey == "fogo";
 
-        public bool HostMap(string mapKey, ushort port = DefaultPort)
+        public bool HostMap(string mapKey, ushort port = DefaultPort, bool online = false)
         {
             if (NM == null || NM.IsListening || IsConnecting) return false;
             if (MatchManager.MenuSelectedMode == GameMode.ItTakesTwo) mapKey = "santiago";
@@ -69,7 +84,7 @@ namespace FPSLAN
                 return false;
             }
             if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == scene)
-                return Host(port);
+                return Host(port, online);
             if (!Application.CanStreamedLevelBeLoaded(scene))
             {
                 Status = "Scene unavailable: " + scene;
@@ -77,6 +92,7 @@ namespace FPSLAN
             }
             s_HostMode = MatchManager.MenuSelectedMode;
             s_HostPort = port;
+            s_HostOnline = online;
             s_HostAfterLoad = true;
             IsConnecting = true;
             UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(scene);
@@ -90,7 +106,9 @@ namespace FPSLAN
             s_HostAfterLoad = false;
             MatchManager.MenuSelectedMode = s_HostMode;
             IsConnecting = false;
-            if (!Host(s_HostPort)) GameUI.ClearPendingBots();
+            bool online = s_HostOnline;
+            s_HostOnline = false;
+            if (!Host(s_HostPort, online)) GameUI.ClearPendingBots();
         }
 
         void Start()
@@ -106,6 +124,24 @@ namespace FPSLAN
             NM.ConnectionApprovalCallback = ApproveConnection;
             NM.NetworkConfig.ConnectionApproval = true;
             if (s_HostAfterLoad) StartCoroutine(HostAfterSceneLoad());
+            else if (!s_CommandLineJoinDone) StartCoroutine(JoinFromCommandLine());
+        }
+
+        static bool s_CommandLineJoinDone;
+
+        /// <summary>Testes: ".exe -joinroom CODIGO" entra logo na sala online, sem passar pelo menu.</summary>
+        IEnumerator JoinFromCommandLine()
+        {
+            s_CommandLineJoinDone = true;
+            var args = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length - 1; i++)
+                if (args[i] == "-joinroom")
+                {
+                    yield return null;
+                    yield return null;
+                    JoinOnline(args[i + 1]);
+                    yield break;
+                }
         }
 
         void OnDestroy()
@@ -120,27 +156,36 @@ namespace FPSLAN
 
         void Update()
         {
-            if (IsConnecting && NM != null && !NM.IsServer && !NM.IsConnectedClient && Time.unscaledTime - m_ConnectStartedAt > ConnectTimeout)
+            if (IsConnecting && !m_RelayPending && NM != null && !NM.IsServer && !NM.IsConnectedClient && Time.unscaledTime - m_ConnectStartedAt > ConnectTimeout)
             {
                 // Nenhuma resposta: o pedido não chegou ao host (IP errado, rede diferente ou firewall do host).
-                Status = "No reply from " + m_ConnectTarget + ". On the host PC press FIX FIREWALL, " +
-                         "and check both PCs are on the same Wi-Fi.";
+                Status = IsOnline
+                    ? "No reply from " + m_ConnectTarget + ". Check the code and that the host is still in the match."
+                    : "No reply from " + m_ConnectTarget + ". On the host PC press FIX FIREWALL, " +
+                      "and check both PCs are on the same Wi-Fi.";
                 IsConnecting = false;
                 NM.Shutdown();
             }
         }
 
-        public bool Host(ushort port = DefaultPort)
+        public bool Host(ushort port = DefaultPort, bool online = false)
         {
-            if (NM == null || NM.IsListening) return false;
+            if (NM == null || NM.IsListening || m_RelayPending) return false;
             if (MatchManager.MenuSelectedMode == GameMode.ItTakesTwo &&
                 UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "CidadeVelha")
-                return HostMap("santiago", port);
+                return HostMap("santiago", port, online);
             if (MatchManager.MenuSelectedMode == GameMode.GemGrab && GemGrabManager.Instance == null)
             {
                 Status = "GEM RUSH requires a map with a gem emitter (Santiago, Sal or Fogo).";
                 return false;
             }
+            if (online)
+            {
+                HostRelayAsync();
+                return true;
+            }
+            IsOnline = false;
+            RoomCode = "";
 
             var utp = NM.GetComponent<UnityTransport>();
             utp.SetConnectionData("127.0.0.1", port, "0.0.0.0");
@@ -154,7 +199,9 @@ namespace FPSLAN
         /// <summary>Liga a um servidor. Aceita "IP" ou "IP:porta".</summary>
         public bool Join(string code, ushort port = DefaultPort)
         {
-            if (NM == null || NM.IsListening) return false;
+            if (NM == null || NM.IsListening || m_RelayPending) return false;
+            IsOnline = false;
+            RoomCode = "";
 
             if (!TryParseCode(code, out var ip, out var parsedPort))
             {
@@ -205,6 +252,9 @@ namespace FPSLAN
         public void Leave()
         {
             GameUI.ClearPendingBots();
+            m_RelayPending = false;
+            IsOnline = false;
+            RoomCode = "";
             if (NM == null) return;
             IsConnecting = false;
             if (CombatSystem.Instance != null) CombatSystem.Instance.ClearAll();
@@ -237,6 +287,7 @@ namespace FPSLAN
         void OnClientDisconnected(ulong clientId)
         {
             if (NM.IsServer) return;
+            RoomCode = "";
 
             // Este cliente perdeu a ligação ao host (ou o host recusou a entrada).
             bool duringConnect = IsConnecting;
@@ -249,6 +300,156 @@ namespace FPSLAN
             else Status = "Disconnected from host.";
             if (CombatSystem.Instance != null) CombatSystem.Instance.ClearAll();
             MenuCamera.SetActive(true);
+        }
+
+        // ------------------------------------------------------------------ online (Unity Relay)
+
+        /// <summary>Entra numa sala online com o código que o host partilhou.</summary>
+        public bool JoinOnline(string code)
+        {
+            if (NM == null || NM.IsListening || m_RelayPending) return false;
+            code = NormalizeRoomCode(code);
+            if (!IsValidRoomCode(code))
+            {
+                Status = "Invalid room code. Use the code shown on the host's screen.";
+                return false;
+            }
+            JoinRelayAsync(code);
+            return true;
+        }
+
+        /// <summary>Tira espaços e passa a maiúsculas: os códigos do Relay são letras e números.</summary>
+        public static string NormalizeRoomCode(string code)
+        {
+            var sb = new System.Text.StringBuilder();
+            foreach (var c in (code ?? "").Trim())
+                if (!char.IsWhiteSpace(c) && c != '-') sb.Append(char.ToUpperInvariant(c));
+            return sb.ToString();
+        }
+
+        public static bool IsValidRoomCode(string code)
+        {
+            if (string.IsNullOrEmpty(code) || code.Length < 6 || code.Length > 12) return false;
+            foreach (var c in code) if (!char.IsLetterOrDigit(c) || c > 127) return false;
+            return true;
+        }
+
+        async void HostRelayAsync()
+        {
+            m_RelayPending = true;
+            IsConnecting = true;
+            IsOnline = true;
+            RoomCode = "";
+            Status = "Creating online room...";
+            try
+            {
+                await EnsureSignedInAsync();
+                if (!StillPending()) return;
+                // Lugares para os outros humanos (os bots correm no host e não contam).
+                var allocation = await RelayService.Instance.CreateAllocationAsync(MaxPlayers - 1);
+                var code = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+                if (!StillPending()) return;
+
+                NM.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, "dtls"));
+                m_RelayPending = false;
+                IsConnecting = false;
+                if (!NM.StartHost())
+                {
+                    FailOnline("Could not start the online room. Try again.");
+                    return;
+                }
+                RoomCode = code;
+                Status = "";
+                GUIUtility.systemCopyBuffer = code;   // pronto a colar no chat dos amigos
+                Debug.Log("[Online] Room created: " + code + " (region " + allocation.Region + ")");
+            }
+            catch (System.Exception e)
+            {
+                if (StillPending()) FailOnline(FriendlyOnlineError(e, false));
+                Debug.LogWarning("[Online] Create room failed: " + e);
+            }
+        }
+
+        async void JoinRelayAsync(string code)
+        {
+            m_RelayPending = true;
+            IsConnecting = true;
+            IsOnline = true;
+            RoomCode = "";
+            m_ConnectTarget = "room " + code;
+            Status = "Joining room " + code + "...";
+            try
+            {
+                await EnsureSignedInAsync();
+                if (!StillPending()) return;
+                var allocation = await RelayService.Instance.JoinAllocationAsync(code);
+                if (!StillPending()) return;
+
+                NM.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, "dtls"));
+                m_RelayPending = false;
+                m_ConnectStartedAt = Time.unscaledTime;
+                if (!NM.StartClient())
+                {
+                    FailOnline("Could not connect to the room. Try again.");
+                    return;
+                }
+                RoomCode = code;
+            }
+            catch (System.Exception e)
+            {
+                if (StillPending()) FailOnline(FriendlyOnlineError(e, true));
+                Debug.LogWarning("[Online] Join room failed: " + e);
+            }
+        }
+
+        /// <summary>Falso se o pedido foi cancelado (Leave/CANCEL) ou a cena mudou enquanto se esperava.</summary>
+        bool StillPending() => this != null && m_RelayPending && NM != null;
+
+        void FailOnline(string message)
+        {
+            m_RelayPending = false;
+            IsConnecting = false;
+            IsOnline = false;
+            RoomCode = "";
+            Status = message;
+            GameUI.ClearPendingBots();
+            if (NM != null && NM.IsListening) NM.Shutdown();
+            MenuCamera.SetActive(true);
+        }
+
+        static string FriendlyOnlineError(System.Exception e, bool joining)
+        {
+            var msg = (e.Message ?? "").ToLowerInvariant();
+            if (joining && (msg.Contains("join code") || msg.Contains("not found") || msg.Contains("invalid")))
+                return "Room not found. Check the code (the room closes when the host leaves).";
+            if (joining && (msg.Contains("full") || msg.Contains("capacity")))
+                return "The room is full.";
+            if (msg.Contains("network") || msg.Contains("connect") || msg.Contains("timeout") || msg.Contains("resolve") || msg.Contains("unreachable"))
+                return "No internet connection (or Unity services unreachable). Check your connection and try again.";
+            return (joining ? "Could not join the room: " : "Could not create the room: ") + e.Message;
+        }
+
+        static Task s_SignIn;
+
+        /// <summary>Inicializa os serviços Unity e faz login anónimo (uma vez por execução).</summary>
+        static Task EnsureSignedInAsync()
+        {
+            if (s_SignIn == null || s_SignIn.IsFaulted || s_SignIn.IsCanceled) s_SignIn = SignInAsync();
+            return s_SignIn;
+        }
+
+        static async Task SignInAsync()
+        {
+            if (UnityServices.State != ServicesInitializationState.Initialized)
+            {
+                // Perfil por processo: duas cópias do jogo no mesmo PC (ou Multiplayer Play Mode)
+                // ficam com jogadores diferentes; senão o Relay via o mesmo jogador dos dois lados.
+                var options = new InitializationOptions();
+                options.SetProfile("p" + System.Diagnostics.Process.GetCurrentProcess().Id);
+                await UnityServices.InitializeAsync(options);
+            }
+            if (!AuthenticationService.Instance.IsSignedIn)
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
         }
 
         // ------------------------------------------------------------------ IPs e firewall

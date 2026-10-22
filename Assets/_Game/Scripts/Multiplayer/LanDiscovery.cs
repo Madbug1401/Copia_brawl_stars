@@ -90,7 +90,8 @@ namespace FPSLAN
         void Update()
         {
             var nm = NetworkManager.Singleton;
-            bool host = nm != null && nm.IsServer && nm.IsListening;
+            // Salas online (Relay) não se anunciam na LAN: só se entra nelas com o código.
+            bool host = nm != null && nm.IsServer && nm.IsListening && !(ConnectionManager.Instance != null && ConnectionManager.Instance.IsOnline);
             bool browse = nm == null || !nm.IsListening;   // no menu, sem ligação nem servidor
 
             if (host != m_HostMode) { CloseAll(); m_HostMode = host; }
