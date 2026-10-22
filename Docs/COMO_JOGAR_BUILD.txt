@@ -1,10 +1,22 @@
-FPS-LAN — Build Windows
+CHIEFS&GEMS — Build Windows
 
 COMO INICIAR
 1. Copie ou extraia a pasta inteira para o computador Windows.
-2. Execute FPS-LAN.exe.
-3. Nao mova o executavel para fora desta pasta: os ficheiros FPS-LAN_Data,
+2. Execute CHIEFS&GEMS.exe.
+3. Nao mova o executavel para fora desta pasta: os ficheiros CHIEFS&GEMS_Data,
    UnityPlayer.dll e restantes dependencias devem permanecer junto dele.
+
+JOGAR ONLINE (PELA INTERNET)
+Nao e preciso estar na mesma rede, nem abrir portas, nem saber IPs.
+1. Todos com a MESMA build do jogo e com ligacao a Internet.
+2. Quem cria a sala: PLAY ONLINE > CREATE ROOM > escolher modo, mapa e
+   personagem > CREATE ROOM. O codigo da sala (ex.: K7Q2XB) e copiado
+   automaticamente; tambem aparece no menu de pausa (Esc) com o botao COPY.
+3. Os amigos: PLAY ONLINE > escrever o codigo em "JOIN WITH ROOM CODE" >
+   JOIN > escolher personagem > JOIN MATCH.
+4. Quem cria a sala e o anfitriao: se sair, a sala fecha para todos.
+   A latencia depende da distancia ao servidor do Unity Relay (Europa),
+   por isso nota-se mais do que na LAN.
 
 JOGAR EM REDE LOCAL (LAN)
 1. Todos os PCs ligados a MESMA rede Wi-Fi/cabo e com a MESMA build do jogo
@@ -65,6 +77,6 @@ ajustar a mira e o volume. O HUD pode ser reposicionado na aba HUD.
 As alteracoes ficam guardadas localmente. REPOR restaura os valores padrao.
 
 Esta e uma build Windows 64-bit (x64). Para distribuir o jogo, envie a pasta
-"build windows" completa; nao envie apenas FPS-LAN.exe. A subpasta
-"FPS-LAN_BackUpThisFolder_ButDontShipItWithYourGame", se existir, e um backup
+"build windows" completa; nao envie apenas CHIEFS&GEMS.exe. A subpasta
+"CHIEFS&GEMS_BackUpThisFolder_ButDontShipItWithYourGame", se existir, e um backup
 do Unity e nao e necessaria para jogar.
