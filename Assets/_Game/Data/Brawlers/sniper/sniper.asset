@@ -15,7 +15,7 @@ MonoBehaviour:
   brawlerId: sniper
   displayName: Lince
   shortName: 
-  role: "Sniper \u2014 38 no corpo, 50 na cabe\xE7a; Especial: tiro fatal (headshot elimina; carrega com o tempo)"
+  role: "The Sharpshooter · Precise long-range shots and a fatal headshot special."
   available: 1
   stats:
     maxHealth: 85
@@ -36,7 +36,7 @@ MonoBehaviour:
     passiveChargePerSecond: 0.033333335
     activation: 1
     mode:
-      label: Tiro Fatal
+      label: Fatal Shot
       duration: 0
       maxShots: 1
       shotCooldown: 0.5

@@ -15,7 +15,7 @@ MonoBehaviour:
   brawlerId: shotgunner
   displayName: Riot
   shortName: 
-  role: "Shotgun / Combate pr\xF3ximo \u2014 6 bagos: 54 de perto, 18 de longe; Especial: rajada que empurra e destr\xF3i cobertura"
+  role: "The Breacher · Powerful close-range shotgun attacks."
   available: 1
   stats:
     maxHealth: 135

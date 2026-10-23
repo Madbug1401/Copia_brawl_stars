@@ -12,7 +12,7 @@ namespace FPSLAN
     /// Progressão em jogo: o dono declara o seu loadout (skin, pet, níveis, melhorias); o host calcula os modificadores
     /// efetivos com limites e normalização (StatResolver) e sincroniza-os em 'Effective'. Os dados base não mudam.
     /// </summary>
-    public class PlayerNetwork : NetworkBehaviour
+    public partial class PlayerNetwork : NetworkBehaviour
     {
         public static readonly List<PlayerNetwork> All = new List<PlayerNetwork>();
         public static PlayerNetwork Local { get; private set; }
@@ -42,6 +42,13 @@ namespace FPSLAN
         public readonly NetworkVariable<int> Kills = new NetworkVariable<int>(0);
         public readonly NetworkVariable<int> Deaths = new NetworkVariable<int>(0);
         public readonly NetworkVariable<int> Assists = new NetworkVariable<int>(0);
+        /// <summary>Ping (ida e volta, ms) deste jogador ao host, medido pelo host. 0 = host, -1 = bot/desconhecido.</summary>
+        public readonly NetworkVariable<int> PingMs = new NetworkVariable<int>(-1);
+        float m_NextPingSample;
+        double m_NextPingSend;
+        float m_LocalRttMs = -1f;
+        /// <summary>Dono (cliente): ping medido pelo próprio jogo (ida e volta ao host, ms). -1 enquanto não houver medição.</summary>
+        public int LocalPingMs => m_LocalRttMs < 0f ? -1 : Mathf.RoundToInt(m_LocalRttMs);
 
         /// <summary>0 = equipa azul, 1 = equipa vermelha, -1 = ainda não atribuída.</summary>
         public readonly NetworkVariable<int> TeamId = new NetworkVariable<int>(-1);
@@ -51,7 +58,16 @@ namespace FPSLAN
         public PlayerMotor Motor { get; private set; }
         public PlayerHealth Health { get; private set; }
         public PlayerCombat Combat { get; private set; }
-        public PlayerVisuals Visuals { get; private set; }
+        /// <summary>
+        /// Visual do jogador. Devolve um null "verdadeiro" depois de o componente ser destruído, para que os muitos
+        /// 'Visuals?.X()' do código não chamem métodos num objeto destruído (o '?.' não vê o null falso do Unity).
+        /// </summary>
+        public PlayerVisuals Visuals
+        {
+            get => m_Visuals != null ? m_Visuals : null;
+            private set => m_Visuals = value;
+        }
+        PlayerVisuals m_Visuals;
         public BotBrain Bot { get; private set; }
         public StatusEffects Status { get; private set; }
 
@@ -81,7 +97,7 @@ namespace FPSLAN
             get
             {
                 var n = PlayerName.Value.ToString();
-                return string.IsNullOrEmpty(n) ? "Jogador " + Id : n;
+                return string.IsNullOrEmpty(n) ? "Player " + Id : n;
             }
         }
 
@@ -135,6 +151,7 @@ namespace FPSLAN
                 GameExperience.Current.ProfileChanged += OnLocalProfileChanged;
             }
 
+            PetFeeding.OnValueChanged += OnPetFeedingChanged;
             HeroId.OnValueChanged += OnHeroChangedLoadout;
             Loadout.OnValueChanged += OnLoadoutChanged;
             if (IsServer)
@@ -148,6 +165,7 @@ namespace FPSLAN
 
         public override void OnNetworkDespawn()
         {
+            PetFeeding.OnValueChanged -= OnPetFeedingChanged;
             HeroId.OnValueChanged -= OnHeroChangedLoadout;
             Loadout.OnValueChanged -= OnLoadoutChanged;
             if (IsOwner && !IsBot && GameExperience.Current != null) GameExperience.Current.ProfileChanged -= OnLocalProfileChanged;
@@ -166,14 +184,66 @@ namespace FPSLAN
             if (MatchManager.IsCoopActive && cmd.interact && MatchManager.FindDownedTeammate(this,
                 MatchManager.Instance.coopReviveRadius) != null)
                 cmd.fire = cmd.meleePressed = cmd.superPressed = false;
+            if (ScriptedCommands == null && IsLocalHuman)
+            {
+                // A alimentar o pet com UPRA: fica parado (pode olhar à volta) durante a animação
+                if (IsFeedingAnim || m_FeedPending)
+                {
+                    var look = cmd.lookDelta;
+                    cmd = default;
+                    cmd.lookDelta = look;
+                }
+                // Roda de sprays aberta: o rato escolhe a cor, a câmara e as armas ficam paradas
+                if (SprayWheelOpen)
+                {
+                    cmd.lookDelta = Vector2.zero;
+                    cmd.fire = cmd.meleePressed = cmd.superPressed = false;
+                }
+            }
             return cmd;
         }
 
         void Update()
         {
+            TickPetFood();
+            TickSpray();
+            if (IsSpawned && IsServer) ServerSamplePing();
+            if (IsSpawned && IsOwner && !IsServer && !IsBot && Time.unscaledTimeAsDouble >= m_NextPingSend)
+            {
+                m_NextPingSend = Time.unscaledTimeAsDouble + 0.5;
+                PingServerRpc(Time.unscaledTimeAsDouble, LocalPingMs);
+            }
             if (!IsSpawned || !IsLocalHuman) return;
             bool held = MatchManager.IsCoopActive && !Health.IsDead && GameUI.GameplayInputAllowed && InputReader.InteractHeld;
             if (CoopInteractHeld.Value != held) CoopInteractHeld.Value = held;
+        }
+
+        /// <summary>Host: uma vez por segundo, publica o ping de cada jogador para o placar.</summary>
+        void ServerSamplePing()
+        {
+            if (Time.unscaledTime < m_NextPingSample) return;
+            m_NextPingSample = Time.unscaledTime + 1f;
+            // Clientes humanos: o valor vem do próprio cliente (PingServerRpc), medido pelo jogo
+            if (IsBot) { if (PingMs.Value != -1) PingMs.Value = -1; }
+            else if (OwnerClientId == NetworkManager.ServerClientId && PingMs.Value != 0) PingMs.Value = 0;
+        }
+
+        // Ping medido pelo jogo (e não pelo transporte, que perde a noção com perda de pacotes): o dono envia a sua
+        // hora, o host devolve-a; a diferença é a ida e volta real, incluindo o tempo de frame do host.
+        [Rpc(SendTo.Server, Delivery = RpcDelivery.Unreliable)]
+        void PingServerRpc(double clientTime, int lastRttMs, RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
+            if (lastRttMs >= 0) { int v = Mathf.Clamp(lastRttMs, 0, 9999); if (PingMs.Value != v) PingMs.Value = v; }
+            PongRpc(clientTime);
+        }
+
+        [Rpc(SendTo.Owner, Delivery = RpcDelivery.Unreliable, InvokePermission = RpcInvokePermission.Server)]
+        void PongRpc(double clientTime)
+        {
+            float rtt = (float)((Time.unscaledTimeAsDouble - clientTime) * 1000.0);
+            if (rtt < 0f || rtt > 10000f) return;
+            m_LocalRttMs = m_LocalRttMs < 0f ? rtt : Mathf.Lerp(m_LocalRttMs, rtt, 0.3f);
         }
 
         [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
@@ -187,7 +257,8 @@ namespace FPSLAN
         public void ChangeHero(int heroId)
         {
             if (!IsOwner) return;
-            if (MatchManager.IsCoopActive && !IsBot) return;
+            if (!IsBot && MatchManager.Instance != null && MatchManager.Instance.IsSpawned &&
+                (MatchManager.Instance.IsCoop || MatchManager.Instance.Mode.Value == GameMode.GemGrab)) return;
             HeroId.Value = BrawlerRegistry.Sanitize(heroId);
         }
 
@@ -244,6 +315,9 @@ namespace FPSLAN
             var gx = GameExperience.Current;
             int previousMax = EffectiveMaxHealth;
             var mods = StatResolver.Resolve(gx.Config, gx.PetCatalog, Loadout.Value, competitive);
+            var feeding = PetFeeding.Value;
+            if (feeding.Remaining(PetFoodTime) > 0 && feeding.petHash == Loadout.Value.petHash)
+                PetFoodRules.ApplyBoost(ref mods, (PetAbilityType)feeding.ability);
             if (!mods.Equals(Effective.Value)) Effective.Value = mods;
             if (Health != null && Health.IsSpawned && EffectiveMaxHealth != previousMax) Health.ServerOnMaxHealthChanged(previousMax);
         }

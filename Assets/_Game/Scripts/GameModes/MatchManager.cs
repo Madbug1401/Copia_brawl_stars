@@ -56,6 +56,9 @@ namespace FPSLAN
         public readonly NetworkVariable<bool> Competitive = new NetworkVariable<bool>(false);
         /// <summary>Id único da partida atual (as recompensas são aplicadas uma vez por id).</summary>
         public readonly NetworkVariable<FixedString64Bytes> MatchId = new NetworkVariable<FixedString64Bytes>();
+        /// <summary>FPS do host: o jogo de todos corre ao ritmo dele (física, projéteis, envio de estados).</summary>
+        public readonly NetworkVariable<int> HostFps = new NetworkVariable<int>(60);
+        float m_NextHostFpsSample;
 
         // Servidor: recompensas e objetivos
         bool m_RewardsSent;
@@ -121,6 +124,13 @@ namespace FPSLAN
         void Update()
         {
             if (!IsSpawned || !IsServer) return;
+
+            if (Time.unscaledTime >= m_NextHostFpsSample)
+            {
+                m_NextHostFpsSample = Time.unscaledTime + 1f;
+                int fps = Mathf.RoundToInt(GraphicsOptions.Fps);
+                if (Mathf.Abs(fps - HostFps.Value) >= 2) HostFps.Value = fps;
+            }
 
             if (Mode.Value == GameMode.ItTakesTwo)
             {
@@ -294,7 +304,7 @@ namespace FPSLAN
         {
             Phase.Value = MatchPhase.Ended;
             IsRoundIntermission.Value = false;
-            WinnerName.Value = new FixedString64Bytes(winner != null ? winner.DisplayName : "Ninguém");
+            WinnerName.Value = new FixedString64Bytes(winner != null ? winner.DisplayName : "Nobody");
             PhaseEndTime.Value = NetworkManager.ServerTime.Time + resultsSeconds;
             ServerSendRewards(p => winner != null && p == winner, winner == null);
         }
@@ -310,7 +320,7 @@ namespace FPSLAN
         {
             Phase.Value = MatchPhase.Ended;
             IsRoundIntermission.Value = false;
-            string name = winningTeam == 0 ? "Equipa Azul" : winningTeam == 1 ? "Equipa Vermelha" : "Empate";
+            string name = winningTeam == 0 ? "Blue Team" : winningTeam == 1 ? "Red Team" : "Draw";
             WinnerName.Value = new FixedString64Bytes(name);
             PhaseEndTime.Value = NetworkManager.ServerTime.Time + resultsSeconds;
             ServerSendRewards(p => winningTeam >= 0 && p.TeamId.Value == winningTeam, winningTeam < 0);
@@ -423,7 +433,7 @@ namespace FPSLAN
         {
             Phase.Value = MatchPhase.Ended;
             IsRoundIntermission.Value = false;
-            WinnerName.Value = new FixedString64Bytes("Empate");
+            WinnerName.Value = new FixedString64Bytes("Draw");
             PhaseEndTime.Value = NetworkManager.ServerTime.Time + resultsSeconds;
             ServerSendRewards(p => false, true);
         }
@@ -569,7 +579,7 @@ namespace FPSLAN
         [Rpc(SendTo.Everyone)]
         void FirstBloodRpc(FixedString64Bytes killer)
         {
-            GameUI.Toast("PRIMEIRA ELIMINAÇÃO · " + killer.ToString().ToUpperInvariant(), new Color(1f, 0.45f, 0.3f));
+            GameUI.Toast("FIRST ELIMINATION · " + killer.ToString().ToUpperInvariant(), new Color(1f, 0.45f, 0.3f));
         }
     }
 }

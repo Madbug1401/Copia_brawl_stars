@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: skin_ekko_neon
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SkinDefinition
   skinId: skin_ekko_neon
-  displayName: "Ekko N\xE9on"
+  displayName: "Neon Ekko"
   target: 0
   targetId: gunslinger
   rarity: 1

@@ -33,9 +33,9 @@ namespace FPSLAN
             s_StyleScale = s;
             if (s_Rounded == null) s_Rounded = MakeRounded(32, 10);
 
-            Title = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(40 * s), fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-            Big = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(26 * s), fontStyle = FontStyle.Bold };
-            Label = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(17 * s), fontStyle = FontStyle.Bold };
+            Title = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(40 * s), fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = false };
+            Big = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(26 * s), fontStyle = FontStyle.Bold, wordWrap = false };
+            Label = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(17 * s), fontStyle = FontStyle.Bold, wordWrap = false };
             Small = new GUIStyle(Label) { fontSize = Mathf.RoundToInt(14 * s), fontStyle = FontStyle.Normal };
             Tiny = new GUIStyle(Label) { fontSize = Mathf.RoundToInt(12 * s) };
             Center = new GUIStyle(Label) { alignment = TextAnchor.MiddleCenter };
@@ -58,6 +58,8 @@ namespace FPSLAN
         static GUIStyle MakeButton(float size)
         {
             var b = new GUIStyle(GUI.skin.button) { fontSize = Mathf.RoundToInt(size), fontStyle = FontStyle.Bold, border = new RectOffset(10, 10, 10, 10) };
+            Title.font = GameTypography.Display;
+            Big.font = BigCenter.font = GameTypography.Title;
             b.font = MenuTheme.Font;
             b.normal.background = s_Rounded;
             b.hover.background = s_Rounded;
@@ -122,7 +124,7 @@ namespace FPSLAN
         public static bool Btn(Rect r, string text, Color c, bool enabled = true, GUIStyle style = null)
         {
             bool clicked = MenuTheme.Button(r, text, c, enabled, style ?? Button);
-            if (clicked) Sfx.Play2D(Sound.Reload, 0.35f);
+            if (clicked) Sfx.Play2D(Sound.UiClick, 0.35f);
             return clicked;
         }
 

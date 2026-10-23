@@ -1,18 +1,42 @@
-FPS-LAN — Build Windows
+CHIEFS&GEMS — Build Windows
 
 COMO INICIAR
 1. Copie ou extraia a pasta inteira para o computador Windows.
-2. Execute FPS-LAN.exe.
-3. Nao mova o executavel para fora desta pasta: os ficheiros FPS-LAN_Data,
+2. Execute CHIEFS&GEMS.exe.
+3. Nao mova o executavel para fora desta pasta: os ficheiros CHIEFS&GEMS_Data,
    UnityPlayer.dll e restantes dependencias devem permanecer junto dele.
 
+JOGAR ONLINE (PELA INTERNET)
+Nao e preciso estar na mesma rede, nem abrir portas, nem saber IPs.
+1. Todos com a MESMA build do jogo e com ligacao a Internet.
+2. Quem cria a sala: PLAY ONLINE > CREATE ROOM > escolher modo, mapa e
+   personagem > CREATE ROOM. O codigo da sala (ex.: K7Q2XB) e copiado
+   automaticamente; tambem aparece no menu de pausa (Esc) com o botao COPY.
+3. Os amigos: PLAY ONLINE > escrever o codigo em "JOIN WITH ROOM CODE" >
+   JOIN > escolher personagem > JOIN MATCH.
+4. Quem cria a sala e o anfitriao: se sair, a sala fecha para todos.
+   A latencia depende da distancia ao servidor do Unity Relay (Europa),
+   por isso nota-se mais do que na LAN.
+5. O ping aparece no canto superior esquerdo (verde < 80 ms, amarelo
+   < 150 ms, vermelho acima) e na coluna "Ping" do placar (Tab).
+
 JOGAR EM REDE LOCAL (LAN)
-1. Todos os computadores devem estar ligados a mesma rede local.
-2. No computador que vai criar a partida, escolha HOST.
-3. Os restantes jogadores devem escrever o IP mostrado no menu do host em
-   "IP do host" e escolher JOIN.
-4. Se o Windows Firewall perguntar, permita o jogo na rede privada. A ligacao
-   usa UDP na porta 7777.
+1. Todos os PCs ligados a MESMA rede Wi-Fi/cabo e com a MESMA build do jogo
+   (copiem a mesma pasta para todos; builds diferentes sao recusadas).
+2. No PC anfitriao: PLAY LOCAL > CREATE SERVER > escolher modo e mapa.
+3. Nos outros PCs: PLAY LOCAL. O servidor aparece sozinho em
+   "SERVERS ON YOUR NETWORK" (1-3 segundos). Clicar nele e entrar.
+   Se nao aparecer, escrever o codigo mostrado no ecra do anfitriao
+   (ex.: 192.168.1.20) em "OR JOIN BY CODE".
+4. FIREWALL (causa mais comum de "No reply"): na primeira vez, no PC
+   anfitriao, carregar em FIX FIREWALL no painel PLAY LOCAL e aceitar o
+   pedido do Windows. Isto permite o jogo em todas as redes, incluindo
+   redes marcadas como "Publica", e apaga bloqueios criados por quem
+   carregou em "Cancelar" no aviso do Windows.
+5. Se mesmo assim falhar: confirmar que nenhum PC esta numa rede de
+   convidados/hotspot com "isolamento de clientes" (os PCs nao se veem).
+   Um hotspot do telemovel ou um router proprio resolve.
+Portas usadas: UDP 7777 (jogo) e UDP 47777 (descoberta automatica).
 
 O host conta como um jogador. O limite da partida e de 4 jogadores.
 TREINO (com bots) inicia uma partida local com bots.
@@ -25,6 +49,8 @@ Escolha o modo no menu antes de iniciar a partida:
   ate ao inicio da ronda seguinte.
 - SHOWDOWN: modo individual sem respawn; vence o ultimo jogador vivo.
   Se o tempo terminar, a vida restante e as eliminacoes decidem o resultado.
+- GEM RUSH: duas equipas disputam gemas em Santiago ou Sal.
+- IT TAKES TWO: cooperativo para dois jogadores, ou com parceiro bot a solo.
 
 CONTROLOS
 WASD       Mover
@@ -37,14 +63,27 @@ E              Super (quando carregado)
 Botao direito  Mira de precisao do Lince
 Tab        Placar
 Esc        Menu de pausa
+F          Reanimar parceiro (manter premido no cooperativo)
+T          Alimentar o pet com UPRA
+Y          Roda de sprays SITA (manter premido)
+
+UPRA E PETS
+Equipe um pet no menu PETS. Alimentar custa 1 UPRA e ativa um boost leve
+durante 20 segundos, com intervalo de 90 segundos e ate 3 usos por partida.
+Recebe 6 unidades iniciais e 2 por partida valida concluida. No menu PETS,
+3 UPRA custam 15 moedas do jogo. Os boosts ficam desativados no competitivo.
 
 DEFINICOES
 No menu principal ou durante a pausa, abre DEFINICOES.
+GRAPHICS: escolher a qualidade (VERY LOW a ULTRA), a resolucao e ecra
+inteiro/janela. Em PCs fracos, VERY LOW ou LOW e uma resolucao mais baixa
+(ex.: 1280 x 720) dao muito mais FPS. Na secao HUD, PING e FPS ligam ou
+desligam o ping e os FPS no canto do ecra durante o jogo.
 As abas TECLAS, JOGABILIDADE e AUDIO permitem reatribuir controlos,
 ajustar a mira e o volume. O HUD pode ser reposicionado na aba HUD.
 As alteracoes ficam guardadas localmente. REPOR restaura os valores padrao.
 
 Esta e uma build Windows 64-bit (x64). Para distribuir o jogo, envie a pasta
-"build windows" completa; nao envie apenas FPS-LAN.exe. A subpasta
-"FPS-LAN_BackUpThisFolder_ButDontShipItWithYourGame", se existir, e um backup
+"build windows" completa; nao envie apenas CHIEFS&GEMS.exe. A subpasta
+"CHIEFS&GEMS_BackUpThisFolder_ButDontShipItWithYourGame", se existir, e um backup
 do Unity e nao e necessaria para jogar.

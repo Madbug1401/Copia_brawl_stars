@@ -26,6 +26,8 @@ namespace FPSLAN
         public const string HoldsWeaponParam = "HoldsWeapon";
         /// <summary>Do pulso (alvo de IK da mão direita) ao punho da arma, no espaço da arma. Público para afinar em Play.</summary>
         public static Vector3 GripFromWrist = new Vector3(0f, -0.05f, 0.04f);
+        /// <summary>Rotação das mãos em relação à arma (direita no punho, esquerda no apoio). Públicas para afinar.</summary>
+        public static Vector3 RightHandEuler = new Vector3(30f, -45f, -90f), LeftHandEuler = new Vector3(20f, -60f, 180f);
 
         /// <summary>Inclinação da mira em graus (positivo = a olhar para baixo).</summary>
         [System.NonSerialized] public float pitch;
@@ -77,8 +79,8 @@ namespace FPSLAN
             var up = Vector3.ProjectOnPlane(upRef, fwd);
             if (up.sqrMagnitude < 1e-6f) up = Vector3.up;
             var rot = Quaternion.LookRotation(fwd, up) * Quaternion.Euler(-10f * kick, 0f, 0f);
-            rRot = rot * Quaternion.Euler(30f, -45f, -90f);
-            lRot = rot * Quaternion.Euler(20f, -60f, 180f);
+            rRot = rot * Quaternion.Euler(RightHandEuler);
+            lRot = rot * Quaternion.Euler(LeftHandEuler);
             rPos += -fwd * 0.06f * kick + up.normalized * 0.01f * kick;   // coice
             // O apoio foi medido no espaço local da arma, que pode estar escalada.
             var supportOffset = weapon != null ? Vector3.Scale(supportLocal, weapon.lossyScale) : supportLocal;

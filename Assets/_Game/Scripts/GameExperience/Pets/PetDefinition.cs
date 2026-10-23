@@ -115,9 +115,9 @@ namespace FPSLAN
         {
             switch (stage)
             {
-                case 2: return "Evoluído";
-                case 1: return "Desenvolvido";
-                default: return "Jovem";
+                case 2: return "Evolved";
+                case 1: return "Developed";
+                default: return "Young";
             }
         }
 
@@ -125,12 +125,12 @@ namespace FPSLAN
         {
             switch (c)
             {
-                case PetCategory.Support: return "Suporte";
-                case PetCategory.Agility: return "Agilidade";
-                case PetCategory.Defense: return "Defesa";
-                case PetCategory.Alert: return "Alerta";
-                case PetCategory.Mobility: return "Mobilidade";
-                default: return "Resistência";
+                case PetCategory.Support: return "Support";
+                case PetCategory.Agility: return "Agility";
+                case PetCategory.Defense: return "Defense";
+                case PetCategory.Alert: return "Alert";
+                case PetCategory.Mobility: return "Mobility";
+                default: return "Resistance";
             }
         }
 
@@ -140,12 +140,12 @@ namespace FPSLAN
             float v = AbilityValue(level);
             switch (ability)
             {
-                case PetAbilityType.Detection: return "Deteta adversários a " + v.ToString("0.0") + " m (direção no ecrã)";
-                case PetAbilityType.Agility: return "+" + (v * 100f).ToString("0.0") + "% de velocidade";
-                case PetAbilityType.Protection: return "Escudo de " + Mathf.RoundToInt(v) + " de vida quando fica com pouca vida";
-                case PetAbilityType.Alert: return "Avisa de ameaças nas costas até " + v.ToString("0") + " m";
-                case PetAbilityType.Mobility: return "+" + (v * 100f).ToString("0.0") + "% de velocidade a correr";
-                case PetAbilityType.Recovery: return "+" + (v * 100f).ToString("0") + "% de regeneração";
+                case PetAbilityType.Detection: return "Detects enemies within " + v.ToString("0.0") + " m (direction on screen)";
+                case PetAbilityType.Agility: return "+" + (v * 100f).ToString("0.0") + "% speed";
+                case PetAbilityType.Protection: return "Shield of " + Mathf.RoundToInt(v) + " health when health is low";
+                case PetAbilityType.Alert: return "Warns of threats behind you within " + v.ToString("0") + " m";
+                case PetAbilityType.Mobility: return "+" + (v * 100f).ToString("0.0") + "% sprint speed";
+                case PetAbilityType.Recovery: return "+" + (v * 100f).ToString("0") + "% regeneration";
                 default: return "—";
             }
         }

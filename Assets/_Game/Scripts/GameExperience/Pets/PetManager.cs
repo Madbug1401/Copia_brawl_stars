@@ -40,10 +40,10 @@ namespace FPSLAN
         {
             switch (s)
             {
-                case PetState.Locked: return "Bloqueado";
-                case PetState.Equipped: return "Equipado";
-                case PetState.Evolving: return "Equipado · em evolução";
-                default: return "Desbloqueado";
+                case PetState.Locked: return "Locked";
+                case PetState.Equipped: return "Equipped";
+                case PetState.Evolving: return "Equipped · evolving";
+                default: return "Unlocked";
             }
         }
 
@@ -97,14 +97,14 @@ namespace FPSLAN
             string name = def != null ? def.displayName : petId;
             var color = def != null ? Color.Lerp(def.primaryColor, Color.white, 0.3f) : Color.white;
             if (PetDefinition.StageFor(after) > PetDefinition.StageFor(before))
-                m_Ctx.Emit(FeedbackType.PetEvolved, name.ToUpperInvariant() + " EVOLUIU!", "Estágio " + PetDefinition.StageName(PetDefinition.StageFor(after)), color);
+                m_Ctx.Emit(FeedbackType.PetEvolved, name.ToUpperInvariant() + " EVOLVED!", "Stage " + PetDefinition.StageName(PetDefinition.StageFor(after)), color);
             else
-                m_Ctx.Emit(FeedbackType.PetLevelUp, name.ToUpperInvariant() + " · NÍVEL " + after, "", color);
+                m_Ctx.Emit(FeedbackType.PetLevelUp, name.ToUpperInvariant() + " · LEVEL " + after, "", color);
 
             if (def != null)
                 foreach (var m in def.milestones)
                     if (m != null && m.level > before && m.level <= after)
-                        m_Ctx.Emit(FeedbackType.PetEvolved, "EVOLUÇÃO DE " + name.ToUpperInvariant(), m.description, color);
+                        m_Ctx.Emit(FeedbackType.PetEvolved, "EVOLUTION OF " + name.ToUpperInvariant(), m.description, color);
             return after - before;
         }
 
@@ -158,25 +158,25 @@ namespace FPSLAN
             var r = def.unlock;
             switch (r.method)
             {
-                case UnlockMethod.Default: return "Disponível desde o início";
-                case UnlockMethod.PlayerLevel: return "Atinge o nível " + r.value + " (atual: " + m_Ctx.Progression.PlayerLevel + ")";
+                case UnlockMethod.Default: return "Available from the start";
+                case UnlockMethod.PlayerLevel: return "Reach level " + r.value + " (current: " + m_Ctx.Progression.PlayerLevel + ")";
                 case UnlockMethod.Quest:
                     return string.IsNullOrEmpty(r.refId)
-                        ? "Completa " + r.value + " missões (" + Mathf.Min(m_Ctx.Profile.questsCompletedTotal, r.value) + "/" + r.value + ")"
-                        : "Completa a missão " + r.refId;
+                        ? "Complete " + r.value + " quests (" + Mathf.Min(m_Ctx.Profile.questsCompletedTotal, r.value) + "/" + r.value + ")"
+                        : "Complete quest " + r.refId;
                 case UnlockMethod.Achievement:
                 {
                     var a = m_Ctx.QuestCatalog.FindAchievement(r.refId);
-                    return "Conquista: " + (a != null ? a.title + " (" + m_Ctx.Quests.AchievementProgress(a) + "/" + a.target + ")" : r.refId);
+                    return "Achievement: " + (a != null ? a.title + " (" + m_Ctx.Quests.AchievementProgress(a) + "/" + a.target + ")" : r.refId);
                 }
                 case UnlockMethod.Challenge:
                 {
                     var a = m_Ctx.QuestCatalog.FindAchievement(r.refId);
-                    return "Desafio: " + (a != null ? a.title + " — " + a.description : r.refId);
+                    return "Challenge: " + (a != null ? a.title + " — " + a.description : r.refId);
                 }
-                case UnlockMethod.Coins: return "Compra por " + r.value + " moedas";
-                case UnlockMethod.Event: return "Evento: " + r.refId + " (em breve)";
-                default: return "Recompensa especial";
+                case UnlockMethod.Coins: return "Buy for " + r.value + " coins";
+                case UnlockMethod.Event: return "Event: " + r.refId + " (coming soon)";
+                default: return "Special reward";
             }
         }
 
@@ -189,9 +189,9 @@ namespace FPSLAN
                 if (def == null || m_Ctx.Inventory.IsPetUnlocked(def.petId) || !IsRuleMet(def)) continue;
                 if (!m_Ctx.Inventory.UnlockPet(def.petId)) continue;
                 n++;
-                m_Ctx.Emit(FeedbackType.PetUnlocked, "NOVO PET!", def.displayName + " · " + PetDefinition.CategoryLabel(def.category),
+                m_Ctx.Emit(FeedbackType.PetUnlocked, "NEW PET!", def.displayName + " · " + PetDefinition.CategoryLabel(def.category),
                     Color.Lerp(def.primaryColor, Color.white, 0.3f));
-                m_Ctx.Log("Pet", "Desbloqueado: " + def.displayName);
+                m_Ctx.Log("Pet", "Unlocked: " + def.displayName);
             }
             return n;
         }
@@ -203,8 +203,8 @@ namespace FPSLAN
             if (def == null || m_Ctx.Inventory.IsPetUnlocked(petId) || !def.unlock.IsPurchasable) return false;
             if (!m_Ctx.Inventory.TrySpend(def.unlock.value)) return false;
             m_Ctx.Inventory.UnlockPet(petId);
-            m_Ctx.Emit(FeedbackType.PetUnlocked, "NOVO PET!", def.displayName, Color.Lerp(def.primaryColor, Color.white, 0.3f));
-            m_Ctx.Log("Loja", "Pet comprado: " + def.displayName + " (" + def.unlock.value + " moedas)");
+            m_Ctx.Emit(FeedbackType.PetUnlocked, "NEW PET!", def.displayName, Color.Lerp(def.primaryColor, Color.white, 0.3f));
+            m_Ctx.Log("Shop", "Pet purchased: " + def.displayName + " (" + def.unlock.value + " coins)");
             m_Ctx.Save();
             return true;
         }

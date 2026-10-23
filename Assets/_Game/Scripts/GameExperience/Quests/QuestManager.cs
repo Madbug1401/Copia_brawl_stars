@@ -61,7 +61,7 @@ namespace FPSLAN
                 var def = m_Ctx.QuestCatalog.FindQuest(p.questId);
                 if (def != null && p.periodKey == PeriodKey(def.period, now)) continue;
                 if (def != null && p.completed && !p.claimed)
-                    m_Ctx.Rewards.Grant("quest:" + def.questId + ":" + p.periodKey, def.reward, "Missão: " + def.title);
+                    m_Ctx.Rewards.Grant("quest:" + def.questId + ":" + p.periodKey, def.reward, "Quest: " + def.title);
                 list.RemoveAt(i);
             }
             foreach (var q in m_Ctx.QuestCatalog.quests) if (q != null) Progress(q);
@@ -105,7 +105,7 @@ namespace FPSLAN
                     p.progress = q.target;
                     p.completed = true;
                     m_Ctx.Profile.questsCompletedTotal++;
-                    m_Ctx.Emit(FeedbackType.QuestCompleted, "MISSÃO CONCLUÍDA!", q.title, new Color(0.45f, 1f, 0.55f));
+                    m_Ctx.Emit(FeedbackType.QuestCompleted, "QUEST COMPLETE!", q.title, new Color(0.45f, 1f, 0.55f));
                 }
             }
         }
@@ -123,8 +123,8 @@ namespace FPSLAN
             var p = Progress(q);
             if (!p.completed || p.claimed) return false;
             p.claimed = true;
-            bool granted = m_Ctx.Rewards.Grant("quest:" + q.questId + ":" + p.periodKey, q.reward, "Missão: " + q.title);
-            if (granted) m_Ctx.Emit(FeedbackType.RewardClaimed, "RECOMPENSA RECEBIDA", q.reward.Describe(m_Ctx.SkinCatalog, m_Ctx.PetCatalog), new Color(1f, 0.85f, 0.3f));
+            bool granted = m_Ctx.Rewards.Grant("quest:" + q.questId + ":" + p.periodKey, q.reward, "Quest: " + q.title);
+            if (granted) m_Ctx.Emit(FeedbackType.RewardClaimed, "REWARD CLAIMED", q.reward.Describe(m_Ctx.SkinCatalog, m_Ctx.PetCatalog), new Color(1f, 0.85f, 0.3f));
             m_Ctx.PetUnlocks.CheckAll();
             m_Ctx.Skins.CheckRuleUnlocks();
             m_Ctx.Save();
@@ -170,8 +170,8 @@ namespace FPSLAN
                 if (a == null || IsAchieved(a) || AchievementProgress(a) < a.target) continue;
                 m_Ctx.Profile.completedAchievements.Add(a.achievementId);
                 n++;
-                m_Ctx.Emit(FeedbackType.AchievementUnlocked, a.isChallenge ? "DESAFIO CONCLUÍDO!" : "CONQUISTA!", a.title, new Color(1f, 0.75f, 0.35f));
-                m_Ctx.Rewards.Grant("ach:" + a.achievementId, a.reward, (a.isChallenge ? "Desafio: " : "Conquista: ") + a.title);
+                m_Ctx.Emit(FeedbackType.AchievementUnlocked, a.isChallenge ? "CHALLENGE COMPLETE!" : "ACHIEVEMENT!", a.title, new Color(1f, 0.75f, 0.35f));
+                m_Ctx.Rewards.Grant("ach:" + a.achievementId, a.reward, (a.isChallenge ? "Challenge: " : "Achievement: ") + a.title);
             }
             if (n > 0)
             {

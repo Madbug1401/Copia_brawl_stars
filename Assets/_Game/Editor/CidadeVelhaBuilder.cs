@@ -78,8 +78,8 @@ namespace FPSLAN.EditorTools
             emitterBaseName = "GEN_Emissor_Base",
             emitterStyle = GemEmitterStyle.Pelourinho,
             arcHeight = 2.2f,
+            decorateMap = SponsorBoards.AddToCidadeVelha,
             expectedSize = "≈ 41 × 56",
-            decorateMap = SponsorBoards.AddToCidadeVelha,       // SITA e UPRANIMAL (patrocinadores do evento)
         };
 
         [MenuItem("FPS-LAN/Mapas/Construir Cidade Velha (Pique-Gemas)", priority = 40)]

@@ -26,27 +26,27 @@ namespace FPSLAN
             if (bundle.coins > 0)
             {
                 inv.AddCoins(bundle.coins);
-                m_Ctx.Emit(FeedbackType.CoinsEarned, "+" + bundle.coins + " MOEDAS", source, new Color(1f, 0.85f, 0.25f));
+                m_Ctx.Emit(FeedbackType.CoinsEarned, "+" + bundle.coins + " COINS", source, new Color(1f, 0.85f, 0.25f));
             }
             if (bundle.petIds != null)
                 foreach (var id in bundle.petIds)
                     if (inv.UnlockPet(id))
                     {
                         var def = m_Ctx.PetCatalog.Find(id);
-                        m_Ctx.Emit(FeedbackType.PetUnlocked, "NOVO PET!", def != null ? def.displayName : id, new Color(0.5f, 1f, 0.6f));
+                        m_Ctx.Emit(FeedbackType.PetUnlocked, "NEW PET!", def != null ? def.displayName : id, new Color(0.5f, 1f, 0.6f));
                     }
             if (bundle.skinIds != null)
                 foreach (var id in bundle.skinIds)
                     if (inv.UnlockSkin(id))
                     {
                         var def = m_Ctx.SkinCatalog.Find(id);
-                        m_Ctx.Emit(FeedbackType.SkinUnlocked, "NOVA SKIN!", def != null ? def.displayName : id,
+                        m_Ctx.Emit(FeedbackType.SkinUnlocked, "NEW SKIN!", def != null ? def.displayName : id,
                             def != null ? RarityStyle.ColorOf(def.rarity) : Color.white);
                     }
             if (bundle.cosmeticIds != null)
                 foreach (var id in bundle.cosmeticIds)
                     if (inv.UnlockCosmetic(id))
-                        m_Ctx.Emit(FeedbackType.RewardClaimed, "NOVO COSMÉTICO", id, new Color(0.8f, 0.7f, 1f));
+                        m_Ctx.Emit(FeedbackType.RewardClaimed, "NEW COSMETIC", id, new Color(0.8f, 0.7f, 1f));
             // XP de recompensa entra pelo caminho normal (pode subir de nível)
             if (bundle.xp > 0) m_Ctx.Progression.AddPlayerXp(bundle.xp, source);
 
@@ -63,8 +63,8 @@ namespace FPSLAN
             if (!m_Ctx.Profile.pendingLevelRewards.Contains(level)) return false;
             m_Ctx.Profile.pendingLevelRewards.Remove(level);
             var bundle = m_Ctx.Config.RewardForLevel(level);
-            bool granted = Grant("level:" + level, bundle, "Nível " + level);
-            if (granted) m_Ctx.Emit(FeedbackType.RewardClaimed, "RECOMPENSA DE NÍVEL " + level, bundle != null ? bundle.Describe(m_Ctx.SkinCatalog, m_Ctx.PetCatalog) : "", new Color(1f, 0.85f, 0.3f));
+            bool granted = Grant("level:" + level, bundle, "Level " + level);
+            if (granted) m_Ctx.Emit(FeedbackType.RewardClaimed, "LEVEL REWARD " + level, bundle != null ? bundle.Describe(m_Ctx.SkinCatalog, m_Ctx.PetCatalog) : "", new Color(1f, 0.85f, 0.3f));
             m_Ctx.PetUnlocks.CheckAll();
             m_Ctx.Skins.CheckRuleUnlocks();
             m_Ctx.Save();

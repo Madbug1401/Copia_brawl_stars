@@ -88,9 +88,9 @@ namespace FPSLAN
         {
             public AttackContext ctx;
             public ConeVolumeDelivery delivery;
-            public Vector3 visualOrigin;
-            public float age, nextTick, nextPuff;
-            public int puffCount, ticksDone;
+            public float age, nextTick;
+            public int ticksDone;
+            public SprayConeVisual visual;
             public readonly List<ulong> hitIds = new List<ulong>();
             public readonly List<int> hitCounts = new List<int>();
         }
@@ -109,6 +109,7 @@ namespace FPSLAN
         readonly List<Trap> m_Traps = new List<Trap>();
         readonly List<Trap> m_TrapScratch = new List<Trap>();
         readonly List<Cone> m_Cones = new List<Cone>();
+        readonly Stack<SprayConeVisual> m_SprayPool = new Stack<SprayConeVisual>();
 
         readonly Stack<ZoneVisual> m_ZonePool = new Stack<ZoneVisual>();
         readonly Stack<Projectile> m_ProjectilePool = new Stack<Projectile>();
@@ -142,8 +143,12 @@ namespace FPSLAN
 
             var p = new PendingAttack { ctx = ctx, fired = 0, nextTime = Time.time };
             m_Pending.Add(p);
-            ProcessPending(p, Time.time); // o primeiro disparo sai já neste frame
-            if (p.fired >= ctx.attack.delivery.ShotCount) m_Pending.Remove(p);
+            bool keep;
+            bool rewound = ctx.authoritative && LagCompensation.Begin(ctx.shooter, ctx.lag);
+            try { keep = ProcessPending(p, Time.time); } // o primeiro disparo sai já neste frame
+            catch (System.Exception e) { LogStepError(e); keep = false; }
+            finally { if (rewound) LagCompensation.End(); }
+            if (!keep || p.fired >= ctx.attack.delivery.ShotCount) m_Pending.Remove(p);
         }
 
         public void ClearAll()
@@ -157,6 +162,7 @@ namespace FPSLAN
             m_Zones.Clear();
             foreach (var t in m_Traps) ReleaseTrapVisual(t);
             m_Traps.Clear();
+            foreach (var cone in m_Cones) ReleaseSpray(cone);
             m_Cones.Clear();
         }
 
@@ -213,7 +219,7 @@ namespace FPSLAN
                 float w = 0.07f * Mathf.Max(0.6f, ctx.attack.visuals.scale);
                 Fx.TracerLine(from, end, color, w, 0.14f);
                 Fx.TracerLine(from, end, Color.white, w * 0.35f, 0.08f);
-                ctx.shooter?.Visuals?.MuzzleFlash(color, shotIndex);
+                Flash(ctx, color, shotIndex);
                 if (hitSomething) Fx.Impact(end, color, 1.2f);
             }
             if (hitSomething) Detonate(ctx, end, false);
@@ -260,7 +266,7 @@ namespace FPSLAN
                 start = Muzzle(ctx, shotIndex);
                 var converge = ctx.origin + dir * Mathf.Min(range, 20f);
                 velocity = (converge - start).normalized * speed;
-                ctx.shooter?.Visuals?.MuzzleFlash(ctx.VisualColor, shotIndex);
+                Flash(ctx, ctx.VisualColor, shotIndex);
             }
 
             var p = NewProjectile(ctx, start, velocity);
@@ -276,7 +282,7 @@ namespace FPSLAN
         public void LaunchArc(AttackContext ctx, ArcProjectileDelivery d, Vector3 target, int shotIndex)
         {
             Vector3 start = ctx.authoritative ? ctx.origin : Muzzle(ctx, shotIndex);
-            if (!ctx.authoritative) ctx.shooter?.Visuals?.MuzzleFlash(ctx.VisualColor, shotIndex);
+            if (!ctx.authoritative) Flash(ctx, ctx.VisualColor, shotIndex);
             LaunchArcFrom(ctx, start, target, d.gravity, d.speed, d.minFlightTime, d.maxFlightTime, d.radius, d.fuseDelay, d.hitsPlayers, shotIndex);
         }
 
@@ -303,17 +309,17 @@ namespace FPSLAN
             {
                 ctx = ctx,
                 delivery = d,
-                visualOrigin = ctx.authoritative ? ctx.origin : Muzzle(ctx, 0),
                 age = 0f,
                 // Primeiro tick quando o spray já chegou ao alcance (não desperdiçar um tick com alcance 0)
                 nextTick = d.FirstTickTime,
-                nextPuff = 0f,
             };
             m_Cones.Add(cone);
             if (!ctx.authoritative)
             {
-                ctx.shooter?.Visuals?.MuzzleFlash(ctx.VisualColor, 0);
-                if (d.dualStream) ctx.shooter?.Visuals?.MuzzleFlash(ctx.VisualColor, 1);
+                cone.visual = m_SprayPool.Count > 0 ? m_SprayPool.Pop() : new SprayConeVisual(transform);
+                cone.visual.Begin(ctx, d, Muzzle(ctx, 0), Muzzle(ctx, 1));
+                Flash(ctx, ctx.VisualColor, 0);
+                if (d.dualStream) Flash(ctx, ctx.VisualColor, 1);
             }
         }
 
@@ -448,7 +454,7 @@ namespace FPSLAN
                 target = position,
                 seed = seed,
             };
-            owner.Visuals?.ApplySkinColors(ctx);
+            if (owner.Visuals != null) owner.Visuals.ApplySkinColors(ctx);
             var local = PlayerNetwork.Local;
             var t = new Trap
             {
@@ -476,7 +482,7 @@ namespace FPSLAN
         {
             if (ctx.authoritative) return;
             Fx.Ring(ctx.target, settings != null ? settings.color : ctx.VisualColor, 2.4f, 0.4f);
-            ctx.shooter?.Visuals?.MuzzleFlash(ctx.VisualColor, 0);
+            Flash(ctx, ctx.VisualColor, 0);
         }
 
         /// <summary>Todas as máquinas: evento decidido no host para uma armadilha.</summary>
@@ -601,10 +607,18 @@ namespace FPSLAN
             float now = Time.time;
             float dt = Time.deltaTime;
 
+            // Cada ataque/projétil corre isolado: uma exceção num deles (ex.: atirador que saiu a meio) descarta só
+            // esse. Antes, a exceção saía do Update — o ataque pendente ficava na lista e falhava em todos os frames,
+            // e os projéteis (passo seguinte) deixavam de andar: balas paradas no ar e o jogo a engasgar com o log.
             for (int i = m_Pending.Count - 1; i >= 0; i--)
             {
                 var p = m_Pending[i];
-                if (!ProcessPending(p, now)) m_Pending.RemoveAt(i);
+                bool keep;
+                bool rewound = p.ctx.authoritative && LagCompensation.Begin(p.ctx.shooter, p.ctx.lag);
+                try { keep = ProcessPending(p, now); }
+                catch (System.Exception e) { LogStepError(e); keep = false; }
+                finally { if (rewound) LagCompensation.End(); }
+                if (!keep) m_Pending.RemoveAt(i);
             }
 
             if (m_Projectiles.Count > 0 || m_Cones.Count > 0) Physics.SyncTransforms();
@@ -612,9 +626,15 @@ namespace FPSLAN
             for (int i = m_Projectiles.Count - 1; i >= 0; i--)
             {
                 var p = m_Projectiles[i];
-                if (!StepProjectile(p, dt))
+                bool alive;
+                // Enquanto voa, o projétil de um cliente vê os outros com o mesmo atraso com que ele os via ao disparar
+                bool rewound = p.ctx != null && p.ctx.authoritative && LagCompensation.Begin(p.ctx.shooter, p.ctx.lag);
+                try { alive = StepProjectile(p, dt); }
+                catch (System.Exception e) { LogStepError(e); alive = false; }
+                finally { if (rewound) LagCompensation.End(); }
+                if (!alive)
                 {
-                    ReleaseProjectile(p);
+                    try { ReleaseProjectile(p); } catch (System.Exception e) { LogStepError(e); }
                     m_Projectiles.RemoveAt(i);
                 }
             }
@@ -623,25 +643,40 @@ namespace FPSLAN
             {
                 var f = m_Fuses[i];
                 f.timer -= dt;
-                if (f.visual != null) ProjectileVisuals.Blink(f.visual, 1f - f.timer / Mathf.Max(0.01f, f.total));
-                if (f.timer <= 0f)
+                try
                 {
-                    Detonate(f.ctx, f.position + Vector3.up * 0.3f, true);
+                    if (f.visual != null) ProjectileVisuals.Blink(f.visual, 1f - f.timer / Mathf.Max(0.01f, f.total));
+                    if (f.timer > 0f) continue;
+                    bool rewound = f.ctx.authoritative && LagCompensation.Begin(f.ctx.shooter, f.ctx.lag);
+                    try { Detonate(f.ctx, f.position + Vector3.up * 0.3f, true); }
+                    finally { if (rewound) LagCompensation.End(); }
                     ProjectileVisuals.Release(f.visual);
-                    m_Fuses.RemoveAt(i);
                 }
+                catch (System.Exception e) { LogStepError(e); }
+                m_Fuses.RemoveAt(i);
             }
 
             for (int i = m_Cones.Count - 1; i >= 0; i--)
-                if (!StepCone(m_Cones[i], dt)) m_Cones.RemoveAt(i);
+            {
+                bool keep;
+                var coneCtx = m_Cones[i].ctx;
+                bool rewound = coneCtx != null && coneCtx.authoritative && LagCompensation.Begin(coneCtx.shooter, coneCtx.lag);
+                try { keep = StepCone(m_Cones[i], dt); }
+                catch (System.Exception e) { LogStepError(e); keep = false; }
+                finally { if (rewound) LagCompensation.End(); }
+                if (keep) continue;
+                try { ReleaseSpray(m_Cones[i]); } catch (System.Exception e) { LogStepError(e); }
+                m_Cones.RemoveAt(i);
+            }
 
             for (int i = m_Zones.Count - 1; i >= 0; i--)
             {
-                if (!StepZone(m_Zones[i], dt))
-                {
-                    ReleaseZone(m_Zones[i].visual);
-                    m_Zones.RemoveAt(i);
-                }
+                bool keep;
+                try { keep = StepZone(m_Zones[i], dt); }
+                catch (System.Exception e) { LogStepError(e); keep = false; }
+                if (keep) continue;
+                try { ReleaseZone(m_Zones[i].visual); } catch (System.Exception e) { LogStepError(e); }
+                m_Zones.RemoveAt(i);
             }
 
             // Cópia: uma explosão ou um evento do host pode remover outras armadilhas durante o passo
@@ -650,9 +685,21 @@ namespace FPSLAN
             foreach (var t in m_TrapScratch)
             {
                 if (!m_Traps.Contains(t)) continue;
-                bool keep = t.authoritative ? StepTrapServer(t, dt) : StepTrapVisual(t, dt);
+                bool keep;
+                try { keep = t.authoritative ? StepTrapServer(t, dt) : StepTrapVisual(t, dt); }
+                catch (System.Exception e) { LogStepError(e); keep = false; }
                 if (!keep && m_Traps.Remove(t)) ReleaseTrapVisual(t);
             }
+        }
+
+        float m_LastStepErrorLog = -999f;
+
+        /// <summary>Regista no máximo um erro a cada 2 s (registar uma exceção por frame trava o jogo).</summary>
+        void LogStepError(System.Exception e)
+        {
+            if (Time.unscaledTime - m_LastStepErrorLog < 2f) return;
+            m_LastStepErrorLog = Time.unscaledTime;
+            Debug.LogException(e, this);
         }
 
         bool ProcessPending(PendingAttack p, float now)
@@ -835,28 +882,17 @@ namespace FPSLAN
                 }
             }
 
-            if (!ctx.authoritative && c.age < d.duration * 0.85f && c.age >= c.nextPuff)
-            {
-                c.nextPuff += 0.022f;
-                var rng = ctx.RngFor(1000 + c.puffCount++);
-                float yaw = (float)(rng.NextDouble() * 2.0 - 1.0) * halfAngle;
-                float pitch = (float)(rng.NextDouble() * 2.0 - 1.0) * halfAngle * 0.5f;
-                var dir = Quaternion.LookRotation(ctx.direction) * Quaternion.Euler(pitch, yaw, 0f) * Vector3.forward;
-                bool local = ctx.shooter != null && ctx.shooter.IsLocalHuman;
-                // Duas latas: o spray sai alternadamente de cada uma (o dano é um só volume)
-                var origin = d.dualStream ? Muzzle(ctx, c.puffCount % 2) : c.visualOrigin;
-                var start = origin + ctx.direction * (local ? 0.9f : 0.2f);
-                float speed = d.range / Mathf.Max(0.05f, d.expandTime + 0.15f) * 1.25f;
-                var baseColor = ctx.VisualColor;
-                var col = Color.Lerp(baseColor, Color.white, (float)rng.NextDouble() * 0.35f);
-                col.a = local ? 0.4f : 0.7f;
-                float life = d.expandTime + 0.35f;
-                Fx.Puff(start, dir * speed, col, (local ? 0.45f : 0.6f) * ctx.attack.visuals.scale, life);
-                if (c.puffCount % 3 == 0)
-                    Fx.Glow(start + dir * 0.3f, dir * speed * 0.9f, Color.Lerp(baseColor, Color.white, 0.5f), 0.12f, life * 0.8f);
-            }
+            if (!ctx.authoritative) c.visual?.Pose(c.age);
 
             return c.age < d.duration;
+        }
+
+        void ReleaseSpray(Cone cone)
+        {
+            if (cone.visual == null) return;
+            cone.visual.Release();
+            m_SprayPool.Push(cone.visual);
+            cone.visual = null;
         }
 
         void ConeTickAll(Cone c, float reach, float halfAngle)
@@ -1012,6 +1048,15 @@ namespace FPSLAN
         {
             if (ctx.shooter != null && ctx.shooter.Visuals != null) return ctx.shooter.Visuals.GetMuzzle(shotIndex);
             return ctx.origin;
+        }
+
+        /// <summary>
+        /// Clarão no cano do atirador. Usa '!= null' do Unity (e não '?.'): um ataque pendente pode disparar depois de o
+        /// jogador sair, e '?.' não deteta componentes destruídos.
+        /// </summary>
+        static void Flash(AttackContext ctx, Color color, int shotIndex)
+        {
+            if (ctx.shooter != null && ctx.shooter.Visuals != null) ctx.shooter.Visuals.MuzzleFlash(color, shotIndex);
         }
 
         static bool Within(Vector3 center, Vector3 feet, float radius)

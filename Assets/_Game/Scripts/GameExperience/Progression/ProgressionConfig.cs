@@ -158,15 +158,15 @@ namespace FPSLAN
         [Min(1)] public int characterLevelsPerUpgradeLevel = 2;
         public List<UpgradeTuning> upgrades = new List<UpgradeTuning>
         {
-            new UpgradeTuning { stat = UpgradeStat.Health, label = "Vida máxima", bonusPerLevel = 0.03f, casualCap = 0.12f },
-            new UpgradeTuning { stat = UpgradeStat.Damage, label = "Dano", bonusPerLevel = 0.02f, casualCap = 0.08f },
-            new UpgradeTuning { stat = UpgradeStat.Regeneration, label = "Regeneração", bonusPerLevel = 0.06f, casualCap = 0.25f },
-            new UpgradeTuning { stat = UpgradeStat.Speed, label = "Velocidade", bonusPerLevel = 0.01f, casualCap = 0.04f },
-            new UpgradeTuning { stat = UpgradeStat.Reload, label = "Recarga", bonusPerLevel = 0.025f, casualCap = 0.10f },
-            new UpgradeTuning { stat = UpgradeStat.SpecialEfficiency, label = "Eficiência do especial", bonusPerLevel = 0.04f, casualCap = 0.15f },
+            new UpgradeTuning { stat = UpgradeStat.Health, label = "Max health", bonusPerLevel = 0.03f, casualCap = 0.12f },
+            new UpgradeTuning { stat = UpgradeStat.Damage, label = "Damage", bonusPerLevel = 0.02f, casualCap = 0.08f },
+            new UpgradeTuning { stat = UpgradeStat.Regeneration, label = "Regeneration", bonusPerLevel = 0.06f, casualCap = 0.25f },
+            new UpgradeTuning { stat = UpgradeStat.Speed, label = "Speed", bonusPerLevel = 0.01f, casualCap = 0.04f },
+            new UpgradeTuning { stat = UpgradeStat.Reload, label = "Reload", bonusPerLevel = 0.025f, casualCap = 0.10f },
+            new UpgradeTuning { stat = UpgradeStat.SpecialEfficiency, label = "Special efficiency", bonusPerLevel = 0.04f, casualCap = 0.15f },
         };
 
-        [Header("Partidas competitivas")]
+        [Header("Competitive matches")]
         [Tooltip("Competitivo: as melhorias de atributos ficam desativadas (todos com os valores base).")]
         public bool competitiveDisablesUpgrades = true;
         [Tooltip("Competitivo: as habilidades dos pets ficam desativadas (os pets são só cosméticos).")]

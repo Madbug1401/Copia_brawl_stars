@@ -198,9 +198,9 @@ namespace FPSLAN
                     a.SetParent(v.spin, false);
                     a.localPosition = new Vector3(0f, 0f, -0.55f);
                     WeaponModels.BuildArrow(a, Color.white, ShadowCastingMode.On, 0.62f);
-                    // a ponta usa a cor do ataque
-                    var head = a.GetChild(1).GetComponent<Renderer>();
-                    v.tint.Add(head);
+                    // a ponta usa a cor do ataque (só na flecha de primitivas; o modelo 3D é um único filho com as
+                    // suas cores — o antigo GetChild(1) rebentava aqui e a flecha nunca saía)
+                    if (a.childCount > 1 && a.GetChild(1).TryGetComponent<Renderer>(out var head)) v.tint.Add(head);
                     v.tint.Add(R(Art.FxPart(PrimitiveType.Sphere, v.spin, new Vector3(0f, 0f, 0.07f), Vector3.one * 0.14f, Color.white, true)));
                     trailTime = 0.1f;
                     break;
@@ -259,6 +259,21 @@ namespace FPSLAN
                     // Molho de três paus de TNT atados com fita, rastilho aceso
                     var bundle = new GameObject("Tnt").transform;
                     bundle.SetParent(v.spin, false);
+                    // o mesmo molho de TNT (modelo 3D) que o Lupus tem na mão, se existir
+                    if (Resources.Load<GameObject>(WeaponModels.PrefabFolder + RigStyle.DualExplosives) != null)
+                    {
+                        WeaponModels.BuildDynamiteStick(bundle, Color.white, ShadowCastingMode.On, false);
+                        foreach (var t in bundle.GetComponentsInChildren<Transform>(true))
+                            if (t.name == "FuseTip") { v.fuseTip = t; break; }
+                        if (v.fuseTip == null)
+                        {
+                            v.fuseTip = new GameObject("FuseTip").transform;
+                            v.fuseTip.SetParent(bundle, false);
+                            v.fuseTip.localPosition = new Vector3(0f, 0.12f, 0f);
+                        }
+                        trailTime = 0.22f;
+                        break;
+                    }
                     for (int i = 0; i < 3; i++)
                     {
                         float a = i * 120f * Mathf.Deg2Rad;

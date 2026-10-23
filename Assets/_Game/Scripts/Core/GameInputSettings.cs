@@ -20,6 +20,8 @@ namespace FPSLAN
         Pause,
         Aim,
         Interact,
+        FeedPet,
+        Emote,
     }
 
     public static class GameInputSettings
@@ -67,8 +69,8 @@ namespace FPSLAN
         {
             var key = GetBinding(action);
             if (key >= KeyCode.Mouse0 && key <= KeyCode.Mouse6)
-                return "Rato " + ((int)key - (int)KeyCode.Mouse0 + 1);
-            return key.ToString().Replace("Left", "Esq. ").Replace("Right", "Dir. ");
+                return "Mouse " + ((int)key - (int)KeyCode.Mouse0 + 1);
+            return key.ToString().Replace("Left", "Left ").Replace("Right", "Right ");
         }
 
         static KeyCode DefaultBinding(GameAction action)
@@ -88,6 +90,8 @@ namespace FPSLAN
                 case GameAction.Pause: return KeyCode.Escape;
                 case GameAction.Aim: return KeyCode.Mouse1;
                 case GameAction.Interact: return KeyCode.F;
+                case GameAction.FeedPet: return KeyCode.T;
+                case GameAction.Emote: return KeyCode.Y;
                 default: return KeyCode.None;
             }
         }

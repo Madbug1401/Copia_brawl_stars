@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: skin_cat_ninja
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SkinDefinition
   skinId: skin_cat_ninja
-  displayName: Bigodes Ninja
+  displayName: "Ninja Bigodes"
   target: 1
   targetId: pet_cat
   rarity: 2

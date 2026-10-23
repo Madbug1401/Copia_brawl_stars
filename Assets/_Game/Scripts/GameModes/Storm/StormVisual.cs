@@ -153,9 +153,9 @@ namespace FPSLAN
 
             string line;
             bool final = phase >= m_Storm.phases.Length - 1 && !shrinking;
-            if (final) line = "ZONA FINAL · DENTRO DO VULCÃO";
-            else if (shrinking) line = $"A TEMPESTADE DE CINZA ESTÁ A FECHAR · {Clock(until)}";
-            else line = $"TEMPESTADE DE CINZA FECHA EM {Clock(until)}";
+            if (final) line = "FINAL ZONE · INSIDE THE VOLCANO";
+            else if (shrinking) line = $"ASH STORM CLOSING IN · {Clock(until)}";
+            else line = $"ASH STORM CLOSES IN {Clock(until)}";
             float w = 560 * s, h = 30 * s;
             var rect = new Rect(Screen.width / 2f - w / 2f, 72 * s, w, h);
             var bg = GUI.color;
@@ -170,10 +170,10 @@ namespace FPSLAN
                 var d = me.transform.position - m_Storm.center;
                 d.y = 0f;
                 float away = Mathf.Max(0f, d.magnitude - r);
-                sub = outside ? (away > 0.5f ? $"FORA DA ZONA SEGURA · {away:0} m · −{dps} vida/s" : $"SOBE DEMASIADO ALTO · −{dps} vida/s")
-                              : $"zona segura: {r:0} m · próxima: {target:0} m";
+                sub = outside ? (away > 0.5f ? $"OUTSIDE THE SAFE ZONE · {away:0} m · −{dps} HP/s" : $"TOO HIGH · −{dps} HP/s")
+                              : $"safe zone: {r:0} m · next: {target:0} m";
             }
-            else sub = $"zona segura: {r:0} m";
+            else sub = $"safe zone: {r:0} m";
             GUI.Label(new Rect(rect.x, rect.y + h - 4 * s, rect.width, 24 * s), sub, m_Small);
             GUI.color = bg;
         }

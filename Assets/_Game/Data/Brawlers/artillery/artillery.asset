@@ -15,7 +15,7 @@ MonoBehaviour:
   brawlerId: artillery
   displayName: Lupus Marinus
   shortName: L.M
-  role: "Artilheiro / TNT \u2014 cargas de TNT em arco (40 por acerto direto, menos \xE0 dist\xE2ncia); Especial: cinco minas com sensor de movimento"
+  role: "The Demolitionist · Explosive area attacks and heavy firepower."
   available: 1
   stats:
     maxHealth: 100

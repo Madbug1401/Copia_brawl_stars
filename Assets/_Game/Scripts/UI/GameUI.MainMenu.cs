@@ -54,9 +54,9 @@ namespace FPSLAN
         static readonly MenuMode[] s_Modes =
         {
             new MenuMode("IT TAKES TWO", "The Pelourinho Heist · Lince & Riot", null, "ItTakesTwo", "Coop"),
-            new MenuMode("DEATHMATCH", "Todos contra todos", null, "Deathmatch"),
-            new MenuMode("GEM GRAB", "Apanha e segura as gemas", "O modo GEM GRAB chega em breve.", "GemGrab", "GemRush", "PiqueGema"),
-            new MenuMode("SHOWDOWN", "Último vivo · tempestade de cinza no Fogo", null, "Showdown"),
+            new MenuMode("DEATHMATCH", "Free for all", null, "Deathmatch"),
+            new MenuMode("GEM RUSH", "Collect and hold the gems", "GEM RUSH is coming soon.", "GemGrab", "GemRush", "PiqueGema"),
+            new MenuMode("SHOWDOWN", "Last one standing · ash storm on Fogo", null, "Showdown"),
         };
 
         struct MenuMap
@@ -90,16 +90,20 @@ namespace FPSLAN
         // ================================================================== estado
 
         enum MenuScreen { Main, Setup }
-        enum SetupContext { Online, LocalHost, LocalJoin }
+        enum SetupContext { Online, LocalHost, LocalJoin, OnlineJoin }
+        static bool IsJoinCtx(SetupContext c) => c == SetupContext.LocalJoin || c == SetupContext.OnlineJoin;
 
         MenuScreen m_MScreen = MenuScreen.Main;
         SetupContext m_MSetupCtx = SetupContext.Online;
         float m_MScreenT = 0f;          // 0→1 entrada do ecrã atual
         bool m_MLocalOpen; float m_MLocalT;
+        bool m_MOnlineOpen; float m_MOnlineT;
+        string m_RoomCode = "";
+        string m_MOnlineError;
         bool m_MAudioOpen; float m_MAudioT;
         int m_MFocus = 0;               // foco do teclado no menu principal (começa em PLAY ONLINE)
         int m_MModeSel = -1;
-        bool MenuCoopSetup => m_MSetupCtx != SetupContext.LocalJoin && MatchManager.MenuSelectedMode == GameMode.ItTakesTwo;
+        bool MenuCoopSetup => !IsJoinCtx(m_MSetupCtx) && MatchManager.MenuSelectedMode == GameMode.ItTakesTwo;
         int m_MMapSel;
         float m_MMapScroll, m_MMapScrollTarget;
         int m_MCharPrev = -1; float m_MCharT = 1f;
@@ -134,7 +138,7 @@ namespace FPSLAN
         static readonly Color MGlass = new Color(0.16f, 0.27f, 0.45f, 0.62f);
         static readonly Color MButtonFill = new Color(0.27f, 0.36f, 0.58f, 0.92f);
         static readonly Color MButtonHover = new Color(0.33f, 0.46f, 0.72f, 0.96f);
-        static readonly Color MCyan = new Color(0.25f, 0.88f, 0.82f, 1f);
+        static readonly Color MCyan = new Color(73f / 255f, 176f / 255f, 182f / 255f, 1f);
         static readonly Color MCyanDim = new Color(0.25f, 0.75f, 0.78f, 0.55f);
         static readonly Color MCoral = new Color(0.9f, 0.43f, 0.37f, 1f);
         static readonly Color MWhite = new Color(0.94f, 0.97f, 1f, 1f);
@@ -153,6 +157,7 @@ namespace FPSLAN
                 m_MLastTime = now;
                 m_MScreenT = Mathf.MoveTowards(m_MScreenT, 1f, m_MDt * 4f);
                 m_MLocalT = Mathf.MoveTowards(m_MLocalT, m_MLocalOpen ? 1f : 0f, m_MDt * 6f);
+                m_MOnlineT = Mathf.MoveTowards(m_MOnlineT, m_MOnlineOpen ? 1f : 0f, m_MDt * 6f);
                 m_MAudioT = Mathf.MoveTowards(m_MAudioT, m_MAudioOpen ? 1f : 0f, m_MDt * 7f);
                 m_MCharT = Mathf.MoveTowards(m_MCharT, 1f, m_MDt * 5f);
                 m_MMapScroll = Mathf.Lerp(m_MMapScroll, m_MMapScrollTarget, 1f - Mathf.Exp(-m_MDt * 10f));
@@ -216,7 +221,7 @@ namespace FPSLAN
             for (int i = 0; i < labels.Length; i++)
             {
                 var r = new Rect(panel.x + 48 * K, panel.y + 112 * K + i * 108 * K, panel.width - 96 * K, 86 * K);
-                bool selected = (i == 1 && m_MLocalOpen) || (m_MFocus == i && !m_MLocalOpen && GUI.enabled);
+                bool selected = (i == 1 && m_MLocalOpen) || (i == 0 && m_MOnlineOpen) || (m_MFocus == i && !m_MLocalOpen && !m_MOnlineOpen && GUI.enabled);
                 var res = MenuButton(r, labels[i], 1000 + i, MBtn.Normal, selected, m_MT30);
                 if (GUI.enabled && Event.current.type == EventType.Repaint && r.Contains(Event.current.mousePosition)) m_MFocus = i;
                 if (res == MClick.Clicked) ActivateMainItem(i);
@@ -227,15 +232,27 @@ namespace FPSLAN
 
             DrawProgressionHub();
 
-            if (m_MLocalT > 0.001f) DrawMenuLocalPanel(new Rect(panel.xMax + 14 * K, panel.y + 150 * K, 350 * K, 352 * K));
+            if (m_MLocalT > 0.001f)
+            {
+                float localH = LocalPanelHeight();
+                float localY = Mathf.Max(panel.y, panel.y + 150 * K - Mathf.Max(0f, localH - 352 * K));
+                DrawMenuLocalPanel(new Rect(panel.xMax + 14 * K, localY, 350 * K, localH));
+            }
+            if (m_MOnlineT > 0.001f)
+                DrawMenuOnlinePanel(new Rect(panel.xMax + 14 * K, panel.y, 350 * K, OnlinePanelHeight));
         }
 
         void ActivateMainItem(int i)
         {
             switch (i)
             {
-                case 0: m_MLocalOpen = false; OpenSetup(SetupContext.Online); break;
+                case 0:
+                    m_MLocalOpen = false;
+                    m_MOnlineOpen = !m_MOnlineOpen;
+                    m_MOnlineError = null;
+                    break;
                 case 1:
+                    m_MOnlineOpen = false;
                     m_MLocalOpen = !m_MLocalOpen;
                     m_MLocalError = null;
                     break;
@@ -256,47 +273,105 @@ namespace FPSLAN
             if (MenuIconButton(new Rect(r.xMax - 40 * K, r.y + 14 * K, 28 * K, 28 * K), "×", 1100)) { m_MLocalOpen = false; m_MAlpha = oldA; return; }
 
             float x = r.x + 22 * K, w = r.width - 44 * K, y = r.y + 60 * K;
-            if (MenuButton(new Rect(x, y, w, 58 * K), "CRIAR SERVIDOR", 1101, MBtn.Primary, false, m_MT20) == MClick.Clicked)
+            if (MenuButton(new Rect(x, y, w, 58 * K), "CREATE SERVER", 1101, MBtn.Primary, false, m_MT20) == MClick.Clicked)
             {
                 m_MLocalOpen = false;
                 OpenSetup(SetupContext.LocalHost);
             }
             y += 66 * K;
-            MText(new Rect(x, y, w, 20 * K), "O teu código: " + LocalCode(), m_MT12, MMuted);
+            MText(new Rect(x, y, w, 20 * K), "Your code: " + LocalCode(), m_MT12, MMuted);
             y += 34 * K;
 
-            // separador "OU"
+            // separador "OR"
             MFill(new Rect(x, y + 10 * K, w * 0.4f, 1.5f * K), Fade(MCyanDim, 1f));
             MFill(new Rect(x + w * 0.6f, y + 10 * K, w * 0.4f, 1.5f * K), Fade(MCyanDim, 1f));
-            MText(new Rect(x, y, w, 22 * K), "OU", m_MT14, MMuted);
+            MText(new Rect(x, y, w, 22 * K), "OR", m_MT14, MMuted);
             y += 34 * K;
 
-            MText(new Rect(x, y, w, 20 * K), "LIGAR A UM SERVIDOR", m_MT14, MWhite, TextAnchor.MiddleLeft);
+            // Servidores encontrados automaticamente na rede (LanDiscovery): basta clicar.
+            MText(new Rect(x, y, w, 20 * K), "SERVERS ON YOUR NETWORK", m_MT14, MWhite, TextAnchor.MiddleLeft);
             y += 26 * K;
-            m_Ip = MenuField(new Rect(x, y, w, 46 * K), "mm_code", m_Ip, "Código do servidor (IP do host)", 40);
+            var found = LanDiscovery.Servers;
+            if (found.Count == 0)
+            {
+                int dots = 1 + (int)(Time.unscaledTime * 2f) % 3;
+                MText(new Rect(x, y, w, 40 * K), "Searching" + new string('.', dots) + "  Ask the host to press CREATE SERVER.", m_MT12, MMuted, TextAnchor.UpperLeft, true);
+                y += 44 * K;
+            }
+            else
+            {
+                for (int i = 0; i < found.Count && i < MaxLocalServerRows; i++)
+                {
+                    var sv = found[i];
+                    string label = sv.HostName + " · " + sv.Map + " · " + sv.Mode + " · " + sv.Players + "/" + sv.MaxPlayers;
+                    if (!sv.SameVersion) label += " · OTHER BUILD";
+                    var kind = sv.IsFull ? MBtn.Muted : (sv.SameVersion ? MBtn.Primary : MBtn.Normal);
+                    if (MenuButton(new Rect(x, y, w, 38 * K), label, 1110 + i, kind, false, m_MT12) == MClick.Clicked)
+                        JoinDiscoveredServer(sv);
+                    y += 44 * K;
+                }
+            }
+            y += 4 * K;
+
+            MText(new Rect(x, y, w, 20 * K), "OR JOIN BY CODE", m_MT14, MWhite, TextAnchor.MiddleLeft);
+            y += 26 * K;
+            m_Ip = MenuField(new Rect(x, y, w, 46 * K), "mm_code", m_Ip, "Server code (host IP)", 40);
             y += 58 * K;
-            if (MenuButton(new Rect(r.x + (r.width - 200 * K) / 2f, y, 200 * K, 48 * K), "LIGAR", 1102, MBtn.Coral, false, m_MT20) == MClick.Clicked)
+            if (MenuButton(new Rect(r.x + (r.width - 200 * K) / 2f, y, 200 * K, 48 * K), "CONNECT", 1102, MBtn.Coral, false, m_MT20) == MClick.Clicked)
                 TryOpenLocalJoin();
             y += 56 * K;
 
             string status = m_MLocalError;
+            if (string.IsNullOrEmpty(status) && !string.IsNullOrEmpty(ConnectionManager.FirewallMessage)) status = ConnectionManager.FirewallMessage;
             if (string.IsNullOrEmpty(status) && ConnectionManager.Instance != null) status = ConnectionManager.Instance.Status;
             if (!string.IsNullOrEmpty(status))
                 MText(new Rect(x - 6 * K, y, w + 12 * K, 40 * K), status, m_MT12, new Color(1f, 0.75f, 0.65f), TextAnchor.UpperCenter, true);
+            y += 44 * K;
+
+            // Corrige a causa mais comum: a firewall do Windows a bloquear o jogo (rede "Pública" ou "Cancelar" no aviso).
+            if (ConnectionManager.CanFixFirewall)
+            {
+                string fw = ConnectionManager.FixingFirewall ? "FIXING FIREWALL..." : "FIX FIREWALL";
+                if (MenuButton(new Rect(r.x + (r.width - 200 * K) / 2f, y, 200 * K, 34 * K), fw, 1103, MBtn.Normal, false, m_MT12) == MClick.Clicked)
+                {
+                    m_MLocalError = null;
+                    ConnectionManager.FixFirewall();
+                }
+            }
 
             m_MAlpha = oldA;
         }
 
         string LocalCode() => m_LocalIps != null && m_LocalIps.Count > 0 ? m_LocalIps[0] : "127.0.0.1";
 
+        const int MaxLocalServerRows = 3;
+
+        float LocalPanelHeight()
+        {
+            int rows = Mathf.Clamp(LanDiscovery.Servers.Count, 0, MaxLocalServerRows);
+            float list = rows == 0 ? 44f : rows * 44f;
+            float firewall = ConnectionManager.CanFixFirewall ? 44f : 0f;
+            return (352f + 60f + list + firewall) * K;
+        }
+
+        /// <summary>Servidor encontrado na rede: preenche o código e passa à escolha de personagem.</summary>
+        void JoinDiscoveredServer(LanDiscovery.ServerInfo sv)
+        {
+            if (sv.IsFull) { m_MLocalError = sv.HostName + "'s server is full."; return; }
+            m_Ip = sv.Code;
+            TryOpenLocalJoin();
+            if (!sv.SameVersion)
+                MenuNotice("Warning: " + sv.HostName + " has a different build of the game. If joining fails, use the same build on both PCs.");
+        }
+
         /// <summary>Valida o código e passa à escolha de personagem (a ligação só acontece no fim).</summary>
         void TryOpenLocalJoin()
         {
             m_MLocalError = null;
             var code = (m_Ip ?? "").Trim();
-            if (code.Length == 0) { m_MLocalError = "Escreve o código do servidor (IP do host, ex.: 192.168.1.20)."; GUI.FocusControl("mm_code"); return; }
-            if (code != "localhost" && !System.Net.IPAddress.TryParse(code, out _))
-            { m_MLocalError = "Código inválido. Usa o código mostrado no ecrã de quem criou o servidor."; GUI.FocusControl("mm_code"); return; }
+            if (code.Length == 0) { m_MLocalError = "Enter the server code (host IP, e.g. 192.168.1.20)."; GUI.FocusControl("mm_code"); return; }
+            if (!ConnectionManager.TryParseCode(code, out _, out _))
+            { m_MLocalError = "Invalid code. Use the code shown on the host's screen."; GUI.FocusControl("mm_code"); return; }
             m_Ip = code;
             m_MLocalOpen = false;
             OpenSetup(SetupContext.LocalJoin);
@@ -305,10 +380,77 @@ namespace FPSLAN
         void JoinLocal()
         {
             if (NM != null && NM.IsListening) return;
-            if (ConnectionManager.Instance == null) { MenuNotice("Erro: sistema de rede não encontrado na cena."); return; }
+            if (ConnectionManager.Instance == null) { MenuNotice("Network system not found in this scene."); return; }
             var code = (m_Ip ?? "").Trim();
             SaveMenuPrefs();
-            ConnectionManager.Instance.Join(code == "localhost" ? "127.0.0.1" : code);
+            ConnectionManager.Instance.Join(code);
+        }
+
+        // ================================================================== PLAY ONLINE (Unity Relay)
+
+        float OnlinePanelHeight => 400f * K;
+
+        /// <summary>PLAY ONLINE: criar uma sala na Internet (Relay) ou entrar com o código de um amigo.</summary>
+        void DrawMenuOnlinePanel(Rect r)
+        {
+            float t = EaseOut(m_MOnlineT);
+            float oldA = m_MAlpha;
+            m_MAlpha *= t;
+            r.x -= (1f - t) * 30f * K;
+            DrawTechPanel(r, false);
+
+            MText(new Rect(r.x, r.y + 14 * K, r.width, 34 * K), "PLAY ONLINE", m_MT20, MCyan);
+            if (MenuIconButton(new Rect(r.xMax - 40 * K, r.y + 14 * K, 28 * K, 28 * K), "×", 1200)) { m_MOnlineOpen = false; m_MAlpha = oldA; return; }
+
+            float x = r.x + 22 * K, w = r.width - 44 * K, y = r.y + 60 * K;
+            if (MenuButton(new Rect(x, y, w, 58 * K), "CREATE ROOM", 1201, MBtn.Primary, false, m_MT20) == MClick.Clicked)
+            {
+                m_MOnlineOpen = false;
+                OpenSetup(SetupContext.Online);
+            }
+            y += 66 * K;
+            MText(new Rect(x, y, w, 36 * K), "You host the match. Share the room code with your friends.", m_MT12, MMuted, TextAnchor.UpperCenter, true);
+            y += 44 * K;
+
+            MFill(new Rect(x, y + 10 * K, w * 0.4f, 1.5f * K), Fade(MCyanDim, 1f));
+            MFill(new Rect(x + w * 0.6f, y + 10 * K, w * 0.4f, 1.5f * K), Fade(MCyanDim, 1f));
+            MText(new Rect(x, y, w, 22 * K), "OR", m_MT14, MMuted);
+            y += 34 * K;
+
+            MText(new Rect(x, y, w, 20 * K), "JOIN WITH ROOM CODE", m_MT14, MWhite, TextAnchor.MiddleLeft);
+            y += 26 * K;
+            m_RoomCode = MenuField(new Rect(x, y, w, 46 * K), "mm_room", m_RoomCode, "Room code (e.g. K7Q2XB)", 16);
+            y += 58 * K;
+            if (MenuButton(new Rect(r.x + (r.width - 200 * K) / 2f, y, 200 * K, 48 * K), "JOIN", 1202, MBtn.Coral, false, m_MT20) == MClick.Clicked)
+                TryOpenOnlineJoin();
+            y += 56 * K;
+
+            string status = m_MOnlineError;
+            if (string.IsNullOrEmpty(status) && ConnectionManager.Instance != null) status = ConnectionManager.Instance.Status;
+            if (!string.IsNullOrEmpty(status))
+                MText(new Rect(x - 6 * K, y, w + 12 * K, 40 * K), status, m_MT12, new Color(1f, 0.75f, 0.65f), TextAnchor.UpperCenter, true);
+
+            m_MAlpha = oldA;
+        }
+
+        void TryOpenOnlineJoin()
+        {
+            m_MOnlineError = null;
+            var code = ConnectionManager.NormalizeRoomCode(m_RoomCode);
+            if (code.Length == 0) { m_MOnlineError = "Enter the room code shown on the host's screen."; GUI.FocusControl("mm_room"); return; }
+            if (!ConnectionManager.IsValidRoomCode(code)) { m_MOnlineError = "Invalid room code. Check it with the host."; GUI.FocusControl("mm_room"); return; }
+            m_RoomCode = code;
+            m_MOnlineOpen = false;
+            OpenSetup(SetupContext.OnlineJoin);
+        }
+
+        void JoinFromSetup()
+        {
+            if (m_MSetupCtx != SetupContext.OnlineJoin) { JoinLocal(); return; }
+            if (NM != null && NM.IsListening) return;
+            if (ConnectionManager.Instance == null) { MenuNotice("Network system not found in this scene."); return; }
+            SaveMenuPrefs();
+            if (!ConnectionManager.Instance.JoinOnline(m_RoomCode)) MenuNotice(ConnectionManager.Instance.Status);
         }
 
         // ================================================================== ecrã de configuração
@@ -316,19 +458,20 @@ namespace FPSLAN
         void OpenSetup(SetupContext ctx)
         {
             m_MSetupCtx = ctx;
-            if (ctx != SetupContext.LocalJoin && MatchManager.MenuSelectedMode == GameMode.ItTakesTwo)
+            if (!IsJoinCtx(ctx) && MatchManager.MenuSelectedMode == GameMode.ItTakesTwo)
                 SelectMode(Mathf.Max(0, m_MModeSel), false);
             m_MScreen = MenuScreen.Setup;
             m_MScreenT = 0f;
             m_MAudioOpen = false;
             GUI.FocusControl(null);
-            if (ctx != SetupContext.LocalJoin) FocusMapIsland(m_MMapSel);
+            if (!IsJoinCtx(ctx)) FocusMapIsland(m_MMapSel);
             else FocusOverview();
         }
 
         void BackToMain()
         {
-            m_MLocalOpen = m_MSetupCtx != SetupContext.Online;
+            m_MLocalOpen = m_MSetupCtx == SetupContext.LocalHost || m_MSetupCtx == SetupContext.LocalJoin;
+            m_MOnlineOpen = m_MSetupCtx == SetupContext.OnlineJoin;
             m_MScreen = MenuScreen.Main;
             m_MScreenT = 0f;
             GUI.FocusControl(null);
@@ -338,8 +481,8 @@ namespace FPSLAN
         void DrawMenuSetupScreen(float ease)
         {
             var ctx = m_MSetupCtx;
-            bool online = ctx != SetupContext.LocalJoin;   // online e criar servidor local: modo · mapa · personagem
-            bool join = ctx == SetupContext.LocalJoin;
+            bool online = !IsJoinCtx(ctx);   // online e criar servidor local: modo · mapa · personagem
+            bool join = IsJoinCtx(ctx);
             float slide = (1f - ease) * 30f * K;
             int step = 1;
 
@@ -364,21 +507,21 @@ namespace FPSLAN
             }
             else
             {
-                MText(title, "SERVIDOR", m_MT40, MWhite, TextAnchor.MiddleLeft);
+                MText(title, "SERVER", m_MT40, MWhite, TextAnchor.MiddleLeft);
                 DrawTechLine(VL(58, 124, 360, 2), false);
                 var info = VL(83, 150, 324, 124);
                 DrawTechPanel(info, false);
-                MText(new Rect(info.x + 18 * K, info.y + 14 * K, info.width - 36 * K, 20 * K), "CÓDIGO", m_MT12, MMuted, TextAnchor.MiddleLeft);
+                MText(new Rect(info.x + 18 * K, info.y + 14 * K, info.width - 36 * K, 20 * K), "CODE", m_MT12, MMuted, TextAnchor.MiddleLeft);
                 MText(new Rect(info.x + 18 * K, info.y + 34 * K, info.width - 36 * K, 30 * K), m_Ip, m_MT24, MCyan, TextAnchor.MiddleLeft);
                 MText(new Rect(info.x + 18 * K, info.y + 74 * K, info.width - 36 * K, 60 * K),
-                    "Quem criou o servidor escolhe o modo e o mapa. Aqui escolhes o teu personagem.", m_MT12, MMuted, TextAnchor.UpperLeft, true);
+                    "The host selects the mode and map. Choose your character here.", m_MT12, MMuted, TextAnchor.UpperLeft, true);
             }
 
             if (!join)
             {
                 bool competitive = MatchManager.MenuSelectedCompetitive && !MenuCoopSetup;
                 var ranked = VL(83, 406, 324, 40);
-                if (MenuButton(ranked, competitive ? "COMPETITIVO" : "CASUAL", 2098, MBtn.Normal, competitive, m_MT14) == MClick.Clicked && !MenuCoopSetup)
+                if (MenuButton(ranked, competitive ? "COMPETITIVE" : "CASUAL", 2098, MBtn.Normal, competitive, m_MT14) == MClick.Clicked && !MenuCoopSetup)
                 {
                     MatchManager.MenuSelectedCompetitive = !competitive;
                     PlayerPrefs.SetInt("fpslan.competitive", !competitive ? 1 : 0);
@@ -422,7 +565,7 @@ namespace FPSLAN
             actions.x += slide;
             DrawSetupActions(actions, ctx);
 
-            if (MenuButton(new Rect(Screen.width - 250 * K, 14 * K, 150 * K, 40 * K), "‹  VOLTAR", 2900, MBtn.Normal, false, m_MT17) == MClick.Clicked)
+            if (MenuButton(new Rect(Screen.width - 250 * K, 14 * K, 150 * K, 40 * K), "‹  BACK", 2900, MBtn.Normal, false, m_MT17) == MClick.Clicked)
                 BackToMain();
         }
 
@@ -466,7 +609,7 @@ namespace FPSLAN
                 selected ? MCyan : (available ? MWhite : MMuted));
             if (GUI.enabled && GUI.Button(cell, GUIContent.none, GUIStyle.none))
             {
-                if (!available) { MenuNotice(MenuCoopSetup ? "Esta missão é protagonizada por Lince e Riot." : s_Roster[i].name + " ainda não está disponível."); return false; }
+                if (!available) { MenuNotice(MenuCoopSetup ? "This mission features Lince and Riot." : s_Roster[i].name + " is not available yet."); return false; }
                 return true;
             }
             return false;
@@ -485,27 +628,32 @@ namespace FPSLAN
 
         void DrawCharacterStageInner(Rect stage, int selChar, bool coopPreview, BrawlerDefinition b)
         {
+            MFill(new Rect(stage.x + 12*K, stage.yMax - 108*K, stage.width - 24*K, 122*K), new Color(0.02f, 0.05f, 0.1f, 0.65f));
             if (coopPreview)
             {
                 int second = selChar == 0 ? 1 : 0;
                 float half = stage.width / 2f;
-                DrawCharacterArt(new Rect(stage.x, stage.y + 34 * K, half, stage.height - 74 * K), selChar, 1f);
-                DrawCharacterArt(new Rect(stage.x + half, stage.y + 34 * K, half, stage.height - 74 * K), second, 1f);
+                DrawCharacterArt(new Rect(stage.x, stage.y + 34 * K, half, stage.height - 108 * K), selChar, 1f);
+                DrawCharacterArt(new Rect(stage.x + half, stage.y + 34 * K, half, stage.height - 108 * K), second, 1f);
                 MText(new Rect(stage.x, stage.y, half, 30 * K), "1", m_MT24, MWhite);
                 MText(new Rect(stage.x + half, stage.y, half, 30 * K), "2", m_MT24, MWhite);
-                MText(new Rect(stage.x, stage.yMax - 34 * K, stage.width, 30 * K), MatchManager.CoopMissionTitle, m_MT17, MCyan);
+                MText(new Rect(stage.x, stage.yMax - 60 * K, stage.width, 26 * K), MatchManager.CoopMissionTitle, m_MT17, MCyan);
+                if (b != null) MText(new Rect(stage.x + 28 * K, stage.yMax - 32 * K, stage.width - 56 * K, 44 * K), CharacterStories.Summary(b.brawlerId), m_MT12, MWhite, TextAnchor.UpperCenter, true);
                 return;
             }
 
             float t = EaseOut(m_MCharT);
-            var art = new Rect(stage.x, stage.y, stage.width, stage.height - 46 * K);
+            var art = new Rect(stage.x, stage.y, stage.width, stage.height - 102 * K);
             if (m_MCharPrev >= 0 && m_MCharPrev != selChar && t < 1f)
                 DrawCharacterArt(art, m_MCharPrev, 1f - t);
             DrawCharacterArt(new Rect(art.x, art.y + (1f - t) * 20f * K, art.width, art.height), selChar, t);
 
-            MText(new Rect(stage.x, stage.yMax - 64 * K, stage.width, 42 * K), s_Roster[selChar].name, m_MT40, MWhite);
+            MText(new Rect(stage.x, stage.yMax - 100 * K, stage.width, 42 * K), s_Roster[selChar].name, m_MT40, MWhite);
             if (b != null)
-                MText(new Rect(stage.x, stage.yMax - 24 * K, stage.width, 22 * K), RoleTitle(b), m_MT14, MCyan);
+            {
+                MText(new Rect(stage.x, stage.yMax - 60 * K, stage.width, 22 * K), CharacterStories.Role(b.brawlerId), m_MT14, MCyan);
+                MText(new Rect(stage.x + 28 * K, stage.yMax - 34 * K, stage.width - 56 * K, 48 * K), CharacterStories.Summary(b.brawlerId), m_MT12, MWhite, TextAnchor.UpperCenter, true);
+            }
         }
 
         void DrawCharacterArt(Rect r, int index, float alpha)
@@ -576,13 +724,13 @@ namespace FPSLAN
             if (MenuCoopSetup && m.key != "santiago")
             {
                 MDraw9(m_MFill, frame, Fade(new Color(0f, 0f, 0f, 0.65f), 1f));
-                MText(frame, "MISSÃO FUTURA", m_MT14, MMuted);
+                MText(frame, "COMING SOON", m_MT14, MMuted);
             }
 
             if (GUI.enabled && GUI.Button(r, GUIContent.none, GUIStyle.none))
             {
                 FocusMapIsland(i);   // a aproximação acontece sempre: mostra de que ilha se trata
-                if (MenuCoopSetup && m.key != "santiago") { MenuNotice("Primeira missão: The Pelourinho Heist. As outras missões ficam para a progressão futura."); m_BgReturnAt = Time.unscaledTime + BgTravelTime + 1.6f; return false; }
+                if (MenuCoopSetup && m.key != "santiago") { MenuNotice("First mission: The Pelourinho Heist. More missions are coming later."); m_BgReturnAt = Time.unscaledTime + BgTravelTime + 1.6f; return false; }
                 if (!m.playable) { PeekUnavailableMap(); return false; }
                 return true;
             }
@@ -592,7 +740,7 @@ namespace FPSLAN
         /// <summary>Mapa ainda fechado: mostra a ilha, avisa e depois a câmara regressa ao mapa escolhido.</summary>
         void PeekUnavailableMap()
         {
-            MenuNotice("Este mapa ainda não está disponível.");
+            MenuNotice("This map is not available yet.");
             m_BgReturnAt = Time.unscaledTime + BgTravelTime + 1.6f;
         }
 
@@ -608,32 +756,32 @@ namespace FPSLAN
             DrawTechPanel(r, false);
             float x = r.x + 18 * K, w = r.width - 36 * K, y = r.y + 12 * K;
 
-            if (ctx == SetupContext.LocalJoin)
+            if (IsJoinCtx(ctx))
             {
-                MText(new Rect(x, y, w, 20 * K), "PRONTO PARA ENTRAR", m_MT12, MMuted, TextAnchor.MiddleLeft);
-                MText(new Rect(x, y + 18 * K, w, 28 * K), "Servidor " + m_Ip, m_MT17, MCyan, TextAnchor.MiddleLeft);
+                MText(new Rect(x, y, w, 20 * K), "READY TO JOIN", m_MT12, MMuted, TextAnchor.MiddleLeft);
+                MText(new Rect(x, y + 18 * K, w, 28 * K), ctx == SetupContext.OnlineJoin ? "Online room " + m_RoomCode : "Server " + m_Ip, m_MT17, MCyan, TextAnchor.MiddleLeft);
                 y += 70 * K;
-                if (MenuButton(new Rect(x, y, w, 64 * K), "ENTRAR NA PARTIDA", 5000, MBtn.Coral, false, m_MT20) == MClick.Clicked)
-                    JoinLocal();
+                if (MenuButton(new Rect(x, y, w, 64 * K), "JOIN MATCH", 5000, MBtn.Coral, false, m_MT20) == MClick.Clicked)
+                    JoinFromSetup();
                 return;
             }
 
             if (ctx == SetupContext.LocalHost)
             {
-                MText(new Rect(x, y, w, 20 * K), "CÓDIGO DO SERVIDOR", m_MT12, MMuted, TextAnchor.MiddleLeft);
+                MText(new Rect(x, y, w, 20 * K), "SERVER CODE", m_MT12, MMuted, TextAnchor.MiddleLeft);
                 MText(new Rect(x, y + 16 * K, w, 26 * K), LocalCode() + "  ·  UDP " + ConnectionManager.DefaultPort, m_MT17, MCyan, TextAnchor.MiddleLeft);
             }
             else
             {
-                MText(new Rect(x, y, w, 20 * K), "PARTIDA", m_MT12, MMuted, TextAnchor.MiddleLeft);
-                MText(new Rect(x, y + 16 * K, w, 26 * K), "Contigo + bots  ·  código " + LocalCode(), m_MT14, MCyan, TextAnchor.MiddleLeft);
+                MText(new Rect(x, y, w, 20 * K), "MATCH", m_MT12, MMuted, TextAnchor.MiddleLeft);
+                MText(new Rect(x, y + 16 * K, w, 26 * K), "Online room · code appears in game (Esc)", m_MT14, MCyan, TextAnchor.MiddleLeft);
             }
             y += 48 * K;
 
             // O cooperativo gere o parceiro e os guardas automaticamente.
             if (MenuCoopSetup)
             {
-                MText(new Rect(x, y, w, 42 * K), "LINCE & RIOT\nParceiro bot a solo · 2 jogadores por LAN", m_MT14, MCyan, TextAnchor.MiddleLeft, true);
+                MText(new Rect(x, y, w, 42 * K), "LINCE & RIOT\nAI partner solo · 2 players over LAN", m_MT14, MCyan, TextAnchor.MiddleLeft, true);
                 y += 46 * K;
             }
             else
@@ -654,7 +802,7 @@ namespace FPSLAN
             y += 46 * K;
             }
 
-            string label = ctx == SetupContext.Online ? "JOGAR" : "CRIAR SERVIDOR";
+            string label = ctx == SetupContext.Online ? "CREATE ROOM" : "CREATE SERVER";
             if (MenuButton(new Rect(x, y, w, 58 * K), label, 5004, MBtn.Primary, false, m_MT20) == MClick.Clicked)
                 TryStartFromSetup(ctx);
         }
@@ -664,27 +812,25 @@ namespace FPSLAN
             if (m_MModeSel < 0 || !TryResolveMode(s_Modes[m_MModeSel], out _))
             {
                 MenuNotice(m_MModeSel >= 0 && s_Modes[m_MModeSel].unavailableMessage != null
-                    ? s_Modes[m_MModeSel].unavailableMessage + " Escolhe outro modo."
-                    : "Escolhe um modo para jogar.");
+                    ? s_Modes[m_MModeSel].unavailableMessage + " Choose another mode."
+                    : "Choose a game mode.");
                 return;
             }
-            if (ctx != SetupContext.LocalJoin && !s_Maps[m_MMapSel].playable)
+            if (!IsJoinCtx(ctx) && !s_Maps[m_MMapSel].playable)
             {
-                MenuNotice("Este mapa ainda não está disponível. Escolhe outro.");
+                MenuNotice("This map is not available yet. Choose another.");
                 return;
             }
-            // Online: ainda sem servidor na Internet — a partida corre neste PC (com bots) e quem estiver na
-            // mesma rede pode entrar com o código.
-            int bots = ctx == SetupContext.Online ? Mathf.Max(1, m_MenuBots) : m_MenuBots;
-            StartHost(bots);
+            // Online: a partida corre neste PC (host) e os amigos entram pelo Unity Relay com o código da sala.
+            StartHost(m_MenuBots, ctx == SetupContext.Online);
         }
 
-        void StartHost(int bots)
+        void StartHost(int bots, bool online = false)
         {
             if (NM != null && NM.IsListening) return;
-            if (ConnectionManager.Instance == null) { MenuNotice("Erro: sistema de rede não encontrado na cena."); return; }
+            if (ConnectionManager.Instance == null) { MenuNotice("Network system not found in this scene."); return; }
             if (MatchManager.MenuSelectedMode == GameMode.GemGrab && !ConnectionManager.SupportsGemGrab(SelectedMapKey))
-            { MenuNotice("GEM GRAB está disponível em Santiago, no Sal e no Fogo. Escolhe uma dessas ilhas."); return; }
+            { MenuNotice("GEM RUSH is available in Santiago, Sal and Fogo. Choose one of these islands."); return; }
             if (MatchManager.MenuSelectedMode == GameMode.ItTakesTwo) MatchManager.MenuSelectedCompetitive = false;
             SaveMenuPrefs();
             if (MatchManager.MenuSelectedMode == GameMode.ItTakesTwo)
@@ -694,7 +840,7 @@ namespace FPSLAN
                 if (!MatchManager.IsCoopStoryHero(BrawlerRegistry.Get(m_Hero)))
                 { m_Hero = MatchManager.CoopHeroIndex("sniper"); GameSession.LocalHeroId = m_Hero; }
             }
-            if (ConnectionManager.Instance.HostMap(SelectedMapKey)) m_PendingBots = bots;
+            if (ConnectionManager.Instance.HostMap(SelectedMapKey, ConnectionManager.DefaultPort, online)) m_PendingBots = bots;
             else MenuNotice(ConnectionManager.Instance.Status);
         }
 
@@ -748,10 +894,10 @@ namespace FPSLAN
             float nv = MenuVerticalSlider(track, v, 6103);
             if (!Mathf.Approximately(nv, v)) SetMenuVolume(nv);
             MText(new Rect(pill.x, track.yMax + 6 * K, pill.width, 22 * K), Mathf.RoundToInt(v * 100f) + "%", m_MT14, muted ? MCoral : MWhite);
-            MText(new Rect(pill.x, track.yMax + 26 * K, pill.width, 20 * K), muted ? "MUDO" : "VOLUME", m_MT12, MMuted);
+            MText(new Rect(pill.x, track.yMax + 26 * K, pill.width, 20 * K), muted ? "MUTE" : "VOLUME", m_MT12, MMuted);
 
             // perfil, teclas, sensibilidade…
-            if (MenuButton(new Rect(Screen.width - 250 * K, pill.yMax + 12 * K, 210 * K, 40 * K), "DEFINIÇÕES", 6104, MBtn.Normal, false, m_MT14) == MClick.Clicked)
+            if (MenuButton(new Rect(Screen.width - 250 * K, pill.yMax + 12 * K, 210 * K, 40 * K), "SETTINGS", 6104, MBtn.Normal, false, m_MT14) == MClick.Clicked)
             {
                 m_MAudioOpen = false;
                 OpenSettings();
@@ -794,7 +940,7 @@ namespace FPSLAN
             var r = new Rect((Screen.width - 460 * K) / 2f, (Screen.height - 220 * K) / 2f, 460 * K, 220 * K);
             DrawTechPanel(r, true);
             bool server = NM != null && NM.IsServer;
-            MText(new Rect(r.x, r.y + 26 * K, r.width, 36 * K), server ? "A PREPARAR A PARTIDA" : "A LIGAR AO SERVIDOR", m_MT24, MWhite);
+            MText(new Rect(r.x, r.y + 26 * K, r.width, 36 * K), server ? "PREPARING MATCH" : "CONNECTING TO SERVER", m_MT24, MWhite);
             for (int i = 0; i < 5; i++)
             {
                 float p = Mathf.Repeat(Time.unscaledTime * 1.4f - i * 0.18f, 1f);
@@ -802,9 +948,9 @@ namespace FPSLAN
                 MTex(new Rect(r.center.x - 62 * K + i * 26 * K, r.y + 80 * K, 14 * K, 14 * K), Art.CircleTexture, new Color(MCyan.r, MCyan.g, MCyan.b, 0.25f + 0.75f * a), ScaleMode.StretchToFill);
             }
             var status = ConnectionManager.Instance != null ? ConnectionManager.Instance.Status : "";
-            if (string.IsNullOrEmpty(status) && !server) status = "A ligar a " + m_Ip + "...";
+            if (string.IsNullOrEmpty(status) && !server) status = "Connecting to " + m_Ip + "...";
             MText(new Rect(r.x + 20 * K, r.y + 104 * K, r.width - 40 * K, 40 * K), status, m_MT14, MMuted, TextAnchor.MiddleCenter, true);
-            if (MenuButton(new Rect(r.center.x - 90 * K, r.yMax - 64 * K, 180 * K, 46 * K), "CANCELAR", 7000, MBtn.Coral, false, m_MT17) == MClick.Clicked)
+            if (MenuButton(new Rect(r.center.x - 90 * K, r.yMax - 64 * K, 180 * K, 46 * K), "CANCEL", 7000, MBtn.Coral, false, m_MT17) == MClick.Clicked)
                 ConnectionManager.Instance?.Leave();
         }
 
@@ -820,6 +966,7 @@ namespace FPSLAN
                 if (m_MAudioOpen) m_MAudioOpen = false;
                 else if (m_MScreen == MenuScreen.Setup) BackToMain();
                 else if (m_MLocalOpen) m_MLocalOpen = false;
+                else if (m_MOnlineOpen) m_MOnlineOpen = false;
                 GUI.FocusControl(null);
                 e.Use();
                 return;
@@ -830,11 +977,12 @@ namespace FPSLAN
                 if (m_MScreen == MenuScreen.Main)
                 {
                     if (m_MLocalOpen && typing) TryOpenLocalJoin();
+                    else if (m_MOnlineOpen && typing) TryOpenOnlineJoin();
                     else if (!typing) ActivateMainItem(m_MFocus);
                 }
                 else if (!typing)
                 {
-                    if (m_MSetupCtx == SetupContext.LocalJoin) JoinLocal();
+                    if (IsJoinCtx(m_MSetupCtx)) JoinFromSetup();
                     else TryStartFromSetup(m_MSetupCtx);
                 }
                 e.Use();
@@ -850,7 +998,7 @@ namespace FPSLAN
             }
 
             int c = Mathf.Max(0, MenuCharIndexForHero(m_Hero));
-            bool modes = m_MSetupCtx != SetupContext.LocalJoin;
+            bool modes = !IsJoinCtx(m_MSetupCtx);
             int characterCount = MenuCoopSetup ? 2 : s_Roster.Length;
             if (e.keyCode == KeyCode.RightArrow || e.keyCode == KeyCode.D) { SelectMenuCharacter((c + 1) % characterCount); e.Use(); }
             else if (e.keyCode == KeyCode.LeftArrow || e.keyCode == KeyCode.A) { SelectMenuCharacter((c + characterCount - 1) % characterCount); e.Use(); }
@@ -858,7 +1006,7 @@ namespace FPSLAN
             { SelectMode((Mathf.Max(0, m_MModeSel) + 1) % s_Modes.Length, true); e.Use(); }
             else if (modes && (e.keyCode == KeyCode.UpArrow || e.keyCode == KeyCode.W))
             { SelectMode((Mathf.Max(0, m_MModeSel) + s_Modes.Length - 1) % s_Modes.Length, true); e.Use(); }
-            else if (m_MSetupCtx != SetupContext.LocalJoin && (e.keyCode == KeyCode.E || e.keyCode == KeyCode.Q))
+            else if (!IsJoinCtx(m_MSetupCtx) && (e.keyCode == KeyCode.E || e.keyCode == KeyCode.Q))
             {
                 int n = s_Maps.Length, next = (m_MMapSel + (e.keyCode == KeyCode.E ? 1 : n - 1)) % n;
                 FocusMapIsland(next);
@@ -961,7 +1109,7 @@ namespace FPSLAN
             if (m_BgReturnAt > 0f && Time.unscaledTime >= m_BgReturnAt)
             {
                 m_BgReturnAt = 0f;
-                if (m_MScreen == MenuScreen.Setup && m_MSetupCtx != SetupContext.LocalJoin) FocusMapIsland(m_MMapSel);
+                if (m_MScreen == MenuScreen.Setup && !IsJoinCtx(m_MSetupCtx)) FocusMapIsland(m_MMapSel);
             }
             if (m_BgT < 1f) m_BgT = Mathf.Min(1f, m_BgT + dt / BgTravelTime);
             float t = m_BgT;
@@ -1115,7 +1263,7 @@ namespace FPSLAN
                 // canto inferior esquerdo do anel (fica na zona livre entre os modos e os mapas)
                 var lr = new Rect(p.x - baseR * 0.74f - 210 * K, p.y + baseR * 0.74f, 200 * K, 20 * K);
                 MFill(new Rect(lr.xMax - 60 * K, lr.yMax + 2 * K, 66 * K, 1.5f * K), MCyanDim);
-                MText(lr, map.coords, m_MT12, MCyan, TextAnchor.MiddleRight);
+                MText(lr, "", m_MT12, MCyan, TextAnchor.MiddleRight);
                 m_MAlpha = oldA;
             }
         }
@@ -1365,19 +1513,33 @@ namespace FPSLAN
         void MText(Rect r, string text, GUIStyle style, Color c, TextAnchor anchor = TextAnchor.MiddleCenter, bool wrap = false)
         {
             if (string.IsNullOrEmpty(text)) return;
+            int oldSize = style.fontSize;
+            var oldFont = style.font;
+            if (text.Length > 0 && System.Array.TrueForAll(text.ToCharArray(), ch => !char.IsLetter(ch))) style.font = GameTypography.Numbers;
+            if (!wrap)
+            {
+                float width = style.CalcSize(new GUIContent(text)).x;
+                if (width > r.width) style.fontSize = Mathf.Max(8, Mathf.FloorToInt(oldSize * r.width / width));
+            }
             var oldColor = style.normal.textColor;
+            var oldHoverColor = style.hover.textColor;
             var oldAnchor = style.alignment;
             var oldWrap = style.wordWrap;
             style.alignment = anchor;
             style.wordWrap = wrap;
             // sombra suave para destacar do fundo
             style.normal.textColor = new Color(0f, 0.02f, 0.06f, 0.6f * c.a * m_MAlpha);
+            style.hover.textColor = style.normal.textColor;
             GUI.Label(new Rect(r.x + 1.5f * K, r.y + 2f * K, r.width, r.height), text, style);
             style.normal.textColor = new Color(c.r, c.g, c.b, c.a * m_MAlpha);
+            style.hover.textColor = style.normal.textColor;
             GUI.Label(r, text, style);
             style.normal.textColor = oldColor;
+            style.hover.textColor = oldHoverColor;
             style.alignment = oldAnchor;
             style.wordWrap = oldWrap;
+            style.fontSize = oldSize;
+            style.font = oldFont;
         }
 
         Texture2D MenuTexture(string name)
@@ -1401,7 +1563,7 @@ namespace FPSLAN
 
             if (m_MFont == null)
             {
-                try { m_MFont = Font.CreateDynamicFontFromOSFont(new[] { "Bahnschrift", "Segoe UI", "Arial" }, 32); }
+                try { m_MFont = GameTypography.Body; }
                 catch { m_MFont = null; }
             }
 
@@ -1429,7 +1591,7 @@ namespace FPSLAN
         {
             var s = new GUIStyle(GUI.skin.label)
             {
-                font = m_MFont,
+                font = size >= 30 ? GameTypography.Display : size >= 24 ? GameTypography.Title : m_MFont,
                 fontSize = Mathf.Max(8, Mathf.RoundToInt(size * K)),
                 fontStyle = style,
                 alignment = TextAnchor.MiddleCenter,

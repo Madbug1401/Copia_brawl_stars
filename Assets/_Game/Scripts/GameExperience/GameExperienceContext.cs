@@ -79,6 +79,7 @@ namespace FPSLAN
         public PlayerProgressionManager Progression { get; }
         public CharacterUpgradeManager Upgrades { get; }
         public PetManager Pets { get; }
+        public PetFoodManager PetFood { get; }
         public PetProgressionManager PetProgression { get; }
         public PetUnlockManager PetUnlocks { get; }
         public SkinManager Skins { get; }
@@ -109,6 +110,7 @@ namespace FPSLAN
             Progression = new PlayerProgressionManager(this);
             Upgrades = new CharacterUpgradeManager(this);
             Pets = new PetManager(this);
+            PetFood = new PetFoodManager(this);
             PetProgression = new PetProgressionManager(this);
             PetUnlocks = new PetUnlockManager(this);
             Skins = new SkinManager(this);
@@ -123,6 +125,7 @@ namespace FPSLAN
 
         void EnsureStarterContent()
         {
+            PetFood.EnsureStarterFood();
             foreach (var b in BrawlerIds())
                 if (Progression.IsCharacterUnlockedByRule(b)) Inventory.UnlockCharacter(b);
             PetUnlocks.CheckAll();

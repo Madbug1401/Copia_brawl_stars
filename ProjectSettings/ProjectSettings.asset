@@ -113,7 +113,7 @@ PlayerSettings:
   xboxEnableFitness: 0
   visibleInBackground: 1
   allowFullscreenSwitch: 1
-  fullscreenMode: 3
+  fullscreenMode: 1
   xboxSpeechDB: 0
   xboxEnableHeadOrientation: 0
   xboxEnableGuest: 0
@@ -305,32 +305,32 @@ PlayerSettings:
       m_Width: 432
       m_Height: 432
       m_Kind: 2
-      m_SubKind:
+      m_SubKind: 
     - m_Textures: []
       m_Width: 324
       m_Height: 324
       m_Kind: 2
-      m_SubKind:
+      m_SubKind: 
     - m_Textures: []
       m_Width: 216
       m_Height: 216
       m_Kind: 2
-      m_SubKind:
+      m_SubKind: 
     - m_Textures: []
       m_Width: 162
       m_Height: 162
       m_Kind: 2
-      m_SubKind:
+      m_SubKind: 
     - m_Textures: []
       m_Width: 108
       m_Height: 108
       m_Kind: 2
-      m_SubKind:
+      m_SubKind: 
     - m_Textures: []
       m_Width: 81
       m_Height: 81
       m_Kind: 2
-      m_SubKind:
+      m_SubKind: 
   m_BuildTargetBatching: []
   m_BuildTargetShaderSettings: []
   m_BuildTargetGraphicsJobs: []
@@ -699,7 +699,13 @@ PlayerSettings:
   XboxOneXTitleMemory: 8
   XboxOneOverrideIdentityName: 
   XboxOneOverrideIdentityPublisher: 
-  cloudServicesEnabled: {}
+  cloudServicesEnabled:
+    Build: 0
+    Game Performance: 0
+    Legacy Analytics: 0
+    Purchasing: 0
+    UDP: 0
+    Unity Ads: 0
   luminIcon:
     m_Name: 
     m_ModelFolderPath: 
@@ -722,11 +728,11 @@ PlayerSettings:
   activeInputHandler: 0
   windowsGamepadBackendHint: 0
   enableDirectStorage: 0
-  cloudProjectId: 
+  cloudProjectId: 02c2c241-89aa-43dc-b413-688067f846e7
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: 
-  organizationId: 
+  projectName: FPS-LAN
+  organizationId: mad_bug1401
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
   hmiLoadingImage: {fileID: 0}

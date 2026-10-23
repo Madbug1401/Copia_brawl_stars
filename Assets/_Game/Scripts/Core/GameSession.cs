@@ -16,7 +16,7 @@ namespace FPSLAN
 
         public static string LocalName
         {
-            get => PlayerPrefs.GetString(KeyName, "Jogador" + Random.Range(10, 99));
+            get => PlayerPrefs.GetString(KeyName, "Player" + Random.Range(10, 99));
             set => PlayerPrefs.SetString(KeyName, Sanitize(value));
         }
 
@@ -90,7 +90,7 @@ namespace FPSLAN
         /// <summary>Nomes curtos e só com caracteres de 1–2 bytes, para caberem num FixedString64Bytes.</summary>
         public static string Sanitize(string s)
         {
-            if (string.IsNullOrWhiteSpace(s)) return "Jogador";
+            if (string.IsNullOrWhiteSpace(s)) return "Player";
             var sb = new System.Text.StringBuilder();
             foreach (var c in s.Trim())
             {
@@ -98,7 +98,7 @@ namespace FPSLAN
                 sb.Append(c);
                 if (sb.Length >= 16) break;
             }
-            return sb.Length == 0 ? "Jogador" : sb.ToString();
+            return sb.Length == 0 ? "Player" : sb.ToString();
         }
     }
 }

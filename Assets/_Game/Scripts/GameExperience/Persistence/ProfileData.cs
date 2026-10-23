@@ -19,6 +19,8 @@ namespace FPSLAN
 
         public long playerXp;
         public int coins;
+        public int upraFood;
+        public bool upraIntroduced;
 
         public List<CharacterProgress> characters = new List<CharacterProgress>();
         public List<PetProgress> pets = new List<PetProgress>();

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: skin_ncage_forest
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SkinDefinition
   skinId: skin_ncage_forest
-  displayName: "Ca\xE7ador da Floresta"
+  displayName: "Forest Hunter"
   target: 0
   targetId: trapper
   rarity: 1

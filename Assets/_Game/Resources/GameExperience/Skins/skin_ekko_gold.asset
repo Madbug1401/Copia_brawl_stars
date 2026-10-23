@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: skin_ekko_gold
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SkinDefinition
   skinId: skin_ekko_gold
-  displayName: Ekko Dourado
+  displayName: "Golden Ekko"
   target: 0
   targetId: gunslinger
   rarity: 3

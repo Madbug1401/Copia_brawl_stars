@@ -13,13 +13,18 @@ namespace FPSLAN
         /// <summary>Peças animadas opcionais (dependem do estilo).</summary>
         public Transform drum, pump, stringTop, stringBottom, nock, arrows, fuseTip, scope;
         public float stringLength, nockRestZ;
+        /// <summary>Arco: pontas da corda e ponto de descanso do nock (espaço da raiz da arma).</summary>
+        public Vector3 bowTop, bowBottom, nockRest;
+        /// <summary>true se a arma veio de um modelo 3D (Resources/Weapons).</summary>
+        public bool fromModel;
 
         public Vector3 Muzzle(int i) => muzzles.Count == 0 ? root.position : muzzles[Mathf.Abs(i) % muzzles.Count].position;
     }
 
     /// <summary>
-    /// Modelos procedurais das armas de cada estilo (revólver, dinamite, arco, lata de spray, caçadeira, sniper).
-    /// Formas grandes e arredondadas, cores fortes e contorno — legíveis à distância, ao estilo de jogos arcade.
+    /// Modelos das armas de cada estilo (metralhadora, dinamite, arco, lata de spray, caçadeira, sniper).
+    /// Usa o modelo 3D de Resources/Weapons/&lt;estilo&gt; quando existe (ver WeaponModelImporter); senão, constrói
+    /// a arma com primitivas — formas grandes e arredondadas, cores fortes e contorno, legíveis à distância.
     /// </summary>
     public static class WeaponModels
     {
@@ -27,6 +32,7 @@ namespace FPSLAN
         static readonly Color DarkMetal = new Color(0.18f, 0.19f, 0.24f);
         static readonly Color Wood = new Color(0.55f, 0.33f, 0.18f);
         static readonly Color Gold = new Color(1f, 0.78f, 0.25f);
+        static readonly Color StringColor = new Color(0.95f, 0.95f, 0.9f);
 
         /// <summary>Constrói a arma de um estilo. 'hand' indica a mão (0 = direita, 1 = esquerda) para estilos duplos.</summary>
         public static WeaponModel Build(RigStyle style, Transform parent, Color accent, int hand, ShadowCastingMode shadows)
@@ -38,7 +44,7 @@ namespace FPSLAN
 
             // Modelo 3D da arma, se existir (Resources/Weapons/<estilo>): substitui a arma de primitivas,
             // tanto no personagem em 3.ª pessoa como na vista em 1.ª pessoa.
-            if (TryBuildFromPrefab(style, w, shadows)) return w;
+            if (TryBuildFromPrefab(style, w, accent, shadows)) return w;
 
             switch (style)
             {
@@ -57,20 +63,48 @@ namespace FPSLAN
 
         /// <summary>Pasta (em Resources) dos modelos 3D das armas, um prefab por estilo (ex.: Weapons/Sniper).</summary>
         public const string PrefabFolder = "Weapons/";
+        /// <summary>Quanto o rótulo SITA desce na lata de spray (m). Público para afinar.</summary>
+        public static float SprayLabelDrop = 0.045f;
 
         /// <summary>
-        /// Usa o prefab Resources/Weapons/&lt;estilo&gt; (origem = punho, +Z = cano). Filhos opcionais: "Muzzle" (boca do
-        /// cano, de onde saem os tiros) e "Support" (onde pousa a outra mão).
+        /// Usa o prefab Resources/Weapons/&lt;estilo&gt; (origem = punho, +Z = cano). Marcadores opcionais:
+        /// "Muzzle" (de onde saem os tiros), "Support" (onde pousa a outra mão), "FuseTip" (rastilho da dinamite),
+        /// "Label" (rótulo SITA da lata de spray), "BowTop"/"BowBottom"/"Nock" (corda animada do arco).
         /// </summary>
-        static bool TryBuildFromPrefab(RigStyle style, WeaponModel w, ShadowCastingMode shadows)
+        static bool TryBuildFromPrefab(RigStyle style, WeaponModel w, Color accent, ShadowCastingMode shadows)
         {
             var prefab = Resources.Load<GameObject>(PrefabFolder + style);
             if (prefab == null) return false;
             var model = Object.Instantiate(prefab, w.root, false);
             model.name = "Model";
+            w.fromModel = true;
             foreach (var r in model.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = shadows;
+            Transform top = null, bottom = null, nock = null;
             foreach (var t in model.GetComponentsInChildren<Transform>(true))
-                if (t.name == "Muzzle") w.muzzles.Add(t);
+            {
+                switch (t.name)
+                {
+                    case "Muzzle": w.muzzles.Add(t); break;
+                    case "FuseTip": w.fuseTip = t; w.muzzles.Add(t); break;
+                    case "Label":
+                        // rótulo SITA na metade de baixo da lata: a mão agarra a de cima sem nunca o tapar
+                        t.localPosition += Vector3.down * SprayLabelDrop;
+                        SprayCanBranding.AddTo(t);
+                        break;
+                    case "BowTop": top = t; break;
+                    case "BowBottom": bottom = t; break;
+                    case "Nock": nock = t; break;
+                }
+            }
+            // A dinamite desaparece da mão quando é lançada (ver ViewModelRig).
+            if (style == RigStyle.DualExplosives) w.arrows = model.transform;
+            if (style == RigStyle.SprayCan || style == RigStyle.DualSprayCans) w.scope = model.transform;
+            if (style == RigStyle.Bow && top != null && bottom != null)
+            {
+                var nockPos = nock != null ? w.root.InverseTransformPoint(nock.position)
+                    : (w.root.InverseTransformPoint(top.position) + w.root.InverseTransformPoint(bottom.position)) * 0.5f;
+                AddBowString(w, accent, w.root.InverseTransformPoint(top.position), w.root.InverseTransformPoint(bottom.position), nockPos);
+            }
             if (w.muzzles.Count == 0) Muzzle(w, new Vector3(0f, 0.05f, 0.6f));
             return true;
         }
@@ -99,19 +133,96 @@ namespace FPSLAN
         // ------------------------------------------------------------------ Minigun (especial do Ekko)
 
         /// <summary>Minigun segura com as duas mãos: 'drum' é o conjunto de canos que roda ao disparar.</summary>
+        /// <summary>
+        /// Faca de combate (golpe corpo-a-corpo na 1.ª pessoa), numa só malha orgânica: lâmina afilada com o fio para
+        /// baixo (-Y), guarda, cabo com sulcos para os dedos e pomo. Cabo à volta de z = -0.06, ponta em z = 0.3.
+        /// </summary>
+        public static void BuildKnife(Transform parent, Color handle, Color accent)
+        {
+            var m = new OrganicMesh();
+            var steel = new Color(0.78f, 0.86f, 0.93f);
+            // cabo (secção ligeiramente oval) com três sulcos para os dedos
+            var grip = new List<OrganicMesh.Ring>();
+            for (int i = 0; i <= 12; i++)
+            {
+                float z = Mathf.Lerp(-0.125f, 0.02f, i / 12f);
+                float groove = 1f - 0.12f * Mathf.Max(0f, Mathf.Sin((z + 0.11f) / 0.035f * Mathf.PI)) * (z < 0f ? 1f : 0f);
+                grip.Add(new OrganicMesh.Ring(new Vector3(0f, 0f, z), 0.018f * groove, 0.0155f * groove, handle));
+            }
+            m.Tube(grip, Vector3.up, false, false, 12);
+            m.Ellipsoid(new Vector3(0f, 0f, -0.128f), Quaternion.identity, new Vector3(0.019f, 0.022f, 0.014f), accent, 12);   // pomo
+            m.Ellipsoid(new Vector3(0f, -0.004f, 0.026f), Quaternion.identity, new Vector3(0.012f, 0.042f, 0.009f), accent, 12); // guarda
+            // lâmina: a lombada fica direita em cima e o fio sobe até à ponta
+            var blade = new List<OrganicMesh.Ring>();
+            const float spine = 0.018f;
+            for (int i = 0; i <= 14; i++)
+            {
+                float t = i / 14f;
+                float z = Mathf.Lerp(0.032f, 0.3f, t);
+                float w = Mathf.Lerp(0.017f, 0.0012f, Mathf.Pow(t, 2.2f)) * (t < 0.08f ? Mathf.Lerp(0.85f, 1f, t / 0.08f) : 1f);
+                float thick = Mathf.Lerp(0.0045f, 0.0012f, t);
+                blade.Add(new OrganicMesh.Ring(new Vector3(0f, spine - w - 0.004f + Mathf.Pow(t, 3f) * 0.006f, z), w, thick, steel));
+            }
+            m.Tube(blade, Vector3.up, false, true, 10, 2, 0.5f);
+            var t0 = m.Attach(parent, "KnifeMesh", true);
+            t0.localRotation = Quaternion.Euler(0f, 0f, -8f);
+        }
+
         public static WeaponModel BuildMinigun(Transform parent, Color accent, ShadowCastingMode s)
         {
             var w = new WeaponModel();
             var root = new GameObject("Weapon_Minigun").transform;
             root.SetParent(parent, false);
             w.root = root;
-            // Corpo e caixa de munições
-            P(w, PrimitiveType.Cube, new Vector3(0f, 0f, 0.02f), new Vector3(0.16f, 0.15f, 0.26f), DarkMetal, s);
-            P(w, PrimitiveType.Cube, new Vector3(-0.14f, -0.06f, 0f), new Vector3(0.12f, 0.14f, 0.18f), accent, s);
-            P(w, PrimitiveType.Cube, new Vector3(-0.14f, 0.02f, 0f), new Vector3(0.125f, 0.02f, 0.185f), Gold, ShadowCastingMode.Off);
-            // Pegas (traseira e de cima)
-            P(w, PrimitiveType.Cylinder, new Vector3(0f, -0.12f, -0.06f), new Vector3(0.035f, 0.06f, 0.035f), Wood, s);
-            P(w, PrimitiveType.Cube, new Vector3(0f, 0.12f, 0.02f), new Vector3(0.03f, 0.05f, 0.14f), Metal, s);
+            // Modelo 3D (Resources/Weapons/Minigun, ver WeaponModelImporter): origem na pega traseira, canos ("Barrels")
+            // separados para rodarem, marcadores Muzzle e Support (mão esquerda por baixo dos canos)
+            var prefab = Resources.Load<GameObject>(PrefabFolder + "Minigun");
+            if (prefab != null)
+            {
+                var model = Object.Instantiate(prefab, root, false);
+                model.name = "Model";
+                w.fromModel = true;
+                foreach (var r in model.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = s;
+                foreach (var t in model.GetComponentsInChildren<Transform>(true))
+                {
+                    if (t.name == "Muzzle") w.muzzles.Add(t);
+                    else if (t.name == "Barrels") w.drum = t;
+                }
+                if (w.muzzles.Count == 0) Muzzle(w, new Vector3(0f, 0f, 0.6f));
+                return w;
+            }
+            // Corpo arredondado, tambor de munições ao lado e pegas, numa só malha (silhueta limpa, um só contorno)
+            {
+                var m = new OrganicMesh();
+                m.Tube(OrganicMesh.Smooth(new[]
+                {
+                    new OrganicMesh.Ring(new Vector3(0f, 0.005f, -0.14f), 0.055f, 0.06f, DarkMetal),
+                    new OrganicMesh.Ring(new Vector3(0f, 0f, -0.06f), 0.074f, 0.078f, DarkMetal),
+                    new OrganicMesh.Ring(new Vector3(0f, 0f, 0.1f), 0.072f, 0.076f, DarkMetal),
+                    new OrganicMesh.Ring(new Vector3(0f, 0f, 0.2f), 0.06f, 0.062f, Metal),
+                }, 3), Vector3.right, true, true, 18, 3, 0.6f);
+                // tambor de munições (eixo X), com aros dourados
+                var drum = new List<OrganicMesh.Ring>();
+                foreach (var (x, r, c) in new[] { (-0.06f, 0.064f, Gold), (-0.075f, 0.07f, Gold), (-0.09f, 0.07f, accent), (-0.17f, 0.07f, accent), (-0.185f, 0.07f, Gold), (-0.2f, 0.064f, Gold) })
+                    drum.Add(new OrganicMesh.Ring(new Vector3(x, -0.035f, -0.01f), r, r, c));
+                m.Tube(drum, Vector3.up, true, true, 18, 2, 0.35f);
+                // pega traseira (vertical, de madeira) e pega de transporte em arco por cima
+                m.Tube(new[]
+                {
+                    new OrganicMesh.Ring(new Vector3(0f, -0.06f, -0.055f), 0.02f, 0.022f, Wood),
+                    new OrganicMesh.Ring(new Vector3(0f, -0.13f, -0.065f), 0.019f, 0.021f, Wood),
+                    new OrganicMesh.Ring(new Vector3(0f, -0.18f, -0.07f), 0.021f, 0.023f, Wood),
+                }, Vector3.right, false, true, 12);
+                m.Tube(OrganicMesh.Smooth(new[]
+                {
+                    new OrganicMesh.Ring(new Vector3(0f, 0.06f, -0.07f), 0.012f, 0.012f, Metal),
+                    new OrganicMesh.Ring(new Vector3(0f, 0.125f, -0.04f), 0.012f, 0.012f, Metal),
+                    new OrganicMesh.Ring(new Vector3(0f, 0.13f, 0.06f), 0.012f, 0.012f, Metal),
+                    new OrganicMesh.Ring(new Vector3(0f, 0.06f, 0.1f), 0.012f, 0.012f, Metal),
+                }, 4), Vector3.right, true, true, 10);
+                var body = m.Attach(root, "MinigunBody", true);
+                body.GetComponent<MeshRenderer>().shadowCastingMode = s;
+            }
             // Canos rotativos
             var barrels = new GameObject("Barrels").transform;
             barrels.SetParent(root, false);
@@ -236,7 +347,7 @@ namespace FPSLAN
             stick.SetParent(w.root, false);
             stick.localPosition = new Vector3(0f, 0.05f, 0.02f);
             stick.localRotation = Quaternion.Euler(-20f, 0f, 0f);
-            BuildDynamiteStick(stick, accent, s, false);
+            BuildDynamiteStickPrimitive(stick, accent, s, false);
             w.arrows = stick; // reutiliza "arrows" como o objeto que desaparece ao lançar
             var tip = new GameObject("FuseTip").transform;
             tip.SetParent(stick, false);
@@ -245,8 +356,29 @@ namespace FPSLAN
             w.muzzles.Add(tip);
         }
 
-        /// <summary>Pau de dinamite vertical (centro na origem). Usado na mão e como projétil.</summary>
+        /// <summary>
+        /// Dinamite vertical (centro na origem). Usado como projétil: o modelo 3D (molho de TNT) se existir,
+        /// senão um pau de primitivas.
+        /// </summary>
         public static void BuildDynamiteStick(Transform parent, Color accent, ShadowCastingMode s, bool big)
+        {
+            var prefab = Resources.Load<GameObject>(PrefabFolder + RigStyle.DualExplosives);
+            if (prefab != null)
+            {
+                var m = Object.Instantiate(prefab, parent, false);
+                m.name = "TNT";
+                var mesh = m.GetComponentInChildren<MeshFilter>();
+                var c = mesh != null && mesh.sharedMesh != null ? mesh.sharedMesh.bounds.center : Vector3.zero;
+                float k = big ? 1.6f : 1f;
+                m.transform.localScale = Vector3.one * k;
+                m.transform.localPosition = -c * k;
+                foreach (var r in m.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = s;
+                return;
+            }
+            BuildDynamiteStickPrimitive(parent, accent, s, big);
+        }
+
+        static void BuildDynamiteStickPrimitive(Transform parent, Color accent, ShadowCastingMode s, bool big)
         {
             float k = big ? 1.6f : 1f;
             Art.Part(PrimitiveType.Cylinder, parent, Vector3.zero, new Vector3(0.075f, 0.11f, 0.075f) * k, new Color(0.9f, 0.18f, 0.15f), true, default, s);
@@ -294,16 +426,23 @@ namespace FPSLAN
             // Pontas decorativas
             P(w, PrimitiveType.Sphere, new Vector3(0f, tipY, tipZ), Vector3.one * 0.045f, accent, ShadowCastingMode.Off);
             P(w, PrimitiveType.Sphere, new Vector3(0f, -tipY, tipZ), Vector3.one * 0.045f, accent, ShadowCastingMode.Off);
+            AddBowString(w, accent, new Vector3(0f, tipY, tipZ), new Vector3(0f, -tipY, tipZ), new Vector3(0f, 0f, tipZ));
+        }
 
-            // Corda: duas metades que se juntam no "nock" (animado ao puxar)
+        /// <summary>Corda animada (duas metades que se juntam no nock) e três flechas encaixadas no nock.</summary>
+        static void AddBowString(WeaponModel w, Color accent, Vector3 top, Vector3 bottom, Vector3 nockRest)
+        {
             var nock = new GameObject("Nock").transform;
             nock.SetParent(w.root, false);
-            nock.localPosition = new Vector3(0f, 0f, tipZ);
+            nock.localPosition = nockRest;
             w.nock = nock;
-            w.nockRestZ = tipZ;
-            w.stringTop = Art.Part(PrimitiveType.Cylinder, w.root, Vector3.zero, new Vector3(0.008f, 0.1f, 0.008f), new Color(0.95f, 0.95f, 0.9f), false, default, ShadowCastingMode.Off);
-            w.stringBottom = Art.Part(PrimitiveType.Cylinder, w.root, Vector3.zero, new Vector3(0.008f, 0.1f, 0.008f), new Color(0.95f, 0.95f, 0.9f), false, default, ShadowCastingMode.Off);
-            w.stringLength = tipY;
+            w.bowTop = top;
+            w.bowBottom = bottom;
+            w.nockRest = nockRest;
+            w.nockRestZ = nockRest.z;
+            w.stringLength = (top.y - bottom.y) * 0.5f;
+            w.stringTop = Art.Part(PrimitiveType.Cylinder, w.root, Vector3.zero, new Vector3(0.008f, 0.1f, 0.008f), StringColor, false, default, ShadowCastingMode.Off);
+            w.stringBottom = Art.Part(PrimitiveType.Cylinder, w.root, Vector3.zero, new Vector3(0.008f, 0.1f, 0.008f), StringColor, false, default, ShadowCastingMode.Off);
             PoseBow(w, 0f, 0f);
 
             // Três flechas encaixadas no nock (leque ligeiro)
@@ -320,9 +459,19 @@ namespace FPSLAN
             }
         }
 
-        /// <summary>Flecha ao longo de +Z (cauda na origem).</summary>
+        /// <summary>Flecha ao longo de +Z (cauda na origem): modelo 3D (Resources/Weapons/Arrow) ou primitivas.</summary>
         public static void BuildArrow(Transform parent, Color accent, ShadowCastingMode s, float length)
         {
+            var prefab = Resources.Load<GameObject>(PrefabFolder + "Arrow");
+            if (prefab != null)
+            {
+                var m = Object.Instantiate(prefab, parent, false);
+                m.name = "ArrowModel";
+                m.transform.localScale = Vector3.one * (length / 0.62f);
+                foreach (var t in m.GetComponentsInChildren<Transform>(true)) if (t.name == "Muzzle") t.name = "ArrowTip";
+                foreach (var r in m.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = s;
+                return;
+            }
             Art.Part(PrimitiveType.Cylinder, parent, new Vector3(0f, 0f, length * 0.5f), new Vector3(0.016f, length * 0.5f, 0.016f), new Color(0.75f, 0.55f, 0.32f), false, new Vector3(90f, 0f, 0f), s);
             Art.Part(PrimitiveType.Sphere, parent, new Vector3(0f, 0f, length), new Vector3(0.05f, 0.05f, 0.11f), accent, true, default, s);
             Art.Part(PrimitiveType.Cube, parent, new Vector3(0f, 0.02f, 0.05f), new Vector3(0.006f, 0.04f, 0.09f), Color.white, false, default, ShadowCastingMode.Off);
@@ -340,8 +489,7 @@ namespace FPSLAN
             P(w, PrimitiveType.Cylinder, new Vector3(0f, 0.02f, 0f), new Vector3(0.115f, 0.04f, 0.115f), Color.white, ShadowCastingMode.Off, default, can);
             P(w, PrimitiveType.Sphere, new Vector3(0f, 0.13f, 0f), new Vector3(0.1f, 0.06f, 0.1f), new Color(0.85f, 0.88f, 0.92f), s, default, can);
             P(w, PrimitiveType.Cube, new Vector3(0f, 0.175f, 0.015f), new Vector3(0.03f, 0.035f, 0.05f), DarkMetal, ShadowCastingMode.Off, default, can);
-            // Pequena caveira/estrela pintada (rótulo)
-            P(w, PrimitiveType.Sphere, new Vector3(0f, 0.02f, 0.055f), new Vector3(0.05f, 0.05f, 0.01f), Art.Lighten(accent, 0.6f), ShadowCastingMode.Off, default, can);
+            SprayCanBranding.AddTo(can);
             w.scope = can;
             Muzzle(w, new Vector3(0f, 0.18f, 0.05f), can);
         }
@@ -399,13 +547,10 @@ namespace FPSLAN
         public static void PoseBow(WeaponModel w, float draw, float vibrate)
         {
             if (w == null || w.nock == null || w.stringTop == null) return;
-            var rest = new Vector3(0f, 0f, w.nockRestZ);
-            var nockPos = rest + new Vector3(0f, 0f, -0.22f * Mathf.Clamp01(draw) + Mathf.Sin(Time.time * 70f) * 0.02f * vibrate);
+            var nockPos = w.nockRest + new Vector3(0f, 0f, -0.22f * Mathf.Clamp01(draw) + Mathf.Sin(Time.time * 70f) * 0.02f * vibrate);
             w.nock.localPosition = nockPos;
-            var top = new Vector3(0f, w.stringLength, rest.z);
-            var bottom = new Vector3(0f, -w.stringLength, rest.z);
-            PlaceString(w.stringTop, top, nockPos);
-            PlaceString(w.stringBottom, bottom, nockPos);
+            PlaceString(w.stringTop, w.bowTop, nockPos);
+            PlaceString(w.stringBottom, w.bowBottom, nockPos);
         }
 
         static void PlaceString(Transform s, Vector3 a, Vector3 b)

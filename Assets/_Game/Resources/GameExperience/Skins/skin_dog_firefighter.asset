@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: skin_dog_firefighter
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SkinDefinition
   skinId: skin_dog_firefighter
-  displayName: Faro Bombeiro
+  displayName: "Firefighter Faro"
   target: 1
   targetId: pet_dog
   rarity: 1

@@ -22,6 +22,7 @@ namespace FPSLAN
 
         public string petId = "";
         public int petXp;
+        public int upraFood;
         public int petLevelBefore, petLevelAfter, petStageBefore, petStageAfter;
 
         /// <summary>Desbloqueios e conquistas desta partida (texto para a interface).</summary>
@@ -68,7 +69,7 @@ namespace FPSLAN
                 if (m_Ctx.Inventory.IsCharacterUnlocked(id) || !IsCharacterUnlockedByRule(id)) continue;
                 m_Ctx.Inventory.UnlockCharacter(id);
                 var b = BrawlerRegistry.FindById(id);
-                m_Ctx.Emit(FeedbackType.CharacterUnlocked, "NOVA PERSONAGEM!", b != null ? b.displayName : id, new Color(1f, 0.7f, 0.3f));
+                m_Ctx.Emit(FeedbackType.CharacterUnlocked, "NEW CHARACTER!", b != null ? b.displayName : id, new Color(1f, 0.7f, 0.3f));
             }
         }
 
@@ -129,6 +130,7 @@ namespace FPSLAN
             if (!r.participated) return; // partida não válida: só fica registada (sem XP)
 
             stats.validMatches++;
+            report.upraFood = m_Ctx.PetFood.Add(PetFoodRules.FoodPerMatch);
             stats.kills += Mathf.Max(0, (int)r.kills);
             stats.assists += Mathf.Max(0, (int)r.assists);
             stats.deaths += Mathf.Max(0, (int)r.deaths);
@@ -143,7 +145,7 @@ namespace FPSLAN
             // XP global e da personagem
             int xp = Mathf.Max(0, r.XpTotal);
             report.xpGained = xp;
-            m_Ctx.XP.AddPlayerXp(xp, "Partida");
+            m_Ctx.XP.AddPlayerXp(xp, "Match");
             m_Ctx.XP.AddCharacterXp(brawlerId, Mathf.RoundToInt(xp * Cfg.characterXpShare));
             report.playerXpAfter = profile.playerXp;
             report.levelAfter = PlayerLevel;
@@ -170,7 +172,7 @@ namespace FPSLAN
                 report.petStageAfter = PetDefinition.StageFor(report.petLevelAfter);
             }
 
-            if (r.won && !r.draw) m_Ctx.Emit(FeedbackType.Victory, "VITÓRIA!", "+" + Cfg.xpVictory + " XP de vitória", new Color(1f, 0.85f, 0.25f));
+            if (r.won && !r.draw) m_Ctx.Emit(FeedbackType.Victory, "VICTORY!", "+" + Cfg.xpVictory + " victory XP", new Color(1f, 0.85f, 0.25f));
 
             // Missões, conquistas e desbloqueios por regras
             m_Ctx.Quests.OnMatch(r, pet != null);

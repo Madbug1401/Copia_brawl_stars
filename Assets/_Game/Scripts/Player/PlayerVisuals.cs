@@ -31,6 +31,7 @@ namespace FPSLAN
         int m_ViewLayer = -1;
         SkinDefinition m_Skin;
         PetFollower m_Pet;
+        PlayerEmotesFx m_Emotes;
 
         // Estados visíveis para os outros
         Transform m_Cage;
@@ -121,6 +122,7 @@ namespace FPSLAN
         void Awake()
         {
             m_Player = GetComponent<PlayerNetwork>();
+            if (GetComponent<TeamPresentation>() == null) gameObject.AddComponent<TeamPresentation>();
             m_Controller = GetComponent<CharacterController>();
             m_ViewLayer = LayerMask.NameToLayer(ViewModelLayerName);
         }
@@ -150,6 +152,7 @@ namespace FPSLAN
 
             RebuildRigs();
             RefreshPet();
+            m_Emotes = new PlayerEmotesFx(m_Player, this, m_ViewLayer);
         }
 
         public override void OnNetworkDespawn()
@@ -162,6 +165,8 @@ namespace FPSLAN
             m_View = null;
             if (m_Pet != null) m_Pet.Despawn();
             m_Pet = null;
+            m_Emotes?.Dispose();
+            m_Emotes = null;
         }
 
         void OnHeroChanged(int previous, int current) => RebuildRigs();
@@ -257,6 +262,14 @@ namespace FPSLAN
 
         /// <summary>O dono eliminou alguém: o pet celebra.</summary>
         public void OnOwnerScored() => m_Pet?.Celebrate();
+
+        public void OnPetFed() { } // a celebração acontece no fim da animação de comer (PlayerEmotesFx)
+
+        /// <summary>Pet que segue este jogador (pode ser null).</summary>
+        public PetFollower Pet => m_Pet != null ? m_Pet : null;
+
+        /// <summary>Spray SITA confirmado pelo host: lata na mão e jato de tinta.</summary>
+        public void OnSpray(Vector3 point, int colorIndex) => m_Emotes?.OnSpray(point, colorIndex);
 
         /// <summary>Uma habilidade de pet foi ativada (ex.: escudo de lama do Porco).</summary>
         public void OnPetAbility(PetAbilityType ability)
@@ -645,6 +658,9 @@ namespace FPSLAN
             // ---------------- estados (preso, escudo do pet, especial ativo, veneno)
             UpdateStatusVisuals(dead);
 
+            // ---------------- emotes de marca (UPRA / SITA)
+            m_Emotes?.Tick(dt, m_Concealed || m_PendingRespawn, dead);
+
             // ---------------- primeira pessoa
             if (local) UpdateFirstPerson(dt, dead);
 
@@ -695,13 +711,17 @@ namespace FPSLAN
                 var baseRot = dead ? Quaternion.Euler(35f, 0f, 0f) : Quaternion.identity;
                 var shake = CameraShake.Sample(dt);
                 m_CamRot = Quaternion.Slerp(m_CamRot, baseRot, 1f - Mathf.Exp(-6f * dt));
-                m_Camera.transform.localRotation = m_CamRot * Quaternion.Euler(shake);
+                // A alimentar o pet: a câmara baixa o olhar para a tigela
+                float feedW = m_Emotes != null ? m_Emotes.FeedCameraWeight : 0f;
+                var feedTilt = feedW > 0f ? Quaternion.Euler(Mathf.Clamp(38f - pitch, 0f, 70f) * feedW, 0f, 0f) : Quaternion.identity;
+                m_Camera.transform.localRotation = feedTilt * m_CamRot * Quaternion.Euler(shake);
 
                 // Abrandado: campo de visão mais fechado; sprint: ligeiramente mais aberto
                 bool scoped = !dead && GameUI.GameplayInputAllowed && m_Player.Brawler != null &&
                     m_Player.Brawler.firstPerson.rig == RigStyle.Sniper && InputReader.AimHeld;
                 // a mirar pela luneta: esconde a arma e as mãos (só se vê a mira no ecrã)
-                if (m_View != null) m_View.SetVisible(!dead && !scoped);
+                bool emote = (m_Emotes != null && m_Emotes.HidesWeapon) || m_Player.SprayWheelOpen;
+                if (m_View != null) m_View.SetVisible(!dead && !scoped && !emote);
                 float fov = scoped ? GameSession.ScopeFieldOfView :
                     (m_Player.Health.IsSlowed ? 78f : (motor.IsSprinting && motor.IsMoving ? 90f : 85f));
                 if (motor.IsLaunched) fov = 92f;

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: skin_ncage_lunar
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SkinDefinition
   skinId: skin_ncage_lunar
-  displayName: Arqueiro Lunar
+  displayName: "Lunar Archer"
   target: 0
   targetId: trapper
   rarity: 2

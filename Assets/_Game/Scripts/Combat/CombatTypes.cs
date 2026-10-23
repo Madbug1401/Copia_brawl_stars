@@ -182,6 +182,8 @@ namespace FPSLAN
         public AttackDefinition attack;
         public bool isSuper;
         public bool authoritative;
+        /// <summary>Host: segundos a recuar os outros jogadores ao testar este ataque (compensação de latência).</summary>
+        public double lag;
         public Vector3 origin;
         public Vector3 direction;
         public Vector3 target;

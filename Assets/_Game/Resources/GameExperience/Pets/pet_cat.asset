@@ -15,7 +15,7 @@ MonoBehaviour:
   petId: pet_cat
   displayName: Bigodes
   category: 1
-  description: "Gato \xE1gil. D\xE1 um pequeno impulso \xE0 velocidade do dono."
+  description: "An agile cat. Gives its owner a small speed boost."
   species: 1
   ability: 2
   abilityBase: 0.02
@@ -34,16 +34,16 @@ MonoBehaviour:
   milestones:
   - level: 3
     type: 0
-    description: Pequena melhoria na habilidade
+    description: "Small ability upgrade"
   - level: 4
     type: 2
-    description: "Est\xE1gio Desenvolvido (maior, coleira)"
+    description: "Developed stage (larger, collar)"
   - level: 5
     type: 1
-    description: "Nova anima\xE7\xE3o de celebra\xE7\xE3o (pirueta)"
+    description: "New celebration animation (spin)"
   - level: 8
     type: 2
-    description: "Est\xE1gio Evolu\xEDdo + acess\xF3rio adicional"
+    description: "Evolved stage + extra accessory"
   - level: 10
     type: 3
-    description: "Aura especial de n\xEDvel m\xE1ximo"
+    description: "Special max-level aura"

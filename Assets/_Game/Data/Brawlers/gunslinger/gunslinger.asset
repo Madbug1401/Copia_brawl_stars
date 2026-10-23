@@ -15,7 +15,7 @@ MonoBehaviour:
   brawlerId: gunslinger
   displayName: Ekko
   shortName: 
-  role: "Pistoleiro / Metralhador \u2014 duas metralhadoras autom\xE1ticas, fortes de perto; Especial: Minigun (at\xE9 200 de dano)"
+  role: "The Gunslinger · Dual pistols and rapid-fire minigun."
   available: 1
   stats:
     maxHealth: 120

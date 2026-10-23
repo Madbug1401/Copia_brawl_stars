@@ -15,7 +15,7 @@ MonoBehaviour:
   petId: pet_rabbit
   displayName: Pipoca
   category: 4
-  description: "Coelho saltit\xE3o. Ajuda o dono a correr mais depressa."
+  description: "A lively rabbit. Helps its owner sprint faster."
   species: 4
   ability: 5
   abilityBase: 0.03
@@ -34,16 +34,16 @@ MonoBehaviour:
   milestones:
   - level: 3
     type: 0
-    description: Pequena melhoria na habilidade
+    description: "Small ability upgrade"
   - level: 4
     type: 2
-    description: "Est\xE1gio Desenvolvido (maior, coleira)"
+    description: "Developed stage (larger, collar)"
   - level: 5
     type: 1
-    description: "Nova anima\xE7\xE3o de celebra\xE7\xE3o (pirueta)"
+    description: "New celebration animation (spin)"
   - level: 8
     type: 2
-    description: "Est\xE1gio Evolu\xEDdo + acess\xF3rio adicional"
+    description: "Evolved stage + extra accessory"
   - level: 10
     type: 3
-    description: "Aura especial de n\xEDvel m\xE1ximo"
+    description: "Special max-level aura"

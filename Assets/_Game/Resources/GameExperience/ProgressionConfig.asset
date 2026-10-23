@@ -52,27 +52,27 @@ MonoBehaviour:
   characterLevelsPerUpgradeLevel: 2
   upgrades:
   - stat: 0
-    label: "Vida m\xE1xima"
+    label: "Max health"
     bonusPerLevel: 0.03
     casualCap: 0.12
   - stat: 1
-    label: Dano
+    label: "Damage"
     bonusPerLevel: 0.02
     casualCap: 0.08
   - stat: 2
-    label: "Regenera\xE7\xE3o"
+    label: "Regeneration"
     bonusPerLevel: 0.06
     casualCap: 0.25
   - stat: 3
-    label: Velocidade
+    label: "Speed"
     bonusPerLevel: 0.01
     casualCap: 0.04
   - stat: 4
-    label: Recarga
+    label: "Reload"
     bonusPerLevel: 0.025
     casualCap: 0.1
   - stat: 5
-    label: "Efici\xEAncia do especial"
+    label: "Special efficiency"
     bonusPerLevel: 0.04
     casualCap: 0.15
   competitiveDisablesUpgrades: 1

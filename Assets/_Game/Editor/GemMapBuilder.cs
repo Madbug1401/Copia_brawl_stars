@@ -84,9 +84,8 @@ namespace FPSLAN.EditorTools
         public float fogStart = 50f, fogEnd = 220f;
         public float menuRadius = 42f, menuHeight = 28f;
         public float fallRecoveryY = -20f;
-        public string expectedSize = "";            // texto para o relatório (ex.: "≈ 41 × 56")
-        /// <summary>Extras do mapa acrescentados ao prefab depois dos colisores (ex.: placas dos patrocinadores).</summary>
         public System.Action<GameObject, StringBuilder> decorateMap;
+        public string expectedSize = "";            // texto para o relatório (ex.: "≈ 41 × 56")
 
         public string ModelsPath => artRoot + "/Models";
         public string TexturesPath => artRoot + "/Textures";

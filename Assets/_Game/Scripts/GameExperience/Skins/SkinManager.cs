@@ -65,8 +65,8 @@ namespace FPSLAN
             if (s == null || m_Ctx.Inventory.IsSkinUnlocked(skinId) || !s.unlock.IsPurchasable) return false;
             if (!m_Ctx.Inventory.TrySpend(s.unlock.value)) return false;
             m_Ctx.Inventory.UnlockSkin(skinId);
-            m_Ctx.Emit(FeedbackType.SkinUnlocked, "NOVA SKIN!", s.displayName + " · " + RarityStyle.LabelOf(s.rarity), RarityStyle.ColorOf(s.rarity));
-            m_Ctx.Log("Loja", "Skin comprada: " + s.displayName + " (" + s.unlock.value + " moedas)");
+            m_Ctx.Emit(FeedbackType.SkinUnlocked, "NEW SKIN!", s.displayName + " · " + RarityStyle.LabelOf(s.rarity), RarityStyle.ColorOf(s.rarity));
+            m_Ctx.Log("Shop", "Skin purchased: " + s.displayName + " (" + s.unlock.value + " coins)");
             m_Ctx.Save();
             return true;
         }
@@ -96,7 +96,7 @@ namespace FPSLAN
                 if (s == null || m_Ctx.Inventory.IsSkinUnlocked(s.skinId) || !IsRuleMet(s)) continue;
                 if (!m_Ctx.Inventory.UnlockSkin(s.skinId)) continue;
                 n++;
-                m_Ctx.Emit(FeedbackType.SkinUnlocked, "NOVA SKIN!", s.displayName + " · " + RarityStyle.LabelOf(s.rarity), RarityStyle.ColorOf(s.rarity));
+                m_Ctx.Emit(FeedbackType.SkinUnlocked, "NEW SKIN!", s.displayName + " · " + RarityStyle.LabelOf(s.rarity), RarityStyle.ColorOf(s.rarity));
             }
             return n;
         }
@@ -107,18 +107,18 @@ namespace FPSLAN
             var r = s.unlock;
             switch (r.method)
             {
-                case UnlockMethod.Default: return "Incluída";
-                case UnlockMethod.Coins: return r.value + " moedas";
-                case UnlockMethod.PlayerLevel: return "Nível de jogador " + r.value;
+                case UnlockMethod.Default: return "Included";
+                case UnlockMethod.Coins: return r.value + " coins";
+                case UnlockMethod.PlayerLevel: return "Player level " + r.value;
                 case UnlockMethod.Achievement:
                 case UnlockMethod.Challenge:
                 {
                     var a = m_Ctx.QuestCatalog.FindAchievement(r.refId);
-                    return (r.method == UnlockMethod.Challenge ? "Desafio: " : "Conquista: ") + (a != null ? a.title : r.refId);
+                    return (r.method == UnlockMethod.Challenge ? "Challenge: " : "Achievement: ") + (a != null ? a.title : r.refId);
                 }
-                case UnlockMethod.Quest: return "Completa " + r.value + " missões";
-                case UnlockMethod.Event: return "Evento " + r.refId;
-                default: return "Recompensa de missão/nível";
+                case UnlockMethod.Quest: return "Complete " + r.value + " quests";
+                case UnlockMethod.Event: return "Event " + r.refId;
+                default: return "Quest/level reward";
             }
         }
 

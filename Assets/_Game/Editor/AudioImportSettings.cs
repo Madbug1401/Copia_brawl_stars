@@ -5,7 +5,7 @@ namespace FPSLAN.EditorTools
 {
     /// <summary>
     /// Importação dos sons em Resources/Audio: música em streaming comprimida (não ocupa memória) e falas
-    /// comprimidas em memória (tocam sem atraso). Assim os WAV grandes não pesam na build.
+    /// comprimidas em memória. Efeitos curtos em PCM pré-carregado para baixa latência.
     /// </summary>
     public class AudioImportSettings : AssetPostprocessor
     {
@@ -15,6 +15,17 @@ namespace FPSLAN.EditorTools
             if (!path.Contains("/Resources/Audio/")) return;
             var ai = (AudioImporter)assetImporter;
             var s = ai.defaultSampleSettings;
+            if (path.Contains("/Sfx/"))
+            {
+                s.compressionFormat = AudioCompressionFormat.PCM;
+                s.loadType = AudioClipLoadType.DecompressOnLoad;
+                s.preloadAudioData = true;
+                s.sampleRateSetting = AudioSampleRateSetting.PreserveSampleRate;
+                ai.defaultSampleSettings = s;
+                ai.forceToMono = true;
+                ai.loadInBackground = false;
+                return;
+            }
             s.compressionFormat = AudioCompressionFormat.Vorbis;
             if (path.Contains("/Music/"))
             {

@@ -350,7 +350,8 @@ namespace FPSLAN.Tests
             int pressFrame = Time.frameCount + 2;
             bool sawMode = false, modeEnded = false;
             // Dispara só enquanto a Minigun está ativa: depois do modo, o ataque principal voltaria a carregar o Super
-            ekko.ScriptedCommands = () => Aim(ekko, Chest(riot), Time.frameCount > pressFrame + 1 && !modeEnded, Time.frameCount == pressFrame);
+            // O estado local termina antes da tolerância de rede do servidor.
+            ekko.ScriptedCommands = () => Aim(ekko, Chest(riot), Time.frameCount > pressFrame + 1 && !modeEnded && ekko.Combat.InSuperMode, Time.frameCount == pressFrame);
             int dealtBefore = DamageDealt(ekko);
             int minigunDamage = 0;
             float chargeAtEnd = -1f;
