@@ -61,6 +61,13 @@ namespace FPSLAN.EditorTools
                 Path(sb, cc, "Sobrado: 1.º andar → janelas da frente",
                     new Vector3(-6f, 3.6f, 30f),
                     new[] { new Vector3(-4.5f, 0f, 25.9f), new Vector3(1.5f, 0f, 25.9f), new Vector3(4.5f, 0f, 25.9f), new Vector3(7.5f, 0f, 25.9f) }, 3.55f);
+                Transform cen = null;
+                foreach (var t in Object.FindObjectsByType<Transform>())
+                    if (t.name == "Cenario") { cen = t; break; }
+                if (cen != null)
+                    foreach (var r in CidadeVelhaInteriores.CasaRoutes(cen))
+                        Path(sb, cc, r.name, r.start, r.pts, r.expectY);
+                else sb.AppendLine("FALHA não encontrei o Cenario para validar as casas");
                 // não se sai pelas janelas: tenta atravessar cada janela de cima e do coro
                 Blocked(sb, cc, "Janela do sobrado (x=4,5) não deixa sair", new Vector3(4.5f, 3.6f, 26.2f), new Vector3(4.5f, 0f, 23.0f));
                 Blocked(sb, cc, "Óculo da igreja não deixa sair", new Vector3(0f, 3.35f, -26.2f), new Vector3(0f, 0f, -23.0f));

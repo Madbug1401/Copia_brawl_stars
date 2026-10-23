@@ -85,6 +85,8 @@ namespace FPSLAN.EditorTools
         public float menuRadius = 42f, menuHeight = 28f;
         public float fallRecoveryY = -20f;
         public string expectedSize = "";            // texto para o relatório (ex.: "≈ 41 × 56")
+        /// <summary>Extras do mapa acrescentados ao prefab depois dos colisores (ex.: placas dos patrocinadores).</summary>
+        public System.Action<GameObject, StringBuilder> decorateMap;
 
         public string ModelsPath => artRoot + "/Models";
         public string TexturesPath => artRoot + "/Textures";
@@ -450,6 +452,7 @@ namespace FPSLAN.EditorTools
             ConvertColliders(root.transform, log);
             ConvertBushes(root.transform, log);
             ConvertSpawns(root.transform, log);
+            cfg.decorateMap?.Invoke(root, log);
             FinishStatic(root.transform);
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(root, cfg.mapPrefabPath);

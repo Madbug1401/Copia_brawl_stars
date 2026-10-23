@@ -19,7 +19,7 @@ namespace FPSLAN.EditorTools
     /// Os dois edifícios crescem para trás (fora da zona jogável) para caber o interior; a fachada mantém-se onde estava.
     /// Só mexe no prefab PF_CidadeVelha. Pode correr-se várias vezes (substitui o grupo "Interiores").
     /// </summary>
-    public static class CidadeVelhaInteriores
+    public static partial class CidadeVelhaInteriores
     {
         const string PrefabPath = ProjectSetup.Root + "/Prefabs/Environment/PF_CidadeVelha.prefab";
         const string ArtRoot = ProjectSetup.Root + "/Art/Environment/Santiago/CidadeVelha";
@@ -44,6 +44,7 @@ namespace FPSLAN.EditorTools
 
         class Mats
         {
+            public Material azulejo, mosaico, terracota, rosa, azulRb;
             public Material reboco, ocre, pedraMuro, pedraClara, telha, madeira, troncos, ladrilho, soalho, pintado,
                 chama, vidroLuz, lumeVermelho, fogo, sombra, verde, azul, barro, folhas, florRosa, florVerm, ferro;
         }
@@ -80,6 +81,10 @@ namespace FPSLAN.EditorTools
             try
             {
                 var cen = FindDeep(root.transform, "Cenario") ?? root.transform;
+                // placas dos patrocinadores (SITA e UPRANIMAL): refeitas sempre, para nunca faltarem no mapa
+                var oldSp = root.transform.Find("Patrocinadores");
+                if (oldSp != null) Object.DestroyImmediate(oldSp.gameObject);
+                SponsorBoards.AddToCidadeVelha(root, log);
                 var old = cen.Find("Interiores");
                 if (old != null) Object.DestroyImmediate(old.gameObject);
                 var group = new GameObject("Interiores").transform;
@@ -144,6 +149,9 @@ namespace FPSLAN.EditorTools
                 MakeColliders(casa, k, colLayer);
                 MakeLights(casa, k);
                 log.AppendLine($"Sobrado: {tris} triângulos, {k.Cols.Count} colisores, {k.Lights.Count} luzes. 1.º andar a {Floor2} m; 5 janelas e varanda abertas para a praça.");
+
+                // ---------------------------------------------------------------- restantes casas (bares, casas, apartamentos…)
+                Casas(group, cen, M, colLayer, log);
 
                 // os limites invisíveis do mapa (N/S) passavam pelas fachadas: ficam só fora dos dois edifícios
                 // (as paredes dos edifícios fecham o resto)
@@ -237,6 +245,11 @@ namespace FPSLAN.EditorTools
             k.Setup(M.verde, 0.8f);
             k.Setup(M.azul, 0.8f);
             k.Setup(M.ferro, 1f);
+            if (M.azulejo != null) k.Setup(M.azulejo, 1.6f);       // 4 azulejos por repetição → ~15 cm cada
+            if (M.mosaico != null) k.Setup(M.mosaico, 1.6f);       // 2 ladrilhos por repetição → ~30 cm
+            if (M.terracota != null) k.Setup(M.terracota, 0.35f);
+            if (M.rosa != null) k.Setup(M.rosa, 0.35f);
+            if (M.azulRb != null) k.Setup(M.azulRb, 0.35f);
         }
 
         // =====================================================================================================
@@ -2481,11 +2494,11 @@ namespace FPSLAN.EditorTools
             k.C = Color.white;
         }
 
-        static void Bed(InteriorKit k, Mats M, Vector3 headWall, float yaw)
+        static void Bed(InteriorKit k, Mats M, Vector3 headWall, float yaw, float w = 1.6f)
         {
             // cabeceira encostada à parede do fundo; cama para −z
             k.Push(headWall, yaw);
-            float w = 1.6f, len = 2.0f;
+            float len = 2.0f;
             k.C = WoodDark;
             foreach (var x in new[] { -w * 0.5f, w * 0.5f })
             {
@@ -2517,8 +2530,8 @@ namespace FPSLAN.EditorTools
             k.Box(M.pintado, new Vector3(-w * 0.5f - 0.03f, 0.28f, qz0 - 0.02f), new Vector3(w * 0.5f + 0.03f, 0.56f, qz0));
             k.C = new Color(0.97f, 0.96f, 0.93f);
             k.Box(M.pintado, new Vector3(-w * 0.5f + 0.04f, 0.52f, qz1), new Vector3(w * 0.5f - 0.04f, 0.565f, qz1 + 0.15f));
-            foreach (var x in new[] { -0.38f, 0.38f })
-                k.Ellipsoid(M.pintado, new Vector3(x, 0.6f, -0.32f), new Vector3(0.3f, 0.08f, 0.17f), 10, 4);
+            foreach (var x in w > 1.2f ? new[] { -w * 0.24f, w * 0.24f } : new[] { 0f })
+                k.Ellipsoid(M.pintado, new Vector3(x, 0.6f, -0.32f), new Vector3(Mathf.Min(0.3f, w * 0.32f), 0.08f, 0.17f), 10, 4);
             k.C = Color.white;
             k.Pop();
             Blob(k, M, headWall.x, headWall.y, headWall.z - 1.0f, 2.0f, 2.4f, yaw);
@@ -2800,6 +2813,11 @@ namespace FPSLAN.EditorTools
             M.lumeVermelho = NewMat("M_CVI_Lume_Vermelho", null, new Color(0.9f, 0.15f, 0.12f), false, new Color(0.9f, 0.12f, 0.08f));
             M.fogo = NewMat("M_CVI_Fogo", null, new Color(1f, 0.5f, 0.1f), false, new Color(1.4f, 0.45f, 0.08f));
             M.sombra = ShadowMat();
+            M.azulejo = NewMat("M_CVI_Azulejo", Tex("T_CVI_Azulejo", AzulejoTex), Color.white, true, Color.black);
+            M.mosaico = NewMat("M_CVI_Mosaico", Tex("T_CVI_Mosaico", MosaicoTex), Color.white, true, Color.black);
+            M.terracota = CopyMat("M_CVI_Reboco_Terracota", "M_CV_Reboco_Terracota", Color.white);
+            M.rosa = CopyMat("M_CVI_Reboco_Rosa", "M_CV_Reboco_Rosa", Color.white);
+            M.azulRb = CopyMat("M_CVI_Reboco_Azul", "M_CV_Reboco_Azul", Color.white);
             // tom da sombra mais fundo nos materiais que só existem lá dentro: o interior fica na penumbra
             // e as luzes (candeeiros, altar, fogão) fazem manchas de luz com mais contraste
             foreach (var m in new[] { M.madeira, M.pintado, M.ladrilho, M.soalho, M.troncos })
@@ -2984,6 +3002,63 @@ namespace FPSLAN.EditorTools
                     px[y * n + x] = c;
                 }
             }
+            return px;
+        }
+
+        /// <summary>Azulejo azul e branco (padrão português): 4×4 azulejos por textura, rosácea e cantos.</summary>
+        static Color[] AzulejoTex(int n)
+        {
+            var px = new Color[n * n];
+            int cell = n / 4;
+            var white = new Color(0.95f, 0.94f, 0.9f);
+            var blue = new Color(0.12f, 0.27f, 0.62f);
+            var blueL = new Color(0.45f, 0.6f, 0.85f);
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    float u = (x % cell + 0.5f) / cell * 2f - 1f, v = (y % cell + 0.5f) / cell * 2f - 1f;
+                    float r = Mathf.Sqrt(u * u + v * v);
+                    var c = white;
+                    float ang = Mathf.Atan2(v, u);
+                    float petal = 0.42f + 0.18f * Mathf.Cos(ang * 4f);
+                    if (r < petal && r > 0.12f) c = Color.Lerp(blueL, blue, Mathf.InverseLerp(0.12f, petal, r));
+                    if (r < 0.1f) c = blue;
+                    float cr = Mathf.Sqrt((1f - Mathf.Abs(u)) * (1f - Mathf.Abs(u)) + (1f - Mathf.Abs(v)) * (1f - Mathf.Abs(v)));
+                    if (cr < 0.32f && cr > 0.2f) c = blue;
+                    if (Mathf.Abs(Mathf.Abs(u) - Mathf.Abs(v)) < 0.03f && r > 0.62f && r < 1.2f) c = blueL;
+                    if (Mathf.Max(Mathf.Abs(u), Mathf.Abs(v)) > 0.97f) c = new Color(0.7f, 0.7f, 0.68f);
+                    c *= 0.96f + 0.06f * Hash(x / 3, y / 3);
+                    c.a = 1f;
+                    px[y * n + x] = c;
+                }
+            return px;
+        }
+
+        /// <summary>Mosaico hidráulico (estrela de 8 pontas) em barro, creme e preto: 2×2 ladrilhos por textura.</summary>
+        static Color[] MosaicoTex(int n)
+        {
+            var px = new Color[n * n];
+            int cell = n / 2;
+            var cream = new Color(0.88f, 0.82f, 0.7f);
+            var terra = new Color(0.66f, 0.3f, 0.2f);
+            var dark = new Color(0.16f, 0.15f, 0.15f);
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    float u = (x % cell + 0.5f) / cell * 2f - 1f, v = (y % cell + 0.5f) / cell * 2f - 1f;
+                    float a = Mathf.Abs(u), b = Mathf.Abs(v);
+                    float star = Mathf.Min(Mathf.Max(a, b), (a + b) * 0.7071f);
+                    var c = cream;
+                    if (star < 0.55f) c = terra;
+                    if (star < 0.5f && star > 0.42f) c = dark;
+                    if (star < 0.2f) c = cream;
+                    if (Mathf.Max(a, b) > 0.9f) c = dark;
+                    else if (Mathf.Max(a, b) > 0.84f) c = terra;
+                    if (Mathf.Max(a, b) > 0.985f) c = new Color(0.5f, 0.48f, 0.45f);
+                    c *= 0.95f + 0.07f * Mathf.PerlinNoise(x * 0.05f, y * 0.05f);
+                    c.a = 1f;
+                    px[y * n + x] = c;
+                }
             return px;
         }
 

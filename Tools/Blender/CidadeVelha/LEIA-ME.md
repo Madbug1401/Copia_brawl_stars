@@ -128,3 +128,36 @@ Blender (como o menu da costa) e pode repetir-se. Os blocos originais ficam no p
 **FPS-LAN ▸ Mapas ▸ Validar interiores da Cidade Velha** anda com o CharacterController do jogador desde os spawns até
 ao coro (pelas duas escadas), ao 1.º andar e à varanda, confirma que as janelas não deixam sair e testa as linhas de tiro
 óculo/coro ↔ janelas/varanda. Imagens em `Docs/preview/cidade_velha/interior_*.jpg`.
+
+### 4.1 Restantes casas do Pelourinho (`Editor/CidadeVelhaInteriores.Casas.cs`)
+
+O mesmo menu dá interior às outras 10 casas. As aberturas saem dos módulos do FBX (`_Porta_`, `_Janela_`, `_Janela2_`,
+`_PortaVaranda_`), por isso a ferramenta acompanha mudanças no script do Blender. Fica a cobertura, a chaminé, os
+candeeiros e a cantaria (cunhais, cornija, friso — sem as faces que entravam na sala); o bloco de reboco maciço, as
+portas e as janelas originais passam a inativos e são refeitos com paredes de 30 cm com vãos, forro interior, rodapé
+ou azulejo, embasamento de pedra, portas abertas para dentro, janelas com portadas abertas, cortinas e floreiras.
+
+| Casa | Tema |
+|---|---|
+| Esquina EN e WN (2 pisos) | **Bar**: balcão com torneiras de cerveja, garrafeira com espelho e frigoríficos iluminados, bancos altos, mesas redondas, TV com futebol, bandeira de Cabo Verde, quadro de ardósia, alvo de dardos, candeeiros pendentes, ventoinha · 1.º andar: **apartamento** |
+| Esquina ES (2 pisos) | **Mercearia**: prateleiras de produtos, balcão com caixa registadora e balança, bancas de fruta, sacos de arroz/feijão/milho, frigorífico de bebidas, cacho de bananas · 1.º andar: apartamento com duas camas |
+| Esquina WS (2 pisos) | **Casa de família**: cozinha (bancada, lava-loiça, placa a gás, frigorífico), mesa de jantar, sala com sofá, TV, estante · 1.º andar: apartamento |
+| Fila EN | **Tasca de grogue** com **alambique** de cobre (fornalha acesa, serpentina), barris, cana-de-açúcar, balcão com garrafas de grogue e pontche, mesa com bancos, luzes de fiada |
+| Fila ES | Casa térrea (quarto, cozinha, mesa, cadeira de baloiço) |
+| Fila WN | Estúdio (cama, kitchenette, sofá, secretária com portátil, TV) |
+| Fila WS | **Barbearia** (2 cadeiras de barbeiro, espelhos, bancada, lavatório, banco de espera, TV, poste de barbeiro na fachada) |
+| Bolsa E | **Restaurante** com balcão e **palco de morna** (violões, microfone, colunas), mesas com toalha, luzes de fiada |
+| Bolsa W | Casa de família com divisória: quarto (cama, berço, baú) e sala/cozinha |
+
+- **Sobrados de esquina**: escada de madeira (14 degraus) junto à parede do fundo, vão com guarda no 1.º andar, porta da
+  varanda da frente e da varanda lateral abertas (guarda de ferro, vaso). As janelas do 1.º andar ficam abertas para
+  tiro; as do rés-do-chão têm grades.
+- Os móveis respeitam zonas livres (abertura das portas, corredor entre a porta da frente e a lateral, escada) e cada
+  casa tem 1–2 luzes pontuais (uma com sombras suaves). ~187k triângulos nas 10 casas, uma malha por material.
+- Os arbustos (esconderijos) das bolsas entravam pela parede: são afastados para fora da fachada.
+- **Patrocinadores**: o mesmo menu refaz sempre as placas SITA e UPRANIMAL (`Editor/SponsorBoards.cs`), também
+  chamadas pelo construtor do mapa (`decorateMap`); funcionam com o bloco maciço da casa já desligado.
+
+A validação percorre também cada casa: porta → escada → 1.º andar → varanda da frente, 1.º andar → varanda lateral
+(esquinas), porta da frente → porta lateral (fila) e porta → sala → porta (bolsas). Fotografias em
+`GameJam/Fotos/Cidade_Velha/Interiores_Casas/`.
