@@ -1403,21 +1403,55 @@ namespace FPSLAN.EditorTools
 
         static void TV(InteriorKit k, Mats M, Vector3 b)
         {
-            // televisão com pé, ecrã para −z local (a dar futebol: relvado verde)
+            // televisão com pé, ecrã para −z local (a dar futebol: relvado verde) — b é o centro da base
+            k.Push(b, 0f);
             k.C = new Color(0.08f, 0.08f, 0.09f);
-            k.Box(M.pintado, new Vector3(-0.15f, 0f, -0.08f), new Vector3(0.15f, 0.02f, 0.08f));
-            k.Box(M.pintado, new Vector3(-0.03f, 0.02f, -0.02f), new Vector3(0.03f, 0.12f, 0.02f));
-            k.Box(M.pintado, new Vector3(-0.5f, 0.1f, -0.04f), new Vector3(0.5f, 0.68f, 0.03f));
-            ScreenFootball(k, M, new Vector3(0f, 0.39f, -0.045f), 0.94f, 0.52f);
+            k.Box(M.pintado, new Vector3(-0.18f, 0f, -0.1f), new Vector3(0.18f, 0.02f, 0.1f));
+            k.Box(M.pintado, new Vector3(-0.03f, 0.02f, -0.02f), new Vector3(0.03f, 0.14f, 0.03f));
+            k.Box(M.pintado, new Vector3(-0.52f, 0.12f, -0.035f), new Vector3(0.52f, 0.72f, 0.025f));
+            k.Box(M.pintado, new Vector3(-0.25f, 0.2f, 0.025f), new Vector3(0.25f, 0.6f, 0.06f));
+            ScreenFootball(k, M, new Vector3(0f, 0.42f, -0.037f), 0.98f, 0.54f);
+            k.C = new Color(0.2f, 0.8f, 0.3f);
+            k.Box(M.pintado, new Vector3(0.44f, 0.135f, -0.037f), new Vector3(0.46f, 0.145f, -0.034f));
+            k.C = Color.white;
+            k.Pop();
         }
 
         static void ScreenFootball(InteriorKit k, Mats M, Vector3 c, float w, float h)
         {
-            k.C = new Color(0.25f, 0.65f, 0.3f);
-            k.Box(M.pintado, new Vector3(c.x - w * 0.5f, c.y - h * 0.5f, c.z - 0.002f), new Vector3(c.x + w * 0.5f, c.y + h * 0.5f, c.z + 0.002f));
+            // ecrã a olhar para −z: relvado às riscas, linhas, círculo central, jogadores e marcador
+            float z = c.z;
+            for (int i = 0; i < 8; i++)
+            {
+                k.C = i % 2 == 0 ? new Color(0.22f, 0.6f, 0.27f) : new Color(0.27f, 0.68f, 0.32f);
+                float x0 = c.x - w * 0.5f + i * w / 8f;
+                k.Box(M.pintado, new Vector3(x0, c.y - h * 0.5f, z - 0.002f), new Vector3(x0 + w / 8f, c.y + h * 0.5f, z + 0.002f));
+            }
+            float zf = z - 0.0035f, zb = z - 0.002f;
+            k.C = new Color(0.92f, 0.95f, 0.92f);
+            k.Box(M.pintado, new Vector3(c.x - 0.004f, c.y - h * 0.42f, zf), new Vector3(c.x + 0.004f, c.y + h * 0.42f, zb));
+            k.Box(M.pintado, new Vector3(c.x - w * 0.46f, c.y - h * 0.42f, zf), new Vector3(c.x + w * 0.46f, c.y - h * 0.42f + 0.007f, zb));
+            k.Box(M.pintado, new Vector3(c.x - w * 0.46f, c.y + h * 0.42f - 0.007f, zf), new Vector3(c.x + w * 0.46f, c.y + h * 0.42f, zb));
+            float r = h * 0.17f;
+            for (int i = 0; i < 16; i++)
+            {
+                float a = i * Mathf.PI / 8f, b2 = (i + 1) * Mathf.PI / 8f;
+                var p0 = new Vector3(c.x + Mathf.Cos(a) * r, c.y + Mathf.Sin(a) * r, zf + 0.0007f);
+                var p1 = new Vector3(c.x + Mathf.Cos(b2) * r, c.y + Mathf.Sin(b2) * r, zf + 0.0007f);
+                k.Rod(M.pintado, p0, p1, 0.003f, 3, false);
+            }
+            var rng = new System.Random(7);
+            for (int i = 0; i < 10; i++)
+            {
+                k.C = i < 5 ? CvBlue : CvRed;
+                float x = c.x + (i < 5 ? -1f : 1f) * (0.05f + (float)rng.NextDouble() * w * 0.38f);
+                float y = c.y - h * 0.35f + (float)rng.NextDouble() * h * 0.7f;
+                k.Box(M.pintado, new Vector3(x - 0.008f, y - 0.012f, zf), new Vector3(x + 0.008f, y + 0.012f, zb));
+            }
+            k.C = new Color(0.1f, 0.1f, 0.12f);
+            k.Box(M.pintado, new Vector3(c.x - w * 0.47f, c.y + h * 0.33f, zf - 0.001f), new Vector3(c.x - w * 0.2f, c.y + h * 0.46f, zb));
             k.C = Color.white;
-            k.Box(M.pintado, new Vector3(c.x - 0.004f, c.y - h * 0.45f, c.z - 0.004f), new Vector3(c.x + 0.004f, c.y + h * 0.45f, c.z - 0.002f));
-            k.Box(M.pintado, new Vector3(c.x - w * 0.47f, c.y + h * 0.36f, c.z - 0.004f), new Vector3(c.x - w * 0.2f, c.y + h * 0.44f, c.z - 0.002f));
+            k.Box(M.pintado, new Vector3(c.x - w * 0.44f, c.y + h * 0.37f, zf - 0.002f), new Vector3(c.x - w * 0.24f, c.y + h * 0.42f, zf - 0.001f));
         }
 
         static void WallTV(InteriorKit k, Mats M, Vector3 p, float yaw, string name)
