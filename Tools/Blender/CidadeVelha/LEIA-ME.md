@@ -161,3 +161,17 @@ ou azulejo, embasamento de pedra, portas abertas para dentro, janelas com portad
 A validação percorre também cada casa: porta → escada → 1.º andar → varanda da frente, 1.º andar → varanda lateral
 (esquinas), porta da frente → porta lateral (fila) e porta → sala → porta (bolsas). Fotografias em
 `GameJam/Fotos/Cidade_Velha/Interiores_Casas/`.
+
+### 4.2 Portas e desempenho
+
+- **Portas** (`DoorUnit` / `DoorLeaf`): portas de duas folhas almofadadas (montantes, travessas, almofadas em relevo,
+  dobradiças de ferro, puxador de latão, espelho de fechadura e argola), bandeira envidraçada com leque de ferro por
+  cima, alizar de madeira por dentro e ombreiras rebocadas. Nas casas as folhas abrem **encostadas à parede interior**
+  (deixam de tapar a passagem e a vista); só onde não há parede livre (canto, janela ao lado) ficam abertas a ~95°.
+  Porta da rua 2,8 m (2,62 m nos sobrados de esquina, por baixo das vigas), porta da varanda 2,55 m. A bandeira tem
+  colisor: só a parte das folhas é passagem.
+- **Desempenho**: as 26 luzes pontuais dos interiores deixaram de ter sombras e de ser forçadas a "pixel";
+  `InteriorLightCulling` (no grupo `Interiores`) deixa ligadas só as 6 mais próximas da câmara num raio de 16 m.
+  Só a estrutura (reboco, cantaria, pedra, telha, troncos) projeta sombra do sol — a mobília não. Qualidade Ultra:
+  sombras até 60 m com 2 cascatas (era 150 m / 4); Very High: 55 m. Medição no editor (1920×1080, Ultra, 4 vistas da
+  Cidade Velha, média): 38,3 ms → 29,9 ms por imagem.

@@ -89,6 +89,7 @@ namespace FPSLAN.EditorTools
                 if (old != null) Object.DestroyImmediate(old.gameObject);
                 var group = new GameObject("Interiores").transform;
                 group.SetParent(cen, false);
+                group.gameObject.AddComponent<InteriorLightCulling>();     // só as luzes perto da câmara ficam ligadas
 
                 int colLayer = 0;
                 var origCol = FindDeep(cen, "COL_Box_BLD_Capela_N");
@@ -130,7 +131,7 @@ namespace FPSLAN.EditorTools
                 k.Push(new Vector3(0f, 0f, ChurchFrontZ), 180f);
                 Church(k, M);
                 k.Pop();
-                int tris = k.Build(igreja, "CVI_Igreja", SaveMesh, m => m == M.sombra ? ShadowCastingMode.Off : ShadowCastingMode.TwoSided);
+                int tris = k.Build(igreja, "CVI_Igreja", SaveMesh, m => CasterMode(M, m));
                 MakeColliders(igreja, k, colLayer);
                 MakeLights(igreja, k);
                 log.AppendLine($"Igreja: {tris} triângulos, {k.Cols.Count} colisores, {k.Lights.Count} luzes. Coro alto a {LoftY} m (olhos à altura do óculo), 2 escadas.");
@@ -145,7 +146,7 @@ namespace FPSLAN.EditorTools
                 k.Push(new Vector3(0f, 0f, HouseFrontZ), 0f);
                 House(k, M);
                 k.Pop();
-                tris = k.Build(casa, "CVI_Sobrado", SaveMesh, m => m == M.sombra ? ShadowCastingMode.Off : ShadowCastingMode.TwoSided);
+                tris = k.Build(casa, "CVI_Sobrado", SaveMesh, m => CasterMode(M, m));
                 MakeColliders(casa, k, colLayer);
                 MakeLights(casa, k);
                 log.AppendLine($"Sobrado: {tris} triângulos, {k.Cols.Count} colisores, {k.Lights.Count} luzes. 1.º andar a {Floor2} m; 5 janelas e varanda abertas para a praça.");
@@ -750,25 +751,80 @@ namespace FPSLAN.EditorTools
             }
         }
 
+        /// <summary>Folha de porta almofadada (montantes, travessas, almofadas em relevo nas duas faces, dobradiças de
+        /// ferro, puxador e espelho de fechadura). Referencial: dobradiça em (0,0,0), folha ao longo de +x (leftHinge) ou −x,
+        /// espessura 0..0,06 em z; yaw roda a folha à volta da dobradiça.</summary>
         static void DoorLeaf(InteriorKit k, Mats M, Material mat, Vector3 hinge, float w, float hh, float yaw, bool leftHinge, string col)
         {
+            const float t = 0.06f, st = 0.1f;
             k.Push(hinge, yaw);
             float x0 = leftHinge ? 0f : -w, x1 = leftHinge ? w : 0f;
-            k.Box(mat, new Vector3(x0, 0f, 0f), new Vector3(x1, hh, 0.06f));
-            k.C = new Color(0.8f, 0.8f, 0.8f);
-            foreach (var y in new[] { 0.25f, 1.3f })
-                foreach (var zf in new[] { -0.015f, 0.06f })
-                    k.Box(mat, new Vector3(x0 + 0.12f, y, zf), new Vector3(x1 - 0.12f, y + (y < 1f ? 0.85f : 1.4f), zf + 0.015f));
-            k.C = Iron;
-            float hx = leftHinge ? x1 - 0.12f : x0 + 0.12f;
-            k.Push(new Vector3(hx, 1.15f, -0.04f), 0f, 90f, 0f);
-            k.Torus(M.pintado, Vector3.zero, 0.07f, 0.012f, 10, 4);
-            k.Pop();
-            foreach (var y in new[] { 0.4f, hh - 0.4f })
-                k.Box(M.pintado, new Vector3(x0 + 0.02f, y, -0.012f), new Vector3(x0 + (x1 - x0) * 0.45f, y + 0.06f, 0f));
+            float a = x0 + st, b = x1 - st;
+            // estrutura: montantes e travessas (inferior, do meio/fechadura, superior)
+            float rb = Mathf.Min(0.24f, hh * 0.1f), rm0 = hh * 0.42f, rm1 = rm0 + 0.14f, rt = hh - Mathf.Min(0.14f, hh * 0.06f);
             k.C = Color.white;
-            k.Col(col, new Vector3(x0, 0f, -0.02f), new Vector3(x1, hh, 0.08f));
+            k.Box(mat, new Vector3(x0, 0f, 0f), new Vector3(a, hh, t));
+            k.Box(mat, new Vector3(b, 0f, 0f), new Vector3(x1, hh, t));
+            k.Box(mat, new Vector3(a, 0f, 0f), new Vector3(b, rb, t));
+            k.Box(mat, new Vector3(a, rm0, 0f), new Vector3(b, rm1, t));
+            k.Box(mat, new Vector3(a, rt, 0f), new Vector3(b, hh, t));
+            if (b - a > 0.5f)
+            {
+                // folhas largas (igreja): montante a meio
+                float m = (a + b) * 0.5f;
+                k.Box(mat, new Vector3(m - 0.05f, rb, 0f), new Vector3(m + 0.05f, rt, t));
+                Panels(k, mat, a, m - 0.05f, rb, rm0, rm1, rt, t);
+                Panels(k, mat, m + 0.05f, b, rb, rm0, rm1, rt, t);
+            }
+            else Panels(k, mat, a, b, rb, rm0, rm1, rt, t);
+            // dobradiças de ferro (do lado da dobradiça, nas duas faces)
+            k.C = Iron;
+            float hx0 = leftHinge ? x0 : x1 - 0.32f, hx1 = leftHinge ? x0 + 0.32f : x1;
+            foreach (var y in new[] { 0.28f, hh * 0.5f, hh - 0.34f })
+                foreach (var z in new[] { -0.006f, t })
+                    k.Box(M.pintado, new Vector3(hx0, y, z), new Vector3(hx1, y + 0.05f, z + 0.006f));
+            float px = leftHinge ? x0 : x1;
+            k.Cyl(M.pintado, new Vector3(px, 0.2f, t * 0.5f), 0.018f, hh - 0.4f, 6);
+            // puxador, espelho e argola (do lado livre)
+            float fx = leftHinge ? x1 - st * 0.5f : x0 + st * 0.5f;
+            float ly = (rm0 + rm1) * 0.5f;
+            k.C = Brass;
+            foreach (var z in new[] { -0.012f, t })
+            {
+                k.Box(M.pintado, new Vector3(fx - 0.025f, ly - 0.12f, z), new Vector3(fx + 0.025f, ly + 0.08f, z + 0.012f));
+                float zz = z < 0f ? -0.045f : t + 0.045f;
+                k.Rod(M.pintado, new Vector3(fx, ly, z < 0f ? z : z + 0.012f), new Vector3(fx, ly, zz), 0.01f, 5);
+                k.Rod(M.pintado, new Vector3(fx, ly, zz), new Vector3(fx + (leftHinge ? -0.1f : 0.1f), ly, zz), 0.011f, 6);
+            }
+            k.C = new Color(0.08f, 0.08f, 0.08f);
+            k.Box(M.pintado, new Vector3(fx - 0.006f, ly - 0.09f, -0.014f), new Vector3(fx + 0.006f, ly - 0.06f, -0.012f));
+            k.C = Iron;
+            k.Push(new Vector3((x0 + x1) * 0.5f, hh * 0.62f, -0.03f), 0f, 90f, 0f);
+            k.Torus(M.pintado, Vector3.zero, 0.065f, 0.011f, 12, 4);
             k.Pop();
+            k.C = Color.white;
+            k.Col(col, new Vector3(x0, 0f, -0.02f), new Vector3(x1, hh, t + 0.02f));
+            k.Pop();
+        }
+
+        /// <summary>Almofadas da folha: duas (em baixo e em cima) em relevo nas duas faces, com rebaixo à volta.</summary>
+        static void Panels(InteriorKit k, Material mat, float a, float b, float rb, float rm0, float rm1, float rt, float t)
+        {
+            foreach (var (y0, y1) in new[] { (rb, rm0), (rm1, rt) })
+            {
+                // fundo rebaixado
+                k.C = new Color(0.78f, 0.78f, 0.78f);
+                k.Box(mat, new Vector3(a, y0, 0.012f), new Vector3(b, y1, t - 0.012f));
+                // almofada em relevo (moldura de 2 degraus)
+                float i1 = 0.03f, i2 = 0.06f;
+                foreach (var (z0, z1, z2) in new[] { (0.012f, 0.004f, -0.002f), (t - 0.012f, t - 0.004f, t + 0.002f) })
+                {
+                    k.C = new Color(0.9f, 0.9f, 0.9f);
+                    k.Box(mat, new Vector3(a + i1, y0 + i1, Mathf.Min(z0, z1)), new Vector3(b - i1, y1 - i1, Mathf.Max(z0, z1)));
+                    k.C = Color.white;
+                    k.Box(mat, new Vector3(a + i2, y0 + i2, Mathf.Min(z1, z2)), new Vector3(b - i2, y1 - i2, Mathf.Max(z1, z2)));
+                }
+            }
         }
 
         static void Runner(InteriorKit k, Mats M, float x0, float x1, float y, float z0, float z1, Color c, Color border)
@@ -2743,6 +2799,17 @@ namespace FPSLAN.EditorTools
             }
         }
 
+        /// <summary>Quem projeta sombra do sol (malhas fechadas: basta uma face).</summary>
+        static ShadowCastingMode CasterMode(Mats M, Material m)
+        {
+            // só a estrutura (paredes, cantaria, telhado, troncos) projeta sombra do sol; a mobília fica dentro de casa,
+            // onde o sol quase não chega, e cada malha a projetar é redesenhada em todas as cascatas de sombra
+            if (m == M.reboco || m == M.ocre || m == M.terracota || m == M.rosa || m == M.azulRb || m == M.pedraMuro ||
+                m == M.pedraClara || m == M.telha || m == M.troncos)
+                return ShadowCastingMode.On;
+            return ShadowCastingMode.Off;
+        }
+
         static void MakeLights(Transform parent, InteriorKit k)
         {
             var g = new GameObject("Luzes").transform;
@@ -2757,11 +2824,10 @@ namespace FPSLAN.EditorTools
                 lt.color = l.color;
                 lt.range = l.range;
                 lt.intensity = l.intensity;
-                lt.shadows = l.shadows;
-                lt.shadowStrength = 0.85f;
-                lt.shadowBias = 0.03f;
-                lt.shadowNormalBias = 0.3f;
-                lt.renderMode = LightRenderMode.ForcePixel;
+                // desempenho: luzes pontuais sem sombras (cada uma custava 6 mapas de sombra por frame) e em modo
+                // automático — o Unity escolhe as mais importantes para cada objeto conforme a qualidade gráfica
+                lt.shadows = LightShadows.None;
+                lt.renderMode = LightRenderMode.Auto;
             }
         }
 

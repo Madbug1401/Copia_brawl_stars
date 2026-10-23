@@ -95,7 +95,7 @@ namespace FPSLAN.EditorTools
                 k.Push(c.lay);
                 Interior(k, M, c);
                 k.Pop();
-                int tris = k.Build(go, "CVI_" + d.name, SaveMesh, m => m == M.sombra ? ShadowCastingMode.Off : ShadowCastingMode.TwoSided);
+                int tris = k.Build(go, "CVI_" + d.name, SaveMesh, m => CasterMode(M, m));
                 MakeColliders(go, k, colLayer);
                 MakeLights(go, k);
                 total += tris;
@@ -361,11 +361,14 @@ namespace FPSLAN.EditorTools
             foreach (var o in c.ops)
             {
                 Vector4 hv;
-                if (o.kind == 0) hv = H(o.along, 1.3f, 0f, 2.3f);
-                else if (o.kind == 3) hv = H(o.along, 1.1f, c.y2, c.y2 + 2.0f);
+                if (o.kind == 0) hv = H(o.along, 1.3f, 0f, DoorTop(c));
+                else if (o.kind == 3) hv = H(o.along, 1.1f, c.y2, c.y2 + BalconyTop);
                 else hv = H(o.along, 1.0f, o.pos.y, o.pos.y + 1.3f);
                 holes[o.face].Add(hv);
-                if (o.kind != 1) cols[o.face].Add(hv);
+                // a bandeira (vidro por cima da porta) não deixa passar: o colisor só abre a parte da porta
+                if (o.kind == 0) cols[o.face].Add(H(o.along, 1.3f, 0f, DoorLeafH + 0.06f));
+                else if (o.kind == 3) cols[o.face].Add(H(o.along, 1.1f, c.y2, c.y2 + BalconyLeafH + 0.02f));
+                else if (o.kind != 1) cols[o.face].Add(hv);
                 if (o.kind == 0) doors[o.face].Add(new Vector4(hv.x, hv.y, -1f, 1f));
             }
             // paredes
@@ -398,23 +401,112 @@ namespace FPSLAN.EditorTools
                 float cx = AlongLocal(o.face, o.along);
                 if (o.kind == 0)
                 {
-                    DoorFrame(k, M, cx, 0f, 1.3f, 2.3f, true);
+                    float top = DoorTop(c);
+                    DoorFrame(k, M, cx, 0f, 1.3f, top, true);
                     k.Box(M.pedraClara, new Vector3(cx - 0.9f, 0f, -0.45f), new Vector3(cx + 0.9f, 0.13f, 0.02f));
                     k.Col(c.name + "_Degrau", new Vector3(cx - 0.9f, 0f, -0.45f), new Vector3(cx + 0.9f, 0.13f, 0.02f));
                     k.Box(M.pedraClara, new Vector3(cx - 0.65f, 0f, 0f), new Vector3(cx + 0.65f, 0.06f, T));
-                    DoorLeaf(k, M, c.shutter, new Vector3(cx - 0.65f, 0.06f, T), 1.3f, 2.22f, -100f, true, c.name + "_Porta");
+                    FreeWall(c, o, out float avL, out float avR);
+                    DoorUnit(k, M, c.shutter, cx, 0.06f, 1.3f, DoorLeafH, top, avL, avR, c.name + "_Porta");
                 }
                 else if (o.kind == 3)
                 {
-                    DoorFrame(k, M, cx, c.y2, 1.1f, 2.0f, false);
+                    float top = c.y2 + BalconyTop;
+                    DoorFrame(k, M, cx, c.y2, 1.1f, BalconyTop, false);
                     k.Box(M.soalho, new Vector3(cx - 0.55f, c.y2 - 0.2f, 0f), new Vector3(cx + 0.55f, c.y2, T));
-                    DoorLeaf(k, M, c.shutter, new Vector3(cx - 0.55f, c.y2 + 0.01f, T), 0.55f, 1.96f, -95f, true, c.name + "_PV_A");
-                    DoorLeaf(k, M, c.shutter, new Vector3(cx + 0.55f, c.y2 + 0.01f, T), 0.55f, 1.96f, 95f, false, c.name + "_PV_B");
+                    FreeWall(c, o, out float avL, out float avR);
+                    DoorUnit(k, M, c.shutter, cx, c.y2 + 0.01f, 1.1f, BalconyLeafH, top, avL, avR, c.name + "_PV");
                     BalconyAt(k, M, c.name, cx, c.y2);
                 }
                 else WindowAt(k, M, c.shutter, cx, o.pos.y, o.kind == 1, c.inner);
                 k.Pop();
             }
+        }
+
+        // ------------------------------------------------------------------ portas
+
+        const float DoorLeafH = 2.24f;        // folhas da porta da rua (acima da soleira)
+        const float BalconyLeafH = 2.1f;      // folhas da porta da varanda
+        const float BalconyTop = 2.55f;       // vão da varanda com bandeira
+
+        /// <summary>Altura do vão da porta da rua (folhas + bandeira), abaixo das vigas do teto.</summary>
+        static float DoorTop(Casa c) => c.twoStoreys ? Mathf.Min(2.8f, c.y2 - 0.47f) : 2.8f;
+
+        /// <summary>Parede livre (referencial da fachada) à esquerda e à direita de uma porta, ao mesmo nível: até à
+        /// próxima abertura (com moldura/cortinas) ou ao canto. Decide se as folhas abrem encostadas à parede.</summary>
+        static void FreeWall(Casa c, Abertura o, out float left, out float right)
+        {
+            bool upper = o.kind >= 2;
+            float a0 = AlongLocal(o.face, o.face < 2 ? c.x0 + T : c.z0 + T), a1 = AlongLocal(o.face, o.face < 2 ? c.x1 - T : c.z1 - T);
+            float lo = Mathf.Min(a0, a1) + 0.03f, hi = Mathf.Max(a0, a1) - 0.03f;
+            float cx = AlongLocal(o.face, o.along);
+            float half = o.kind == 0 ? 0.65f : 0.55f;
+            float l = lo, r = hi;
+            foreach (var q in c.ops)
+            {
+                if (q == o || q.face != o.face || (q.kind >= 2) != upper) continue;
+                float qx = AlongLocal(q.face, q.along);
+                float qh = q.kind == 0 ? 0.77f : q.kind == 3 ? 0.67f : 0.78f;
+                if (qx < cx) l = Mathf.Max(l, qx + qh); else r = Mathf.Min(r, qx - qh);
+            }
+            left = (cx - half) - l;
+            right = r - (cx + half);
+        }
+
+        /// <summary>Porta de duas folhas almofadadas com bandeira envidraçada (leque de ferro) e guarnição de madeira
+        /// por dentro. As folhas abrem encostadas à parede interior quando há parede livre; senão ficam abertas a ~95°.
+        /// Referencial da fachada (z = 0 fora, z = T dentro).</summary>
+        static void DoorUnit(InteriorKit k, Mats M, Material mat, float cx, float y0, float w, float leafH, float top, float freeL, float freeR, string name)
+        {
+            float lw = w * 0.5f, hz = T + 0.13f;
+            // folhas
+            if (freeL >= lw + 0.02f) DoorLeaf(k, M, mat, new Vector3(cx - lw * 2f + lw, y0, hz), lw, leafH, 180f, true, name + "_A");
+            else DoorLeaf(k, M, mat, new Vector3(cx - lw, y0, T), lw, leafH, -95f, true, name + "_A");
+            if (freeR >= lw + 0.02f) DoorLeaf(k, M, mat, new Vector3(cx + lw, y0, hz), lw, leafH, 180f, false, name + "_B");
+            else DoorLeaf(k, M, mat, new Vector3(cx + lw, y0, T), lw, leafH, 95f, false, name + "_B");
+            // travessa e bandeira (vidro escuro + leque de ferro)
+            float ty = y0 + leafH, zg = T * 0.5f;
+            if (top - ty > 0.12f)
+            {
+                k.C = new Color(0.85f, 0.85f, 0.85f);
+                k.Box(mat, new Vector3(cx - lw, ty, zg - 0.05f), new Vector3(cx + lw, ty + 0.08f, zg + 0.05f));
+                k.Box(mat, new Vector3(cx - lw, top - 0.05f, zg - 0.05f), new Vector3(cx + lw, top, zg + 0.05f));
+                k.C = new Color(0.2f, 0.28f, 0.33f);
+                k.Box(M.pintado, new Vector3(cx - lw, ty + 0.08f, zg - 0.008f), new Vector3(cx + lw, top - 0.05f, zg + 0.008f));
+                k.C = Iron;
+                float by = ty + 0.08f, rh = top - 0.05f - by;
+                var hub = new Vector3(cx, by, zg - 0.015f);
+                for (int i = 0; i <= 6; i++)
+                {
+                    float a = Mathf.PI * i / 6f;
+                    var p = new Vector3(cx + Mathf.Cos(a) * lw * 0.96f, by + Mathf.Sin(a) * rh * 0.95f, zg - 0.015f);
+                    k.Rod(M.pintado, hub, p, 0.008f, 4, false);
+                    k.Rod(M.pintado, hub + Vector3.forward * 0.03f, p + Vector3.forward * 0.03f, 0.008f, 4, false);
+                }
+                Vector3 prev = Vector3.zero;
+                for (int i = 0; i <= 12; i++)
+                {
+                    float a = Mathf.PI * i / 12f;
+                    var p = new Vector3(cx + Mathf.Cos(a) * lw * 0.55f, by + Mathf.Sin(a) * rh * 0.55f, zg - 0.015f);
+                    if (i > 0) k.Rod(M.pintado, prev, p, 0.008f, 4, false);
+                    prev = p;
+                }
+                k.Sphere(M.pintado, hub + Vector3.up * 0.03f, 0.04f, 8, 4);
+            }
+            // guarnição (alizar) de madeira por dentro
+            k.C = WoodMid;
+            float zi = T + 0.025f, zo = T + 0.06f, g = 0.1f;
+            k.Box(M.madeira, new Vector3(cx - lw - g, y0, zi), new Vector3(cx - lw, top, zo));
+            k.Box(M.madeira, new Vector3(cx + lw, y0, zi), new Vector3(cx + lw + g, top, zo));
+            k.Box(M.madeira, new Vector3(cx - lw - g - 0.03f, top, zi), new Vector3(cx + lw + g + 0.03f, top + 0.14f, zo + 0.01f));
+            k.C = WoodDark;
+            k.Box(M.madeira, new Vector3(cx - lw - g - 0.05f, top + 0.14f, zi), new Vector3(cx + lw + g + 0.05f, top + 0.18f, zo + 0.03f));
+            // ombreiras do vão (reboco liso na espessura da parede)
+            k.C = new Color(0.95f, 0.94f, 0.9f);
+            k.Box(M.reboco, new Vector3(cx - lw - 0.01f, y0, 0.02f), new Vector3(cx - lw, top, T));
+            k.Box(M.reboco, new Vector3(cx + lw, y0, 0.02f), new Vector3(cx + lw + 0.01f, top, T));
+            k.Box(M.reboco, new Vector3(cx - lw, top - 0.01f, 0.02f), new Vector3(cx + lw, top, T));
+            k.C = Color.white;
         }
 
         static void Lining(InteriorKit k, Mats M, Casa c, List<Vector4>[] holes, float y0, float y1, Color col, bool tiles)
@@ -911,6 +1003,7 @@ namespace FPSLAN.EditorTools
             Poster(k, M, new Vector3(-s * 2.4f, 2.65f, zb - 0.03f), 180f, c.rng);
             WallTV(k, M, new Vector3(s * 1.7f, 2.2f, zb - 0.03f), 180f, c.name);
             CoatHooks(k, M, new Vector3(-s * (iw - 0.03f), 1.7f, 0.9f), s * 90f);
+            k.Push(new Vector3(-Mathf.Sign(c.fd) * 0.32f, 0f, 0f));   // prateleira afastada da folha da porta
             k.C = WoodMid;
             k.Box(M.madeira, new Vector3(-0.55f, 1.95f, T + 0.02f), new Vector3(0.55f, 1.99f, T + 0.26f));
             for (int i = 0; i < 4; i++)
@@ -924,6 +1017,7 @@ namespace FPSLAN.EditorTools
                 k.Lathe(M.pintado, new Vector3(0.1f + i * 0.11f, 1.99f, T + 0.14f), new[] { new Vector2(0.035f, 0f), new Vector2(0.035f, 0.16f), new Vector2(0.015f, 0.2f) }, 8);
             }
             k.C = Color.white;
+            k.Pop();
             var tp = Pick(c, 0.35f, 0.35f, false, new Vector2(-s * 1.6f, 1.6f), new Vector2(0f, 1.9f));
             if (tp.HasValue)
             {
@@ -1053,9 +1147,9 @@ namespace FPSLAN.EditorTools
             if (deepBalcony)
             {
                 // varanda lateral ao fundo: roupeiro na frente, sala virada para a TV na parede do fundo
-                Wardrobe(k, M, new Vector3(s * 1.85f, y, T + 0.32f), 180f);
-                k.Col(c.name + "_Roupeiro", new Vector3(s * 1.85f - 0.75f, y, T), new Vector3(s * 1.85f + 0.75f, y + 2.25f, T + 0.65f));
-                Reserve(c, new Vector2(s * 1.85f, T + 0.35f), 0.8f, 0.4f, true);
+                Wardrobe(k, M, new Vector3(s * 2.05f, y, T + 0.32f), 180f);
+                k.Col(c.name + "_Roupeiro", new Vector3(s * 2.05f - 0.75f, y, T), new Vector3(s * 2.05f + 0.75f, y + 2.25f, T + 0.65f));
+                Reserve(c, new Vector2(s * 2.05f, T + 0.35f), 0.8f, 0.4f, true);
                 TVStand(k, M, new Vector3(s * 1.9f, y, zb - 0.24f), 0f, c.name);
                 Sofa(k, M, new Vector3(s * 1.9f, y, 3.55f), 0f, 2.0f, new Color(0.35f, 0.5f, 0.42f), c.name);
                 CoffeeTable(k, M, new Vector3(s * 1.9f, y, 4.45f), 0f, c.rng, c.name);
