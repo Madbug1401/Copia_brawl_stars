@@ -638,22 +638,30 @@ namespace FPSLAN.EditorTools
             var mid = (p0 + p1) * 0.5f - (rot * Vector3.up) * 0.1f;
             mid.x = (x0 + x1) * 0.5f;
             MirColRot(k, sx, "Rampa", mid, new Vector3(x1 - x0, 0.2f, (p1 - p0).magnitude), rot);
-            // corrimão do lado da nave
-            float hr = 0.95f;
+            // corrimão do lado da nave: balaústres em cada degrau até à barra (a altura de cada um acompanha a inclinação),
+            // prumo no fundo e no topo, e um troço horizontal que liga ao prumo da balaustrada do coro
+            float hr = 0.95f, xr = x0 + 0.06f;
+            var ra = new Vector3(xr, rise + hr, zBot);
+            var rb = new Vector3(xr, LoftY + hr, zTop + run);
+            System.Func<float, float> railY = z => Mathf.Lerp(ra.y, rb.y, Mathf.InverseLerp(ra.z, rb.z, z));
             for (int i = 0; i < n; i++)
             {
                 float z = zBot - i * run - run * 0.5f;
                 float y = (i + 1) * rise;
                 k.C = WoodDark;
-                k.Push(new Vector3(x0 + 0.06f, y, z), Quaternion.identity, new Vector3(0.75f, 1f, 0.75f));
-                Baluster(k, M, Vector3.zero, hr - 0.06f);
+                k.Push(new Vector3(xr, y, z), Quaternion.identity, new Vector3(0.75f, 1f, 0.75f));
+                Baluster(k, M, Vector3.zero, railY(z) - y - 0.01f);
                 k.Pop();
                 k.C = Color.white;
             }
             k.C = WoodDark;
-            k.Rod(M.madeira, new Vector3(x0 + 0.06f, rise + hr, zBot), new Vector3(x0 + 0.06f, LoftY + hr, zTop + run), 0.045f, 6);
-            k.BoxB(M.madeira, new Vector3(x0 + 0.06f, 0.03f, zBot - run * 0.3f), new Vector3(0.14f, rise + hr + 0.1f, 0.14f));
-            k.Sphere(M.madeira, new Vector3(x0 + 0.06f, rise + hr + 0.17f, zBot - run * 0.3f), 0.08f, 8, 4);
+            k.Rod(M.madeira, ra, rb, 0.05f, 8);
+            k.Rod(M.madeira, rb, new Vector3(xr, LoftY + hr, LoftZ - 0.05f), 0.05f, 8);
+            // prumo do fundo e prumo do topo (no coro), com remate
+            k.BoxB(M.madeira, new Vector3(xr, 0.03f, zBot - run * 0.3f), new Vector3(0.14f, rise + hr + 0.1f, 0.14f));
+            k.Sphere(M.madeira, new Vector3(xr, rise + hr + 0.17f, zBot - run * 0.3f), 0.08f, 8, 4);
+            k.BoxB(M.madeira, new Vector3(xr, LoftY, rb.z), new Vector3(0.14f, hr + 0.1f, 0.14f));
+            k.Sphere(M.madeira, new Vector3(xr, LoftY + hr + 0.17f, rb.z), 0.08f, 8, 4);
             k.C = Color.white;
             var r0 = new Vector3(x0 + 0.06f, rise, zBot);
             var r1 = new Vector3(x0 + 0.06f, LoftY, zTop + run);
@@ -1726,18 +1734,22 @@ namespace FPSLAN.EditorTools
                 k.Box(M.madeira, new Vector3(0f, -0.14f, -0.035f), new Vector3((b - a).magnitude, 0.1f, 0.035f));
                 k.Pop();
             }
-            // corrimão do lado aberto (z0)
+            // corrimão do lado aberto (z0): balaústres até à barra, prumos no fundo e no topo
+            float zr = z0 + 0.06f;
+            var ha = new Vector3(xBot, rise + 0.95f, zr);
+            var hb = new Vector3(xBot - n * run, Floor2 + 0.95f, zr);
+            System.Func<float, float> hrY = x => Mathf.Lerp(ha.y, hb.y, Mathf.InverseLerp(ha.x, hb.x, x));
             for (int i = 0; i < n; i++)
             {
                 float x = xBot - i * run - run * 0.5f;
                 float y = (i + 1) * rise;
-                k.Push(new Vector3(x, y, z0 + 0.06f), Quaternion.identity, new Vector3(0.75f, 1f, 0.75f));
-                Baluster(k, M, Vector3.zero, 0.9f);
+                k.Push(new Vector3(x, y, zr), Quaternion.identity, new Vector3(0.75f, 1f, 0.75f));
+                Baluster(k, M, Vector3.zero, hrY(x) - y - 0.01f);
                 k.Pop();
             }
-            k.Rod(M.madeira, new Vector3(xBot, rise + 0.95f, z0 + 0.06f), new Vector3(xBot - n * run, Floor2 + 0.95f, z0 + 0.06f), 0.04f, 6);
-            k.BoxB(M.madeira, new Vector3(xBot - 0.1f, 0.03f, z0 + 0.06f), new Vector3(0.13f, rise + 1.05f, 0.13f));
-            k.Sphere(M.madeira, new Vector3(xBot - 0.1f, rise + 1.12f, z0 + 0.06f), 0.075f, 8, 4);
+            k.Rod(M.madeira, ha, hb, 0.045f, 8);
+            k.BoxB(M.madeira, new Vector3(xBot - 0.1f, 0.03f, zr), new Vector3(0.13f, rise + 1.05f, 0.13f));
+            k.Sphere(M.madeira, new Vector3(xBot - 0.1f, rise + 1.12f, zr), 0.075f, 8, 4);
             k.C = Color.white;
             // colisores: rampa + corrimão
             var p0 = new Vector3(xBot + run, 0f, 0f);
