@@ -790,16 +790,21 @@ namespace FPSLAN.EditorTools
             var d = b - a;
             float len = d.magnitude;
             var dir = d / len;
-            var right = Vector3.Cross(Vector3.up, dir);
             int n = Mathf.Max(2, Mathf.RoundToInt(len / 0.22f));
             for (int i = 0; i <= n; i++)
             {
                 var p = a + dir * (len * i / n);
-                if (i % 12 == 0) k.BoxB(M.madeira, p, new Vector3(0.12f, hh + 0.04f, 0.12f));
+                if (i % 12 == 0 || i == n)
+                {
+                    k.BoxB(M.madeira, p, new Vector3(0.13f, hh + 0.06f, 0.13f));          // prumo
+                    k.BoxB(M.madeira, p + Vector3.up * (hh + 0.06f), new Vector3(0.17f, 0.04f, 0.17f));
+                }
                 else Baluster(k, M, p + Vector3.up * 0.08f, hh - 0.16f);
             }
-            k.Push(a, Quaternion.LookRotation(right, Vector3.up), Vector3.one);
-            k.Box(M.madeira, new Vector3(-0.07f, hh - 0.08f, 0f), new Vector3(0.07f, hh, len));
+            // corrimão por cima dos balaústres e rodapé por baixo (eixo z local = direção da balaustrada)
+            k.Push(a, Quaternion.LookRotation(dir, Vector3.up), Vector3.one);
+            k.Box(M.madeira, new Vector3(-0.08f, hh - 0.08f, 0f), new Vector3(0.08f, hh - 0.02f, len));
+            k.Box(M.madeira, new Vector3(-0.06f, hh - 0.02f, 0f), new Vector3(0.06f, hh + 0.02f, len));
             k.Box(M.madeira, new Vector3(-0.05f, 0f, 0f), new Vector3(0.05f, 0.08f, len));
             k.Pop();
             k.C = Color.white;
