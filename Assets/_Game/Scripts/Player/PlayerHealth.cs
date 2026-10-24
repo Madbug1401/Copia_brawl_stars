@@ -178,6 +178,21 @@ namespace FPSLAN
             m_Player.Combat.ServerPetAbilityFeedback(PetAbilityType.Protection);
         }
 
+        /// <summary>Servidor: cura (bónus UPRA do Cão/Tartaruga). Não passa da vida máxima.</summary>
+        public void ServerHeal(int amount)
+        {
+            if (!IsServer || Dead.Value || amount <= 0) return;
+            Health.Value = Mathf.Min(MaxHealth, Health.Value + amount);
+        }
+
+        /// <summary>Servidor: escudo temporário (bónus UPRA do Porco). Fica o maior entre o atual e o novo.</summary>
+        public void ServerGrantShield(int amount, float duration)
+        {
+            if (!IsServer || Dead.Value || amount <= 0) return;
+            Shield.Value = Mathf.Max(Shield.Value, amount);
+            m_ShieldUntil = Mathf.Max(m_ShieldUntil, Time.time + Mathf.Max(0.5f, duration));
+        }
+
         /// <summary>Compatibilidade: delega no StatusEffects.</summary>
         public void ServerApplySlow(float factor, float duration)
         {

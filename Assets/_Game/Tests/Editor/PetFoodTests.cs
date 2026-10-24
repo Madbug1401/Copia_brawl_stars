@@ -67,63 +67,63 @@ namespace FPSLAN.Tests
         }
 
         [Test]
-        public void FeedingExpiresAfterTwentySecondsAndCooldownSurvivesCancellation()
+        public void FeedingIsTwoSecondAnimationThenTwelveSecondBoostAndCooldownSurvivesCancellation()
         {
             var state = new PetFeedingState();
-            Assert.IsTrue(PetFoodRules.TryStart(ref state, 10, 6, 123, PetAbilityType.Agility, true, true, false));
-            Assert.AreEqual(20, state.Remaining(10));
-            Assert.AreEqual(0, state.Remaining(30));
-            Assert.IsFalse(PetFoodRules.TryStart(ref state, 31, 6, 123, PetAbilityType.Agility, true, true, false));
-            state.endsAt = 0; // death or unequipping
-            Assert.IsFalse(PetFoodRules.TryStart(ref state, 40, 6, 123, PetAbilityType.Agility, true, true, false));
-            Assert.IsTrue(PetFoodRules.TryStart(ref state, 100, 6, 123, PetAbilityType.Agility, true, true, false));
+            Assert.IsTrue(PetFoodRules.TryStart(ref state, 10, 6, 123, PetSpecies.Rabbit, true, true));
+            Assert.AreEqual(PetSpecies.Rabbit, state.Species);
+            Assert.AreEqual(14, state.Remaining(10));
+            Assert.IsFalse(PetFoodRules.BoostActive(state, 11));   // ainda a comer
+            Assert.IsTrue(PetFoodRules.BoostActive(state, 12.5));  // bónus ativo
+            Assert.AreEqual(0, state.Remaining(24));
+            Assert.IsFalse(PetFoodRules.TryStart(ref state, 30, 6, 123, PetSpecies.Rabbit, true, true));
+            state.endsAt = 0; // morte ou trocar de pet
+            Assert.IsFalse(PetFoodRules.TryStart(ref state, 40, 6, 123, PetSpecies.Rabbit, true, true));
+            Assert.IsTrue(PetFoodRules.TryStart(ref state, 70, 6, 123, PetSpecies.Rabbit, true, true));
         }
 
         [Test]
-        public void ThreeUsesAreAllowedAndExtraRequestsCannotExtendTheBoost()
+        public void ThreeMealsPerMatchAndExtraRequestsCannotExtendTheBoost()
         {
             var state = new PetFeedingState();
             for (int i = 0; i < 3; i++)
-                Assert.IsTrue(PetFoodRules.TryStart(ref state, i*90, 99, 123, PetAbilityType.Mobility, true, true, false));
+                Assert.IsTrue(PetFoodRules.TryStart(ref state, i * 60, 99, 123, PetSpecies.Dog, true, true));
             var before = state;
-            Assert.IsFalse(PetFoodRules.TryStart(ref state, 270, int.MaxValue, 123, PetAbilityType.Mobility, true, true, false));
+            Assert.IsFalse(PetFoodRules.TryStart(ref state, 180, int.MaxValue, 123, PetSpecies.Dog, true, true));
             Assert.AreEqual(before, state);
         }
 
-        [TestCase(0, 1, PetAbilityType.Agility, true, true, false)]
-        [TestCase(6, 0, PetAbilityType.Agility, true, true, false)]
-        [TestCase(6, 1, PetAbilityType.None, true, true, false)]
-        [TestCase(6, 1, PetAbilityType.Agility, false, true, false)]
-        [TestCase(6, 1, PetAbilityType.Agility, true, false, false)]
-        [TestCase(6, 1, PetAbilityType.Agility, true, true, true)]
-        public void InvalidFeedingLeavesStateUntouched(int stock, int pet, PetAbilityType ability, bool alive, bool playing, bool competitive)
+        [TestCase(0, 1, true, true)]
+        [TestCase(6, 0, true, true)]
+        [TestCase(6, 1, false, true)]
+        [TestCase(6, 1, true, false)]
+        public void InvalidFeedingLeavesStateUntouched(int stock, int pet, bool alive, bool playing)
         {
             var state = new PetFeedingState();
-            Assert.IsFalse(PetFoodRules.TryStart(ref state, 0, stock, pet, ability, alive, playing, competitive));
+            Assert.IsFalse(PetFoodRules.TryStart(ref state, 0, stock, pet, PetSpecies.Cat, alive, playing));
             Assert.AreEqual(default(PetFeedingState), state);
         }
 
-        [TestCase(PetAbilityType.Detection)]
-        [TestCase(PetAbilityType.Agility)]
-        [TestCase(PetAbilityType.Protection)]
-        [TestCase(PetAbilityType.Alert)]
-        [TestCase(PetAbilityType.Mobility)]
-        [TestCase(PetAbilityType.Recovery)]
-        public void EveryBoostIsSmallAndNeverChangesDamageOrMaxHealth(PetAbilityType ability)
+        [Test]
+        public void EachPetGivesItsOwnBoostAndNoneChangesDamage()
         {
-            var mods = EffectiveModifiers.Neutral;
-            mods.petAbility = (byte)ability; mods.petAbilityValue = 6;
-            PetFoodRules.ApplyBoost(ref mods, ability);
-            Assert.AreEqual(1, mods.damageMultiplier);
-            Assert.AreEqual(1, mods.healthMultiplier);
-            Assert.LessOrEqual(mods.speedMultiplier, 1.021f);
-            Assert.LessOrEqual(mods.sprintMultiplier, 1.031f);
-            Assert.LessOrEqual(mods.regenMultiplier, 1.051f);
-            Assert.LessOrEqual(mods.petAbilityValue, 7);
-            mods.competitive = true;
-            var before = mods;
-            PetFoodRules.ApplyBoost(ref mods, ability);
-            Assert.AreEqual(before, mods);
+            var m = EffectiveModifiers.Neutral; PetFoodRules.ApplyBoost(ref m, PetSpecies.Rabbit);
+            Assert.AreEqual(1.2f, m.speedMultiplier, 0.001f);
+            m = EffectiveModifiers.Neutral; PetFoodRules.ApplyBoost(ref m, PetSpecies.Turtle);
+            Assert.AreEqual(1.25f, m.healthMultiplier, 0.001f);
+            m = EffectiveModifiers.Neutral; PetFoodRules.ApplyBoost(ref m, PetSpecies.Dog);
+            Assert.AreEqual(3f, m.regenMultiplier, 0.001f);
+            m = EffectiveModifiers.Neutral; PetFoodRules.ApplyBoost(ref m, PetSpecies.Cat);
+            Assert.AreEqual(0.7f, m.reloadTimeMultiplier, 0.001f);
+            m = EffectiveModifiers.Neutral; PetFoodRules.ApplyBoost(ref m, PetSpecies.Rooster);
+            Assert.AreEqual(1.5f, m.superChargeMultiplier, 0.001f);
+            foreach (PetSpecies sp in System.Enum.GetValues(typeof(PetSpecies)))
+            {
+                m = EffectiveModifiers.Neutral;
+                PetFoodRules.ApplyBoost(ref m, sp);
+                Assert.AreEqual(1f, m.damageMultiplier, sp.ToString());
+                Assert.IsFalse(string.IsNullOrEmpty(PetFoodRules.BoostText(sp)));
+            }
         }
 
         [Test]

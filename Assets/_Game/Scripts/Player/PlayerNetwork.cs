@@ -194,7 +194,7 @@ namespace FPSLAN
                     cmd.lookDelta = look;
                 }
                 // Roda de sprays aberta: o rato escolhe a cor, a câmara e as armas ficam paradas
-                if (SprayWheelOpen)
+                if (SprayWheelOpen || m_WheelLatched)
                 {
                     cmd.lookDelta = Vector2.zero;
                     cmd.fire = cmd.meleePressed = cmd.superPressed = false;
@@ -316,8 +316,8 @@ namespace FPSLAN
             int previousMax = EffectiveMaxHealth;
             var mods = StatResolver.Resolve(gx.Config, gx.PetCatalog, Loadout.Value, competitive);
             var feeding = PetFeeding.Value;
-            if (feeding.Remaining(PetFoodTime) > 0 && feeding.petHash == Loadout.Value.petHash)
-                PetFoodRules.ApplyBoost(ref mods, (PetAbilityType)feeding.ability);
+            if (PetFoodRules.BoostActive(feeding, PetFoodTime) && feeding.petHash == Loadout.Value.petHash)
+                PetFoodRules.ApplyBoost(ref mods, feeding.Species);
             if (!mods.Equals(Effective.Value)) Effective.Value = mods;
             if (Health != null && Health.IsSpawned && EffectiveMaxHealth != previousMax) Health.ServerOnMaxHealthChanged(previousMax);
         }

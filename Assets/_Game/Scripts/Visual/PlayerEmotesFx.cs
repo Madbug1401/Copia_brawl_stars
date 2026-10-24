@@ -35,6 +35,10 @@ namespace FPSLAN
         bool m_CanFP;
         float m_NextMist;
 
+        // Bónus UPRA ativo: aura com a cor do bónus
+        float m_NextAura;
+        bool m_WasBoosted;
+
         public PlayerEmotesFx(PlayerNetwork player, PlayerVisuals visuals, int viewLayer)
         {
             m_Player = player;
@@ -71,6 +75,7 @@ namespace FPSLAN
             }
             TickGrains(dt);
             TickSpray(hidden, dead);
+            TickBoostAura(hidden, dead);
         }
 
         // ================================================================== UPRA
@@ -202,6 +207,27 @@ namespace FPSLAN
             if (m_Sack != null) Object.Destroy(m_Sack.gameObject);
             m_Bowl = m_BowlFood = m_Sack = null;
             m_Visuals.Pet?.EndFeeding(celebrate);
+        }
+
+        void TickBoostAura(bool hidden, bool dead)
+        {
+            bool on = !dead && m_Player.UpraActive;
+            var col = PetFoodRules.BoostColor(m_Player.UpraSpecies);
+            var feet = m_Player.transform.position;
+            if (on && !m_WasBoosted && !hidden)
+            {
+                // Arranque do bónus: anel e brilho
+                Fx.Ring(feet + Vector3.up * 0.05f, col, 2.2f, 0.5f);
+                for (int i = 0; i < 10; i++) Fx.Glow(feet + Vector3.up * 1f + Random.insideUnitSphere * 0.6f, Vector3.up * 1.5f, col, 0.12f, 0.7f);
+                if (Local) Sfx.Play2D(Sound.SuperReady, 0.5f);
+                else Sfx.PlayAt(Sound.SuperReady, feet + Vector3.up, 0.6f);
+            }
+            m_WasBoosted = on;
+            if (!on || hidden || Time.time < m_NextAura) return;
+            m_NextAura = Time.time + (Local ? 0.2f : 0.09f);
+            // No próprio jogador só junto aos pés (não tapa a vista); nos outros à volta do corpo
+            var p = Local ? feet + Vector3.up * 0.1f + Random.insideUnitSphere * 0.5f : feet + Vector3.up * (0.4f + Random.value * 1.3f) + Random.insideUnitSphere * 0.45f;
+            Fx.Glow(p, Vector3.up * 0.9f, col, Local ? 0.07f : 0.1f, 0.6f);
         }
 
         // ================================================================== SITA

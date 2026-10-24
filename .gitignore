@@ -46,3 +46,6 @@ crashlytics-build.properties
 # Relatorios exportados e copias locais de testes (nao fazem parte do jogo)
 /output/
 /tmp/
+
+# Builds zipadas (demasiado grandes para o GitHub)
+*.zip
