@@ -35,7 +35,8 @@ namespace FPSLAN.Tests
             Assert.IsNotNull(signs);
             Assert.AreEqual(16, signs.childCount);
             Assert.AreEqual(0, signs.GetComponentsInChildren<Collider>(true).Length);
-            Assert.AreEqual(67, prefab.GetComponentsInChildren<Collider>(true).Length);
+            // Os interiores das casas (Nico-uglaa) acrescentam colisores; o mapa exterior original tinha 67.
+            Assert.GreaterOrEqual(prefab.GetComponentsInChildren<Collider>(true).Length, 67);
             Assert.AreEqual(10, prefab.GetComponentsInChildren<SpawnPoint>(true).Length);
         }
 
