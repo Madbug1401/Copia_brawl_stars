@@ -45,10 +45,6 @@ namespace FPSLAN
         /// <summary>Cotovelo do braço da faca, no espaço do balanço.</summary>
         static readonly Vector3 KnifeElbow = new Vector3(0.42f, -0.72f, 0.05f);
         FirstPersonArms m_ModelArms;
-        /// <summary>Braços com esqueleto do personagem (mão e manga do modelo); as mãos estilizadas passam a alvos invisíveis.</summary>
-        FPSkinnedArms m_SkinArms;
-        /// <summary>true = usa os braços com esqueleto gerados no Blender (se o personagem os tiver).</summary>
-        public static bool UseSkinnedArms = true;
         HandPalette m_Palette;
         // mão de apoio (caçadeira/sniper): ponto da arma e rotação da mão em relação à arma
         Transform m_SupportT;
@@ -290,15 +286,6 @@ namespace FPSLAN
                 m_KnifeArm = StylizedHands.BuildForearm(m_Sway, m_Palette);
             }
             m_Knife.gameObject.SetActive(false);
-
-            // braços com esqueleto do modelo: as mãos/antebraços estilizados ficam só como alvos (invisíveis)
-            if (UseSkinnedArms && m_ModelArms == null)
-            {
-                m_SkinArms = FPSkinnedArms.TryCreate(b, m_Sway, layer);
-                if (m_SkinArms != null)
-                    foreach (var t in new[] { m_HandR, m_HandL, m_KnifeHand, m_ArmR, m_ArmL, m_UpperArmR, m_KnifeArm })
-                        if (t != null) foreach (var r in t.GetComponentsInChildren<Renderer>(true)) r.enabled = false;
-            }
 
             foreach (var w in new[] { m_WeaponR, m_WeaponL })
                 if (w != null) m_WeaponRenderers.AddRange(w.root.GetComponentsInChildren<Renderer>(true));
@@ -892,16 +879,6 @@ namespace FPSLAN
             }
             else StylizedHands.PoseForearm(m_ArmR, m_HandR, m_Sway.TransformPoint(m_ElbowR));
             StylizedHands.PoseForearm(m_ArmL, m_HandL, m_Sway.TransformPoint(m_ElbowL));
-
-            // ---------------- braços com esqueleto: seguem as mãos (a da faca quando está de fora)
-            if (m_SkinArms != null)
-            {
-                bool knifeOut = m_KnifeHand != null && m_KnifeHand.gameObject.activeInHierarchy;
-                var right = knifeOut ? m_KnifeHand : m_HandR;
-                var er = knifeOut ? m_Sway.TransformPoint(KnifeElbow) : m_Sway.TransformPoint(m_ElbowR);
-                // arco: o braço que puxa a corda vem do ombro de referência do arco
-                m_SkinArms.Pose(right, m_HandL, er, m_Sway.TransformPoint(m_ElbowL), Style == RigStyle.Bow && !knifeOut ? BowShoulder : (Vector3?)null);
-            }
 
             // ---------------- Super pronto: arma brilha a pulsar
             if (f.superReady)
