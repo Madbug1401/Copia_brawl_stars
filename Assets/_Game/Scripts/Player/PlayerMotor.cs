@@ -10,10 +10,12 @@ namespace FPSLAN
         public Vector3 Position;
         public float Yaw;
         public float Pitch;
-        public byte Flags; // bit0: no chão, bit1: a mover
+        public byte Flags; // bit0: no chão, bit1: a mover, bit2: agachado, bit3: a deslizar (slide)
 
         public bool Grounded => (Flags & 1) != 0;
         public bool Moving => (Flags & 2) != 0;
+        public bool Crouched => (Flags & 4) != 0;
+        public bool Sliding => (Flags & 8) != 0;
     }
 
     /// <summary>
@@ -28,7 +30,7 @@ namespace FPSLAN
     /// - O host guarda o histórico de todos (<see cref="TryGetPositionAt"/>) para "recuar" alvos ao validar tiros.
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
-    public class PlayerMotor : NetworkBehaviour
+    public partial class PlayerMotor : NetworkBehaviour
     {
         /// <summary>Snapshots de movimento por segundo enviados pelo dono.</summary>
         public const float SendRate = 30f;
@@ -120,6 +122,7 @@ namespace FPSLAN
         {
             m_Controller = GetComponent<CharacterController>();
             m_Player = GetComponent<PlayerNetwork>();
+            CrouchAwake();
         }
 
         public override void OnNetworkSpawn()
@@ -163,7 +166,7 @@ namespace FPSLAN
 
             m_RecoilPitch = Mathf.MoveTowards(m_RecoilPitch, 0f, 18f * dt);
             transform.rotation = Quaternion.Euler(0f, m_Yaw, 0f);
-            cameraRoot.localRotation = Quaternion.Euler(m_Pitch - m_RecoilPitch, 0f, 0f);
+            cameraRoot.localRotation = Quaternion.Euler(m_Pitch - m_RecoilPitch, 0f, m_SlideRoll);
             if (aimPivot != null) aimPivot.localRotation = Quaternion.Euler(m_Pitch, 0f, 0f);
 
             if (!m_Controller.enabled)
@@ -186,6 +189,9 @@ namespace FPSLAN
 
             bool grounded = m_Controller.isGrounded;
             m_CoyoteTimer = grounded ? coyoteTime : m_CoyoteTimer - dt;
+
+            // Agachar / slide (PlayerMotor.Crouch.cs): pode reduzir a velocidade alvo e controla a velocidade no slide
+            UpdateCrouchSlide(cmd, wish, ref speed, grounded, alive, rooted, dt);
 
             // Plataformas de salto
             m_PadCooldown -= dt;
@@ -210,6 +216,9 @@ namespace FPSLAN
             float accel = grounded ? groundAccel : airAccel;
             if (m_Launched)
                 m_HorizontalVelocity = Vector3.MoveTowards(m_HorizontalVelocity, wish * speed * 0.25f, airAccel * dt);
+            else if (m_Sliding)
+                SlideVelocity(wish, dt);
+            else if (!grounded && AirMomentum(wish, speed, dt)) { }
             else
                 m_HorizontalVelocity = Vector3.MoveTowards(m_HorizontalVelocity, wish * speed, accel * dt);
 
@@ -223,8 +232,9 @@ namespace FPSLAN
                 m_ExternalVelocity = Vector3.zero;
                 m_LaunchVelocity = Vector3.zero;
             }
-            if (m_JumpBuffer > 0f && m_CoyoteTimer > 0f && !m_Launched && !rooted)
+            if (m_JumpBuffer > 0f && m_CoyoteTimer > 0f && !m_Launched && !rooted && CanJumpFromCrouch())
             {
+                OnJumpFromCrouch();
                 m_VerticalVelocity = Mathf.Sqrt(2f * gravity * move.jumpHeight);
                 m_JumpBuffer = 0f;
                 m_CoyoteTimer = 0f;
@@ -258,6 +268,7 @@ namespace FPSLAN
             byte f = 0;
             if (m_Controller.enabled && m_Controller.isGrounded) f |= 1;
             if (m_HorizontalVelocity.sqrMagnitude > 0.5f) f |= 2;
+            f |= CrouchFlags();
 
             m_Latest = new MotorState
             {
@@ -375,6 +386,7 @@ namespace FPSLAN
             transform.position = s.Position;
             transform.rotation = Quaternion.Euler(0f, s.Yaw, 0f);
             if (aimPivot != null) aimPivot.localRotation = Quaternion.Euler(s.Pitch, 0f, 0f);
+            ApplyRemoteCrouch(s.Crouched, s.Sliding, Time.deltaTime);
         }
 
         /// <summary>Estado interpolado na hora 't' (na escala dos snapshots). Extrapola pouco e nunca atravessa teleportes.</summary>
@@ -509,6 +521,7 @@ namespace FPSLAN
             m_LaunchVelocity = Vector3.zero;
             m_Launched = false;
             m_VerticalVelocity = 0f;
+            ResetCrouch();
             transform.rotation = Quaternion.Euler(0f, m_Yaw, 0f);
             if (m_Player.Bot != null) m_Player.Bot.OnTeleported(yaw);
             PushState(true);

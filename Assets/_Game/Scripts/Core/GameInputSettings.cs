@@ -22,6 +22,7 @@ namespace FPSLAN
         Interact,
         FeedPet,
         Emote,
+        Crouch,   // acrescentado no fim: as teclas guardadas usam o nome, mas assim nada muda de número
     }
 
     public static class GameInputSettings
@@ -63,6 +64,7 @@ namespace FPSLAN
         public static bool IsHeld(GameAction action) => IsHeld(GetBinding(action));
         public static bool WasPressedThisFrame(GameAction action) => ReadKeyPressedThisFrame(GetBinding(action));
         public static bool WasPressedThisFrame(KeyCode key) => ReadKeyPressedThisFrame(key);
+        public static bool IsHeldKey(KeyCode key) => IsHeld(key);
         public static bool HasCustomBinding(GameAction action) => PlayerPrefs.HasKey(PreferencePrefix + action);
 
         public static string BindingLabel(GameAction action)
@@ -92,6 +94,7 @@ namespace FPSLAN
                 case GameAction.Interact: return KeyCode.F;
                 case GameAction.FeedPet: return KeyCode.T;
                 case GameAction.Emote: return KeyCode.Y;
+                case GameAction.Crouch: return KeyCode.LeftControl;
                 default: return KeyCode.None;
             }
         }

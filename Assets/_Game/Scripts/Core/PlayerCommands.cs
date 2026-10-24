@@ -13,6 +13,8 @@ namespace FPSLAN
         public bool absoluteAim;     // bot: usa yaw/pitch absolutos
         public float yaw, pitch;
         public bool sprint;
+        public bool crouch;          // manter agachado (a correr: slide)
+        public bool crouchPressed;
         public bool jumpPressed;
         public bool fire;
         public bool meleePressed;
@@ -31,6 +33,8 @@ namespace FPSLAN
                 move = InputReader.Move,
                 lookDelta = InputReader.Look * GameSession.Sensitivity * sensitivity,
                 sprint = InputReader.Sprint,
+                crouch = InputReader.CrouchHeld,
+                crouchPressed = InputReader.CrouchPressed,
                 jumpPressed = InputReader.JumpPressed,
                 fire = InputReader.Fire,
                 meleePressed = InputReader.MeleePressed,
@@ -125,7 +129,10 @@ namespace FPSLAN
         public static bool IsHeadshot(PlayerHealth victim, Vector3 hitPoint, Vector3 rayOrigin, Vector3 rayDir)
         {
             if (victim == null) return false;
-            return IsHeadshot(victim.transform.position, hitPoint, rayOrigin, rayDir);
+            // Agachado/slide: a cabeça está mais baixa
+            var motor = victim.GetComponent<PlayerMotor>();
+            float drop = motor != null ? motor.CrouchDrop : 0f;
+            return IsHeadshot(victim.transform.position - Vector3.up * drop, hitPoint, rayOrigin, rayDir);
         }
 
         public static bool IsHeadshot(Vector3 victimFeet, Vector3 hitPoint, Vector3 rayOrigin, Vector3 rayDir)

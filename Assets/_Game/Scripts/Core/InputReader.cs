@@ -17,6 +17,11 @@ namespace FPSLAN
         public static bool JumpPressed => ReadJumpPressed();
         public static bool Fire => ReadFire();
         public static bool MeleePressed => GameInputSettings.WasPressedThisFrame(GameAction.Melee);
+        /// <summary>Agachar (Ctrl por defeito; C também funciona enquanto a tecla não for redefinida).</summary>
+        public static bool CrouchHeld => GameInputSettings.IsHeld(GameAction.Crouch) ||
+            (!GameInputSettings.HasCustomBinding(GameAction.Crouch) && GameInputSettings.IsHeldKey(KeyCode.C));
+        public static bool CrouchPressed => GameInputSettings.WasPressedThisFrame(GameAction.Crouch) ||
+            (!GameInputSettings.HasCustomBinding(GameAction.Crouch) && GameInputSettings.WasPressedThisFrame(KeyCode.C));
         public static bool AimHeld => GameInputSettings.IsHeld(GameAction.Aim);
         public static bool InteractHeld => GameInputSettings.IsHeld(GameAction.Interact);
         public static bool SuperPressed => ReadSuperPressed();
