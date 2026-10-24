@@ -150,6 +150,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.MatchManager
   ShowTopMostFoldoutHeaderGroup: 1
+  coopTotalWaves: 5
+  coopFirstWaveDelay: 14
+  coopIntermissionSeconds: 12
+  coopReviveSeconds: 3
+  coopReviveRadius: 2.8
+  coopReviveHealthPercent: 0.5
+  coopBondRadius: 10
+  coopBondDamageMultiplier: 1.25
+  coopBondRegenPercentPerSecond: 0.03
+  coopPlateA: {x: -6.2, y: 0.1, z: 0}
+  coopPlateB: {x: 0, y: 0.1, z: -7}
+  coopGemPosition: {x: 0, y: 0.7, z: -4.3}
+  coopPlateRadius: 1.5
+  coopPuzzleSeconds: 2.5
+  coopGemPickupRadius: 1.8
+  coopGemPartnerRadius: 4
   killLimit: 15
   matchMinutes: 8
   resultsSeconds: 8
@@ -231,6 +247,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.MapInfo
   mapName: Cidade Velha
   halfSize: 26.5
+  fallRecoveryY: -20
   waypoints:
   - {x: -12.5, y: 0.1, z: -13.6}
   - {x: -18, y: 0.1, z: -17.3}
@@ -264,6 +281,11 @@ MonoBehaviour:
   - {x: 6.2, y: 0.1, z: 0}
   - {x: 0, y: 0.1, z: 7}
   - {x: 0, y: 0.1, z: -7}
+  extraAreas:
+  - m_Center: {x: 0, y: 2, z: -31}
+    m_Extent: {x: 8.4, y: 3, z: 5.6}
+  - m_Center: {x: 0, y: 2, z: 29.5}
+    m_Extent: {x: 8.4, y: 3, z: 4.1}
 --- !u!4 &234934826
 Transform:
   m_ObjectHideFlags: 0
@@ -563,6 +585,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e4a9de0145e14f498f05c7edeb95eafd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.GemGrabVisuals
+  style: 0
+  waterSurface: {fileID: 0}
+  waterRadius: 2.2
+  waterColor: {r: 0.45, g: 0.95, b: 0.95, a: 0.9}
 --- !u!114 &1175664018
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -599,6 +625,8 @@ MonoBehaviour:
   dropArcSeconds: 0.6
   dropRadius: 1.8
   gemFloatHeight: 0.6
+  maxGroundRise: 0.45
+  maxGroundDrop: 1
   gemPrefab: {fileID: 5748521444635031477, guid: da09d5aae497d964791bbd360ab06cc8, type: 3}
   emitterHalo: {fileID: 734246180}
   emitterBase: {fileID: 734246179}
@@ -616,6 +644,7 @@ MonoBehaviour:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
+  respawnPickupGrace: 0.75
 --- !u!114 &1175664019
 MonoBehaviour:
   m_ObjectHideFlags: 0

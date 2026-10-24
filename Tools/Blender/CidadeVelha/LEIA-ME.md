@@ -99,3 +99,79 @@ python analisar_rotas.py out/cidade_velha_layout.json out/Renders/planta_rotas.p
 
 Rasteriza os colisores inflacionados pelo raio do CharacterController (0.4 m) e confirma ligação entre spawns,
 acesso às 8 aterragens, 3 rotas independentes e largura mínima de cada rota. Não substitui o teste com o jogador.
+
+## 4. Interiores: igreja e sobrado (Unity)
+
+**FPS-LAN ▸ Mapas ▸ Cidade Velha: interiores (igreja e sobrado)** (`Editor/CidadeVelhaInteriores.cs`) troca os dois
+blocos maciços do fundo da praça por edifícios com interior. Corre-se depois de reconstruir a Cidade Velha a partir do
+Blender (como o menu da costa) e pode repetir-se. Os blocos originais ficam no prefab, inativos.
+
+- **Igreja (−Z)**: nave com 8 bancos (livros, genuflexórios), passadeira vermelha, teia de comunhão, presbitério com
+  altar (toalha com renda, sacrário, castiçais, missal), arco azul com fundo estrelado e crucifixo, 4 nichos com imagens,
+  estandartes vermelho e azul, ventoinhas de parede, via-sacra, lustre de velas, lâmpada do Santíssimo, ambão, cadeiras,
+  confessionário, pias de água benta, velas votivas, teto branco com vigas verde-água.
+  **Coro alto** a 3,3 m sobre a entrada, com **duas escadas** (uma de cada lado) e balaustrada: os olhos ficam à altura
+  do **óculo** da fachada (4,9 m), agora aberto, e há duas janelas do coro na fachada (x = ±5,5) — posições de atirador.
+- **Sobrado (+Z)**: interior rústico em troncos. Rés-do-chão com fogão de ferro (panelas, tacho de cobre, chaleira,
+  lume), lenha, prateleiras com louça e frascos, bancada, mesa posta com cadeiras e candeeiro de petróleo, berço,
+  cadeiras de baloiço, baús, cristaleira, barris, relógio, quadros, vasos nas janelas (com grades).
+  **Escada de madeira** (16 degraus) para o 1.º andar (quarto: cama com colcha de retalhos, guarda-roupa, lavatório,
+  roca de fiar, secretária). As **5 janelas de cima e a varanda** (alargada, com guarda de ferro) abrem para a praça,
+  viradas para a igreja.
+- **Luz e sombras**: 3 luzes pontuais por edifício (altar e candeeiro da cozinha com sombras suaves), sol a entrar pelas
+  janelas, oclusão nos vértices e sombras de contacto debaixo da mobília. Cada edifício é desenhado com uma malha por
+  material (~40k triângulos cada).
+- **Jogo**: colisores em caixa (paredes com vãos, rampas suaves nas escadas, móveis); não se sai pelas janelas nem pelo
+  óculo, mas as balas passam. Os limites invisíveis N/S do mapa deixaram de atravessar as fachadas e o `MapInfo`
+  passou a ter `extraAreas` (saltos e gemas largadas dentro dos edifícios não são puxados para a praça).
+
+**FPS-LAN ▸ Mapas ▸ Validar interiores da Cidade Velha** anda com o CharacterController do jogador desde os spawns até
+ao coro (pelas duas escadas), ao 1.º andar e à varanda, confirma que as janelas não deixam sair e testa as linhas de tiro
+óculo/coro ↔ janelas/varanda. Imagens em `Docs/preview/cidade_velha/interior_*.jpg`.
+
+### 4.1 Restantes casas do Pelourinho (`Editor/CidadeVelhaInteriores.Casas.cs`)
+
+O mesmo menu dá interior às outras 10 casas. As aberturas saem dos módulos do FBX (`_Porta_`, `_Janela_`, `_Janela2_`,
+`_PortaVaranda_`), por isso a ferramenta acompanha mudanças no script do Blender. Fica a cobertura, a chaminé, os
+candeeiros e a cantaria (cunhais, cornija, friso — sem as faces que entravam na sala); o bloco de reboco maciço, as
+portas e as janelas originais passam a inativos e são refeitos com paredes de 30 cm com vãos, forro interior, rodapé
+ou azulejo, embasamento de pedra, portas abertas para dentro, janelas com portadas abertas, cortinas e floreiras.
+
+| Casa | Tema |
+|---|---|
+| Esquina EN e WN (2 pisos) | **Bar**: balcão com torneiras de cerveja, garrafeira com espelho e frigoríficos iluminados, bancos altos, mesas redondas, TV com futebol, bandeira de Cabo Verde, quadro de ardósia, alvo de dardos, candeeiros pendentes, ventoinha · 1.º andar: **apartamento** |
+| Esquina ES (2 pisos) | **Mercearia**: prateleiras de produtos, balcão com caixa registadora e balança, bancas de fruta, sacos de arroz/feijão/milho, frigorífico de bebidas, cacho de bananas · 1.º andar: apartamento com duas camas |
+| Esquina WS (2 pisos) | **Casa de família**: cozinha (bancada, lava-loiça, placa a gás, frigorífico), mesa de jantar, sala com sofá, TV, estante · 1.º andar: apartamento |
+| Fila EN | **Tasca de grogue** com **alambique** de cobre (fornalha acesa, serpentina), barris, cana-de-açúcar, balcão com garrafas de grogue e pontche, mesa com bancos, luzes de fiada |
+| Fila ES | Casa térrea (quarto, cozinha, mesa, cadeira de baloiço) |
+| Fila WN | Estúdio (cama, kitchenette, sofá, secretária com portátil, TV) |
+| Fila WS | **Barbearia** (2 cadeiras de barbeiro, espelhos, bancada, lavatório, banco de espera, TV, poste de barbeiro na fachada) |
+| Bolsa E | **Restaurante** com balcão e **palco de morna** (violões, microfone, colunas), mesas com toalha, luzes de fiada |
+| Bolsa W | Casa de família com divisória: quarto (cama, berço, baú) e sala/cozinha |
+
+- **Sobrados de esquina**: escada de madeira (14 degraus) junto à parede do fundo, vão com guarda no 1.º andar, porta da
+  varanda da frente e da varanda lateral abertas (guarda de ferro, vaso). As janelas do 1.º andar ficam abertas para
+  tiro; as do rés-do-chão têm grades.
+- Os móveis respeitam zonas livres (abertura das portas, corredor entre a porta da frente e a lateral, escada) e cada
+  casa tem 1–2 luzes pontuais (uma com sombras suaves). ~187k triângulos nas 10 casas, uma malha por material.
+- Os arbustos (esconderijos) das bolsas entravam pela parede: são afastados para fora da fachada.
+- **Patrocinadores**: o mesmo menu refaz sempre as placas SITA e UPRANIMAL (`Editor/SponsorBoards.cs`), também
+  chamadas pelo construtor do mapa (`decorateMap`); funcionam com o bloco maciço da casa já desligado.
+
+A validação percorre também cada casa: porta → escada → 1.º andar → varanda da frente, 1.º andar → varanda lateral
+(esquinas), porta da frente → porta lateral (fila) e porta → sala → porta (bolsas). Fotografias em
+`GameJam/Fotos/Cidade_Velha/Interiores_Casas/`.
+
+### 4.2 Portas e desempenho
+
+- **Portas** (`DoorUnit` / `DoorLeaf`): portas de duas folhas almofadadas (montantes, travessas, almofadas em relevo,
+  dobradiças de ferro, puxador de latão, espelho de fechadura e argola), bandeira envidraçada com leque de ferro por
+  cima, alizar de madeira por dentro e ombreiras rebocadas. Nas casas as folhas abrem **encostadas à parede interior**
+  (deixam de tapar a passagem e a vista); só onde não há parede livre (canto, janela ao lado) ficam abertas a ~95°.
+  Porta da rua 2,8 m (2,62 m nos sobrados de esquina, por baixo das vigas), porta da varanda 2,55 m. A bandeira tem
+  colisor: só a parte das folhas é passagem.
+- **Desempenho**: as 26 luzes pontuais dos interiores deixaram de ter sombras e de ser forçadas a "pixel";
+  `InteriorLightCulling` (no grupo `Interiores`) deixa ligadas só as 6 mais próximas da câmara num raio de 16 m.
+  Só a estrutura (reboco, cantaria, pedra, telha, troncos) projeta sombra do sol — a mobília não. Qualidade Ultra:
+  sombras até 60 m com 2 cascatas (era 150 m / 4); Very High: 55 m. Medição no editor (1920×1080, Ultra, 4 vistas da
+  Cidade Velha, média): 38,3 ms → 29,9 ms por imagem.

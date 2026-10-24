@@ -17,6 +17,8 @@ namespace FPSLAN
         public float fallRecoveryY = -20f;
         [Tooltip("Pontos livres por onde os bots circulam.")]
         public Vector3[] waypoints = new Vector3[0];
+        [Tooltip("Zonas jogáveis fora do quadrado (ex.: interiores de edifícios). Só contam X e Z.")]
+        public Bounds[] extraAreas = new Bounds[0];
 
         void Awake() => Instance = this;
         void OnDestroy() { if (Instance == this) Instance = null; }
@@ -29,6 +31,10 @@ namespace FPSLAN
         /// <summary>Mantém um ponto dentro da área jogável (com margem).</summary>
         public static Vector3 ClampInside(Vector3 p, float margin = 1.2f)
         {
+            var mi = Instance;
+            if (mi != null && mi.extraAreas != null)
+                foreach (var b in mi.extraAreas)
+                    if (p.x >= b.min.x && p.x <= b.max.x && p.z >= b.min.z && p.z <= b.max.z) return p;
             float h = Mathf.Max(2f, HalfSize - margin);
             p.x = Mathf.Clamp(p.x, -h, h);
             p.z = Mathf.Clamp(p.z, -h, h);

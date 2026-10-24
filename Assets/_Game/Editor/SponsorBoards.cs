@@ -41,7 +41,7 @@ namespace FPSLAN.EditorTools
                 var stall = Find<BoxCollider>(map, "COL_Box_CVR_Banca_" + tag);
                 if (stall != null)
                 {
-                    var b = stall.bounds;
+                    var b = WorldBounds(stall);
                     bool alongX = b.size.x >= b.size.z;
                     float half = (alongX ? b.extents.z : b.extents.x) - 0.05f;       // saia 5 cm para dentro do tampo
                     for (int s = -1; s <= 1; s += 2)
@@ -61,7 +61,7 @@ namespace FPSLAN.EditorTools
                 var window = FindT(map, "BLD_Fila_" + tag + "_Janela_" + face + "0");
                 if (body != null && door != null && window != null)
                 {
-                    var b = body.bounds;
+                    var b = WorldBounds(body);
                     var toDoor = door.position - b.center;
                     bool alongZ = Mathf.Abs(toDoor.z) > Mathf.Abs(toDoor.x);
                     var n = alongZ ? new Vector3(0, 0, Mathf.Sign(toDoor.z)) : new Vector3(Mathf.Sign(toDoor.x), 0, 0);
@@ -81,7 +81,7 @@ namespace FPSLAN.EditorTools
                 if (wall != null && segA != null && segB != null)
                 {
                     var segPos = (segA.position + segB.position) * 0.5f;
-                    var b = wall.bounds;
+                    var b = WorldBounds(wall);
                     bool alongX = b.size.x >= b.size.z;
                     var n = alongX ? new Vector3(0, 0, -Mathf.Sign(b.center.z)) : new Vector3(-Mathf.Sign(b.center.x), 0, 0);
                     float half = alongX ? b.extents.z : b.extents.x;
@@ -104,6 +104,13 @@ namespace FPSLAN.EditorTools
             var r = go.AddComponent<MeshRenderer>();
             r.sharedMaterial = mat;
             r.shadowCastingMode = ShadowCastingMode.Off;
+        }
+
+        /// <summary>Caixa do colisor no mundo, também quando o colisor está desativado (as casas com interior desligam o bloco maciço).</summary>
+        static Bounds WorldBounds(BoxCollider c)
+        {
+            var t = c.transform;
+            return new Bounds(t.TransformPoint(c.center), Vector3.Scale(c.size, t.lossyScale));
         }
 
         static T Find<T>(GameObject root, string name) where T : Component
