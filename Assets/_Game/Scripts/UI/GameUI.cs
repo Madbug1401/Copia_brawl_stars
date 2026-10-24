@@ -1362,6 +1362,7 @@ namespace FPSLAN
                 case GameAction.Interact: return "Revive partner (hold)";
                 case GameAction.FeedPet: return "Feed pet (UPRA)";
                 case GameAction.Emote: return "SITA spray wheel (hold)";
+                case GameAction.Crouch: return "Crouch / slide (while sprinting)";
                 default: return action.ToString();
             }
         }
@@ -1426,7 +1427,7 @@ namespace FPSLAN
             {
                 GameAction.MoveForward, GameAction.MoveBackward, GameAction.MoveLeft, GameAction.MoveRight,
                 GameAction.Fire, GameAction.Melee, GameAction.Super, GameAction.Jump, GameAction.Sprint,
-                GameAction.Scoreboard, GameAction.Pause, GameAction.Aim, GameAction.Interact, GameAction.FeedPet, GameAction.Emote,
+                GameAction.Scoreboard, GameAction.Pause, GameAction.Aim, GameAction.Interact, GameAction.FeedPet, GameAction.Emote, GameAction.Crouch,
             };
             foreach (var action in actions)
             {

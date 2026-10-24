@@ -725,6 +725,7 @@ namespace FPSLAN
                 float fov = scoped ? GameSession.ScopeFieldOfView :
                     (m_Player.Health.IsSlowed ? 78f : (motor.IsSprinting && motor.IsMoving ? 90f : 85f));
                 if (motor.IsLaunched) fov = 92f;
+                if (motor.IsSliding && !scoped) fov = 98f; // slide: abre o campo de visão (sensação de velocidade)
                 m_Camera.fieldOfView = Mathf.Lerp(m_Camera.fieldOfView, fov, 1f - Mathf.Exp(-8f * dt));
                 if (m_ViewCamera != null) m_ViewCamera.fieldOfView = m_Camera.fieldOfView;
             }

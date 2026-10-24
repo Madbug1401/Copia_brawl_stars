@@ -166,7 +166,7 @@ namespace FPSLAN
 
             m_RecoilPitch = Mathf.MoveTowards(m_RecoilPitch, 0f, 18f * dt);
             transform.rotation = Quaternion.Euler(0f, m_Yaw, 0f);
-            cameraRoot.localRotation = Quaternion.Euler(m_Pitch - m_RecoilPitch, 0f, m_SlideRoll);
+            cameraRoot.localRotation = Quaternion.Euler(m_Pitch - m_RecoilPitch + SlideCameraPitch, 0f, m_SlideRoll);
             if (aimPivot != null) aimPivot.localRotation = Quaternion.Euler(m_Pitch, 0f, 0f);
 
             if (!m_Controller.enabled)
@@ -241,7 +241,7 @@ namespace FPSLAN
             }
 
             // --- Gravity ---
-            if (grounded && m_VerticalVelocity < 0f) m_VerticalVelocity = -2f;
+            if (grounded && m_VerticalVelocity < 0f) m_VerticalVelocity = m_Sliding ? -9f : -2f; // slide: cola ao chão em descidas
             m_VerticalVelocity -= gravity * dt;
 
             m_ExternalVelocity = Vector3.MoveTowards(m_ExternalVelocity, Vector3.zero, (grounded ? 30f : 8f) * dt);
