@@ -110,6 +110,8 @@ namespace FPSLAN
             root.SetParent(parent, false);
             root.gameObject.layer = parent.gameObject.layer;
             if (left) root.localScale = new Vector3(-1f, 1f, 1f);
+            var tag = root.gameObject.AddComponent<HandPoseTag>();
+            tag.pose = pose; tag.radius = radius; tag.left = left;
             float r = radius;
             var palmCol = pal.fingerless ? pal.glove : pal.skin;
 
