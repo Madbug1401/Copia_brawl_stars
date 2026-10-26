@@ -57,7 +57,9 @@ Só mudaram os nomes visíveis (`displayName`), por isso prefabs, saves e mensag
 
 ### Lince — sniper
 - Principal: **55 no corpo / 80 na cabeça**, deteção de headshot pela zona da cabeça (de cima, de baixo e sem raio),
-  indicador visual de headshot, a cadência mais lenta do jogo, mira própria.
+  indicador visual de headshot, a cadência mais lenta do jogo, mira própria (botão direito). A mirar, a **roda do
+  rato** aproxima ou afasta o zoom da luneta (de 1,8x a 10,5x, mostrado no ecrã; fica guardado). A sensibilidade baixa
+  com o zoom.
 - Especial **Tiro fatal**: carrega passivamente com o tempo. Arma-se com o botão do Super (carregar outra vez cancela
   e guarda a carga). Headshot válido = eliminação imediata; no corpo = dano normal (55). Hitscan validado no host,
   respeita paredes e linha de visão, sem mira automática. A carga só é gasta ao disparar.

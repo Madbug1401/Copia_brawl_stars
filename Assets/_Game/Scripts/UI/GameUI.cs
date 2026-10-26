@@ -520,6 +520,10 @@ namespace FPSLAN
             Fill(new Rect(cx - line * 0.5f, cy - radius * 0.72f, line, radius * 0.62f), color);
             Fill(new Rect(cx - line * 0.5f, cy + radius * 0.1f, line, radius * 0.62f), color);
             Fill(new Rect(cx - line, cy - line, line * 2f, line * 2f), color);
+            // nível de zoom (roda do rato)
+            float mag = GameSession.ScopeMagnification;
+            Outlined(new Rect(cx - radius, cy + radius * 0.78f, radius * 2f, 30f * Scale), mag.ToString("0.0") + "x", m_Center, color, 1.5f);
+            Outlined(new Rect(cx - radius, cy + radius * 0.78f + 26f * Scale, radius * 2f, 24f * Scale), "Scroll: zoom", m_TinyCenter, new Color(1f, 1f, 1f, 0.7f), 1.5f);
         }
 
         // ================================================================== menu principal
@@ -1480,7 +1484,7 @@ namespace FPSLAN
             if (!Mathf.Approximately(aimSensitivity, GameSession.AimSensitivity))
                 GameSession.AimSensitivity = aimSensitivity;
             GUILayout.Label("Zoom (field of view): " + Mathf.RoundToInt(GameSession.ScopeFieldOfView) + "°", m_Label);
-            float scopeFov = GUILayout.HorizontalSlider(GameSession.ScopeFieldOfView, 20f, 55f);
+            float scopeFov = GUILayout.HorizontalSlider(GameSession.ScopeFieldOfView, GameSession.ScopeMinFov, GameSession.ScopeMaxFov);
             if (!Mathf.Approximately(scopeFov, GameSession.ScopeFieldOfView))
                 GameSession.ScopeFieldOfView = scopeFov;
             if (LayoutButton("RESET AIM AND SENSITIVITY", new Color(0.4f, 0.46f, 0.6f),
@@ -1488,7 +1492,7 @@ namespace FPSLAN
             {
                 GameSession.Sensitivity = 2f;
                 GameSession.AimSensitivity = 0.5f;
-                GameSession.ScopeFieldOfView = 32f;
+                GameSession.ScopeFieldOfView = GameSession.ScopeDefaultFov;
             }
         }
 

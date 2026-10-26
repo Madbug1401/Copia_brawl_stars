@@ -25,7 +25,8 @@ namespace FPSLAN
             var local = PlayerNetwork.Local;
             bool aiming = InputReader.AimHeld && local != null && local.Brawler != null &&
                 local.Brawler.firstPerson.rig == RigStyle.Sniper;
-            float sensitivity = aiming ? GameSession.AimSensitivity : 1f;
+            // a mirar: sensibilidade da luneta, mais baixa quanto maior o zoom (o mesmo gesto move o mesmo no ecrã)
+            float sensitivity = aiming ? GameSession.AimSensitivity * GameSession.ScopeFieldOfView / GameSession.ScopeDefaultFov : 1f;
             return new PlayerCommands
             {
                 move = InputReader.Move,

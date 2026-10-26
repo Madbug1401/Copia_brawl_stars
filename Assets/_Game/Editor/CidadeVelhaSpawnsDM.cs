@@ -9,8 +9,8 @@ namespace FPSLAN.EditorTools
     /// Cidade Velha (Pelourinho):
     /// 1) tira as faixas azul e vermelha do chão (GRD_Spawn_Blue / GRD_Spawn_Red) — os spawns das equipas do Pique-Gemas
     ///    continuam nos mesmos sítios, só deixam de estar pintados;
-    /// 2) cria spawns "só Deathmatch" dentro das 10 casas (rés-do-chão e 1.º andar dos sobrados). No Deathmatch o respawn
-    ///    passa a ser aleatório entre eles; nos outros modos são ignorados.
+    /// 2) cria spawns "só Deathmatch" dentro das 10 casas (rés-do-chão e 1.º andar dos sobrados) e da igreja (nave e coro
+    ///    alto). No Deathmatch o respawn passa a ser aleatório entre eles; nos outros modos são ignorados.
     /// Cada ponto é validado com a física do prefab: chão do piso por baixo, espaço livre para o jogador e teto por cima.
     /// Pode correr-se várias vezes (substitui o grupo "Spawns_Deathmatch").
     /// </summary>
@@ -19,10 +19,11 @@ namespace FPSLAN.EditorTools
         const string PrefabPath = ProjectSetup.Root + "/Prefabs/Environment/PF_CidadeVelha.prefab";
         const string GroupName = "Spawns_Deathmatch";
         const int PerFloor = 2;            // spawns por piso de cada casa
+        const int ChurchNave = 3, ChurchLoft = 1;
         const float MinSeparation = 2.5f;  // entre spawns da mesma casa
         const float PlayerRadius = 0.42f;
 
-        [MenuItem("FPS-LAN/Mapas/Cidade Velha: spawns do Deathmatch nas casas (sem faixas azul e vermelha)", priority = 46)]
+        [MenuItem("FPS-LAN/Mapas/Cidade Velha: spawns do Deathmatch nas casas e na igreja (sem faixas azul e vermelha)", priority = 46)]
         static void Menu()
         {
             var r = Apply();
@@ -57,7 +58,9 @@ namespace FPSLAN.EditorTools
                 var phys = root.scene.GetPhysicsScene();
                 var byFloor = new Dictionary<string, List<(Vector3 p, Vector3 toDoor)>>();
                 int tested = 0, valid = 0;
-                foreach (var c in CidadeVelhaInteriores.CasaSpawnCandidates(cen))
+                var candidates = CidadeVelhaInteriores.CasaSpawnCandidates(cen);
+                candidates.AddRange(CidadeVelhaInteriores.ChurchSpawnCandidates());
+                foreach (var c in candidates)
                 {
                     tested++;
                     if (!Validate(phys, c.point, c.floorY, out var ground)) continue;
@@ -71,7 +74,8 @@ namespace FPSLAN.EditorTools
                 var houses = new HashSet<string>();
                 foreach (var kv in byFloor)
                 {
-                    var chosen = Spread(kv.Value, PerFloor, MinSeparation);
+                    int count = kv.Key == "Igreja#0" ? ChurchNave : kv.Key == "Igreja#1" ? ChurchLoft : PerFloor;
+                    var chosen = Spread(kv.Value, count, kv.Key.StartsWith("Igreja") ? 4f : MinSeparation);
                     string house = kv.Key.Substring(0, kv.Key.IndexOf('#'));
                     string floor = kv.Key.EndsWith("#0") ? "R" : "1";
                     for (int i = 0; i < chosen.Count; i++)
@@ -88,7 +92,7 @@ namespace FPSLAN.EditorTools
                         houses.Add(house);
                     }
                 }
-                log.AppendLine($"Spawns do Deathmatch: {made} em {houses.Count} casas ({valid} de {tested} pontos da grelha válidos).");
+                log.AppendLine($"Spawns do Deathmatch: {made} em {houses.Count} edifícios (10 casas e a igreja; {valid} de {tested} pontos da grelha válidos).");
                 PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
             }
             finally

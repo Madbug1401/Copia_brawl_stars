@@ -722,10 +722,12 @@ namespace FPSLAN
                 // a mirar pela luneta: esconde a arma e as mãos (só se vê a mira no ecrã)
                 bool emote = (m_Emotes != null && m_Emotes.HidesWeapon) || m_Player.SprayWheelOpen;
                 if (m_View != null) m_View.SetVisible(!dead && !scoped && !emote);
+                // roda do rato a mirar: aproxima / afasta o zoom da luneta
+                if (scoped) GameSession.ZoomScope(InputReader.ScrollNotches);
                 float fov = scoped ? GameSession.ScopeFieldOfView :
                     (m_Player.Health.IsSlowed ? 78f : (motor.IsSprinting && motor.IsMoving ? 90f : 85f));
                 if (motor.IsLaunched) fov = 92f;
-                m_Camera.fieldOfView = Mathf.Lerp(m_Camera.fieldOfView, fov, 1f - Mathf.Exp(-8f * dt));
+                m_Camera.fieldOfView = Mathf.Lerp(m_Camera.fieldOfView, fov, 1f - Mathf.Exp(-(scoped ? 14f : 8f) * dt));
                 if (m_ViewCamera != null) m_ViewCamera.fieldOfView = m_Camera.fieldOfView;
             }
 

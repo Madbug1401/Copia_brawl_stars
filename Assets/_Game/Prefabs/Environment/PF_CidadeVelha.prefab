@@ -914,7 +914,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.44, y: 0.47, z: 0.4}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &136143709275536560
+--- !u!1 &126197630323432277
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -922,37 +922,37 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 488720115502509092}
-  - component: {fileID: 1372916506084874916}
+  - component: {fileID: 1569767059899091769}
+  - component: {fileID: 8243511218225729260}
   m_Layer: 0
-  m_Name: SPAWN_DM_Bolsa_E_R0
+  m_Name: SPAWN_DM_Esquina_ES_10
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &488720115502509092
+--- !u!4 &1569767059899091769
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 136143709275536560}
+  m_GameObject: {fileID: 126197630323432277}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.9158264, z: -0, w: 0.40157446}
-  m_LocalPosition: {x: -17.9, y: 0.07, z: 0.000000113248824}
+  m_LocalRotation: {x: -0, y: 0.9716526, z: -0, w: -0.2364132}
+  m_LocalPosition: {x: -13, y: 3.1399999, z: 21.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 4975190420226926033}
+  m_Father: {fileID: 6294991931103381074}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1372916506084874916
+--- !u!114 &8243511218225729260
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 136143709275536560}
+  m_GameObject: {fileID: 126197630323432277}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
@@ -1322,6 +1322,52 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &160291416367792652
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3510329433917719288}
+  - component: {fileID: 4643944666474890481}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Esquina_WS_R1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3510329433917719288
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160291416367792652}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.8333583, z: -0, w: 0.55273324}
+  m_LocalPosition: {x: 10, y: 0.07, z: 20.9}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4643944666474890481
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160291416367792652}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &166834133028267378
 GameObject:
   m_ObjectHideFlags: 0
@@ -3393,6 +3439,52 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.0999999, y: 1.98, z: 0.3133335}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &383256258407095849
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 912430440860933355}
+  - component: {fileID: 6687997228346223150}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Igreja_R2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &912430440860933355
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 383256258407095849}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.3092442, z: -0, w: 0.9509827}
+  m_LocalPosition: {x: -8, y: 0.07, z: -36}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6687997228346223150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 383256258407095849}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &394168874711926473
 GameObject:
   m_ObjectHideFlags: 0
@@ -5534,6 +5626,52 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.3000002, y: 1.25, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &657006733333641152
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3551944561895213893}
+  - component: {fileID: 7602725283701112474}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Bolsa_W_R1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3551944561895213893
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 657006733333641152}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.9978046, z: -0, w: -0.06622724}
+  m_LocalPosition: {x: 16.9, y: 0.07, z: 4.9999995}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7602725283701112474
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 657006733333641152}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &665654291218102615
 GameObject:
   m_ObjectHideFlags: 0
@@ -9545,6 +9683,52 @@ Transform:
   - {fileID: 1962133363157475147}
   m_Father: {fileID: 6915925677435633402}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1028664960863936309
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5586822537209673115}
+  - component: {fileID: 7715087078786761394}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Fila_ES_R1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5586822537209673115
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1028664960863936309}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.13505948, z: -0, w: 0.9908375}
+  m_LocalPosition: {x: -18, y: 0.07, z: 11.100002}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7715087078786761394
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1028664960863936309}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &1034488672172003746
 GameObject:
   m_ObjectHideFlags: 0
@@ -9742,52 +9926,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.8, y: 5.2, z: 0.8}
   m_Center: {x: 0, y: 2.6, z: 0}
---- !u!1 &1044594480113864146
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3156114112768771648}
-  - component: {fileID: 2706477754649900435}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Fila_WS_R0
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3156114112768771648
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1044594480113864146}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.06536682, z: -0, w: 0.9978613}
-  m_LocalPosition: {x: 15, y: 0.07, z: 10.099998}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2706477754649900435
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1044594480113864146}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &1051569581525793545
 GameObject:
   m_ObjectHideFlags: 0
@@ -10306,52 +10444,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &1097639167722236046
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1509768482075762415}
-  - component: {fileID: 2311668330635041101}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Bolsa_E_R1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1509768482075762415
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1097639167722236046}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.9840166, z: -0, w: 0.17807683}
-  m_LocalPosition: {x: -18.9, y: 0.32000002, z: 6}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2311668330635041101
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1097639167722236046}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &1107300642868024376
 GameObject:
   m_ObjectHideFlags: 0
@@ -11379,6 +11471,52 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.3000002, y: 3.8999999, z: 0.10000038}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &1194970219939977242
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2145289121329054465}
+  - component: {fileID: 5359947617384901419}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Igreja_R1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2145289121329054465
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1194970219939977242}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.66180253, z: -0, w: 0.74967825}
+  m_LocalPosition: {x: -8, y: 0.07, z: -26}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5359947617384901419
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1194970219939977242}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &1200530992206042399
 GameObject:
   m_ObjectHideFlags: 0
@@ -15460,6 +15598,52 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2, y: 0.55, z: 0.84}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &1528864532707420505
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3369711932783772142}
+  - component: {fileID: 1555736756539692892}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Esquina_EN_10
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3369711932783772142
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1528864532707420505}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.08526398, z: -0, w: 0.99635845}
+  m_LocalPosition: {x: -14, y: 3.1399999, z: -21.899998}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1555736756539692892
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1528864532707420505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &1535783833651274532
 GameObject:
   m_ObjectHideFlags: 0
@@ -15754,6 +15938,52 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.0999999, y: 1.25, z: 0.3}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &1587895776152937696
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2632312515165058840}
+  - component: {fileID: 7555281344651099845}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Esquina_ES_R0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2632312515165058840
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1587895776152937696}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.9917345, z: -0, w: -0.12830722}
+  m_LocalPosition: {x: -14, y: 0.07, z: 20.9}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7555281344651099845
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1587895776152937696}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &1588345127387686881
 GameObject:
   m_ObjectHideFlags: 0
@@ -16372,52 +16602,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &1656678220086288934
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6184857043556933539}
-  - component: {fileID: 2337084524461765703}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Esquina_WN_R0
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6184857043556933539
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1656678220086288934}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.08526398, z: -0, w: 0.99635845}
-  m_LocalPosition: {x: 15, y: 0.07, z: -21.900002}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2337084524461765703
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1656678220086288934}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &1658633164889385997
 GameObject:
   m_ObjectHideFlags: 0
@@ -17897,6 +18081,52 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &1815512246709015957
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1592100886508994128}
+  - component: {fileID: 4333274369036698360}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Fila_WS_R1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1592100886508994128
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1815512246709015957}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.5439988, z: -0, w: 0.839086}
+  m_LocalPosition: {x: 19, y: 0.07, z: 10.0999975}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4333274369036698360
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1815512246709015957}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &1824070731585413568
 GameObject:
   m_ObjectHideFlags: 0
@@ -18133,52 +18363,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1.25, z: 0.29999924}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &1835315115797287842
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3266277832400511249}
-  - component: {fileID: 5340759886445619123}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Esquina_ES_10
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3266277832400511249
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1835315115797287842}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.9716526, z: -0, w: -0.2364132}
-  m_LocalPosition: {x: -13, y: 3.1399999, z: 21.9}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5340759886445619123
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1835315115797287842}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &1842430488998799184
 GameObject:
   m_ObjectHideFlags: 0
@@ -20029,6 +20213,52 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &2015629655301580832
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1023368391960060427}
+  - component: {fileID: 4117189278607204793}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Esquina_WN_R0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1023368391960060427
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2015629655301580832}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.08526398, z: -0, w: 0.99635845}
+  m_LocalPosition: {x: 15, y: 0.07, z: -21.900002}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4117189278607204793
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2015629655301580832}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &2022227130691444213
 GameObject:
   m_ObjectHideFlags: 0
@@ -21431,6 +21661,69 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &2127454728123738410
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6294991931103381074}
+  m_Layer: 0
+  m_Name: Spawns_Deathmatch
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6294991931103381074
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2127454728123738410}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 7400769668898957023}
+  - {fileID: 5725048511695272660}
+  - {fileID: 3369711932783772142}
+  - {fileID: 332232871984928817}
+  - {fileID: 1023368391960060427}
+  - {fileID: 4419065402891760296}
+  - {fileID: 5008364157092150047}
+  - {fileID: 480520501704721064}
+  - {fileID: 2632312515165058840}
+  - {fileID: 3262670831999049966}
+  - {fileID: 1569767059899091769}
+  - {fileID: 2832723123341384967}
+  - {fileID: 1114621108838111547}
+  - {fileID: 3510329433917719288}
+  - {fileID: 99041633287137473}
+  - {fileID: 3670177302708123453}
+  - {fileID: 8594934592886154983}
+  - {fileID: 5455157700866440428}
+  - {fileID: 5948633100404389308}
+  - {fileID: 5586822537209673115}
+  - {fileID: 7097979638251276079}
+  - {fileID: 3800768542345340927}
+  - {fileID: 8582816208002197735}
+  - {fileID: 1592100886508994128}
+  - {fileID: 3631908613499559442}
+  - {fileID: 8019289738612242909}
+  - {fileID: 1005957529032552097}
+  - {fileID: 3551944561895213893}
+  - {fileID: 8708605480035637604}
+  - {fileID: 2145289121329054465}
+  - {fileID: 912430440860933355}
+  - {fileID: 426604075945447020}
+  m_Father: {fileID: 9139908094248273716}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2128648530669407812
 GameObject:
   m_ObjectHideFlags: 0
@@ -21574,52 +21867,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.15999985, y: 2.6299999, z: 0.1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &2139583575732355131
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2580433973355039559}
-  - component: {fileID: 8904816116950817797}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Esquina_WS_R0
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2580433973355039559
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2139583575732355131}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.99635845, z: -0, w: -0.08526398}
-  m_LocalPosition: {x: 15, y: 0.07, z: 21.9}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8904816116950817797
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2139583575732355131}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &2144582420680151366
 GameObject:
   m_ObjectHideFlags: 0
@@ -27821,6 +28068,52 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.08000088, y: 1.0500002, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &2768025726351034743
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5725048511695272660}
+  - component: {fileID: 2008623132314329698}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Esquina_EN_R1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5725048511695272660
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2768025726351034743}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.633989, z: -0, w: 0.77334213}
+  m_LocalPosition: {x: -10, y: 0.07, z: -19.899998}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2008623132314329698
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2768025726351034743}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &2775148411822794576
 GameObject:
   m_ObjectHideFlags: 0
@@ -27980,65 +28273,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.1, y: 0.55, z: 0.84}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &2797167472594570103
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4975190420226926033}
-  m_Layer: 0
-  m_Name: Spawns_Deathmatch
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4975190420226926033
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2797167472594570103}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 6370452076735443288}
-  - {fileID: 7645447578094158812}
-  - {fileID: 6029494499435262067}
-  - {fileID: 9185671750489921031}
-  - {fileID: 6184857043556933539}
-  - {fileID: 3421148187040185474}
-  - {fileID: 6429566408494508877}
-  - {fileID: 3521101125949680178}
-  - {fileID: 3837517019417862361}
-  - {fileID: 6204768170995814482}
-  - {fileID: 3266277832400511249}
-  - {fileID: 7611096544643496899}
-  - {fileID: 2580433973355039559}
-  - {fileID: 2443923552250595657}
-  - {fileID: 6552736181021174013}
-  - {fileID: 5149618012922847646}
-  - {fileID: 8432584083404593156}
-  - {fileID: 6582552032183405312}
-  - {fileID: 894331713297189175}
-  - {fileID: 1683854933761946799}
-  - {fileID: 4837488979124107363}
-  - {fileID: 2376212474567971980}
-  - {fileID: 3156114112768771648}
-  - {fileID: 1592540447963607972}
-  - {fileID: 488720115502509092}
-  - {fileID: 1509768482075762415}
-  - {fileID: 925609383200379891}
-  - {fileID: 5601034273451066436}
-  m_Father: {fileID: 9139908094248273716}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2809843146311229418
 GameObject:
   m_ObjectHideFlags: 0
@@ -31436,52 +31670,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &3127148259188413268
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5149618012922847646}
-  - component: {fileID: 17528451899623400}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Esquina_WS_11
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5149618012922847646
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3127148259188413268}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.9096512, z: -0, w: -0.41537303}
-  m_LocalPosition: {x: 19, y: 3.1399999, z: 22.9}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &17528451899623400
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3127148259188413268}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &3131077768969259394
 GameObject:
   m_ObjectHideFlags: 0
@@ -32602,6 +32790,52 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &3227454113457259229
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3631908613499559442}
+  - component: {fileID: 5847636706494591689}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Bolsa_E_R0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3631908613499559442
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3227454113457259229}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.9158264, z: -0, w: 0.40157446}
+  m_LocalPosition: {x: -17.9, y: 0.07, z: 0.000000113248824}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5847636706494591689
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3227454113457259229}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &3235308400751660441
 GameObject:
   m_ObjectHideFlags: 0
@@ -33978,6 +34212,52 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2, y: 7, z: 0.3}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &3342640597699908426
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 426604075945447020}
+  - component: {fileID: 2571425038742140878}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Igreja_10
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &426604075945447020
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3342640597699908426}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
+  m_LocalPosition: {x: 0, y: 3.34, z: -26.9}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2571425038742140878
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3342640597699908426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &3346875461501931008
 GameObject:
   m_ObjectHideFlags: 0
@@ -34748,6 +35028,52 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &3446410109194546058
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1005957529032552097}
+  - component: {fileID: 8546569602879025639}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Bolsa_W_R0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1005957529032552097
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3446410109194546058}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.826791, z: -0, w: 0.56250924}
+  m_LocalPosition: {x: 17.9, y: 0.07, z: -0.9999998}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8546569602879025639
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3446410109194546058}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &3447330585633005245
 GameObject:
   m_ObjectHideFlags: 0
@@ -36408,6 +36734,52 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.8000001, y: 0.13, z: 0.47}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &3571971744249142593
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7400769668898957023}
+  - component: {fileID: 3101889326365574685}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Esquina_EN_R0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7400769668898957023
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3571971744249142593}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.08526398, z: -0, w: 0.99635845}
+  m_LocalPosition: {x: -15, y: 0.07, z: -21.899998}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3101889326365574685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3571971744249142593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &3581614929790993084
 GameObject:
   m_ObjectHideFlags: 0
@@ -36498,6 +36870,52 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &3586094729351062540
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8019289738612242909}
+  - component: {fileID: 8020028535606131223}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Bolsa_E_R1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8019289738612242909
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3586094729351062540}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.9840166, z: -0, w: 0.17807683}
+  m_LocalPosition: {x: -18.9, y: 0.32000002, z: 6}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8020028535606131223
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3586094729351062540}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &3597828461526480351
 GameObject:
   m_ObjectHideFlags: 0
@@ -40767,6 +41185,52 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.1600008, y: 2.6299999, z: 0.1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &3952270971989528123
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1114621108838111547}
+  - component: {fileID: 5700241625713830784}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Esquina_WS_R0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1114621108838111547
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3952270971989528123}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.99635845, z: -0, w: -0.08526398}
+  m_LocalPosition: {x: 15, y: 0.07, z: 21.9}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5700241625713830784
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3952270971989528123}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &3970407831672797678
 GameObject:
   m_ObjectHideFlags: 0
@@ -42958,6 +43422,98 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &4221758781787236362
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8708605480035637604}
+  - component: {fileID: 3533938985784814811}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Igreja_R0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8708605480035637604
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4221758781787236362}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.07, z: -31}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3533938985784814811
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4221758781787236362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
+--- !u!1 &4226086506252729319
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2832723123341384967}
+  - component: {fileID: 1403497099040552039}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Esquina_ES_11
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2832723123341384967
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4226086506252729319}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.9096512, z: -0, w: 0.41537303}
+  m_LocalPosition: {x: -19, y: 3.1399999, z: 22.9}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1403497099040552039
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4226086506252729319}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &4241106890884895287
 GameObject:
   m_ObjectHideFlags: 0
@@ -48643,6 +49199,52 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.6, y: 0.47, z: 0.36}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &4674842891173064305
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 99041633287137473}
+  - component: {fileID: 8730458292572420669}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Esquina_WS_10
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &99041633287137473
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4674842891173064305}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.9716526, z: -0, w: 0.2364132}
+  m_LocalPosition: {x: 13, y: 3.1399999, z: 21.9}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8730458292572420669
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4674842891173064305}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &4686111371449473666
 GameObject:
   m_ObjectHideFlags: 0
@@ -50601,52 +51203,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &4822641817068492328
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 9185671750489921031}
-  - component: {fileID: 2753815688364091583}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Esquina_EN_11
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &9185671750489921031
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4822641817068492328}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.41537303, z: -0, w: 0.9096512}
-  m_LocalPosition: {x: -19, y: 3.1399999, z: -22.899998}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2753815688364091583
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4822641817068492328}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &4823479017046914674
 GameObject:
   m_ObjectHideFlags: 0
@@ -51114,52 +51670,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &4866820287263049338
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 8432584083404593156}
-  - component: {fileID: 6715177884315262527}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Fila_EN_R0
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &8432584083404593156
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4866820287263049338}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.9460669, z: -0, w: -0.32397142}
-  m_LocalPosition: {x: -16, y: 0.07, z: -9.1}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6715177884315262527
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4866820287263049338}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &4867742316158097804
 GameObject:
   m_ObjectHideFlags: 0
@@ -53308,52 +53818,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &5067396359458556817
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6029494499435262067}
-  - component: {fileID: 7502670104169096740}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Esquina_EN_10
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6029494499435262067
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5067396359458556817}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.08526398, z: -0, w: 0.99635845}
-  m_LocalPosition: {x: -14, y: 3.1399999, z: -21.899998}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7502670104169096740
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5067396359458556817}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &5068417307966055193
 GameObject:
   m_ObjectHideFlags: 0
@@ -54290,52 +54754,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &5141904964813204762
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4837488979124107363}
-  - component: {fileID: 3996077872784599726}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Fila_WN_R0
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4837488979124107363
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5141904964813204762}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.9978613, z: -0, w: -0.06536707}
-  m_LocalPosition: {x: 15, y: 0.07, z: -10.1}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3996077872784599726
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5141904964813204762}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &5142995308008703179
 GameObject:
   m_ObjectHideFlags: 0
@@ -59607,52 +60025,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &5573313726190451309
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6552736181021174013}
-  - component: {fileID: 3914101635233188486}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Esquina_WS_10
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6552736181021174013
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5573313726190451309}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.9716526, z: -0, w: 0.2364132}
-  m_LocalPosition: {x: 13, y: 3.1399999, z: 21.9}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3914101635233188486
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5573313726190451309}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &5589815736469518538
 GameObject:
   m_ObjectHideFlags: 0
@@ -60385,6 +60757,52 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &5646750258054536678
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 480520501704721064}
+  - component: {fileID: 1717493737133386949}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Esquina_WN_11
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &480520501704721064
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5646750258054536678}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.41537303, z: -0, w: 0.9096512}
+  m_LocalPosition: {x: 19, y: 3.1399999, z: -22.900002}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1717493737133386949
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5646750258054536678}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &5649721172781690702
 GameObject:
   m_ObjectHideFlags: 0
@@ -61292,52 +61710,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &5735399716299516904
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6582552032183405312}
-  - component: {fileID: 547781770899509358}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Fila_EN_R1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6582552032183405312
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5735399716299516904}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.94027156, z: -0, w: 0.34042537}
-  m_LocalPosition: {x: -19, y: 0.07, z: -11.1}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &547781770899509358
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5735399716299516904}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &5737240747968855371
 GameObject:
   m_ObjectHideFlags: 0
@@ -64869,6 +65241,52 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.44, y: 0.47, z: 0.4}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &6024003102218437323
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 332232871984928817}
+  - component: {fileID: 8228021320246545375}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Esquina_EN_11
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &332232871984928817
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6024003102218437323}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.41537303, z: -0, w: 0.9096512}
+  m_LocalPosition: {x: -19, y: 3.1399999, z: -22.899998}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8228021320246545375
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6024003102218437323}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &6033827524073320985
 GameObject:
   m_ObjectHideFlags: 0
@@ -66556,6 +66974,52 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.3000002, y: 3.8999999, z: 0.10000038}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &6213491256256025223
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8582816208002197735}
+  - component: {fileID: 1359623141021062205}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Fila_WS_R0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8582816208002197735
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6213491256256025223}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.06536682, z: -0, w: 0.9978613}
+  m_LocalPosition: {x: 15, y: 0.07, z: 10.099998}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1359623141021062205
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6213491256256025223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &6222780534063607803
 GameObject:
   m_ObjectHideFlags: 0
@@ -67983,7 +68447,7 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
---- !u!1 &6397958915455243502
+--- !u!1 &6407138390993799767
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -67991,37 +68455,37 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 894331713297189175}
-  - component: {fileID: 8817446878718693689}
+  - component: {fileID: 3670177302708123453}
+  - component: {fileID: 4263424949183687143}
   m_Layer: 0
-  m_Name: SPAWN_DM_Fila_ES_R0
+  m_Name: SPAWN_DM_Esquina_WS_11
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &894331713297189175
+--- !u!4 &3670177302708123453
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6397958915455243502}
+  m_GameObject: {fileID: 6407138390993799767}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.3239713, z: -0, w: 0.9460669}
-  m_LocalPosition: {x: -16, y: 0.07, z: 9.100001}
+  m_LocalRotation: {x: -0, y: 0.9096512, z: -0, w: -0.41537303}
+  m_LocalPosition: {x: 19, y: 3.1399999, z: 22.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 4975190420226926033}
+  m_Father: {fileID: 6294991931103381074}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8817446878718693689
+--- !u!114 &4263424949183687143
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6397958915455243502}
+  m_GameObject: {fileID: 6407138390993799767}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
@@ -69308,7 +69772,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 9, y: 0.15, z: 3}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &6625014796162679883
+--- !u!1 &6605828620665391973
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -69316,37 +69780,37 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6429566408494508877}
-  - component: {fileID: 1372106168930526460}
+  - component: {fileID: 4419065402891760296}
+  - component: {fileID: 2699409132474730533}
   m_Layer: 0
-  m_Name: SPAWN_DM_Esquina_WN_10
+  m_Name: SPAWN_DM_Esquina_WN_R1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &6429566408494508877
+--- !u!4 &4419065402891760296
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6625014796162679883}
+  m_GameObject: {fileID: 6605828620665391973}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.08526398, z: -0, w: 0.99635845}
-  m_LocalPosition: {x: 14, y: 3.1399999, z: -21.900002}
+  m_LocalRotation: {x: -0, y: 0.55273324, z: -0, w: 0.8333583}
+  m_LocalPosition: {x: 10, y: 0.07, z: -20.900002}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 4975190420226926033}
+  m_Father: {fileID: 6294991931103381074}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1372106168930526460
+--- !u!114 &2699409132474730533
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6625014796162679883}
+  m_GameObject: {fileID: 6605828620665391973}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
@@ -69641,52 +70105,6 @@ Transform:
   - {fileID: 5712696993988778038}
   m_Father: {fileID: 9139908094248273716}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &6651796154199151516
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 925609383200379891}
-  - component: {fileID: 6191171232636590397}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Bolsa_W_R0
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &925609383200379891
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6651796154199151516}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.826791, z: -0, w: 0.56250924}
-  m_LocalPosition: {x: 17.9, y: 0.07, z: -0.9999998}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6191171232636590397
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6651796154199151516}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &6663996824043943458
 GameObject:
   m_ObjectHideFlags: 0
@@ -69918,6 +70336,52 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &6679573348656099238
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8594934592886154983}
+  - component: {fileID: 2606583556660123603}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Fila_EN_R0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8594934592886154983
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6679573348656099238}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.9460669, z: -0, w: -0.32397142}
+  m_LocalPosition: {x: -16, y: 0.07, z: -9.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2606583556660123603
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6679573348656099238}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &6683068547496481030
 GameObject:
   m_ObjectHideFlags: 0
@@ -70190,6 +70654,52 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &6687670692724899974
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3800768542345340927}
+  - component: {fileID: 3466077462731940131}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Fila_WN_R1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3800768542345340927
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6687670692724899974}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.839086, z: -0, w: 0.54399884}
+  m_LocalPosition: {x: 19, y: 0.07, z: -10.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3466077462731940131
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6687670692724899974}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &6688854074825194869
 GameObject:
   m_ObjectHideFlags: 0
@@ -71618,52 +72128,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &6889004641279052787
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5601034273451066436}
-  - component: {fileID: 652879488048383918}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Bolsa_W_R1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5601034273451066436
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6889004641279052787}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.9978046, z: -0, w: -0.06622724}
-  m_LocalPosition: {x: 16.9, y: 0.07, z: 4.9999995}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &652879488048383918
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6889004641279052787}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &6890307089833039491
 GameObject:
   m_ObjectHideFlags: 0
@@ -72893,52 +73357,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.6, y: 2.6, z: 4}
   m_Center: {x: 0, y: 1.3, z: 0}
---- !u!1 &7036732428353730670
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1683854933761946799}
-  - component: {fileID: 6206165242941637962}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Fila_ES_R1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1683854933761946799
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7036732428353730670}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.13505948, z: -0, w: 0.9908375}
-  m_LocalPosition: {x: -18, y: 0.07, z: 11.100002}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6206165242941637962
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7036732428353730670}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &7047975383392986793
 GameObject:
   m_ObjectHideFlags: 0
@@ -74408,52 +74826,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.8000002, y: 0.78, z: 0.79999995}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &7231527572004404427
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2376212474567971980}
-  - component: {fileID: 5871117442024013172}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Fila_WN_R1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2376212474567971980
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7231527572004404427}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.839086, z: -0, w: 0.54399884}
-  m_LocalPosition: {x: 19, y: 0.07, z: -10.1}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5871117442024013172
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7231527572004404427}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &7235407293671290917
 GameObject:
   m_ObjectHideFlags: 0
@@ -76187,52 +76559,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.1, y: 1.1, z: 5.3599668}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &7423727776310288336
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3421148187040185474}
-  - component: {fileID: 4096796573593646163}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Esquina_WN_R1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3421148187040185474
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7423727776310288336}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.55273324, z: -0, w: 0.8333583}
-  m_LocalPosition: {x: 10, y: 0.07, z: -20.900002}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4096796573593646163
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7423727776310288336}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &7439773135422808467
 GameObject:
   m_ObjectHideFlags: 0
@@ -76820,6 +77146,52 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &7514137907503173539
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7097979638251276079}
+  - component: {fileID: 350087610599911164}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Fila_WN_R0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7097979638251276079
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7514137907503173539}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.9978613, z: -0, w: -0.06536707}
+  m_LocalPosition: {x: 15, y: 0.07, z: -10.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &350087610599911164
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7514137907503173539}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &7525552361345446538
 GameObject:
   m_ObjectHideFlags: 0
@@ -78838,52 +79210,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &7693620812402456781
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3837517019417862361}
-  - component: {fileID: 7653367747591319153}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Esquina_ES_R0
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3837517019417862361
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7693620812402456781}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.9917345, z: -0, w: -0.12830722}
-  m_LocalPosition: {x: -14, y: 0.07, z: 20.9}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7653367747591319153
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7693620812402456781}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &7695711382244660887
 GameObject:
   m_ObjectHideFlags: 0
@@ -79617,52 +79943,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.96, y: 0.62, z: 0.66}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &7768357559830890293
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1592540447963607972}
-  - component: {fileID: 1593355451533760718}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Fila_WS_R1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1592540447963607972
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7768357559830890293}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.5439988, z: -0, w: 0.839086}
-  m_LocalPosition: {x: 19, y: 0.07, z: 10.0999975}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1593355451533760718
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7768357559830890293}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &7770108956981762317
 GameObject:
   m_ObjectHideFlags: 0
@@ -80050,6 +80330,52 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &7809162436740288504
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3262670831999049966}
+  - component: {fileID: 5270422603440213756}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Esquina_ES_R1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3262670831999049966
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7809162436740288504}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.93180734, z: -0, w: 0.36295325}
+  m_LocalPosition: {x: -19, y: 0.07, z: 23.9}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5270422603440213756
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7809162436740288504}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &7812396156640059351
 GameObject:
   m_ObjectHideFlags: 0
@@ -80142,6 +80468,52 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &7821936819556168851
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5008364157092150047}
+  - component: {fileID: 6746172292261647865}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Esquina_WN_10
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5008364157092150047
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7821936819556168851}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.08526398, z: -0, w: 0.99635845}
+  m_LocalPosition: {x: 14, y: 3.1399999, z: -21.900002}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6746172292261647865
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7821936819556168851}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &7832773481535006072
 GameObject:
   m_ObjectHideFlags: 0
@@ -82080,6 +82452,52 @@ MonoBehaviour:
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
   team: 0
   deathmatchOnly: 0
+--- !u!1 &8051795117872885752
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5948633100404389308}
+  - component: {fileID: 2469057902672201419}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Fila_ES_R0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5948633100404389308
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8051795117872885752}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.3239713, z: -0, w: 0.9460669}
+  m_LocalPosition: {x: -16, y: 0.07, z: 9.100001}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2469057902672201419
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8051795117872885752}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &8064859451575935184
 GameObject:
   m_ObjectHideFlags: 0
@@ -83116,6 +83534,52 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &8189993519001118330
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5455157700866440428}
+  - component: {fileID: 999901807797754197}
+  m_Layer: 0
+  m_Name: SPAWN_DM_Fila_EN_R1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5455157700866440428
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8189993519001118330}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.94027156, z: -0, w: 0.34042537}
+  m_LocalPosition: {x: -19, y: 0.07, z: -11.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6294991931103381074}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &999901807797754197
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8189993519001118330}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
+  team: -1
+  deathmatchOnly: 1
 --- !u!1 &8198585291556104329
 GameObject:
   m_ObjectHideFlags: 0
@@ -84130,52 +84594,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 3.04, y: 0.92, z: 0.6200001}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &8300007626679080546
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6204768170995814482}
-  - component: {fileID: 8510813338273692996}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Esquina_ES_R1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6204768170995814482
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8300007626679080546}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.93180734, z: -0, w: 0.36295325}
-  m_LocalPosition: {x: -19, y: 0.07, z: 23.9}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8510813338273692996
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8300007626679080546}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &8304797456070206542
 GameObject:
   m_ObjectHideFlags: 0
@@ -84266,52 +84684,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &8308390960078461865
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3521101125949680178}
-  - component: {fileID: 2273682668593195100}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Esquina_WN_11
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3521101125949680178
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8308390960078461865}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.41537303, z: -0, w: 0.9096512}
-  m_LocalPosition: {x: 19, y: 3.1399999, z: -22.900002}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2273682668593195100
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8308390960078461865}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &8322703199623932451
 GameObject:
   m_ObjectHideFlags: 0
@@ -87465,7 +87837,7 @@ Transform:
   - {fileID: 5022871733938332412}
   - {fileID: 2496558676087064682}
   - {fileID: 6295422388287245809}
-  - {fileID: 4975190420226926033}
+  - {fileID: 6294991931103381074}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8597161296644790476
@@ -87830,52 +88202,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &8612184194050985404
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 7645447578094158812}
-  - component: {fileID: 8251891578076082474}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Esquina_EN_R1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &7645447578094158812
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8612184194050985404}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.633989, z: -0, w: 0.77334213}
-  m_LocalPosition: {x: -10, y: 0.07, z: -19.899998}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8251891578076082474
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8612184194050985404}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &8614498750027909822
 GameObject:
   m_ObjectHideFlags: 0
@@ -89903,52 +90229,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &8850813657869922754
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 7611096544643496899}
-  - component: {fileID: 4603042063685480769}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Esquina_ES_11
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &7611096544643496899
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8850813657869922754}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.9096512, z: -0, w: 0.41537303}
-  m_LocalPosition: {x: -19, y: 3.1399999, z: 22.9}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4603042063685480769
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8850813657869922754}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &8853372929369151166
 GameObject:
   m_ObjectHideFlags: 0
@@ -92299,52 +92579,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.64, y: 0.9, z: 0.64}
   m_Center: {x: 0, y: 0.45, z: 0}
---- !u!1 &9057189303701469213
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6370452076735443288}
-  - component: {fileID: 1583754795487130922}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Esquina_EN_R0
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6370452076735443288
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9057189303701469213}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.08526398, z: -0, w: 0.99635845}
-  m_LocalPosition: {x: -15, y: 0.07, z: -21.899998}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1583754795487130922
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9057189303701469213}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &9075625760635930516
 GameObject:
   m_ObjectHideFlags: 0
@@ -92573,52 +92807,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.44, y: 0.47, z: 0.4}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &9101480832660402021
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2443923552250595657}
-  - component: {fileID: 4573477056150193515}
-  m_Layer: 0
-  m_Name: SPAWN_DM_Esquina_WS_R1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2443923552250595657
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9101480832660402021}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.8333583, z: -0, w: 0.55273324}
-  m_LocalPosition: {x: 10, y: 0.07, z: 20.9}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4975190420226926033}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4573477056150193515
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9101480832660402021}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f665a8a9d16614d4096e517434b99c43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.SpawnPoint
-  team: -1
-  deathmatchOnly: 1
 --- !u!1 &9103800712554352002
 GameObject:
   m_ObjectHideFlags: 0
