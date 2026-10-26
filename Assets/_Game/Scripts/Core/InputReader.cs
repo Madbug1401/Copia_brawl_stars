@@ -35,11 +35,11 @@ namespace FPSLAN
                       (GameInputSettings.IsHeld(GameAction.MoveLeft) ? 1f : 0f);
             float y = (GameInputSettings.IsHeld(GameAction.MoveForward) ? 1f : 0f) -
                       (GameInputSettings.IsHeld(GameAction.MoveBackward) ? 1f : 0f);
-            return new Vector2(x, y);
+            return Vector2.ClampMagnitude(new Vector2(x, y) + GamepadInput.LeftStick, 1f);
         }
 
         // Escala igual ao "Mouse X/Y" do Input Manager antigo (0.1 por pixel).
-        static Vector2 ReadLook() => M == null ? Vector2.zero : M.delta.ReadValue() * 0.1f;
+        static Vector2 ReadLook() => (M == null ? Vector2.zero : M.delta.ReadValue() * 0.1f) + GamepadInput.LookDelta(Time.deltaTime);
         static bool ReadSprint() => GameInputSettings.IsHeld(GameAction.Sprint);
         static bool ReadJumpPressed() => GameInputSettings.WasPressedThisFrame(GameAction.Jump);
         static bool ReadFire() => GameInputSettings.IsHeld(GameAction.Fire);
@@ -50,7 +50,7 @@ namespace FPSLAN
         static float ReadScroll()
         {
             float y = M == null ? 0f : M.scroll.ReadValue().y;
-            return Mathf.Abs(y) < 0.01f ? 0f : Mathf.Sign(y);
+            return Mathf.Abs(y) < 0.01f ? GamepadInput.DpadVerticalPressed : Mathf.Sign(y);
         }
 #else
         static Vector2 ReadMove()
@@ -59,10 +59,10 @@ namespace FPSLAN
                       (GameInputSettings.IsHeld(GameAction.MoveLeft) ? 1f : 0f);
             float y = (GameInputSettings.IsHeld(GameAction.MoveForward) ? 1f : 0f) -
                       (GameInputSettings.IsHeld(GameAction.MoveBackward) ? 1f : 0f);
-            return new Vector2(x, y);
+            return Vector2.ClampMagnitude(new Vector2(x, y) + GamepadInput.LeftStick, 1f);
         }
 
-        static Vector2 ReadLook() => new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"));
+        static Vector2 ReadLook() => new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y")) + GamepadInput.LookDelta(Time.deltaTime);
         static bool ReadSprint() => GameInputSettings.IsHeld(GameAction.Sprint);
         static bool ReadJumpPressed() => GameInputSettings.WasPressedThisFrame(GameAction.Jump);
         static bool ReadFire() => GameInputSettings.IsHeld(GameAction.Fire);
@@ -73,7 +73,7 @@ namespace FPSLAN
         static float ReadScroll()
         {
             float y = Input.mouseScrollDelta.y;
-            return Mathf.Abs(y) < 0.01f ? 0f : Mathf.Sign(y);
+            return Mathf.Abs(y) < 0.01f ? GamepadInput.DpadVerticalPressed : Mathf.Sign(y);
         }
 #endif
     }

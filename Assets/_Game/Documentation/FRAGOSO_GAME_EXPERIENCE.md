@@ -159,6 +159,12 @@ headshot e especial disponível.
 |---|---|
 | Botão esquerdo | ataque principal (no modo Minigun/Tiro fatal dispara o especial) |
 | Botão direito / E | Super; para Ekko ativa a Minigun, para Lince arma/cancela o Tiro fatal |
+
+**Comando PlayStation** (DualShock 4 / DualSense, USB ou Bluetooth; Definições ▸ Controlos ▸ "Controller: ON"):
+L stick andar · R stick olhar (sensibilidade e inverter Y nas definições) · R2 atacar · L2 mirar · L1 Super ·
+R1 facada · X saltar · L3 sprint · Quadrado reanimar · Triângulo comida do pet · Círculo roda de sprays ·
+Touchpad marcador · Options pausa · Lince a mirar: cruzeta ↑/↓ zoom, R3 luneta térmica. Os menus usam o rato.
+(`GamepadInput` + eixos `FPSLAN_*` no InputManager.)
 | Q | Facada |
 
 ---

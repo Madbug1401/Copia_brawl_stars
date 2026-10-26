@@ -61,8 +61,9 @@ namespace FPSLAN
             PlayerPrefs.Save();
         }
 
-        public static bool IsHeld(GameAction action) => IsHeld(GetBinding(action));
-        public static bool WasPressedThisFrame(GameAction action) => ReadKeyPressedThisFrame(GetBinding(action));
+        // teclado/rato ou comando PlayStation (GamepadInput)
+        public static bool IsHeld(GameAction action) => IsHeld(GetBinding(action)) || GamepadInput.ActionHeld(action);
+        public static bool WasPressedThisFrame(GameAction action) => ReadKeyPressedThisFrame(GetBinding(action)) || GamepadInput.ActionPressed(action);
         public static bool WasPressedThisFrame(KeyCode key) => ReadKeyPressedThisFrame(key);
         public static bool HasCustomBinding(GameAction action) => PlayerPrefs.HasKey(PreferencePrefix + action);
 

@@ -1431,6 +1431,8 @@ namespace FPSLAN
             GUILayout.Space(6f * s);
             m_SettingsScroll = GUILayout.BeginScrollView(m_SettingsScroll, false, true, GUILayout.ExpandHeight(true));
 
+            DrawControllerSettings(s);
+
             var actions = new[]
             {
                 GameAction.MoveForward, GameAction.MoveBackward, GameAction.MoveLeft, GameAction.MoveRight,
@@ -1471,6 +1473,35 @@ namespace FPSLAN
             GUILayout.EndHorizontal();
 
             HandleBindingCapture();
+        }
+
+        /// <summary>Comando PlayStation: ligar/desligar, estado, sensibilidade do stick, inverter Y e mapa dos botões.</summary>
+        void DrawControllerSettings(float s)
+        {
+            GUILayout.Label("PLAYSTATION CONTROLLER (DualShock 4 / DualSense)", m_Small);
+            bool connected = GamepadInput.Connected;
+            GUILayout.Label(connected ? "Connected: " + GamepadInput.Name
+                : "No controller detected. Connect it by USB cable or Bluetooth (Windows: Settings ▸ Bluetooth ▸ add device, hold SHARE/CREATE + PS until the light flashes).", m_Tiny);
+            GUILayout.BeginHorizontal();
+            bool on = GameSession.ControllerEnabled;
+            if (LayoutButton(on ? "CONTROLLER: ON" : "CONTROLLER: OFF", on ? new Color(0.2f, 0.62f, 0.38f) : new Color(0.45f, 0.3f, 0.3f),
+                    GUILayout.Width(230f * s), GUILayout.Height(38f * s)))
+                GameSession.ControllerEnabled = !on;
+            bool inv = GameSession.ControllerInvertY;
+            if (LayoutButton(inv ? "INVERT Y: ON" : "INVERT Y: OFF", new Color(0.28f, 0.36f, 0.56f),
+                    GUILayout.Width(200f * s), GUILayout.Height(38f * s)))
+                GameSession.ControllerInvertY = !inv;
+            GUILayout.EndHorizontal();
+            GUILayout.Label("Stick look sensitivity: " + GameSession.ControllerLookSensitivity.ToString("0.00"), m_Label);
+            float padLook = GUILayout.HorizontalSlider(GameSession.ControllerLookSensitivity, 0.3f, 3f);
+            if (!Mathf.Approximately(padLook, GameSession.ControllerLookSensitivity))
+                GameSession.ControllerLookSensitivity = padLook;
+            GUILayout.Space(4f * s);
+            GUILayout.Label("L stick: move · R stick: look · R2: attack · L2: aim · L1: Super · R1: melee · X: jump · L3: sprint", m_Tiny);
+            GUILayout.Label("Square: revive · Triangle: feed pet · Circle: spray wheel · Touchpad: scoreboard · Options: pause", m_Tiny);
+            GUILayout.Label("Lince aiming: D-pad up/down = zoom · R3 = thermal scope. Menus still use the mouse.", m_Tiny);
+            GUILayout.Space(14f * s);
+            GUILayout.Label("KEYBOARD AND MOUSE", m_Small);
         }
 
         void DrawGameplaySettings(float s)

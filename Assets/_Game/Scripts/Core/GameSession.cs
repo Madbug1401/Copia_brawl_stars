@@ -11,6 +11,9 @@ namespace FPSLAN
         const string KeyIp = "fpslan.ip";
         const string KeyAimSensitivity = "fpslan.aim.sensitivity";
         const string KeyScopeFov = "fpslan.aim.scopeFov";
+        const string KeyPadEnabled = "fpslan.pad.enabled";
+        const string KeyPadLook = "fpslan.pad.look";
+        const string KeyPadInvertY = "fpslan.pad.invertY";
         const string KeyMasterVolume = "fpslan.audio.masterVolume";
         const string KeyMuted = "fpslan.audio.muted";
 
@@ -59,6 +62,26 @@ namespace FPSLAN
         /// <summary>Ampliação da luneta em relação à vista normal (ex.: 3.5x).</summary>
         public static float ScopeMagnification =>
             Mathf.Tan(NormalFov * 0.5f * Mathf.Deg2Rad) / Mathf.Tan(ScopeFieldOfView * 0.5f * Mathf.Deg2Rad);
+
+        /// <summary>Comando PlayStation ativo (definições ▸ controlos).</summary>
+        public static bool ControllerEnabled
+        {
+            get => PlayerPrefs.GetInt(KeyPadEnabled, 1) == 1;
+            set => PlayerPrefs.SetInt(KeyPadEnabled, value ? 1 : 0);
+        }
+
+        /// <summary>Sensibilidade do stick direito (1 = 200°/s no máximo).</summary>
+        public static float ControllerLookSensitivity
+        {
+            get => GetClampedFloat(KeyPadLook, 1f, 0.3f, 3f);
+            set => PlayerPrefs.SetFloat(KeyPadLook, Mathf.Clamp(value, 0.3f, 3f));
+        }
+
+        public static bool ControllerInvertY
+        {
+            get => PlayerPrefs.GetInt(KeyPadInvertY, 0) == 1;
+            set => PlayerPrefs.SetInt(KeyPadInvertY, value ? 1 : 0);
+        }
 
         public static float MasterVolume
         {
