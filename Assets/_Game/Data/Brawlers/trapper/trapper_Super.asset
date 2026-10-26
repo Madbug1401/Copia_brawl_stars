@@ -30,8 +30,8 @@ MonoBehaviour:
     slowFactor: 1
     slowDuration: 0
     dotDamagePerSecond: 8
-    dotDuration: 5
-    rootDuration: 5
+    dotDuration: 2
+    rootDuration: 2
     rootImmunity: 3
     knockback: 0
     knockbackUp: 0

@@ -2790,7 +2790,8 @@ namespace FPSLAN.EditorTools
             foreach (var c in k.Cols)
             {
                 var go = new GameObject("COL_" + c.name + "_" + i++);
-                go.layer = layer;
+                // grades: o jogador não passa, mas os tiros passam entre as barras (CombatMath.ShotMask ignora a layer 2)
+                go.layer = c.shotThrough ? 2 : layer;
                 go.transform.SetParent(g, false);
                 go.transform.position = c.center;
                 go.transform.rotation = c.rot;
@@ -3143,6 +3144,30 @@ namespace FPSLAN.EditorTools
         }
 
         static float Random01(Vector3 p) => Hash((int)(p.x * 100f), (int)(p.z * 100f));
+
+        /// <summary>Pontos candidatos a spawn (mundo) dentro da igreja: nave (piso 0, incluindo os degraus do altar e o
+        /// espaço debaixo do coro) e coro alto (piso 1). Grelha de 1 m afastada das paredes; a validação é de quem os usa.</summary>
+        public static List<(string house, int floor, float floorY, Vector3 point, Vector3 toDoor)> ChurchSpawnCandidates()
+        {
+            var list = new List<(string, int, float, Vector3, Vector3)>();
+            float cz = ChurchFrontZ;
+            float ix = W * 0.5f - T - 0.7f;
+            var door = new Vector3(0f, 0f, cz);
+            for (float x = -ix; x <= ix + 1e-3f; x += 1f)
+            {
+                for (float z = cz - 1f; z >= cz - ChurchDepth + T + 0.7f - 1e-3f; z -= 1f)
+                    list.Add(("Igreja", 0, 0.03f, new Vector3(x, 0.03f, z), Flat(door - new Vector3(x, 0f, z), Vector3.forward)));
+                for (float z = cz - 0.9f; z >= cz - LoftZ + 0.6f - 1e-3f; z -= 1f)
+                    list.Add(("Igreja", 1, LoftY, new Vector3(x, LoftY, z), Vector3.back));   // do coro olha-se para o altar (−z)
+            }
+            return list;
+        }
+
+        static Vector3 Flat(Vector3 v, Vector3 fallback)
+        {
+            v.y = 0f;
+            return v.sqrMagnitude > 0.01f ? v : fallback;
+        }
 
         static Transform FindDeep(Transform t, string name)
         {

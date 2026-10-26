@@ -520,6 +520,14 @@ namespace FPSLAN
             Fill(new Rect(cx - line * 0.5f, cy - radius * 0.72f, line, radius * 0.62f), color);
             Fill(new Rect(cx - line * 0.5f, cy + radius * 0.1f, line, radius * 0.62f), color);
             Fill(new Rect(cx - line, cy - line, line * 2f, line * 2f), color);
+            // nível de zoom (roda do rato)
+            float mag = GameSession.ScopeMagnification;
+            Outlined(new Rect(cx - radius, cy + radius * 0.78f, radius * 2f, 30f * Scale), mag.ToString("0.0") + "x", m_Center, color, 1.5f);
+            string thermalKey = GameInputSettings.GetBinding(GameAction.ThermalScope) == KeyCode.Mouse2 ? "Wheel click" : GameInputSettings.BindingLabel(GameAction.ThermalScope);
+            Outlined(new Rect(cx - radius, cy + radius * 0.78f + 26f * Scale, radius * 2f, 24f * Scale),
+                "Scroll: zoom · " + thermalKey + ": " + (ThermalScope.Enabled ? "normal view" : "thermal"), m_TinyCenter, new Color(1f, 1f, 1f, 0.7f), 1.5f);
+            if (ThermalScope.Active)
+                Outlined(new Rect(cx - radius, cy - radius * 0.86f, radius * 2f, 30f * Scale), "THERMAL", m_Center, new Color(1f, 0.55f, 0.15f, 0.95f), 1.5f);
         }
 
         // ================================================================== menu principal
@@ -648,7 +656,7 @@ namespace FPSLAN
             float bx = r.x + (r.width - bw) / 2f;
             StatBar(new Rect(bx, y, bw, 22 * s), "HEALTH", b.stats.maxHealth / 150f, b.stats.maxHealth.ToString(), new Color(0.4f, 0.95f, 0.45f));
             y += 28 * s;
-            float range = b.primary.attack != null ? b.primary.attack.Range : 0f;
+            float range = b.primary.attack != null && b.primary.attack.delivery != null ? b.primary.attack.delivery.EffectiveRange : 0f;
             StatBar(new Rect(bx, y, bw, 22 * s), "RANGE", range / 45f, RangeLabel(range), new Color(0.35f, 0.75f, 1f));
             y += 28 * s;
             float dps = EstimateBurst(b);
@@ -1363,6 +1371,7 @@ namespace FPSLAN
                 case GameAction.FeedPet: return "Feed pet (UPRA)";
                 case GameAction.Emote: return "SITA spray wheel (hold)";
                 case GameAction.Crouch: return "Crouch / slide (while sprinting)";
+                case GameAction.ThermalScope: return "Thermal scope (Lince, while aiming)";
                 default: return action.ToString();
             }
         }
@@ -1427,7 +1436,7 @@ namespace FPSLAN
             {
                 GameAction.MoveForward, GameAction.MoveBackward, GameAction.MoveLeft, GameAction.MoveRight,
                 GameAction.Fire, GameAction.Melee, GameAction.Super, GameAction.Jump, GameAction.Sprint,
-                GameAction.Scoreboard, GameAction.Pause, GameAction.Aim, GameAction.Interact, GameAction.FeedPet, GameAction.Emote, GameAction.Crouch,
+                GameAction.Scoreboard, GameAction.Pause, GameAction.Aim, GameAction.ThermalScope, GameAction.Interact, GameAction.FeedPet, GameAction.Emote, GameAction.Crouch,
             };
             foreach (var action in actions)
             {
@@ -1481,7 +1490,7 @@ namespace FPSLAN
             if (!Mathf.Approximately(aimSensitivity, GameSession.AimSensitivity))
                 GameSession.AimSensitivity = aimSensitivity;
             GUILayout.Label("Zoom (field of view): " + Mathf.RoundToInt(GameSession.ScopeFieldOfView) + "°", m_Label);
-            float scopeFov = GUILayout.HorizontalSlider(GameSession.ScopeFieldOfView, 20f, 55f);
+            float scopeFov = GUILayout.HorizontalSlider(GameSession.ScopeFieldOfView, GameSession.ScopeMinFov, GameSession.ScopeMaxFov);
             if (!Mathf.Approximately(scopeFov, GameSession.ScopeFieldOfView))
                 GameSession.ScopeFieldOfView = scopeFov;
             if (LayoutButton("RESET AIM AND SENSITIVITY", new Color(0.4f, 0.46f, 0.6f),
@@ -1489,7 +1498,7 @@ namespace FPSLAN
             {
                 GameSession.Sensitivity = 2f;
                 GameSession.AimSensitivity = 0.5f;
-                GameSession.ScopeFieldOfView = 32f;
+                GameSession.ScopeFieldOfView = GameSession.ScopeDefaultFov;
             }
         }
 

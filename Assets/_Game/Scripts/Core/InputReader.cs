@@ -24,9 +24,12 @@ namespace FPSLAN
             (!GameInputSettings.HasCustomBinding(GameAction.Crouch) && GameInputSettings.WasPressedThisFrame(KeyCode.C));
         public static bool AimHeld => GameInputSettings.IsHeld(GameAction.Aim);
         public static bool InteractHeld => GameInputSettings.IsHeld(GameAction.Interact);
+        public static bool ThermalTogglePressed => GameInputSettings.WasPressedThisFrame(GameAction.ThermalScope);
         public static bool SuperPressed => ReadSuperPressed();
         public static bool ScoreboardHeld => ReadScoreboardHeld();
         public static bool PausePressed => ReadPausePressed();
+        /// <summary>Roda do rato neste frame: +1 para a frente (para longe do jogador), −1 para trás, 0 parada.</summary>
+        public static float ScrollNotches => ReadScroll();
 
 #if FPSLAN_INPUTSYS && ENABLE_INPUT_SYSTEM
         static Mouse M => Mouse.current;
@@ -49,6 +52,11 @@ namespace FPSLAN
             (!GameInputSettings.HasCustomBinding(GameAction.Super) && GameInputSettings.WasPressedThisFrame(KeyCode.E));
         static bool ReadScoreboardHeld() => GameInputSettings.IsHeld(GameAction.Scoreboard);
         static bool ReadPausePressed() => GameInputSettings.WasPressedThisFrame(GameAction.Pause);
+        static float ReadScroll()
+        {
+            float y = M == null ? 0f : M.scroll.ReadValue().y;
+            return Mathf.Abs(y) < 0.01f ? 0f : Mathf.Sign(y);
+        }
 #else
         static Vector2 ReadMove()
         {
@@ -67,6 +75,11 @@ namespace FPSLAN
             (!GameInputSettings.HasCustomBinding(GameAction.Super) && Input.GetKeyDown(KeyCode.E));
         static bool ReadScoreboardHeld() => GameInputSettings.IsHeld(GameAction.Scoreboard);
         static bool ReadPausePressed() => GameInputSettings.WasPressedThisFrame(GameAction.Pause);
+        static float ReadScroll()
+        {
+            float y = Input.mouseScrollDelta.y;
+            return Mathf.Abs(y) < 0.01f ? 0f : Mathf.Sign(y);
+        }
 #endif
     }
 }

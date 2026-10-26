@@ -16,6 +16,6 @@ MonoBehaviour:
   interval: 0
   spreadDegrees: 0.05
   fanDegrees: 0
-  range: 50
+  range: 60
   radius: 0.04
   pierce: 0

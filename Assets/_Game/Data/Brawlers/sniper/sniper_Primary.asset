@@ -14,13 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.AttackDefinition
   delivery: {fileID: 11400000, guid: 4167799180a65a94683b05f9f4e623f6, type: 2}
   effect:
-    damage: 38
+    damage: 55
     nearMultiplier: 1
     farMultiplier: 1
     falloffStartFraction: 0
     canHeadshot: 1
     headshotMultiplier: 1.5
-    headshotDamage: 50
+    headshotDamage: 80
+    headshotFarDamage: 150
+    headshotNearDistance: 1
+    headshotFarDistance: 60
     perShotDamage: 
     executeOnHeadshot: 0
     splashRadius: 0

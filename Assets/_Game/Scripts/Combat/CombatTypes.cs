@@ -14,10 +14,18 @@ namespace FPSLAN
         public float farMultiplier = 1f;
         [Tooltip("Fração do alcance com o multiplicador 'perto'; daí até ao alcance máximo desce até 'longe' (0 = desce desde o início).")]
         [Range(0f, 0.95f)] public float falloffStartFraction = 0f;
+        [Tooltip("Queda de dano por distância em metros (x = distância, y = multiplicador), por ordem crescente de x. " +
+                 "Se tiver pontos, substitui perto/longe: antes do 1.º ponto vale o 1.º y, entre pontos interpola, depois do último vale o último y.")]
+        public Vector2[] falloffCurve = new Vector2[0];
         public bool canHeadshot = true;
         public float headshotMultiplier = 1.5f;
         [Tooltip("Dano fixo de um headshot (antes da distância). 0 = damage × headshotMultiplier.")]
         public int headshotDamage = 0;
+        [Tooltip("Headshot que cresce com a distância: dano a headshotFarDistance (0 = não cresce). " +
+                 "Interpola linearmente de headshotDamage (até headshotNearDistance) a este valor; mais longe fica neste valor.")]
+        public int headshotFarDamage = 0;
+        public float headshotNearDistance = 1f;
+        public float headshotFarDistance = 60f;
         [Tooltip("Dano por índice de disparo numa rajada (vazio = 'damage' para todos). Garante totais exatos (ex.: 33+34+33 = 100).")]
         public int[] perShotDamage = new int[0];
         [Tooltip("Um headshot válido elimina de imediato (tiro fatal). No corpo aplica o dano normal.")]
@@ -54,9 +62,26 @@ namespace FPSLAN
 
         public float DistanceMultiplier(float distance, float range)
         {
+            if (falloffCurve != null && falloffCurve.Length > 0) return CurveMultiplier(falloffCurve, distance);
             if (range <= 0.01f) return nearMultiplier;
             float start = range * Mathf.Clamp(falloffStartFraction, 0f, 0.95f);
             return Mathf.Lerp(nearMultiplier, farMultiplier, Mathf.Clamp01((distance - start) / Mathf.Max(0.01f, range - start)));
+        }
+
+        /// <summary>Multiplicador de uma curva de pontos (distância em metros, multiplicador), linear entre pontos.</summary>
+        public static float CurveMultiplier(Vector2[] curve, float distance)
+        {
+            if (distance <= curve[0].x) return curve[0].y;
+            for (int i = 1; i < curve.Length; i++)
+            {
+                if (distance <= curve[i].x)
+                {
+                    var a = curve[i - 1];
+                    var b = curve[i];
+                    return Mathf.Lerp(a.y, b.y, Mathf.InverseLerp(a.x, b.x, distance));
+                }
+            }
+            return curve[curve.Length - 1].y;
         }
 
         /// <summary>Dano base do disparo n.º shotIndex de uma rajada (antes da distância).</summary>
@@ -66,13 +91,21 @@ namespace FPSLAN
             return damage;
         }
 
+        /// <summary>Dano fixo do headshot à distância dada (cresce com a distância se headshotFarDamage &gt; 0).</summary>
+        public float HeadshotBase(float distance)
+        {
+            if (headshotFarDamage <= 0 || headshotFarDistance <= headshotNearDistance) return headshotDamage;
+            float t = Mathf.InverseLerp(headshotNearDistance, headshotFarDistance, distance);
+            return Mathf.Lerp(headshotDamage, headshotFarDamage, t);
+        }
+
         /// <summary>Dano de um impacto direto (distância percorrida, headshot e índice do disparo).</summary>
         public int DirectDamage(int shotIndex, float distance, float range, bool headshot)
         {
             float dm = DistanceMultiplier(distance, range);
             if (headshot && canHeadshot)
             {
-                if (headshotDamage > 0) return Mathf.RoundToInt(headshotDamage * dm);
+                if (headshotDamage > 0) return Mathf.RoundToInt(HeadshotBase(distance) * dm);
                 return Mathf.RoundToInt(BaseDamageForShot(shotIndex) * dm * headshotMultiplier);
             }
             return Mathf.RoundToInt(BaseDamageForShot(shotIndex) * dm);

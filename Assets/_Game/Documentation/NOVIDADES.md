@@ -68,7 +68,7 @@
 ### Novos Brawlers
 | Nome | Papel | Principal | Super |
 |---|---|---|---|
-| **Brasa** | Caçadeira (curto alcance) | leque de 6 bagos, muito forte de perto | rajada gigante que empurra e destrói cobertura |
+| **Brasa** | Caçadeira (curto alcance) | pump de 10 bagos hitscan, muito forte até 6 m | rajada gigante que empurra e destrói cobertura |
 | **Lince** | Atiradora (sniper) | tiro instantâneo que dói mais ao longe (headshots!) | **salto de fuga** para onde apontas, deixando bombas para trás |
 
 Os 4 anteriores ganharam visual próprio: **Dex** (chapéu de aba larga), **Cardo** (óculos de aviador, cabelo espetado,

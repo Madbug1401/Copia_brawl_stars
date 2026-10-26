@@ -239,7 +239,7 @@ namespace FPSLAN
             if (m_Target != null && m_TargetVisible && now - m_TargetSeenAt >= m_Reaction)
             {
                 float aimErr = Mathf.Abs(Mathf.DeltaAngle(m_Yaw, Mathf.Atan2(toLook.x, toLook.z) * Mathf.Rad2Deg));
-                bool inRange = brawler.primary.attack != null && distToTarget <= brawler.primary.attack.Range * 0.92f;
+                bool inRange = brawler.primary.attack != null && distToTarget <= (brawler.primary.attack.delivery != null ? brawler.primary.attack.delivery.EffectiveRange : brawler.primary.attack.Range) * 0.92f;
                 cmd.fire = inRange && aimErr <= m_FireAngle;
                 cmd.meleePressed = distToTarget <= brawler.melee.range * 0.9f && aimErr <= Mathf.Max(m_FireAngle, 25f);
                 if (cmd.meleePressed) cmd.fire = false;

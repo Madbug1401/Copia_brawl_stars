@@ -36,8 +36,9 @@ Só mudaram os nomes visíveis (`displayName`), por isso prefabs, saves e mensag
   Zonas do mesmo atacante **não acumulam** (`nonStackingPerAttacker`). Zona verde/roxa visível, removida aos 12 s.
 
 ### Riot — shotgun
-- Principal: vários projéteis em leque com espalhamento progressivo, recuo forte, som e animação de recarga.
-  Total do disparo: **50–60 de perto** (54 medido) e **15–20 no alcance máximo**.
+- Principal: caçadeira **pump** (como a Pump Shotgun do Fortnite): **10 bagos hitscan** num cone, 6 de dano cada
+  (**60 até 6 m**). Queda com a distância: 10 m 80%, 13 m 60%, 15 m 49%, 18 m 35%, até 20% aos 31 m (alcance máximo).
+  É preciso acertar **pelo menos 3 bagos** no mesmo jogador para haver dano. Recuo forte, som e animação de recarga.
 - Especial: o Super de Brasa preservado (empurrão + destruição de cobertura), parâmetros configuráveis.
 
 ### Lupus Marinus (L.M) — TNT
@@ -50,15 +51,20 @@ Só mudaram os nomes visíveis (`displayName`), por isso prefabs, saves e mensag
 ### N.Cage — arco
 - Principal: três flechas visíveis com gravidade numa só ação; cada flecha conta separadamente
   (podem acertar adversários diferentes; flechas que falham não contam). Três no mesmo alvo = **100**.
-- Especial: **3 armadilhas**. Ao ativar: preso **5 s** (bloqueia o movimento, não o ataque nem a câmara),
-  **40 de veneno** no total, efeito visual de preso. Imunidade curta após soltar evita cadeias de armadilhas.
+- Especial: **3 armadilhas**. Ao ativar: preso **2 s** (bloqueia o movimento, não o ataque nem a câmara),
+  **16 de veneno** no total (8/s durante os 2 s), efeito visual de preso. Imunidade curta após soltar evita cadeias de armadilhas.
   A armadilha desaparece ao disparar ou ao expirar.
 
 ### Lince — sniper
-- Principal: **38 no corpo / 50 na cabeça**, deteção de headshot pela zona da cabeça (de cima, de baixo e sem raio),
-  indicador visual de headshot, a cadência mais lenta do jogo, mira própria.
+- Principal: **55 no corpo**; na cabeça **80 a 1 m e mais quanto mais longe, até 150 a 60 m** (alcance 60 m), deteção de headshot pela zona da cabeça (de cima, de baixo e sem raio),
+  indicador visual de headshot, a cadência mais lenta do jogo, mira própria (botão direito). A mirar, a **roda do
+  rato** aproxima ou afasta o zoom da luneta (de 1,8x a 10,5x, mostrado no ecrã; fica guardado). A sensibilidade baixa
+  com o zoom.
+  **Luneta térmica**: a mirar, o clique na roda do rato (tecla configurável, "Thermal scope") liga/desliga a visão
+  térmica — cenário frio azul-escuro, jogadores quentes (vermelho → branco), e os arbustos deixam de esconder quem está
+  lá dentro. Só visual, no PC de quem mira (`ThermalScope` + `Resources/Shaders/FPSLAN_Thermal.shader`).
 - Especial **Tiro fatal**: carrega passivamente com o tempo. Arma-se com o botão do Super (carregar outra vez cancela
-  e guarda a carga). Headshot válido = eliminação imediata; no corpo = dano normal (38). Hitscan validado no host,
+  e guarda a carga). Headshot válido = eliminação imediata; no corpo = dano normal (55). Hitscan validado no host,
   respeita paredes e linha de visão, sem mira automática. A carga só é gasta ao disparar.
 
 ---

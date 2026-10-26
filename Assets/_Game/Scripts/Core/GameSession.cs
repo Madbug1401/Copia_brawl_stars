@@ -38,11 +38,27 @@ namespace FPSLAN
             set => PlayerPrefs.SetFloat(KeyAimSensitivity, Mathf.Clamp(value, 0.2f, 1f));
         }
 
+        /// <summary>Limites do zoom da luneta (campo de visão em graus): menos graus = mais zoom.</summary>
+        public const float ScopeMinFov = 10f, ScopeMaxFov = 55f, ScopeDefaultFov = 32f;
+        /// <summary>Campo de visão normal da 1.ª pessoa (para mostrar o zoom como "4.0x").</summary>
+        public const float NormalFov = 85f;
+
         public static float ScopeFieldOfView
         {
-            get => GetClampedFloat(KeyScopeFov, 32f, 20f, 55f);
-            set => PlayerPrefs.SetFloat(KeyScopeFov, Mathf.Clamp(value, 20f, 55f));
+            get => GetClampedFloat(KeyScopeFov, ScopeDefaultFov, ScopeMinFov, ScopeMaxFov);
+            set => PlayerPrefs.SetFloat(KeyScopeFov, Mathf.Clamp(value, ScopeMinFov, ScopeMaxFov));
         }
+
+        /// <summary>Roda do rato na luneta: cada passo para a frente aproxima ~18%, para trás afasta. Fica guardado.</summary>
+        public static void ZoomScope(float notches)
+        {
+            if (Mathf.Approximately(notches, 0f)) return;
+            ScopeFieldOfView = ScopeFieldOfView * Mathf.Pow(0.82f, notches);
+        }
+
+        /// <summary>Ampliação da luneta em relação à vista normal (ex.: 3.5x).</summary>
+        public static float ScopeMagnification =>
+            Mathf.Tan(NormalFov * 0.5f * Mathf.Deg2Rad) / Mathf.Tan(ScopeFieldOfView * 0.5f * Mathf.Deg2Rad);
 
         public static float MasterVolume
         {

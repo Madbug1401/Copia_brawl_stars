@@ -4,11 +4,15 @@ using UnityEngine;
 namespace FPSLAN
 {
     /// <summary>Ponto de spawn. Escolhe-se o mais afastado dos inimigos vivos (com alguma variação).
-    /// Em modos de equipa, se o mapa tiver spawns marcados com equipa, cada jogador só usa os da sua.</summary>
+    /// Em modos de equipa, se o mapa tiver spawns marcados com equipa, cada jogador só usa os da sua.
+    /// Spawns "só Deathmatch" (ex.: interiores das casas da Cidade Velha): no Deathmatch o jogador reaparece num deles
+    /// ao acaso (longe de quem está vivo); nos outros modos são ignorados.</summary>
     public class SpawnPoint : MonoBehaviour
     {
         [Tooltip("-1 = qualquer equipa; 0 = azul; 1 = vermelha.")]
         public int team = -1;
+        [Tooltip("Só é usado no Deathmatch, onde o respawn passa a ser aleatório entre estes pontos.")]
+        public bool deathmatchOnly = false;
 
         static readonly List<SpawnPoint> s_All = new List<SpawnPoint>();
         static readonly List<KeyValuePair<float, SpawnPoint>> s_Scored = new List<KeyValuePair<float, SpawnPoint>>();
@@ -31,6 +35,9 @@ namespace FPSLAN
                 return;
             }
 
+            // Deathmatch com spawns próprios (interiores): ponto ao acaso, de preferência sem ninguém vivo por perto
+            if (IsDeathmatch() && PickDeathmatch(forPlayer, out position, out yaw)) return;
+
             // Cooperativo: os dois jogadores reaparecem juntos (no ponto mais perto do parceiro vivo)
             if (MatchManager.IsCoopActive && MatchManager.IsCoopTeam(forPlayer))
             {
@@ -43,6 +50,7 @@ namespace FPSLAN
                     float best = float.MaxValue;
                     foreach (var sp in s_All)
                     {
+                        if (sp.deathmatchOnly) continue;
                         float d = Vector3.Distance(sp.transform.position, mate.transform.position);
                         if (d < best) { best = d; nearest = sp; }
                     }
@@ -59,11 +67,12 @@ namespace FPSLAN
             bool teamSpawns = false;
             if (myTeam >= 0)
                 foreach (var sp in s_All)
-                    if (sp.team == myTeam) { teamSpawns = true; break; }
+                    if (!sp.deathmatchOnly && sp.team == myTeam) { teamSpawns = true; break; }
 
             s_Scored.Clear();
             foreach (var sp in s_All)
             {
+                if (sp.deathmatchOnly) continue;
                 if (teamSpawns && sp.team != myTeam) continue;
                 float minDist = 999f;
                 foreach (var p in PlayerNetwork.All)
@@ -76,12 +85,61 @@ namespace FPSLAN
                 s_Scored.Add(new KeyValuePair<float, SpawnPoint>(minDist, sp));
             }
 
+            if (s_Scored.Count == 0)
+            {
+                position = new Vector3(0f, 3f, 0f);
+                yaw = 0f;
+                return;
+            }
             s_Scored.Sort((a, b) => b.Key.CompareTo(a.Key));
             int pickFrom = Mathf.Min(3, s_Scored.Count);
             var chosen = s_Scored[Random.Range(0, pickFrom)].Value;
 
             position = MatchManager.IsCoopActive && MatchManager.IsCoopTeam(forPlayer) ? ClearCoopPosition(chosen.transform.position, forPlayer) : chosen.transform.position;
             yaw = chosen.transform.eulerAngles.y;
+        }
+
+        static readonly List<SpawnPoint> s_Candidates = new List<SpawnPoint>();
+
+        static bool IsDeathmatch() =>
+            MatchManager.Instance != null && MatchManager.Instance.IsSpawned && !MatchManager.IsCoopActive &&
+            MatchManager.Instance.Mode.Value == GameMode.Deathmatch;
+
+        /// <summary>Respawn aleatório entre os spawns "só Deathmatch": primeiro os livres e sem ninguém vivo a menos de
+        /// SafeRadius; se não houver, qualquer livre; por fim qualquer um. Devolve false se o mapa não os tiver.</summary>
+        static bool PickDeathmatch(PlayerNetwork forPlayer, out Vector3 position, out float yaw)
+        {
+            const float SafeRadius = 8f;
+            position = default;
+            yaw = 0f;
+            SpawnPoint chosen = null;
+            for (int pass = 0; pass < 3 && chosen == null; pass++)
+            {
+                s_Candidates.Clear();
+                foreach (var sp in s_All)
+                {
+                    if (!sp.deathmatchOnly) continue;
+                    var p = sp.transform.position;
+                    if (pass < 2 && !ClearForPlayer(p, forPlayer)) continue;
+                    if (pass == 0)
+                    {
+                        bool near = false;
+                        foreach (var pl in PlayerNetwork.All)
+                        {
+                            if (pl == null || pl == forPlayer || !pl.IsSpawned || pl.Health.IsDead) continue;
+                            if ((pl.transform.position - p).sqrMagnitude < SafeRadius * SafeRadius) { near = true; break; }
+                        }
+                        if (near) continue;
+                    }
+                    s_Candidates.Add(sp);
+                }
+                if (s_Candidates.Count > 0) chosen = s_Candidates[Random.Range(0, s_Candidates.Count)];
+            }
+            if (chosen == null) return false;
+            position = chosen.transform.position;
+            yaw = chosen.transform.eulerAngles.y;
+            if (forPlayer != null) { s_Reserved[forPlayer.Id] = position; s_ReservedAt[forPlayer.Id] = Time.unscaledTime; }
+            return true;
         }
 
         static readonly Dictionary<ulong, Vector3> s_Reserved = new Dictionary<ulong, Vector3>();
@@ -118,14 +176,14 @@ namespace FPSLAN
                     return candidate;
                 }
             foreach (var sp in s_All)
-                if (ClearForPlayer(sp.transform.position, self)) return sp.transform.position;
+                if (!sp.deathmatchOnly && ClearForPlayer(sp.transform.position, self)) return sp.transform.position;
             // No clear location: defer to the original map spawn, never stack vertically.
             return origin;
         }
 
         void OnDrawGizmos()
         {
-            Gizmos.color = team == 0 ? new Color(0.25f, 0.5f, 1f, 0.9f) : team == 1 ? new Color(1f, 0.3f, 0.25f, 0.9f) : new Color(0.2f, 1f, 0.4f, 0.8f);
+            Gizmos.color = deathmatchOnly ? new Color(1f, 0.85f, 0.2f, 0.9f) : team == 0 ? new Color(0.25f, 0.5f, 1f, 0.9f) : team == 1 ? new Color(1f, 0.3f, 0.25f, 0.9f) : new Color(0.2f, 1f, 0.4f, 0.8f);
             Gizmos.DrawWireCube(transform.position + Vector3.up * 0.9f, new Vector3(0.8f, 1.8f, 0.8f));
             Gizmos.DrawLine(transform.position + Vector3.up, transform.position + Vector3.up + transform.forward * 1.5f);
         }

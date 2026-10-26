@@ -664,6 +664,16 @@ namespace FPSLAN
         /// <summary>Opacidade em dithering (escondido num arbusto).</summary>
         public void SetFade(float fade) => m_Fade = Mathf.Clamp01(fade);
 
+        bool m_Thermal;
+
+        /// <summary>Quente na luneta térmica (o shader de visão térmica lê _Thermal).</summary>
+        public void SetThermal(bool hot)
+        {
+            if (hot == m_Thermal) return;
+            m_Thermal = hot;
+            foreach (var r in m_Renderers) Art.SetFloat(r, ThermalScope.ThermalId, hot ? 1f : 0f);
+        }
+
         public void SetShadowsOnly(bool shadowsOnly)
         {
             foreach (var r in m_Renderers)

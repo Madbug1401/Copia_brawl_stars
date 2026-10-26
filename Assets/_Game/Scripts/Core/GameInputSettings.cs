@@ -23,6 +23,7 @@ namespace FPSLAN
         FeedPet,
         Emote,
         Crouch,   // acrescentado no fim: as teclas guardadas usam o nome, mas assim nada muda de número
+        ThermalScope,   // acrescentado no fim (as teclas guardadas usam o nome)
     }
 
     public static class GameInputSettings
@@ -95,6 +96,7 @@ namespace FPSLAN
                 case GameAction.FeedPet: return KeyCode.T;
                 case GameAction.Emote: return KeyCode.Y;
                 case GameAction.Crouch: return KeyCode.LeftControl;
+                case GameAction.ThermalScope: return KeyCode.Mouse2;
                 default: return KeyCode.None;
             }
         }

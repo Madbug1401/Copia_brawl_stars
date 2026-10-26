@@ -175,3 +175,44 @@ A validação percorre também cada casa: porta → escada → 1.º andar → va
   Só a estrutura (reboco, cantaria, pedra, telha, troncos) projeta sombra do sol — a mobília não. Qualidade Ultra:
   sombras até 60 m com 2 cascatas (era 150 m / 4); Very High: 55 m. Medição no editor (1920×1080, Ultra, 4 vistas da
   Cidade Velha, média): 38,3 ms → 29,9 ms por imagem.
+
+### 4.3 Correntes do Pelourinho (`Editor/CidadeVelhaCorrentes.cs`)
+
+Menu **FPS-LAN ▸ Mapas ▸ Cidade Velha: correntes do Pelourinho (detalhe)**:
+
+- **Malha nova:** troca só a malha dos 4 vãos `PRP_Corrente_0/2/4/6` do prefab. Ficam iguais o material `M_CV_Ferro`, os colisores e as flags estáticas.
+- **Elos:** ovais de ferro entrelaçados, cada um rodado 90° em relação ao anterior, com uma pequena torção aleatória fixa. Medem 13 × 7,5 cm, com arame de 1,2 cm.
+  - Seguem a curva da corrente, que desce 22 cm a meio.
+  - São 184 elos no total.
+- **Postes:** cada poste tem uma anilha dupla e um olhal virado para o vão, à altura de 0,62 m.
+- **Ficheiros:** as malhas ficam em `Art/Environment/Santiago/CidadeVelha/Correntes/CV_Corrente_*.asset`. São cerca de 25 400 triângulos no total.
+- **Depois de reconstruir a Cidade Velha a partir do Blender:** o FBX volta a trazer a corrente simples, por isso é preciso voltar a correr este menu.
+
+### 4.4 Spawns do Deathmatch nas casas e na igreja, e chão sem faixas (`Editor/CidadeVelhaSpawnsDM.cs`)
+
+Menu **FPS-LAN ▸ Mapas ▸ Cidade Velha: spawns do Deathmatch nas casas e na igreja (sem faixas azul e vermelha)**:
+
+- **Faixas pintadas:** apaga do prefab `GRD_Spawn_Blue` e `GRD_Spawn_Red`, as faixas azul e vermelha do chão.
+  - Os spawns das equipas do Pique-Gemas (`SPAWN_Blue_*` e `SPAWN_Red_*`) ficam nos mesmos sítios, só deixam de estar pintados.
+- **Spawns nas casas e na igreja:** cria o grupo `Spawns_Deathmatch` com 32 `SpawnPoint` marcados como `deathmatchOnly`.
+  - Cada piso das 10 casas tem 2 spawns. Os sobrados de esquina têm rés-do-chão e 1.º andar.
+  - A igreja tem 3 spawns na nave (afastados pelo menos 4 m) e 1 no coro alto, virado para o altar.
+  - Os pontos saem de uma grelha de 1 m dentro de cada edifício e são validados com a física do prefab: chão do piso por baixo, espaço livre para um jogador em pé e teto por cima.
+  - Os spawns das casas e da nave ficam virados para a porta da frente.
+- **Deathmatch:** o respawn é **aleatório** entre esses 32 pontos.
+  - Primeiro escolhe entre os pontos livres e sem ninguém vivo a menos de 8 m.
+  - Se não houver nenhum, escolhe entre os livres. Se ainda assim não houver, escolhe entre todos.
+- **Outros modos:** o Pique-Gemas, o It Takes Two e os restantes ignoram estes pontos e funcionam como antes.
+- **Depois de reconstruir a Cidade Velha a partir do Blender** (que volta a trazer as faixas), é preciso correr outra vez os interiores (4 e 4.1) e a seguir este menu.
+
+### 4.5 Janelas com grades (tiros passam, jogadores não)
+
+As janelas do rés-do-chão das casas (`_Janela_`, com grades) têm a parede de colisão aberta no vão. Em cada vão há um
+colisor `COL_<casa>_Grade` na layer **Ignore Raycast** (2):
+
+- **O jogador não passa:** o `CharacterController` colide com a layer 2.
+- **Os tiros passam:** `CombatMath.ShotMask` ignora a layer 2, por isso dá para acertar em quem está do outro lado,
+  entre as barras.
+- **Projéteis e facada:** também passam pelo vão, porque usam a mesma máscara.
+
+Gerado pelo menu dos interiores (4 e 4.1). Depois de o voltar a correr, corre também o 4.4 (spawns do Deathmatch).

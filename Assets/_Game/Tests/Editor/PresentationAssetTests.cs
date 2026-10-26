@@ -35,9 +35,22 @@ namespace FPSLAN.Tests
             Assert.IsNotNull(signs);
             Assert.AreEqual(16, signs.childCount);
             Assert.AreEqual(0, signs.GetComponentsInChildren<Collider>(true).Length);
-            // Os interiores das casas (Nico-uglaa) acrescentam colisores; o mapa exterior original tinha 67.
-            Assert.GreaterOrEqual(prefab.GetComponentsInChildren<Collider>(true).Length, 67);
-            Assert.AreEqual(10, prefab.GetComponentsInChildren<SpawnPoint>(true).Length);
+            // colisores do mapa fora dos interiores das casas (os interiores têm os seus, gerados à parte)
+            var interiors = prefab.transform.Find("Cenario/Interiores");
+            int outside = 0;
+            foreach (var c in prefab.GetComponentsInChildren<Collider>(true))
+                if (interiors == null || !c.transform.IsChildOf(interiors)) outside++;
+            Assert.AreEqual(67, outside);
+            int team = 0, dm = 0;
+            foreach (var sp in prefab.GetComponentsInChildren<SpawnPoint>(true))
+            {
+                if (sp.deathmatchOnly) { dm++; Assert.AreEqual(-1, sp.team, sp.name); }
+                else team++;
+            }
+            Assert.AreEqual(10, team, "spawns das equipas (Pique-Gemas)");
+            Assert.GreaterOrEqual(dm, 10, "spawns do Deathmatch nas casas");
+            Assert.IsNull(prefab.transform.Find("Cenario/GRD_Spawn_Blue"), "sem faixa azul");
+            Assert.IsNull(prefab.transform.Find("Cenario/GRD_Spawn_Red"), "sem faixa vermelha");
         }
 
         [TestCase("sniper")]

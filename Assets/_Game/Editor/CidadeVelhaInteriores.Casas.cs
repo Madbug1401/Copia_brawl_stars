@@ -140,6 +140,36 @@ namespace FPSLAN.EditorTools
             return list;
         }
 
+        /// <summary>Pontos candidatos a spawn (mundo) dentro de cada casa, rés-do-chão e 1.º andar: grelha de 1 m afastada
+        /// das paredes, com a altura do piso e a direção da porta da frente. A validação (chão, espaço livre, teto) é feita
+        /// por quem os usa (CidadeVelhaSpawnsDM).</summary>
+        public static List<(string house, int floor, float floorY, Vector3 point, Vector3 toDoor)> CasaSpawnCandidates(Transform cen)
+        {
+            var list = new List<(string, int, float, Vector3, Vector3)>();
+            foreach (var d in CasasDef)
+            {
+                var c = ReadCasa(cen, d.name, d.plaster, null, new StringBuilder());
+                if (c == null) continue;
+                Vector3 W(float x, float z) => c.lay.MultiplyPoint3x4(new Vector3(x, 0f, z));
+                var door = W(c.fd, 0f);
+                int floors = c.twoStoreys ? 2 : 1;
+                for (int f = 0; f < floors; f++)
+                {
+                    float y = f == 0 ? 0.03f : c.y2;
+                    for (float x = -c.iw + 0.7f; x <= c.iw - 0.7f + 1e-3f; x += 1f)
+                        for (float z = 0.9f; z <= c.zb - 0.7f + 1e-3f; z += 1f)
+                        {
+                            var p = W(x, z);
+                            p.y = y;
+                            var toDoor = door - p;
+                            toDoor.y = 0f;
+                            list.Add((d.name, f, y, p, toDoor));
+                        }
+                }
+            }
+            return list;
+        }
+
         /// <summary>Os arbustos (esconderijos) encostados à fachada entravam pela parede e apareciam dentro da casa:
         /// passam para fora da parede, sem mudar de tamanho nem sair do sítio ao longo da fachada.</summary>
         static void ClearBushes(Transform root, Casa c, StringBuilder log)
@@ -368,7 +398,7 @@ namespace FPSLAN.EditorTools
                 // a bandeira (vidro por cima da porta) não deixa passar: o colisor só abre a parte da porta
                 if (o.kind == 0) cols[o.face].Add(H(o.along, 1.3f, 0f, DoorLeafH + 0.06f));
                 else if (o.kind == 3) cols[o.face].Add(H(o.along, 1.1f, c.y2, c.y2 + BalconyLeafH + 0.02f));
-                else if (o.kind != 1) cols[o.face].Add(hv);
+                else cols[o.face].Add(hv);   // janelas com grade (kind 1): ver "grades" abaixo
                 if (o.kind == 0) doors[o.face].Add(new Vector4(hv.x, hv.y, -1f, 1f));
             }
             // paredes
@@ -376,6 +406,17 @@ namespace FPSLAN.EditorTools
             WallX(k, c.plaster, c.z1 - T, c.z1, c.x0, c.x1, 0f, h, holes[1], cols[1], c.name + "_F1");
             WallZ(k, c.plaster, c.x0, c.x0 + T, c.z0 + T, c.z1 - T, 0f, h, holes[2], cols[2], c.name + "_F2");
             WallZ(k, c.plaster, c.x1 - T, c.x1, c.z0 + T, c.z1 - T, 0f, h, holes[3], cols[3], c.name + "_F3");
+            // grades das janelas do rés-do-chão: o jogador não passa, mas os tiros passam entre as barras
+            foreach (var o in c.ops)
+            {
+                if (o.kind != 1) continue;
+                var g = H(o.along, 1.0f, o.pos.y, o.pos.y + 1.3f);
+                string gn = c.name + "_Grade";
+                if (o.face == 0) k.Col(gn, new Vector3(g.x, g.z, c.z0), new Vector3(g.y, g.w, c.z0 + T), true);
+                else if (o.face == 1) k.Col(gn, new Vector3(g.x, g.z, c.z1 - T), new Vector3(g.y, g.w, c.z1), true);
+                else if (o.face == 2) k.Col(gn, new Vector3(c.x0, g.z, g.x), new Vector3(c.x0 + T, g.w, g.y), true);
+                else k.Col(gn, new Vector3(c.x1 - T, g.z, g.x), new Vector3(c.x1, g.w, g.y), true);
+            }
             // embasamento de pedra (interrompido nas portas)
             WallX(k, M.pedraMuro, c.z0 - 0.04f, c.z0, c.x0 - 0.04f, c.x1 + 0.04f, 0f, 0.55f, doors[0], null, null);
             WallX(k, M.pedraMuro, c.z1, c.z1 + 0.04f, c.x0 - 0.04f, c.x1 + 0.04f, 0f, 0.55f, doors[1], null, null);
