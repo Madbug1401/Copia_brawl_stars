@@ -673,7 +673,7 @@ namespace FPSLAN.EditorTools
             int nb = 0, nr = 0;
             foreach (var sp in map.GetComponentsInChildren<SpawnPoint>())
             {
-                if (sp.team == 0) { blue += sp.transform.position; nb++; } else { red += sp.transform.position; nr++; }
+                if (sp.team == 0) { blue += sp.transform.position; nb++; } else if (sp.team == 1) { red += sp.transform.position; nr++; }
             }
             if (nb > 0 && nr > 0)
                 log.AppendLine($"Equipa azul em {(blue / nb):F1}, vermelha em {(red / nr):F1} (lados opostos do mesmo eixo, y≈0).");

@@ -187,3 +187,19 @@ Menu **FPS-LAN ▸ Mapas ▸ Cidade Velha: correntes do Pelourinho (detalhe)**:
 - **Postes:** cada poste tem uma anilha dupla e um olhal virado para o vão, à altura de 0,62 m.
 - **Ficheiros:** as malhas ficam em `Art/Environment/Santiago/CidadeVelha/Correntes/CV_Corrente_*.asset`. São cerca de 25 400 triângulos no total.
 - **Depois de reconstruir a Cidade Velha a partir do Blender:** o FBX volta a trazer a corrente simples, por isso é preciso voltar a correr este menu.
+
+### 4.4 Spawns do Deathmatch nas casas e chão sem faixas (`Editor/CidadeVelhaSpawnsDM.cs`)
+
+Menu **FPS-LAN ▸ Mapas ▸ Cidade Velha: spawns do Deathmatch nas casas (sem faixas azul e vermelha)**:
+
+- **Faixas pintadas:** apaga do prefab `GRD_Spawn_Blue` e `GRD_Spawn_Red`, as faixas azul e vermelha do chão.
+  - Os spawns das equipas do Pique-Gemas (`SPAWN_Blue_*` e `SPAWN_Red_*`) ficam nos mesmos sítios, só deixam de estar pintados.
+- **Spawns nas casas:** cria o grupo `Spawns_Deathmatch` com 28 `SpawnPoint` marcados como `deathmatchOnly`.
+  - Cada piso das 10 casas tem 2 spawns. Os sobrados de esquina têm rés-do-chão e 1.º andar.
+  - Os pontos saem de uma grelha de 1 m dentro de cada casa e são validados com a física do prefab: chão do piso por baixo, espaço livre para um jogador em pé e teto por cima.
+  - Cada spawn fica virado para a porta da frente.
+- **Deathmatch:** o respawn é **aleatório** entre esses 28 pontos.
+  - Primeiro escolhe entre os pontos livres e sem ninguém vivo a menos de 8 m.
+  - Se não houver nenhum, escolhe entre os livres. Se ainda assim não houver, escolhe entre todos.
+- **Outros modos:** o Pique-Gemas, o It Takes Two e os restantes ignoram estes pontos e funcionam como antes.
+- **Depois de reconstruir a Cidade Velha a partir do Blender** (que volta a trazer as faixas), é preciso correr outra vez os interiores (4 e 4.1) e a seguir este menu.

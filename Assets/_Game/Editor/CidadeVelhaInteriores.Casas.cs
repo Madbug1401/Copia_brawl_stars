@@ -140,6 +140,36 @@ namespace FPSLAN.EditorTools
             return list;
         }
 
+        /// <summary>Pontos candidatos a spawn (mundo) dentro de cada casa, rés-do-chão e 1.º andar: grelha de 1 m afastada
+        /// das paredes, com a altura do piso e a direção da porta da frente. A validação (chão, espaço livre, teto) é feita
+        /// por quem os usa (CidadeVelhaSpawnsDM).</summary>
+        public static List<(string house, int floor, float floorY, Vector3 point, Vector3 toDoor)> CasaSpawnCandidates(Transform cen)
+        {
+            var list = new List<(string, int, float, Vector3, Vector3)>();
+            foreach (var d in CasasDef)
+            {
+                var c = ReadCasa(cen, d.name, d.plaster, null, new StringBuilder());
+                if (c == null) continue;
+                Vector3 W(float x, float z) => c.lay.MultiplyPoint3x4(new Vector3(x, 0f, z));
+                var door = W(c.fd, 0f);
+                int floors = c.twoStoreys ? 2 : 1;
+                for (int f = 0; f < floors; f++)
+                {
+                    float y = f == 0 ? 0.03f : c.y2;
+                    for (float x = -c.iw + 0.7f; x <= c.iw - 0.7f + 1e-3f; x += 1f)
+                        for (float z = 0.9f; z <= c.zb - 0.7f + 1e-3f; z += 1f)
+                        {
+                            var p = W(x, z);
+                            p.y = y;
+                            var toDoor = door - p;
+                            toDoor.y = 0f;
+                            list.Add((d.name, f, y, p, toDoor));
+                        }
+                }
+            }
+            return list;
+        }
+
         /// <summary>Os arbustos (esconderijos) encostados à fachada entravam pela parede e apareciam dentro da casa:
         /// passam para fora da parede, sem mudar de tamanho nem sair do sítio ao longo da fachada.</summary>
         static void ClearBushes(Transform root, Casa c, StringBuilder log)
