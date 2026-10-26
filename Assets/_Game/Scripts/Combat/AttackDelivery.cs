@@ -9,6 +9,8 @@ namespace FPSLAN
     public abstract class AttackDelivery : ScriptableObject
     {
         public abstract float Range { get; }
+        /// <summary>Distância a que o ataque ainda faz dano a sério (UI e bots). Por omissão é o alcance.</summary>
+        public virtual float EffectiveRange => Range;
         public virtual int ShotCount => 1;
         public virtual float ShotInterval => 0f;
         /// <summary>Usa o ponto-alvo (onde o jogador aponta) em vez de só a direção (arcos, armadilhas).</summary>

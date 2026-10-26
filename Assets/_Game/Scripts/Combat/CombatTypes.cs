@@ -14,6 +14,9 @@ namespace FPSLAN
         public float farMultiplier = 1f;
         [Tooltip("Fração do alcance com o multiplicador 'perto'; daí até ao alcance máximo desce até 'longe' (0 = desce desde o início).")]
         [Range(0f, 0.95f)] public float falloffStartFraction = 0f;
+        [Tooltip("Queda de dano por distância em metros (x = distância, y = multiplicador), por ordem crescente de x. " +
+                 "Se tiver pontos, substitui perto/longe: antes do 1.º ponto vale o 1.º y, entre pontos interpola, depois do último vale o último y.")]
+        public Vector2[] falloffCurve = new Vector2[0];
         public bool canHeadshot = true;
         public float headshotMultiplier = 1.5f;
         [Tooltip("Dano fixo de um headshot (antes da distância). 0 = damage × headshotMultiplier.")]
@@ -54,9 +57,26 @@ namespace FPSLAN
 
         public float DistanceMultiplier(float distance, float range)
         {
+            if (falloffCurve != null && falloffCurve.Length > 0) return CurveMultiplier(falloffCurve, distance);
             if (range <= 0.01f) return nearMultiplier;
             float start = range * Mathf.Clamp(falloffStartFraction, 0f, 0.95f);
             return Mathf.Lerp(nearMultiplier, farMultiplier, Mathf.Clamp01((distance - start) / Mathf.Max(0.01f, range - start)));
+        }
+
+        /// <summary>Multiplicador de uma curva de pontos (distância em metros, multiplicador), linear entre pontos.</summary>
+        public static float CurveMultiplier(Vector2[] curve, float distance)
+        {
+            if (distance <= curve[0].x) return curve[0].y;
+            for (int i = 1; i < curve.Length; i++)
+            {
+                if (distance <= curve[i].x)
+                {
+                    var a = curve[i - 1];
+                    var b = curve[i];
+                    return Mathf.Lerp(a.y, b.y, Mathf.InverseLerp(a.x, b.x, distance));
+                }
+            }
+            return curve[curve.Length - 1].y;
         }
 
         /// <summary>Dano base do disparo n.º shotIndex de uma rajada (antes da distância).</summary>

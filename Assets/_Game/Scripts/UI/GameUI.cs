@@ -648,7 +648,7 @@ namespace FPSLAN
             float bx = r.x + (r.width - bw) / 2f;
             StatBar(new Rect(bx, y, bw, 22 * s), "HEALTH", b.stats.maxHealth / 150f, b.stats.maxHealth.ToString(), new Color(0.4f, 0.95f, 0.45f));
             y += 28 * s;
-            float range = b.primary.attack != null ? b.primary.attack.Range : 0f;
+            float range = b.primary.attack != null && b.primary.attack.delivery != null ? b.primary.attack.delivery.EffectiveRange : 0f;
             StatBar(new Rect(bx, y, bw, 22 * s), "RANGE", range / 45f, RangeLabel(range), new Color(0.35f, 0.75f, 1f));
             y += 28 * s;
             float dps = EstimateBurst(b);

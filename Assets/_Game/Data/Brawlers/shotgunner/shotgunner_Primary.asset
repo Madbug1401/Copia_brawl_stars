@@ -14,10 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: FPSLAN.Game::FPSLAN.AttackDefinition
   delivery: {fileID: 11400000, guid: 657b3b5a21d18f9468a5de8da416309d, type: 2}
   effect:
-    damage: 9
+    damage: 6
     nearMultiplier: 1
-    farMultiplier: 0.334
-    falloffStartFraction: 0.25
+    farMultiplier: 1
+    falloffStartFraction: 0
+    falloffCurve:
+    - {x: 6, y: 1}
+    - {x: 10, y: 0.8}
+    - {x: 13, y: 0.6}
+    - {x: 15, y: 0.49}
+    - {x: 18, y: 0.35}
+    - {x: 31, y: 0.2}
     canHeadshot: 0
     headshotMultiplier: 1.5
     headshotDamage: 0
@@ -35,7 +42,7 @@ MonoBehaviour:
     rootImmunity: 2.5
     knockback: 0
     knockbackUp: 0
-    coverDamage: 6
+    coverDamage: 4
     zoneOnImpact:
       enabled: 0
       radius: 3

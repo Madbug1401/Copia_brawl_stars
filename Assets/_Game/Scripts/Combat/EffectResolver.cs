@@ -36,6 +36,14 @@ namespace FPSLAN
             ApplyStatuses(ctx, victim, point - ctx.direction);
         }
 
+        /// <summary>Soma dos bagos de uma caçadeira num jogador (dano já calculado com a distância de cada bago).</summary>
+        public static void PelletHit(AttackContext ctx, PlayerHealth victim, Vector3 point, int damage, bool headshot)
+        {
+            if (victim == null || victim.IsDead || !CanAffectPlayer(ctx, victim) || damage <= 0) return;
+            Damage(ctx, victim, damage, headshot);
+            ApplyStatuses(ctx, victim, point - ctx.direction);
+        }
+
         /// <summary>Eliminação imediata validada no host (ignora escudos de pet, respeita a proteção de spawn).</summary>
         static void Execute(AttackContext ctx, PlayerHealth victim)
         {

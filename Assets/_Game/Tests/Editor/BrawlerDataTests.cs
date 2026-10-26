@@ -162,15 +162,39 @@ namespace FPSLAN.Tests
         // ------------------------------------------------------------------ Riot
 
         [Test]
-        public void RiotShotgunTotals()
+        public void RiotPumpShotgunLikeFortnite()
         {
             var b = Get("shotgunner");
             var a = b.primary.attack;
-            Assert.Greater(a.delivery.ShotCount, 1, "vários projéteis");
-            Assert.That(ShotTotal(a, 0f), Is.InRange(50, 60), "perto");
-            Assert.That(ShotTotal(a, 3f), Is.InRange(50, 60), "curta distância");
-            Assert.That(ShotTotal(a, a.Range), Is.InRange(15, 20), "longe");
-            Assert.Greater(((ProjectileDelivery)a.delivery).fanDegrees, 0f, "espalhamento");
+            var d = a.delivery as PumpShotgunDelivery;
+            Assert.IsNotNull(d, "caçadeira pump (hitscan)");
+            Assert.AreEqual(10, a.delivery.ShotCount, "10 bagos");
+            Assert.AreEqual(3, d.minPelletsToDamage, "mínimo de 3 bagos");
+            Assert.Greater(d.spreadDegrees, 0f, "espalhamento");
+            Assert.AreEqual(18f, d.EffectiveRange, 0.01f);
+            var e = a.effect;
+            Assert.AreEqual(1f, e.DistanceMultiplier(0f, a.Range), 0.001f);
+            Assert.AreEqual(1f, e.DistanceMultiplier(6f, a.Range), 0.001f, "dano total até 6 m");
+            Assert.AreEqual(0.8f, e.DistanceMultiplier(10f, a.Range), 0.001f);
+            Assert.AreEqual(0.6f, e.DistanceMultiplier(13f, a.Range), 0.001f);
+            Assert.AreEqual(0.49f, e.DistanceMultiplier(15f, a.Range), 0.001f);
+            Assert.AreEqual(0.35f, e.DistanceMultiplier(18f, a.Range), 0.001f);
+            Assert.Less(e.DistanceMultiplier(a.Range, a.Range), 0.35f, "continua a descer até ao alcance máximo");
+            Assert.AreEqual(60, ShotTotal(a, 3f), "10 × 6 de perto");
+        }
+
+        [Test]
+        public void PumpPelletsAreDeterministicAndInsideCone()
+        {
+            var b = Get("shotgunner");
+            var d = (PumpShotgunDelivery)b.primary.attack.delivery;
+            var ctx = new AttackContext { attack = b.primary.attack, direction = Vector3.forward, seed = 1234 };
+            for (int i = 0; i < d.ShotCount; i++)
+            {
+                var dir = d.PelletDirection(ctx, i);
+                Assert.AreEqual(dir, d.PelletDirection(ctx, i), "igual em todas as máquinas");
+                Assert.LessOrEqual(Vector3.Angle(Vector3.forward, dir), d.spreadDegrees + d.jitterDegrees * 1.5f + 0.01f);
+            }
         }
 
         [Test]
@@ -234,7 +258,7 @@ namespace FPSLAN.Tests
         }
 
         [Test]
-        public void NCageSnaresRoot5sAnd40Poison()
+        public void NCageSnaresRoot2sAnd16Poison()
         {
             var b = Get("trapper");
             var d = b.super.attack.delivery as PlaceTrapsDelivery;
@@ -242,21 +266,22 @@ namespace FPSLAN.Tests
             Assert.AreEqual(3, d.count);
             Assert.AreEqual(TrapKind.Snare, d.trap.kind);
             var e = b.super.attack.effect;
-            Assert.AreEqual(5f, e.rootDuration);
-            Assert.AreEqual(40f, e.dotDamagePerSecond * e.dotDuration, 0.001f);
+            Assert.AreEqual(2f, e.rootDuration);
+            Assert.AreEqual(16f, e.dotDamagePerSecond * e.dotDuration, 0.001f);
             Assert.Greater(e.rootImmunity, 0f, "evita cadeias de armadilhas");
         }
 
         // ------------------------------------------------------------------ Lince
 
         [Test]
-        public void LinceBody38Head50AndSlowestCadence()
+        public void LinceBody55Head80AndSlowestCadence()
         {
             var b = Get("sniper");
             var a = b.primary.attack;
-            Assert.AreEqual(38, a.effect.DirectDamage(0, 10f, a.Range, false));
-            Assert.AreEqual(38, a.effect.DirectDamage(0, a.Range, a.Range, false));
-            Assert.AreEqual(50, a.effect.DirectDamage(0, 10f, a.Range, true));
+            Assert.AreEqual(55, a.effect.DirectDamage(0, 10f, a.Range, false));
+            Assert.AreEqual(55, a.effect.DirectDamage(0, a.Range, a.Range, false));
+            Assert.AreEqual(80, a.effect.DirectDamage(0, 10f, a.Range, true));
+            Assert.AreEqual(80, a.effect.DirectDamage(0, a.Range, a.Range, true));
             Assert.AreEqual(RigStyle.Sniper, b.firstPerson.rig);
             foreach (var other in Registry.brawlers)
                 if (other != b) Assert.Greater(b.primary.cooldown, other.primary.cooldown, "cadência menor que " + other.displayName);
@@ -272,7 +297,7 @@ namespace FPSLAN.Tests
             Assert.AreEqual(1, b.super.mode.maxShots);
             var e = b.super.attack.effect;
             Assert.IsTrue(e.executeOnHeadshot);
-            Assert.AreEqual(38, e.DirectDamage(0, 5f, b.super.attack.Range, false), "no corpo não elimina");
+            Assert.AreEqual(55, e.DirectDamage(0, 5f, b.super.attack.Range, false), "no corpo não elimina");
             Assert.IsInstanceOf<HitscanDelivery>(b.super.attack.delivery);
         }
 

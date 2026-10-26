@@ -225,6 +225,83 @@ namespace FPSLAN
             if (hitSomething) Detonate(ctx, end, false);
         }
 
+        // Caçadeira pump: bagos do mesmo disparo acumulados por vítima (os bagos saem todos no mesmo frame)
+        class PelletVictim { public PlayerHealth health; public int count; public float damage; public bool headshot; public Vector3 point; }
+        readonly List<PelletVictim> m_PelletVictims = new List<PelletVictim>();
+        AttackContext m_PelletCtx;
+
+        /// <summary>
+        /// Um bago de caçadeira (hitscan). No host o dano é acumulado por jogador e aplicado no último bago, só a quem
+        /// levou pelo menos minPellets bagos. Nos clientes: traço, faísca e impacto de cada bago.
+        /// </summary>
+        public void TracePellet(AttackContext ctx, Vector3 dir, float range, float radius, int pelletIndex, int pelletCount, int minPellets)
+        {
+            if (ctx.authoritative && (m_PelletCtx != ctx || pelletIndex == 0))
+            {
+                m_PelletVictims.Clear();
+                m_PelletCtx = ctx;
+            }
+
+            Vector3 origin = ctx.origin;
+            Vector3 end = origin + dir * range;
+            bool hitSomething = false;
+            var color = ctx.VisualColor;
+
+            int count = Physics.SphereCastNonAlloc(origin, Mathf.Max(0.01f, radius), dir, m_Hits, range, CombatMath.ShotMask, QueryTriggerInteraction.Ignore);
+            SortHits(count);
+            for (int i = 0; i < count; i++)
+            {
+                var hit = m_Hits[i];
+                if (hit.collider == null || IsShooter(ctx, hit.collider)) continue;
+                Vector3 point = hit.distance <= 0f ? origin : hit.point;
+                var health = hit.collider.GetComponentInParent<PlayerHealth>();
+                if (health != null)
+                {
+                    if (health.IsDead) continue;
+                    if (ctx.authoritative)
+                    {
+                        var e = ctx.Effect;
+                        bool head = e.canHeadshot && CombatMath.IsHeadshot(health, point, origin, dir);
+                        float dmg = e.damage * e.DistanceMultiplier(hit.distance, range) * (head ? e.headshotMultiplier : 1f);
+                        PelletVictim v = null;
+                        foreach (var pv in m_PelletVictims) if (pv.health == health) { v = pv; break; }
+                        if (v == null) { v = new PelletVictim { health = health }; m_PelletVictims.Add(v); }
+                        v.count++;
+                        v.damage += dmg;
+                        v.headshot |= head;
+                        v.point = point;
+                    }
+                    else Fx.HitStar(point, color, 0.6f);
+                    end = point;
+                    hitSomething = true;
+                    break;
+                }
+
+                if (ctx.authoritative) EffectResolver.SurfaceHit(ctx, hit.collider);
+                end = point;
+                hitSomething = true;
+                break;
+            }
+
+            if (!ctx.authoritative)
+            {
+                var from = Muzzle(ctx, 0);
+                float w = 0.05f * Mathf.Max(0.6f, ctx.attack.visuals.scale);
+                Fx.TracerLine(from, end, color, w, 0.1f);
+                if (pelletIndex == 0) Flash(ctx, color, 0);
+                if (hitSomething) Fx.Impact(end, color, 0.7f);
+            }
+
+            if (ctx.authoritative && pelletIndex >= pelletCount - 1)
+            {
+                foreach (var v in m_PelletVictims)
+                    if (v.count >= Mathf.Max(1, minPellets))
+                        EffectResolver.PelletHit(ctx, v.health, v.point, Mathf.RoundToInt(v.damage), v.headshot);
+                m_PelletVictims.Clear();
+                m_PelletCtx = null;
+            }
+        }
+
         /// <summary>Facada autoritativa: o primeiro jogador ou obstáculo bloqueia o golpe. Também destrói armadilhas inimigas.</summary>
         public void TraceMelee(PlayerNetwork attacker, Vector3 origin, Vector3 direction, MeleeProfile profile)
         {

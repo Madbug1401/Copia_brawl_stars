@@ -202,7 +202,7 @@ namespace FPSLAN.EditorTools
 
         // =====================================================================================
         // N.Cage (id "trapper") — Arqueiro/Controlo: três flechas por ataque (33+34+33 = 100 se todas acertarem).
-        // Especial: três armadilhas que imobilizam 5 s e envenenam (40 no total).
+        // Especial: três armadilhas que imobilizam 2 s e envenenam (16 no total).
         // =====================================================================================
         static BrawlerDefinition Trapper()
         {
@@ -225,7 +225,7 @@ namespace FPSLAN.EditorTools
                 e.canHeadshot = false; e.splashRadius = 0f; e.splashDamage = 0; e.coverDamage = 10;
             }, v => { v.color = new Color(0.45f, 0.75f, 1f); v.scale = 1.2f; v.style = ProjectileStyle.Arrow; v.sound = Sound.Bow; v.impactSound = Sound.Hit; });
 
-            // Armadilhas de imobilização: prendem 5 s (pode olhar e atacar), 8/s de veneno = 40; imunidade de 3 s depois
+            // Armadilhas de imobilização: prendem 2 s (pode olhar e atacar), 8/s de veneno durante esses 2 s = 16; imunidade de 3 s depois
             var super = Attack<PlaceTrapsDelivery>(id, "Super", d =>
             {
                 d.count = 3; d.spread = 1.6f; d.range = 12f;
@@ -239,7 +239,7 @@ namespace FPSLAN.EditorTools
             }, e =>
             {
                 e.damage = 0; e.canHeadshot = false;
-                e.rootDuration = 5f; e.rootImmunity = 3f; e.dotDamagePerSecond = 8f; e.dotDuration = 5f;
+                e.rootDuration = 2f; e.rootImmunity = 3f; e.dotDamagePerSecond = 8f; e.dotDuration = 2f;
             }, v => { v.color = new Color(0.45f, 0.9f, 0.35f); v.scale = 1f; v.sound = Sound.Lob; v.impactSound = Sound.Snare; });
 
             b.primary = new PrimaryAttackDefinition { attack = main, maxCharges = 3, reloadTimePerCharge = 1.6f, cooldown = 0.6f };
@@ -339,7 +339,8 @@ namespace FPSLAN.EditorTools
         }
 
         // =====================================================================================
-        // Riot (id "shotgunner") — Shotgun/combate próximo: 6 bagos; total de um disparo 54 de perto e 18 de longe.
+        // Riot (id "shotgunner") — Caçadeira "pump" (como a Pump Shotgun do Fortnite): 10 bagos hitscan, 6 cada = 60 até 6 m;
+        // queda: 10 m 80%, 13 m 60%, 15 m 49%, 18 m 35%, até 20% aos 31 m (alcance máximo). Mínimo de 3 bagos para fazer dano.
         // Especial: o Super de Brasa preservado (rajada que empurra e destrói cobertura). Vida mantém-se (135).
         // =====================================================================================
         static BrawlerDefinition Shotgunner()
@@ -352,14 +353,18 @@ namespace FPSLAN.EditorTools
             b.stats = new BrawlerStats { maxHealth = 135, regenDelay = 3f, regenPercentPerSecond = 0.15f };
             b.movement = new MovementProfile { walkSpeed = 6.7f, sprintSpeed = 9.7f, jumpHeight = 1.3f };
 
-            // Valores do disparo completo (não por bago): 6 × 9 = 54 até 1/4 do alcance (curta distância); 6 × 3 = 18 no alcance máximo
-            var main = Attack<ProjectileDelivery>(id, "Primary", d =>
+            var main = Attack<PumpShotgunDelivery>(id, "Primary", d =>
             {
-                d.count = 6; d.interval = 0f; d.spreadDegrees = 2f; d.fanDegrees = 26f;
-                d.speed = 60f; d.range = 13f; d.radius = 0.16f; d.pierce = false; d.gravity = 0f;
+                d.pellets = 10; d.spreadDegrees = 5.5f; d.jitterDegrees = 0.8f; d.range = 31f; d.effectiveRange = 18f;
+                d.radius = 0.05f; d.minPelletsToDamage = 3;
             }, e =>
             {
-                e.damage = 9; e.nearMultiplier = 1f; e.farMultiplier = 0.334f; e.falloffStartFraction = 0.25f; e.canHeadshot = false; e.coverDamage = 6;
+                e.damage = 6; e.nearMultiplier = 1f; e.farMultiplier = 1f; e.falloffStartFraction = 0f; e.canHeadshot = false; e.coverDamage = 4;
+                e.falloffCurve = new[]
+                {
+                    new Vector2(6f, 1f), new Vector2(10f, 0.8f), new Vector2(13f, 0.6f), new Vector2(15f, 0.49f),
+                    new Vector2(18f, 0.35f), new Vector2(31f, 0.2f),
+                };
             }, v => { v.color = new Color(1f, 0.6f, 0.25f); v.scale = 1f; v.style = ProjectileStyle.Pellet; v.sound = Sound.Shotgun; v.impactSound = Sound.Hit; });
 
             var super = Attack<ProjectileDelivery>(id, "Super", d =>
@@ -401,7 +406,7 @@ namespace FPSLAN.EditorTools
         }
 
         // =====================================================================================
-        // Lince (id "sniper") — Sniper: 38 no corpo, 50 na cabeça; a cadência mais lenta. Vida mantém-se (85).
+        // Lince (id "sniper") — Sniper: 55 no corpo, 80 na cabeça; a cadência mais lenta. Vida mantém-se (85).
         // Especial: Tiro fatal — carrega com o tempo; armado, um headshot validado no host elimina de imediato.
         // =====================================================================================
         static BrawlerDefinition Sniper()
@@ -420,7 +425,7 @@ namespace FPSLAN.EditorTools
                 d.range = 50f; d.radius = 0.04f; d.pierce = false;
             }, e =>
             {
-                e.damage = 38; e.nearMultiplier = 1f; e.farMultiplier = 1f; e.canHeadshot = true; e.headshotDamage = 50; e.coverDamage = 15;
+                e.damage = 55; e.nearMultiplier = 1f; e.farMultiplier = 1f; e.canHeadshot = true; e.headshotDamage = 80; e.coverDamage = 15;
             }, v => { v.color = new Color(0.55f, 1f, 0.85f); v.scale = 1.2f; v.style = ProjectileStyle.Bullet; v.sound = Sound.Sniper; v.impactSound = Sound.Hit; });
 
             // Tiro fatal: o mesmo traço (respeita paredes e linha de visão, sem mira automática); headshot = eliminação
@@ -430,7 +435,7 @@ namespace FPSLAN.EditorTools
                 d.range = 60f; d.radius = 0.02f; d.pierce = false;
             }, e =>
             {
-                e.damage = 38; e.nearMultiplier = 1f; e.farMultiplier = 1f; e.canHeadshot = true; e.headshotDamage = 50; e.executeOnHeadshot = true; e.coverDamage = 30;
+                e.damage = 55; e.nearMultiplier = 1f; e.farMultiplier = 1f; e.canHeadshot = true; e.headshotDamage = 80; e.executeOnHeadshot = true; e.coverDamage = 30;
             }, v => { v.color = new Color(1f, 0.2f, 0.2f); v.scale = 1.6f; v.style = ProjectileStyle.Bullet; v.sound = Sound.FatalShot; v.impactSound = Sound.Hit; });
 
             b.primary = new PrimaryAttackDefinition { attack = main, maxCharges = 3, reloadTimePerCharge = 2.3f, cooldown = 1.1f };
