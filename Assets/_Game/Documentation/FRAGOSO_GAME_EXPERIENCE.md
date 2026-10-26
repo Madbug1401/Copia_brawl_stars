@@ -56,7 +56,7 @@ Só mudaram os nomes visíveis (`displayName`), por isso prefabs, saves e mensag
   A armadilha desaparece ao disparar ou ao expirar.
 
 ### Lince — sniper
-- Principal: **55 no corpo / 80 na cabeça**, deteção de headshot pela zona da cabeça (de cima, de baixo e sem raio),
+- Principal: **55 no corpo**; na cabeça **80 a 1 m e mais quanto mais longe, até 150 a 60 m** (alcance 60 m), deteção de headshot pela zona da cabeça (de cima, de baixo e sem raio),
   indicador visual de headshot, a cadência mais lenta do jogo, mira própria (botão direito). A mirar, a **roda do
   rato** aproxima ou afasta o zoom da luneta (de 1,8x a 10,5x, mostrado no ecrã; fica guardado). A sensibilidade baixa
   com o zoom.

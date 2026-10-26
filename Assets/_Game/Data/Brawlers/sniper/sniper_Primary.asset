@@ -21,6 +21,9 @@ MonoBehaviour:
     canHeadshot: 1
     headshotMultiplier: 1.5
     headshotDamage: 80
+    headshotFarDamage: 150
+    headshotNearDistance: 1
+    headshotFarDistance: 60
     perShotDamage: 
     executeOnHeadshot: 0
     splashRadius: 0

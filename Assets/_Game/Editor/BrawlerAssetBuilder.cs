@@ -406,7 +406,8 @@ namespace FPSLAN.EditorTools
         }
 
         // =====================================================================================
-        // Lince (id "sniper") — Sniper: 55 no corpo, 80 na cabeça; a cadência mais lenta. Vida mantém-se (85).
+        // Lince (id "sniper") — Sniper: 55 no corpo; na cabeça 80 a 1 m e mais quanto mais longe, até 150 a 60 m
+        // (alcance 60 m); a cadência mais lenta. Vida mantém-se (85).
         // Especial: Tiro fatal — carrega com o tempo; armado, um headshot validado no host elimina de imediato.
         // =====================================================================================
         static BrawlerDefinition Sniper()
@@ -422,10 +423,11 @@ namespace FPSLAN.EditorTools
             var main = Attack<HitscanDelivery>(id, "Primary", d =>
             {
                 d.count = 1; d.interval = 0f; d.spreadDegrees = 0.05f; d.fanDegrees = 0f;
-                d.range = 50f; d.radius = 0.04f; d.pierce = false;
+                d.range = 60f; d.radius = 0.04f; d.pierce = false;
             }, e =>
             {
                 e.damage = 55; e.nearMultiplier = 1f; e.farMultiplier = 1f; e.canHeadshot = true; e.headshotDamage = 80; e.coverDamage = 15;
+                e.headshotFarDamage = 150; e.headshotNearDistance = 1f; e.headshotFarDistance = 60f;
             }, v => { v.color = new Color(0.55f, 1f, 0.85f); v.scale = 1.2f; v.style = ProjectileStyle.Bullet; v.sound = Sound.Sniper; v.impactSound = Sound.Hit; });
 
             // Tiro fatal: o mesmo traço (respeita paredes e linha de visão, sem mira automática); headshot = eliminação

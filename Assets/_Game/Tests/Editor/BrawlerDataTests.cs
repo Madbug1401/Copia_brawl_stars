@@ -274,14 +274,19 @@ namespace FPSLAN.Tests
         // ------------------------------------------------------------------ Lince
 
         [Test]
-        public void LinceBody55Head80AndSlowestCadence()
+        public void LinceBody55HeadGrowsWithDistanceAndSlowestCadence()
         {
             var b = Get("sniper");
             var a = b.primary.attack;
             Assert.AreEqual(55, a.effect.DirectDamage(0, 10f, a.Range, false));
             Assert.AreEqual(55, a.effect.DirectDamage(0, a.Range, a.Range, false));
-            Assert.AreEqual(80, a.effect.DirectDamage(0, 10f, a.Range, true));
-            Assert.AreEqual(80, a.effect.DirectDamage(0, a.Range, a.Range, true));
+            // headshot cresce com a distância: 80 a 1 m, 150 a 60 m (linear)
+            Assert.AreEqual(60f, a.Range, 0.01f, "alcance 60 m");
+            Assert.AreEqual(80, a.effect.DirectDamage(0, 0.5f, a.Range, true));
+            Assert.AreEqual(80, a.effect.DirectDamage(0, 1f, a.Range, true));
+            Assert.AreEqual(115, a.effect.DirectDamage(0, 30.5f, a.Range, true));
+            Assert.AreEqual(150, a.effect.DirectDamage(0, 60f, a.Range, true));
+            Assert.Less(a.effect.DirectDamage(0, 10f, a.Range, true), a.effect.DirectDamage(0, 40f, a.Range, true));
             Assert.AreEqual(RigStyle.Sniper, b.firstPerson.rig);
             foreach (var other in Registry.brawlers)
                 if (other != b) Assert.Greater(b.primary.cooldown, other.primary.cooldown, "cadência menor que " + other.displayName);
