@@ -245,6 +245,29 @@ namespace FPSLAN
             return v * deg / Mathf.Max(0.01f, GameSession.Sensitivity);
         }
 
+        /// <summary>Texto de diagnóstico (aba CONTROLLER): botões carregados e valores dos sticks/cruzeta, lidos agora.</summary>
+        public static string DebugReadout()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append("Buttons:");
+            bool any = false;
+            foreach (var b in AllButtons)
+                if (RawHeld(b)) { sb.Append(' ').Append(ButtonLabel(b)); any = true; }
+            if (!any) sb.Append(" none");
+#if FPSLAN_INPUTSYS && ENABLE_INPUT_SYSTEM
+            var g = Gamepad.current;
+            var l = g != null ? g.leftStick.ReadValue() : Vector2.zero;
+            var r = g != null ? g.rightStick.ReadValue() : Vector2.zero;
+#else
+            var l = new Vector2(Axis(0, "FPSLAN_LX"), Axis(1, "FPSLAN_LY"));
+            var r = new Vector2(Axis(2, "FPSLAN_RX"), Axis(3, "FPSLAN_RY"));
+#endif
+            sb.Append("   L stick ").Append(l.x.ToString("0.00")).Append(", ").Append(l.y.ToString("0.00"));
+            sb.Append("   R stick ").Append(r.x.ToString("0.00")).Append(", ").Append(r.y.ToString("0.00"));
+            if (!Application.isFocused) sb.Append("   (game window not focused: click inside the game)");
+            return sb.ToString();
+        }
+
         // ------------------------------------------------------------------ ações do jogo e botões configuráveis
 
         const string PrefPrefix = "fpslan.pad.";

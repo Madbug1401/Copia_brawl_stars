@@ -1524,6 +1524,8 @@ namespace FPSLAN
                     GUILayout.Width(200f * s), GUILayout.Height(38f * s)))
                 GameSession.ControllerInvertY = !inv;
             GUILayout.EndHorizontal();
+            if (connected)
+                GUILayout.Label("Live test → " + GamepadInput.DebugReadout(), m_Tiny);
             GUILayout.Label("Stick look sensitivity: " + GameSession.ControllerLookSensitivity.ToString("0.00") + "   (L stick: move · R stick: look)", m_Label);
             float padLook = GUILayout.HorizontalSlider(GameSession.ControllerLookSensitivity, 0.3f, 3f);
             if (!Mathf.Approximately(padLook, GameSession.ControllerLookSensitivity))
