@@ -175,3 +175,15 @@ A validação percorre também cada casa: porta → escada → 1.º andar → va
   Só a estrutura (reboco, cantaria, pedra, telha, troncos) projeta sombra do sol — a mobília não. Qualidade Ultra:
   sombras até 60 m com 2 cascatas (era 150 m / 4); Very High: 55 m. Medição no editor (1920×1080, Ultra, 4 vistas da
   Cidade Velha, média): 38,3 ms → 29,9 ms por imagem.
+
+### 4.3 Correntes do Pelourinho (`Editor/CidadeVelhaCorrentes.cs`)
+
+Menu **FPS-LAN ▸ Mapas ▸ Cidade Velha: correntes do Pelourinho (detalhe)**:
+
+- **Malha nova:** troca só a malha dos 4 vãos `PRP_Corrente_0/2/4/6` do prefab. Ficam iguais o material `M_CV_Ferro`, os colisores e as flags estáticas.
+- **Elos:** ovais de ferro entrelaçados, cada um rodado 90° em relação ao anterior, com uma pequena torção aleatória fixa. Medem 13 × 7,5 cm, com arame de 1,2 cm.
+  - Seguem a curva da corrente, que desce 22 cm a meio.
+  - São 184 elos no total.
+- **Postes:** cada poste tem uma anilha dupla e um olhal virado para o vão, à altura de 0,62 m.
+- **Ficheiros:** as malhas ficam em `Art/Environment/Santiago/CidadeVelha/Correntes/CV_Corrente_*.asset`. São cerca de 25 400 triângulos no total.
+- **Depois de reconstruir a Cidade Velha a partir do Blender:** o FBX volta a trazer a corrente simples, por isso é preciso voltar a correr este menu.
