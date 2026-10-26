@@ -5,10 +5,14 @@ using UnityEngine.InputSystem;
 
 namespace FPSLAN
 {
-    /// <summary>Botões do comando PlayStation (DualShock 4 / DualSense), pela ordem do Windows (DirectInput).</summary>
+    /// <summary>Botões do comando PlayStation (DualShock 4 / DualSense), pela ordem do Windows (DirectInput); a cruzeta
+    /// (lida pelos eixos) e "nenhum" têm valores próprios.</summary>
     public enum PadButton
     {
-        Square, Cross, Circle, Triangle, L1, R1, L2, R2, Share, Options, L3, R3, PS, Touchpad,
+        Square = 0, Cross = 1, Circle = 2, Triangle = 3, L1 = 4, R1 = 5, L2 = 6, R2 = 7, Share = 8, Options = 9,
+        L3 = 10, R3 = 11, PS = 12, Touchpad = 13,
+        DpadUp = 20, DpadDown = 21, DpadLeft = 22, DpadRight = 23,
+        None = 99,
     }
 
     /// <summary>
@@ -17,7 +21,8 @@ namespace FPSLAN
     /// Input System usa o Gamepad.current. As ações do jogo passam por GameInputSettings, por isso o comando funciona
     /// em tudo o que usa as teclas (disparar, mirar, Super, saltar, pausa, roda de sprays, pet, etc.).
     ///
-    /// Mapa: L stick andar · R stick olhar · R2 disparar · L2 mirar · L1 Super · R1 facada · X saltar · L3 sprint ·
+    /// Os botões de cada ação mudam-se na aba CONTROLLER das definições (guardados em PlayerPrefs "fpslan.pad.*").
+    /// Por defeito: L stick andar · R stick olhar · R2 disparar · L2 mirar · L1 Super · R1 facada · X saltar · L3 sprint ·
     /// ▢ reanimar · △ dar comida ao pet · ◯ roda de sprays · touchpad marcador · Options pausa · R3 luneta térmica ·
     /// cruzeta ↑/↓ zoom da luneta.
     /// </summary>
@@ -74,9 +79,16 @@ namespace FPSLAN
 
         // ------------------------------------------------------------------ leitura base
 
-        public static bool Held(PadButton b)
+        /// <summary>Botão carregado (com o comando ativo nas definições).</summary>
+        public static bool Held(PadButton b) => Active && RawHeld(b);
+        /// <summary>Botão carregado neste frame (com o comando ativo nas definições).</summary>
+        public static bool Pressed(PadButton b) => Active && RawPressed(b);
+
+        /// <summary>Leitura direta (basta o comando estar ligado): usada também para mudar os botões nas definições.</summary>
+        public static bool RawHeld(PadButton b)
         {
-            if (!Active) return false;
+            if (b == PadButton.None || !Connected) return false;
+            if (IsDpad(b)) { UpdateFrame(); return DpadDir(s_Dpad, b); }
 #if FPSLAN_INPUTSYS && ENABLE_INPUT_SYSTEM
             var c = Control(b);
             return c != null && c.isPressed;
@@ -85,15 +97,45 @@ namespace FPSLAN
 #endif
         }
 
-        public static bool Pressed(PadButton b)
+        public static bool RawPressed(PadButton b)
         {
-            if (!Active) return false;
+            if (b == PadButton.None || !Connected) return false;
+            if (IsDpad(b)) { UpdateFrame(); return DpadDir(s_Dpad, b) && !DpadDir(s_PrevDpad, b); }
 #if FPSLAN_INPUTSYS && ENABLE_INPUT_SYSTEM
             var c = Control(b);
             return c != null && c.wasPressedThisFrame;
 #else
             return Input.GetKeyDown(KeyCode.JoystickButton0 + (int)b);
 #endif
+        }
+
+        static bool IsDpad(PadButton b) => b >= PadButton.DpadUp && b <= PadButton.DpadRight;
+
+        static bool DpadDir(Vector2 d, PadButton b)
+        {
+            switch (b)
+            {
+                case PadButton.DpadUp: return d.y > 0.5f;
+                case PadButton.DpadDown: return d.y < -0.5f;
+                case PadButton.DpadLeft: return d.x < -0.5f;
+                case PadButton.DpadRight: return d.x > 0.5f;
+                default: return false;
+            }
+        }
+
+        /// <summary>Todos os botões que se podem atribuir (para a captura nas definições).</summary>
+        public static readonly PadButton[] AllButtons =
+        {
+            PadButton.Cross, PadButton.Circle, PadButton.Square, PadButton.Triangle, PadButton.L1, PadButton.R1,
+            PadButton.L2, PadButton.R2, PadButton.L3, PadButton.R3, PadButton.Share, PadButton.Options, PadButton.Touchpad,
+            PadButton.DpadUp, PadButton.DpadDown, PadButton.DpadLeft, PadButton.DpadRight,
+        };
+
+        /// <summary>Primeiro botão carregado neste frame (None se nenhum).</summary>
+        public static PadButton AnyPressed()
+        {
+            foreach (var b in AllButtons) if (RawPressed(b)) return b;
+            return PadButton.None;
         }
 
 #if FPSLAN_INPUTSYS && ENABLE_INPUT_SYSTEM
@@ -168,25 +210,26 @@ namespace FPSLAN
             if (s_Frame == Time.frameCount) return;
             s_Frame = Time.frameCount;
             s_PrevDpad = s_Dpad;
-            if (!Active) { s_Dpad = Vector2.zero; s_SprintLatch = false; return; }
+            if (!Connected) { s_Dpad = Vector2.zero; s_SprintLatch = false; return; }
 #if FPSLAN_INPUTSYS && ENABLE_INPUT_SYSTEM
             s_Dpad = Gamepad.current != null ? Gamepad.current.dpad.ReadValue() : Vector2.zero;
 #else
             s_Dpad = new Vector2(Axis(4, "FPSLAN_DX"), Axis(5, "FPSLAN_DY"));
 #endif
-            // sprint: clicar no L3 liga; desliga quando o stick volta ao centro
-            if (Pressed(PadButton.L3)) s_SprintLatch = !s_SprintLatch;
-            if (LeftStick.sqrMagnitude < 0.25f * 0.25f) s_SprintLatch = false;
+            // sprint: clicar no botão do sprint (L3 por defeito) liga; desliga quando o stick volta ao centro
+            var sprint = GetBinding(SprintId);
+            if (Active && !IsDpad(sprint) && RawPressed(sprint)) s_SprintLatch = !s_SprintLatch;
+            if (!Active || LeftStick.sqrMagnitude < 0.25f * 0.25f) s_SprintLatch = false;
         }
 
-        /// <summary>Cruzeta neste frame: +1 cima, −1 baixo (só no frame em que é carregada).</summary>
-        public static float DpadVerticalPressed
+        /// <summary>Zoom da luneta neste frame: +1 aproximar, −1 afastar (botões ZoomIn / ZoomOut).</summary>
+        public static float ZoomNotches
         {
             get
             {
-                UpdateFrame();
-                if (s_Dpad.y > 0.5f && s_PrevDpad.y <= 0.5f) return 1f;
-                if (s_Dpad.y < -0.5f && s_PrevDpad.y >= -0.5f) return -1f;
+                if (!Active) return 0f;
+                if (RawPressed(GetBinding(ZoomInId))) return 1f;
+                if (RawPressed(GetBinding(ZoomOutId))) return -1f;
                 return 0f;
             }
         }
@@ -202,39 +245,82 @@ namespace FPSLAN
             return v * deg / Mathf.Max(0.01f, GameSession.Sensitivity);
         }
 
-        // ------------------------------------------------------------------ ações do jogo
+        // ------------------------------------------------------------------ ações do jogo e botões configuráveis
 
-        /// <summary>Botão do comando de cada ação (None se a ação não tiver botão).</summary>
-        public static bool TryButton(GameAction action, out PadButton b)
+        const string PrefPrefix = "fpslan.pad.";
+        public const string SprintId = "Sprint", ZoomInId = "ZoomIn", ZoomOutId = "ZoomOut";
+
+        /// <summary>Ações que se podem mapear no comando (ids = nome da GameAction, mais o zoom da luneta).</summary>
+        public static readonly string[] BindableIds =
         {
-            switch (action)
+            "Fire", "Aim", "Super", "Melee", "Jump", SprintId, "Interact", "FeedPet", "Emote", "Scoreboard", "Pause",
+            "ThermalScope", ZoomInId, ZoomOutId,
+        };
+
+        public static PadButton DefaultBinding(string id)
+        {
+            switch (id)
             {
-                case GameAction.Fire: b = PadButton.R2; return true;
-                case GameAction.Aim: b = PadButton.L2; return true;
-                case GameAction.Super: b = PadButton.L1; return true;
-                case GameAction.Melee: b = PadButton.R1; return true;
-                case GameAction.Jump: b = PadButton.Cross; return true;
-                case GameAction.Interact: b = PadButton.Square; return true;
-                case GameAction.FeedPet: b = PadButton.Triangle; return true;
-                case GameAction.Emote: b = PadButton.Circle; return true;
-                case GameAction.Scoreboard: b = PadButton.Touchpad; return true;
-                case GameAction.Pause: b = PadButton.Options; return true;
-                case GameAction.ThermalScope: b = PadButton.R3; return true;
-                default: b = PadButton.Square; return false;
+                case "Fire": return PadButton.R2;
+                case "Aim": return PadButton.L2;
+                case "Super": return PadButton.L1;
+                case "Melee": return PadButton.R1;
+                case "Jump": return PadButton.Cross;
+                case SprintId: return PadButton.L3;
+                case "Interact": return PadButton.Square;
+                case "FeedPet": return PadButton.Triangle;
+                case "Emote": return PadButton.Circle;
+                case "Scoreboard": return PadButton.Touchpad;
+                case "Pause": return PadButton.Options;
+                case "ThermalScope": return PadButton.R3;
+                case ZoomInId: return PadButton.DpadUp;
+                case ZoomOutId: return PadButton.DpadDown;
+                default: return PadButton.None;
             }
+        }
+
+        public static PadButton GetBinding(string id)
+        {
+            int v = PlayerPrefs.GetInt(PrefPrefix + id, (int)DefaultBinding(id));
+            return System.Enum.IsDefined(typeof(PadButton), v) ? (PadButton)v : DefaultBinding(id);
+        }
+
+        /// <summary>Atribui o botão à ação; se outra ação já o usava, as duas trocam de botão. Devolve a ação trocada (ou null).</summary>
+        public static string SetBinding(string id, PadButton b)
+        {
+            var old = GetBinding(id);
+            string swapped = null;
+            if (b != PadButton.None)
+                foreach (var other in BindableIds)
+                    if (other != id && GetBinding(other) == b)
+                    {
+                        PlayerPrefs.SetInt(PrefPrefix + other, (int)old);
+                        swapped = other;
+                    }
+            PlayerPrefs.SetInt(PrefPrefix + id, (int)b);
+            PlayerPrefs.Save();
+            return swapped;
+        }
+
+        public static void ResetBindings()
+        {
+            foreach (var id in BindableIds) PlayerPrefs.DeleteKey(PrefPrefix + id);
+            PlayerPrefs.Save();
         }
 
         public static bool ActionHeld(GameAction action)
         {
             if (!Active) return false;
             if (action == GameAction.Sprint) { UpdateFrame(); return s_SprintLatch; }
-            return TryButton(action, out var b) && Held(b);
+            var b = GetBinding(action.ToString());
+            return b != PadButton.None && RawHeld(b);
         }
 
         public static bool ActionPressed(GameAction action)
         {
-            if (!Active) return false;
-            return TryButton(action, out var b) && Pressed(b);
+            if (!Active || action == GameAction.Sprint) return false;
+            var b = GetBinding(action.ToString());
+            return b != PadButton.None && RawPressed(b);
         }
 
         public static string ButtonLabel(PadButton b)
@@ -246,6 +332,12 @@ namespace FPSLAN
                 case PadButton.Circle: return "Circle";
                 case PadButton.Triangle: return "Triangle";
                 case PadButton.Touchpad: return "Touchpad";
+                case PadButton.Share: return "Create / Share";
+                case PadButton.DpadUp: return "D-pad Up";
+                case PadButton.DpadDown: return "D-pad Down";
+                case PadButton.DpadLeft: return "D-pad Left";
+                case PadButton.DpadRight: return "D-pad Right";
+                case PadButton.None: return "—";
                 default: return b.ToString();
             }
         }

@@ -18,6 +18,12 @@ namespace FPSLAN
         const int SettingsTabAudio = 2;
         const int SettingsTabProfile = 3;
         const int SettingsTabGraphics = 4;
+        const int SettingsTabController = 5;
+
+        // captura de botões do comando (aba CONTROLLER)
+        bool m_CapturingPad;
+        string m_CapturingPadId;
+        int m_PadCaptureFrame;
 
         public static bool GameplayInputAllowed => s_Instance != null && s_Instance.m_InGame &&
             !s_Instance.m_Paused && !s_Instance.m_SettingsOpen && !ProgressionUI.IsOpen;
@@ -1349,6 +1355,7 @@ namespace FPSLAN
             if (m_SettingsTab == tab) return;
             m_SettingsTab = tab;
             m_CapturingBinding = false;
+            m_CapturingPad = false;
         }
 
         static string ActionLabel(GameAction action)
@@ -1400,6 +1407,9 @@ namespace FPSLAN
             if (LayoutButton("CONTROLS", m_SettingsTab == SettingsTabControls ? PanelBlue : new Color(0.22f, 0.24f, 0.34f),
                 GUILayout.Height(40f * s)))
                 ChangeSettingsTab(SettingsTabControls);
+            if (LayoutButton("CONTROLLER", m_SettingsTab == SettingsTabController ? PanelBlue : new Color(0.22f, 0.24f, 0.34f),
+                GUILayout.Height(40f * s)))
+                ChangeSettingsTab(SettingsTabController);
             if (LayoutButton("GAMEPLAY", m_SettingsTab == SettingsTabGameplay ? PanelBlue : new Color(0.22f, 0.24f, 0.34f),
                 GUILayout.Height(40f * s)))
                 ChangeSettingsTab(SettingsTabGameplay);
@@ -1421,6 +1431,8 @@ namespace FPSLAN
                 DrawProfileSettings(s);
             else if (m_SettingsTab == SettingsTabGraphics)
                 DrawGraphicsSettings(s);
+            else if (m_SettingsTab == SettingsTabController)
+                DrawControllerTab(s);
             GUILayout.EndArea();
         }
 
@@ -1430,8 +1442,6 @@ namespace FPSLAN
             GUILayout.Label("Select an action, then press a key or mouse button. Aim: right mouse button.", m_Small);
             GUILayout.Space(6f * s);
             m_SettingsScroll = GUILayout.BeginScrollView(m_SettingsScroll, false, true, GUILayout.ExpandHeight(true));
-
-            DrawControllerSettings(s);
 
             var actions = new[]
             {
@@ -1475,13 +1485,25 @@ namespace FPSLAN
             HandleBindingCapture();
         }
 
-        /// <summary>Comando PlayStation: ligar/desligar, estado, sensibilidade do stick, inverter Y e mapa dos botões.</summary>
-        void DrawControllerSettings(float s)
+        static string PadActionLabel(string id)
         {
-            GUILayout.Label("PLAYSTATION CONTROLLER (DualShock 4 / DualSense)", m_Small);
+            switch (id)
+            {
+                case GamepadInput.ZoomInId: return "Zoom in (Lince, while aiming)";
+                case GamepadInput.ZoomOutId: return "Zoom out (Lince, while aiming)";
+                case GamepadInput.SprintId: return "Sprint (click to toggle)";
+                default:
+                    return System.Enum.TryParse<GameAction>(id, out var a) ? ActionLabel(a) : id;
+            }
+        }
+
+        /// <summary>Aba CONTROLLER: comando PlayStation (ligar/desligar, estado, sensibilidade, inverter Y) e botões de cada ação.</summary>
+        void DrawControllerTab(float s)
+        {
+            GUILayout.Space(10f * s);
             bool connected = GamepadInput.Connected;
-            GUILayout.Label(connected ? "Connected: " + GamepadInput.Name
-                : "No controller detected. Connect it by USB cable or Bluetooth (Windows: Settings ▸ Bluetooth ▸ add device, hold SHARE/CREATE + PS until the light flashes).", m_Tiny);
+            GUILayout.Label(connected ? "PlayStation controller connected: " + GamepadInput.Name
+                : "No controller detected. PS5 DualSense / PS4 DualShock: USB cable, or Bluetooth (hold CREATE/SHARE + PS until the light flashes).", m_Small);
             GUILayout.BeginHorizontal();
             bool on = GameSession.ControllerEnabled;
             if (LayoutButton(on ? "CONTROLLER: ON" : "CONTROLLER: OFF", on ? new Color(0.2f, 0.62f, 0.38f) : new Color(0.45f, 0.3f, 0.3f),
@@ -1492,16 +1514,66 @@ namespace FPSLAN
                     GUILayout.Width(200f * s), GUILayout.Height(38f * s)))
                 GameSession.ControllerInvertY = !inv;
             GUILayout.EndHorizontal();
-            GUILayout.Label("Stick look sensitivity: " + GameSession.ControllerLookSensitivity.ToString("0.00"), m_Label);
+            GUILayout.Label("Stick look sensitivity: " + GameSession.ControllerLookSensitivity.ToString("0.00") + "   (L stick: move · R stick: look)", m_Label);
             float padLook = GUILayout.HorizontalSlider(GameSession.ControllerLookSensitivity, 0.3f, 3f);
             if (!Mathf.Approximately(padLook, GameSession.ControllerLookSensitivity))
                 GameSession.ControllerLookSensitivity = padLook;
-            GUILayout.Space(4f * s);
-            GUILayout.Label("L stick: move · R stick: look · R2: attack · L2: aim · L1: Super · R1: melee · X: jump · L3: sprint", m_Tiny);
-            GUILayout.Label("Square: revive · Triangle: feed pet · Circle: spray wheel · Touchpad: scoreboard · Options: pause", m_Tiny);
-            GUILayout.Label("Lince aiming: D-pad up/down = zoom · R3 = thermal scope. Menus still use the mouse.", m_Tiny);
-            GUILayout.Space(14f * s);
-            GUILayout.Label("KEYBOARD AND MOUSE", m_Small);
+            GUILayout.Space(6f * s);
+            GUILayout.Label("Select an action, then press a button on the controller. Buttons already in use are swapped.", m_Tiny);
+
+            m_SettingsScroll = GUILayout.BeginScrollView(m_SettingsScroll, false, true, GUILayout.ExpandHeight(true));
+            foreach (var id in GamepadInput.BindableIds)
+            {
+                bool capturing = m_CapturingPad && m_CapturingPadId == id;
+                GUILayout.BeginHorizontal("box", GUILayout.Height(48f * s));
+                GUILayout.Label(PadActionLabel(id), m_Label, GUILayout.ExpandWidth(true));
+                string label = capturing ? "PRESS A BUTTON..." : GamepadInput.ButtonLabel(GamepadInput.GetBinding(id));
+                if (LayoutButton(label, capturing ? new Color(0.86f, 0.61f, 0.15f) : new Color(0.28f, 0.36f, 0.56f),
+                        GUILayout.Width(210f * s), GUILayout.Height(38f * s)))
+                {
+                    if (!connected)
+                        m_SettingsMessage = "Connect the controller first.";
+                    else
+                    {
+                        m_CapturingPad = true;
+                        m_CapturingPadId = id;
+                        m_PadCaptureFrame = Time.frameCount;
+                        m_SettingsMessage = null;
+                    }
+                }
+                GUILayout.EndHorizontal();
+            }
+            GUILayout.EndScrollView();
+
+            if (!string.IsNullOrEmpty(m_SettingsMessage))
+                GUILayout.Label(m_SettingsMessage, m_Small);
+            if (LayoutButton("RESET CONTROLLER BUTTONS", new Color(0.75f, 0.45f, 0.2f), GUILayout.Height(40f * s)))
+            {
+                GamepadInput.ResetBindings();
+                m_CapturingPad = false;
+                m_SettingsMessage = "Default controller buttons restored.";
+            }
+            HandlePadCapture();
+        }
+
+        void HandlePadCapture()
+        {
+            if (!m_CapturingPad || Event.current.type != EventType.Repaint) return;
+            // Escape cancela
+            if (GameInputSettings.WasPressedThisFrame(KeyCode.Escape)) { m_CapturingPad = false; m_SettingsMessage = "Cancelled."; return; }
+            if (Time.frameCount <= m_PadCaptureFrame + 1) return;
+            var b = GamepadInput.AnyPressed();
+            if (b == PadButton.None) return;
+            if (b == PadButton.Options && m_CapturingPadId != "Pause" && GamepadInput.GetBinding("Pause") == PadButton.Options)
+            {
+                m_SettingsMessage = "Options is the pause button. Choose another one (or change Pause first).";
+                return;
+            }
+            var swapped = GamepadInput.SetBinding(m_CapturingPadId, b);
+            m_SettingsMessage = swapped != null
+                ? PadActionLabel(m_CapturingPadId) + ": " + GamepadInput.ButtonLabel(b) + " (swapped with " + PadActionLabel(swapped) + ")."
+                : PadActionLabel(m_CapturingPadId) + ": " + GamepadInput.ButtonLabel(b) + ".";
+            m_CapturingPad = false;
         }
 
         void DrawGameplaySettings(float s)

@@ -50,7 +50,7 @@ namespace FPSLAN
         static float ReadScroll()
         {
             float y = M == null ? 0f : M.scroll.ReadValue().y;
-            return Mathf.Abs(y) < 0.01f ? GamepadInput.DpadVerticalPressed : Mathf.Sign(y);
+            return Mathf.Abs(y) < 0.01f ? GamepadInput.ZoomNotches : Mathf.Sign(y);
         }
 #else
         static Vector2 ReadMove()
@@ -73,7 +73,7 @@ namespace FPSLAN
         static float ReadScroll()
         {
             float y = Input.mouseScrollDelta.y;
-            return Mathf.Abs(y) < 0.01f ? GamepadInput.DpadVerticalPressed : Mathf.Sign(y);
+            return Mathf.Abs(y) < 0.01f ? GamepadInput.ZoomNotches : Mathf.Sign(y);
         }
 #endif
     }
