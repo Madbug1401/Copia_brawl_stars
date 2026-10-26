@@ -523,7 +523,11 @@ namespace FPSLAN
             // nível de zoom (roda do rato)
             float mag = GameSession.ScopeMagnification;
             Outlined(new Rect(cx - radius, cy + radius * 0.78f, radius * 2f, 30f * Scale), mag.ToString("0.0") + "x", m_Center, color, 1.5f);
-            Outlined(new Rect(cx - radius, cy + radius * 0.78f + 26f * Scale, radius * 2f, 24f * Scale), "Scroll: zoom", m_TinyCenter, new Color(1f, 1f, 1f, 0.7f), 1.5f);
+            string thermalKey = GameInputSettings.GetBinding(GameAction.ThermalScope) == KeyCode.Mouse2 ? "Wheel click" : GameInputSettings.BindingLabel(GameAction.ThermalScope);
+            Outlined(new Rect(cx - radius, cy + radius * 0.78f + 26f * Scale, radius * 2f, 24f * Scale),
+                "Scroll: zoom · " + thermalKey + ": " + (ThermalScope.Enabled ? "normal view" : "thermal"), m_TinyCenter, new Color(1f, 1f, 1f, 0.7f), 1.5f);
+            if (ThermalScope.Active)
+                Outlined(new Rect(cx - radius, cy - radius * 0.86f, radius * 2f, 30f * Scale), "THERMAL", m_Center, new Color(1f, 0.55f, 0.15f, 0.95f), 1.5f);
         }
 
         // ================================================================== menu principal
@@ -1366,6 +1370,7 @@ namespace FPSLAN
                 case GameAction.Interact: return "Revive partner (hold)";
                 case GameAction.FeedPet: return "Feed pet (UPRA)";
                 case GameAction.Emote: return "SITA spray wheel (hold)";
+                case GameAction.ThermalScope: return "Thermal scope (Lince, while aiming)";
                 default: return action.ToString();
             }
         }
@@ -1430,7 +1435,7 @@ namespace FPSLAN
             {
                 GameAction.MoveForward, GameAction.MoveBackward, GameAction.MoveLeft, GameAction.MoveRight,
                 GameAction.Fire, GameAction.Melee, GameAction.Super, GameAction.Jump, GameAction.Sprint,
-                GameAction.Scoreboard, GameAction.Pause, GameAction.Aim, GameAction.Interact, GameAction.FeedPet, GameAction.Emote,
+                GameAction.Scoreboard, GameAction.Pause, GameAction.Aim, GameAction.ThermalScope, GameAction.Interact, GameAction.FeedPet, GameAction.Emote,
             };
             foreach (var action in actions)
             {

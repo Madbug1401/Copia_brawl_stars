@@ -158,7 +158,7 @@ namespace FPSLAN
         public override void OnNetworkDespawn()
         {
             m_Player.HeroId.OnValueChanged -= OnHeroChanged;
-            if (m_Player.IsLocalHuman) MenuCamera.SetActive(true);
+            if (m_Player.IsLocalHuman) { ThermalScope.Release(); MenuCamera.SetActive(true); }
             m_Rig?.Destroy();
             m_View?.Destroy();
             m_Rig = null;
@@ -606,9 +606,12 @@ namespace FPSLAN
             }
             if (m_Rig != null && !m_Dead && !m_PendingRespawn)
             {
-                m_Rig.SetVisible(!m_Concealed);
+                // Luneta térmica da Lince (no PC de quem mira): os outros jogadores ficam quentes e visíveis mesmo nos arbustos
+                bool thermal = !local && ThermalScope.Active;
+                m_Rig.SetVisible(!m_Concealed || thermal);
                 // Dentro do arbusto mas visível (perto/revelado): meio transparente
-                m_Rig.SetFade(InBush && !local ? 0.55f : 1f);
+                m_Rig.SetFade(thermal ? 1f : (InBush && !local ? 0.55f : 1f));
+                m_Rig.SetThermal(thermal);
             }
 
             // ---------------- rig de terceira pessoa
@@ -722,8 +725,17 @@ namespace FPSLAN
                 // a mirar pela luneta: esconde a arma e as mãos (só se vê a mira no ecrã)
                 bool emote = (m_Emotes != null && m_Emotes.HidesWeapon) || m_Player.SprayWheelOpen;
                 if (m_View != null) m_View.SetVisible(!dead && !scoped && !emote);
-                // roda do rato a mirar: aproxima / afasta o zoom da luneta
-                if (scoped) GameSession.ZoomScope(InputReader.ScrollNotches);
+                // roda do rato a mirar: aproxima / afasta o zoom da luneta; clique na roda: visão térmica
+                if (scoped)
+                {
+                    GameSession.ZoomScope(InputReader.ScrollNotches);
+                    if (InputReader.ThermalTogglePressed)
+                    {
+                        ThermalScope.Enabled = !ThermalScope.Enabled;
+                        Sfx.Play2D(Sound.UiClick, 0.6f);
+                    }
+                }
+                ThermalScope.Tick(m_Camera, scoped);
                 float fov = scoped ? GameSession.ScopeFieldOfView :
                     (m_Player.Health.IsSlowed ? 78f : (motor.IsSprinting && motor.IsMoving ? 90f : 85f));
                 if (motor.IsLaunched) fov = 92f;

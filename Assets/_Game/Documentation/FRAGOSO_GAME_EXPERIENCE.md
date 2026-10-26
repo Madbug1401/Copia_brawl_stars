@@ -60,6 +60,9 @@ Só mudaram os nomes visíveis (`displayName`), por isso prefabs, saves e mensag
   indicador visual de headshot, a cadência mais lenta do jogo, mira própria (botão direito). A mirar, a **roda do
   rato** aproxima ou afasta o zoom da luneta (de 1,8x a 10,5x, mostrado no ecrã; fica guardado). A sensibilidade baixa
   com o zoom.
+  **Luneta térmica**: a mirar, o clique na roda do rato (tecla configurável, "Thermal scope") liga/desliga a visão
+  térmica — cenário frio azul-escuro, jogadores quentes (vermelho → branco), e os arbustos deixam de esconder quem está
+  lá dentro. Só visual, no PC de quem mira (`ThermalScope` + `Resources/Shaders/FPSLAN_Thermal.shader`).
 - Especial **Tiro fatal**: carrega passivamente com o tempo. Arma-se com o botão do Super (carregar outra vez cancela
   e guarda a carga). Headshot válido = eliminação imediata; no corpo = dano normal (55). Hitscan validado no host,
   respeita paredes e linha de visão, sem mira automática. A carga só é gasta ao disparar.

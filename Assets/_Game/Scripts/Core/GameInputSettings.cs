@@ -22,6 +22,7 @@ namespace FPSLAN
         Interact,
         FeedPet,
         Emote,
+        ThermalScope,   // acrescentado no fim (as teclas guardadas usam o nome)
     }
 
     public static class GameInputSettings
@@ -92,6 +93,7 @@ namespace FPSLAN
                 case GameAction.Interact: return KeyCode.F;
                 case GameAction.FeedPet: return KeyCode.T;
                 case GameAction.Emote: return KeyCode.Y;
+                case GameAction.ThermalScope: return KeyCode.Mouse2;
                 default: return KeyCode.None;
             }
         }

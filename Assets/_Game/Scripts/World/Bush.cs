@@ -69,7 +69,9 @@ namespace FPSLAN
                 float dx = Mathf.Abs(l.x * s.x) - halfExtents.x, dz = Mathf.Abs(l.z * s.z) - halfExtents.y;
                 if (dx < 0.8f && dz < 0.8f) target = 0.35f;
             }
-            m_Fade = Mathf.MoveTowards(m_Fade, target, Time.deltaTime * 3f);
+            // luneta térmica: as folhas quase não tapam (vê-se o calor de quem está lá dentro)
+            if (ThermalScope.Active) target = 0.2f;
+            m_Fade = Mathf.MoveTowards(m_Fade, target, Time.deltaTime * (ThermalScope.Active ? 12f : 3f));
             if (Mathf.Abs(m_Fade - m_Applied) > 0.01f)
             {
                 m_Applied = m_Fade;
