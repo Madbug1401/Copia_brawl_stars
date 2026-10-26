@@ -17,7 +17,33 @@ namespace FPSLAN
         public static bool JumpPressed => ReadJumpPressed();
         public static bool Fire => ReadFire();
         public static bool MeleePressed => GameInputSettings.WasPressedThisFrame(GameAction.Melee);
-        public static bool AimHeld => GameInputSettings.IsHeld(GameAction.Aim);
+        /// <summary>Agachar (Ctrl por defeito; o C passou a ser o corpo-a-corpo).</summary>
+        public static bool CrouchHeld => GameInputSettings.IsHeld(GameAction.Crouch);
+        public static bool CrouchPressed => GameInputSettings.WasPressedThisFrame(GameAction.Crouch);
+        /// <summary>Inclinar (Q esquerda / E direita por defeito).</summary>
+        public static bool LeanLeftHeld => GameInputSettings.IsHeld(GameAction.LeanLeft);
+        public static bool LeanRightHeld => GameInputSettings.IsHeld(GameAction.LeanRight);
+        public static bool LeanLeftPressed => GameInputSettings.WasPressedThisFrame(GameAction.LeanLeft);
+        public static bool LeanRightPressed => GameInputSettings.WasPressedThisFrame(GameAction.LeanRight);
+        /// <summary>A mirar (Lince): tecla premida, ou ligado/desligado em modo alternar (SETTINGS > CONTROLS).</summary>
+        public static bool AimHeld
+        {
+            get
+            {
+                if (!GameSession.AimToggle) return GameInputSettings.IsHeld(GameAction.Aim);
+                // Lido várias vezes por frame: o toque só conta uma vez
+                if (s_AimFrame != Time.frameCount)
+                {
+                    s_AimFrame = Time.frameCount;
+                    if (GameUI.GameplayInputAllowed && GameInputSettings.WasPressedThisFrame(GameAction.Aim)) s_AimToggled = !s_AimToggled;
+                }
+                return s_AimToggled;
+            }
+        }
+        static bool s_AimToggled;
+        static int s_AimFrame = -1;
+        /// <summary>Sai da luneta no modo alternar (morte, troca de personagem, mudança de modo).</summary>
+        public static void ResetAimToggle() => s_AimToggled = false;
         public static bool InteractHeld => GameInputSettings.IsHeld(GameAction.Interact);
         public static bool ThermalTogglePressed => GameInputSettings.WasPressedThisFrame(GameAction.ThermalScope);
         public static bool SuperPressed => ReadSuperPressed();
@@ -43,8 +69,7 @@ namespace FPSLAN
         static bool ReadSprint() => GameInputSettings.IsHeld(GameAction.Sprint);
         static bool ReadJumpPressed() => GameInputSettings.WasPressedThisFrame(GameAction.Jump);
         static bool ReadFire() => GameInputSettings.IsHeld(GameAction.Fire);
-        static bool ReadSuperPressed() => GameInputSettings.WasPressedThisFrame(GameAction.Super) ||
-            (!GameInputSettings.HasCustomBinding(GameAction.Super) && GameInputSettings.WasPressedThisFrame(KeyCode.E));
+        static bool ReadSuperPressed() => GameInputSettings.WasPressedThisFrame(GameAction.Super);
         static bool ReadScoreboardHeld() => GameInputSettings.IsHeld(GameAction.Scoreboard);
         static bool ReadPausePressed() => GameInputSettings.WasPressedThisFrame(GameAction.Pause);
         static float ReadScroll()
@@ -66,8 +91,7 @@ namespace FPSLAN
         static bool ReadSprint() => GameInputSettings.IsHeld(GameAction.Sprint);
         static bool ReadJumpPressed() => GameInputSettings.WasPressedThisFrame(GameAction.Jump);
         static bool ReadFire() => GameInputSettings.IsHeld(GameAction.Fire);
-        static bool ReadSuperPressed() => GameInputSettings.WasPressedThisFrame(GameAction.Super) ||
-            (!GameInputSettings.HasCustomBinding(GameAction.Super) && Input.GetKeyDown(KeyCode.E));
+        static bool ReadSuperPressed() => GameInputSettings.WasPressedThisFrame(GameAction.Super);
         static bool ReadScoreboardHeld() => GameInputSettings.IsHeld(GameAction.Scoreboard);
         static bool ReadPausePressed() => GameInputSettings.WasPressedThisFrame(GameAction.Pause);
         static float ReadScroll()

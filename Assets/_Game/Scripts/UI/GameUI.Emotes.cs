@@ -16,6 +16,29 @@ namespace FPSLAN
                     HudLabel(new Rect(0, Screen.height * 0.5f + 70 * s, Screen.width, 24 * s), hint, m_HudSmall, new Color(1f, 0.85f, 0.4f));
             }
             DrawFeedingBanner(me, s);
+            DrawUpraBoost(me, s);
+        }
+
+        /// <summary>Bónus UPRA ativo: cartão com a cor do bónus, o que faz e o tempo que falta (entra com um "pop").</summary>
+        void DrawUpraBoost(PlayerNetwork me, float s)
+        {
+            if (!me.UpraActive) return;
+            var sp = me.UpraSpecies;
+            var col = PetFoodRules.BoostColor(sp);
+            float remaining = me.UpraRemaining;
+            float since = PetFoodRules.BoostDuration - remaining;
+            float pop = since < 0.35f ? Mathf.Lerp(1.35f, 1f, since / 0.35f) : 1f;
+            float w = 330f * s * pop, h = 54f * s * pop;
+            var r = new Rect((Screen.width - w) / 2f, Screen.height * 0.74f, w, h);
+            HudPlate(r, new Color(0.04f, 0.08f, 0.14f, 0.82f), col, 3f * s);
+            float icon = h - 10 * s;
+            Tex(new Rect(r.x + 6 * s, r.y + 5 * s, icon, icon), Branding.UpraSack, Color.white);
+            float x = r.x + icon + 14 * s, tw = r.xMax - x - 10 * s;
+            HudLabel(new Rect(x, r.y + 5 * s, tw, 22 * s), "UPRA BOOST · " + PetFoodRules.BoostLabel(sp) + " · " + Mathf.CeilToInt(remaining) + "s", m_HudSmall, col);
+            HudLabel(new Rect(x, r.y + 24 * s, tw, 16 * s), PetFoodRules.BoostText(sp).ToUpperInvariant(), m_HudSmall, Color.white);
+            var bar = new Rect(x, r.yMax - 10 * s, tw, 5 * s);
+            Panel(bar, new Color(0f, 0f, 0f, 0.5f));
+            Panel(new Rect(bar.x, bar.y, bar.width * Mathf.Clamp01(remaining / PetFoodRules.BoostDuration), bar.height), col);
         }
 
         void DrawSprayWheel(PlayerNetwork me, float s)
@@ -73,7 +96,7 @@ namespace FPSLAN
             Tex(new Rect(r.x + 6 * s, r.y + 4 * s, icon, icon), Branding.UpraSack, Color.white);
             float x = r.x + icon + 16 * s, tw = r.xMax - x - 12 * s;
             HudLabel(new Rect(x, r.y + 8 * s, tw, 26 * s), Branding.UpraFormula(pet.species).ToUpperInvariant(), m_HudTitle, Color.white);
-            HudLabel(new Rect(x, r.y + 34 * s, tw, 16 * s), "FEEDING " + pet.displayName.ToUpperInvariant() + " · " + PetFoodRules.BoostText(pet.ability).ToUpperInvariant(), m_HudSmall, HudLime);
+            HudLabel(new Rect(x, r.y + 34 * s, tw, 16 * s), "FEEDING " + pet.displayName.ToUpperInvariant() + " · NEXT: " + PetFoodRules.BoostText(pet.species).ToUpperInvariant(), m_HudSmall, HudLime);
             var bar = new Rect(x, r.yMax - 16 * s, tw, 8 * s);
             Panel(bar, new Color(0f, 0f, 0f, 0.5f));
             Panel(new Rect(bar.x, bar.y, bar.width * Mathf.Clamp01(Mathf.Max(0f, t) / PetFoodRules.FeedAnimDuration), bar.height), new Color(0.95f, 0.75f, 0.3f));

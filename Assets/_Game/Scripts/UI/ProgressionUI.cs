@@ -817,9 +817,9 @@ namespace FPSLAN
             float x = r.x + icon + 16 * s, w = r.xMax - x - 8 * s;
             Outlined(new Rect(x, r.y + 4 * s, w, 22 * s), Branding.UpraFormula(pet.species).ToUpperInvariant(), Label, Color.white, 1.2f);
             Outlined(new Rect(x, r.y + 25 * s, w, 16 * s), Branding.UpraFormulaTagline(pet.species), Tiny, new Color(0.6f, 0.8f, 1f), 1f);
-            Outlined(new Rect(x, r.y + 42 * s, w, 18 * s), PetFoodRules.BoostText(pet.ability) + " · 20s", Small, Good, 1f);
+            Outlined(new Rect(x, r.y + 42 * s, w, 18 * s), "UPRA boost: " + PetFoodRules.BoostText(pet.species) + " · " + (int)PetFoodRules.BoostDuration + "s", Small, Good, 1f);
             Outlined(new Rect(x, r.y + 63 * s, w, 16 * s), "[" + GameInputSettings.BindingLabel(GameAction.FeedPet) + "] in match · pet eats 2s, you stand still", Tiny, Muted, 1f);
-            Outlined(new Rect(x, r.y + 80 * s, w, 16 * s), "90s cooldown · 3 per match · casual only", Tiny, Muted, 1f);
+            Outlined(new Rect(x, r.y + 80 * s, w, 16 * s), (int)PetFoodRules.Cooldown + "s cooldown · 3 meals per match · all modes", Tiny, Muted, 1f);
         }
 
         void DrawPetDetail(Rect r, PetDefinition pet)

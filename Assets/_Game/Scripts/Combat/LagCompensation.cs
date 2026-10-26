@@ -27,6 +27,7 @@ namespace FPSLAN
         public static readonly bool Enabled = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-nolagcomp") < 0;
 
         static readonly List<(Transform transform, Vector3 position)> s_Saved = new List<(Transform, Vector3)>(16);
+        static readonly List<PlayerMotor> s_Leaners = new List<PlayerMotor>(16);
         static int s_Depth;
 
         /// <summary>Host: atraso a compensar para um ataque de 'shooter' que estava a ver os outros na hora 'viewTime'.</summary>
@@ -60,6 +61,9 @@ namespace FPSLAN
                 var t = p.transform;
                 s_Saved.Add((t, t.position));
                 t.position = past;
+                // A inclinação (Q/E) também recua: cabeça e ombro onde estavam no ecrã de quem disparou
+                p.Motor.LagRewindLean(time);
+                s_Leaners.Add(p.Motor);
             }
             Physics.SyncTransforms();
             return true;
@@ -75,6 +79,8 @@ namespace FPSLAN
                 if (t != null) t.position = pos;
             }
             s_Saved.Clear();
+            foreach (var m in s_Leaners) if (m != null) m.LagRestoreLean();
+            s_Leaners.Clear();
             Physics.SyncTransforms();
         }
     }

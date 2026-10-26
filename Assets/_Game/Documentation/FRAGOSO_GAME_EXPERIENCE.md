@@ -164,7 +164,8 @@ headshot e especial disponível.
 sensibilidade, inverter Y e **botões de cada ação configuráveis** — escolhe a ação e carrega no botão; se já estava
 em uso, as duas trocam). Botões por defeito:
 L stick andar · R stick olhar (sensibilidade e inverter Y nas definições) · R2 atacar · L2 mirar · L1 Super ·
-R1 facada · X saltar · L3 sprint · Quadrado reanimar · Triângulo comida do pet · Círculo roda de sprays ·
+R1 facada · X saltar · L3 sprint · Círculo agachar/slide · cruzeta ←/→ inclinar · Quadrado reanimar ·
+Triângulo comida do pet · Create roda de sprays ·
 Touchpad marcador · Options pausa · Lince a mirar: cruzeta ↑/↓ zoom, R3 luneta térmica. Os menus usam o rato.
 (`GamepadInput` + eixos `FPSLAN_*` no InputManager.)
 | Q | Facada |

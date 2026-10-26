@@ -23,8 +23,8 @@ namespace FPSLAN
     ///
     /// Os botões de cada ação mudam-se na aba CONTROLLER das definições (guardados em PlayerPrefs "fpslan.pad.*").
     /// Por defeito: L stick andar · R stick olhar · R2 disparar · L2 mirar · L1 Super · R1 facada · X saltar · L3 sprint ·
-    /// ▢ reanimar · △ dar comida ao pet · ◯ roda de sprays · touchpad marcador · Options pausa · R3 luneta térmica ·
-    /// cruzeta ↑/↓ zoom da luneta.
+    /// ◯ agachar/slide · cruzeta ←/→ inclinar · ▢ reanimar · △ dar comida ao pet · Create roda de sprays ·
+    /// touchpad marcador · Options pausa · R3 luneta térmica · cruzeta ↑/↓ zoom da luneta.
     /// </summary>
     public static class GamepadInput
     {
@@ -253,8 +253,8 @@ namespace FPSLAN
         /// <summary>Ações que se podem mapear no comando (ids = nome da GameAction, mais o zoom da luneta).</summary>
         public static readonly string[] BindableIds =
         {
-            "Fire", "Aim", "Super", "Melee", "Jump", SprintId, "Interact", "FeedPet", "Emote", "Scoreboard", "Pause",
-            "ThermalScope", ZoomInId, ZoomOutId,
+            "Fire", "Aim", "Super", "Melee", "Jump", SprintId, "Crouch", "LeanLeft", "LeanRight", "Interact", "FeedPet",
+            "Emote", "Scoreboard", "Pause", "ThermalScope", ZoomInId, ZoomOutId,
         };
 
         public static PadButton DefaultBinding(string id)
@@ -269,7 +269,10 @@ namespace FPSLAN
                 case SprintId: return PadButton.L3;
                 case "Interact": return PadButton.Square;
                 case "FeedPet": return PadButton.Triangle;
-                case "Emote": return PadButton.Circle;
+                case "Crouch": return PadButton.Circle;
+                case "LeanLeft": return PadButton.DpadLeft;
+                case "LeanRight": return PadButton.DpadRight;
+                case "Emote": return PadButton.Share;
                 case "Scoreboard": return PadButton.Touchpad;
                 case "Pause": return PadButton.Options;
                 case "ThermalScope": return PadButton.R3;

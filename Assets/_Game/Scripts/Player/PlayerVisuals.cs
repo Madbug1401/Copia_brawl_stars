@@ -720,8 +720,9 @@ namespace FPSLAN
                 m_Camera.transform.localRotation = feedTilt * m_CamRot * Quaternion.Euler(shake);
 
                 // Abrandado: campo de visão mais fechado; sprint: ligeiramente mais aberto
-                bool scoped = !dead && GameUI.GameplayInputAllowed && m_Player.Brawler != null &&
-                    m_Player.Brawler.firstPerson.rig == RigStyle.Sniper && InputReader.AimHeld;
+                bool sniper = m_Player.Brawler != null && m_Player.Brawler.firstPerson.rig == RigStyle.Sniper;
+                if (dead || !sniper) InputReader.ResetAimToggle(); // modo alternar: morrer ou trocar de personagem sai da luneta
+                bool scoped = !dead && GameUI.GameplayInputAllowed && sniper && InputReader.AimHeld;
                 // a mirar pela luneta: esconde a arma e as mãos (só se vê a mira no ecrã)
                 bool emote = (m_Emotes != null && m_Emotes.HidesWeapon) || m_Player.SprayWheelOpen;
                 if (m_View != null) m_View.SetVisible(!dead && !scoped && !emote);
@@ -739,6 +740,7 @@ namespace FPSLAN
                 float fov = scoped ? GameSession.ScopeFieldOfView :
                     (m_Player.Health.IsSlowed ? 78f : (motor.IsSprinting && motor.IsMoving ? 90f : 85f));
                 if (motor.IsLaunched) fov = 92f;
+                if (motor.IsSliding && !scoped) fov = 98f; // slide: abre o campo de visão (sensação de velocidade)
                 m_Camera.fieldOfView = Mathf.Lerp(m_Camera.fieldOfView, fov, 1f - Mathf.Exp(-(scoped ? 14f : 8f) * dt));
                 if (m_ViewCamera != null) m_ViewCamera.fieldOfView = m_Camera.fieldOfView;
             }

@@ -95,6 +95,24 @@ namespace FPSLAN
             }
         }
 
+        const string KeyAimToggle = "fpslan.aimToggle";
+
+        /// <summary>Mira da Lince (botão direito): falso = manter premido; verdadeiro = carregar para entrar na luneta e outra vez para sair.</summary>
+        public static bool AimToggle
+        {
+            get => PlayerPrefs.GetInt(KeyAimToggle, 0) == 1;
+            set { PlayerPrefs.SetInt(KeyAimToggle, value ? 1 : 0); PlayerPrefs.Save(); InputReader.ResetAimToggle(); }
+        }
+
+        const string KeyLeanToggle = "fpslan.leanToggle";
+
+        /// <summary>Inclinar (Q/E): falso = manter a tecla premida; verdadeiro = carregar uma vez para inclinar e outra para voltar.</summary>
+        public static bool LeanToggle
+        {
+            get => PlayerPrefs.GetInt(KeyLeanToggle, 0) == 1;
+            set { PlayerPrefs.SetInt(KeyLeanToggle, value ? 1 : 0); PlayerPrefs.Save(); }
+        }
+
         /// <summary>Silenciar sem perder o volume escolhido (botão de mudo do menu).</summary>
         public static bool Muted
         {

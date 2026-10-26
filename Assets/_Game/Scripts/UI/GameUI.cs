@@ -1377,7 +1377,10 @@ namespace FPSLAN
                 case GameAction.Interact: return "Revive partner (hold)";
                 case GameAction.FeedPet: return "Feed pet (UPRA)";
                 case GameAction.Emote: return "SITA spray wheel (hold)";
+                case GameAction.Crouch: return "Crouch / slide (while sprinting)";
                 case GameAction.ThermalScope: return "Thermal scope (Lince, while aiming)";
+                case GameAction.LeanLeft: return "Lean left";
+                case GameAction.LeanRight: return "Lean right";
                 default: return action.ToString();
             }
         }
@@ -1447,7 +1450,8 @@ namespace FPSLAN
             {
                 GameAction.MoveForward, GameAction.MoveBackward, GameAction.MoveLeft, GameAction.MoveRight,
                 GameAction.Fire, GameAction.Melee, GameAction.Super, GameAction.Jump, GameAction.Sprint,
-                GameAction.Scoreboard, GameAction.Pause, GameAction.Aim, GameAction.ThermalScope, GameAction.Interact, GameAction.FeedPet, GameAction.Emote,
+                GameAction.Scoreboard, GameAction.Pause, GameAction.Aim, GameAction.ThermalScope, GameAction.Interact, GameAction.FeedPet, GameAction.Emote, GameAction.Crouch,
+                GameAction.LeanLeft, GameAction.LeanRight,
             };
             foreach (var action in actions)
             {
@@ -1466,6 +1470,12 @@ namespace FPSLAN
                     m_SettingsMessage = null;
                 }
                 GUILayout.EndHorizontal();
+
+                // Campos de modo (manter premido / alternar) logo a seguir às teclas a que se aplicam
+                if (action == GameAction.Aim)
+                    { bool v = DrawHoldToggleRow("Aim mode (Lince scope)", GameSession.AimToggle, s); if (v != GameSession.AimToggle) GameSession.AimToggle = v; }
+                else if (action == GameAction.LeanRight)
+                    { bool v = DrawHoldToggleRow("Lean mode", GameSession.LeanToggle, s); if (v != GameSession.LeanToggle) GameSession.LeanToggle = v; }
             }
 
             GUILayout.EndScrollView();
@@ -1576,6 +1586,19 @@ namespace FPSLAN
             m_CapturingPad = false;
         }
 
+        /// <summary>Linha de definição HOLD / TOGGLE (dois botões, o escolhido destacado). Devolve o valor novo.</summary>
+        bool DrawHoldToggleRow(string label, bool toggle, float s)
+        {
+            GUILayout.BeginHorizontal("box", GUILayout.Height(48f * s));
+            GUILayout.Label(label, m_Label, GUILayout.ExpandWidth(true));
+            var on = new Color(0.86f, 0.61f, 0.15f);
+            var off = new Color(0.22f, 0.24f, 0.34f);
+            if (LayoutButton("HOLD", toggle ? off : on, GUILayout.Width(103f * s), GUILayout.Height(38f * s))) toggle = false;
+            if (LayoutButton("TOGGLE", toggle ? on : off, GUILayout.Width(103f * s), GUILayout.Height(38f * s))) toggle = true;
+            GUILayout.EndHorizontal();
+            return toggle;
+        }
+
         void DrawGameplaySettings(float s)
         {
             GUILayout.Space(14f * s);
@@ -1602,6 +1625,7 @@ namespace FPSLAN
                 GameSession.AimSensitivity = 0.5f;
                 GameSession.ScopeFieldOfView = GameSession.ScopeDefaultFov;
             }
+
         }
 
         void DrawProfileSettings(float s)
