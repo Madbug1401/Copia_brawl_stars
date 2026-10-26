@@ -12,8 +12,8 @@ namespace FPSLAN
     [DefaultExecutionOrder(10001)]
     public class LeanPose : MonoBehaviour
     {
-        const float SpineRoll = 22f;      // graus do tronco com a inclinação máxima
-        const float MaxHipShift = 0.3f;   // m
+        const float SpineRoll = 26f;      // graus do tronco com a inclinação máxima
+        const float MaxHipShift = 0.42f;   // m
 
         static readonly Quaternion Unset = new Quaternion(0f, 0f, 0f, 0f);
         static readonly Vector3 UnsetPos = new Vector3(float.NaN, 0f, 0f);

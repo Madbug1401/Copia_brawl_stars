@@ -720,8 +720,9 @@ namespace FPSLAN
                 m_Camera.transform.localRotation = feedTilt * m_CamRot * Quaternion.Euler(shake);
 
                 // Abrandado: campo de visão mais fechado; sprint: ligeiramente mais aberto
-                bool scoped = !dead && GameUI.GameplayInputAllowed && m_Player.Brawler != null &&
-                    m_Player.Brawler.firstPerson.rig == RigStyle.Sniper && InputReader.AimHeld;
+                bool sniper = m_Player.Brawler != null && m_Player.Brawler.firstPerson.rig == RigStyle.Sniper;
+                if (dead || !sniper) InputReader.ResetAimToggle(); // modo alternar: morrer ou trocar de personagem sai da luneta
+                bool scoped = !dead && GameUI.GameplayInputAllowed && sniper && InputReader.AimHeld;
                 // a mirar pela luneta: esconde a arma e as mãos (só se vê a mira no ecrã)
                 bool emote = (m_Emotes != null && m_Emotes.HidesWeapon) || m_Player.SprayWheelOpen;
                 if (m_View != null) m_View.SetVisible(!dead && !scoped && !emote);

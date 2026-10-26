@@ -25,7 +25,25 @@ namespace FPSLAN
         public static bool LeanRightHeld => GameInputSettings.IsHeld(GameAction.LeanRight);
         public static bool LeanLeftPressed => GameInputSettings.WasPressedThisFrame(GameAction.LeanLeft);
         public static bool LeanRightPressed => GameInputSettings.WasPressedThisFrame(GameAction.LeanRight);
-        public static bool AimHeld => GameInputSettings.IsHeld(GameAction.Aim);
+        /// <summary>A mirar (Lince): tecla premida, ou ligado/desligado em modo alternar (SETTINGS > CONTROLS).</summary>
+        public static bool AimHeld
+        {
+            get
+            {
+                if (!GameSession.AimToggle) return GameInputSettings.IsHeld(GameAction.Aim);
+                // Lido várias vezes por frame: o toque só conta uma vez
+                if (s_AimFrame != Time.frameCount)
+                {
+                    s_AimFrame = Time.frameCount;
+                    if (GameUI.GameplayInputAllowed && GameInputSettings.WasPressedThisFrame(GameAction.Aim)) s_AimToggled = !s_AimToggled;
+                }
+                return s_AimToggled;
+            }
+        }
+        static bool s_AimToggled;
+        static int s_AimFrame = -1;
+        /// <summary>Sai da luneta no modo alternar (morte, troca de personagem, mudança de modo).</summary>
+        public static void ResetAimToggle() => s_AimToggled = false;
         public static bool InteractHeld => GameInputSettings.IsHeld(GameAction.Interact);
         public static bool ThermalTogglePressed => GameInputSettings.WasPressedThisFrame(GameAction.ThermalScope);
         public static bool SuperPressed => ReadSuperPressed();

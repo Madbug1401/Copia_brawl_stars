@@ -1458,6 +1458,12 @@ namespace FPSLAN
                     m_SettingsMessage = null;
                 }
                 GUILayout.EndHorizontal();
+
+                // Campos de modo (manter premido / alternar) logo a seguir às teclas a que se aplicam
+                if (action == GameAction.Aim)
+                    { bool v = DrawHoldToggleRow("Aim mode (Lince scope)", GameSession.AimToggle, s); if (v != GameSession.AimToggle) GameSession.AimToggle = v; }
+                else if (action == GameAction.LeanRight)
+                    { bool v = DrawHoldToggleRow("Lean mode", GameSession.LeanToggle, s); if (v != GameSession.LeanToggle) GameSession.LeanToggle = v; }
             }
 
             GUILayout.EndScrollView();
@@ -1475,6 +1481,19 @@ namespace FPSLAN
             GUILayout.EndHorizontal();
 
             HandleBindingCapture();
+        }
+
+        /// <summary>Linha de definição HOLD / TOGGLE (dois botões, o escolhido destacado). Devolve o valor novo.</summary>
+        bool DrawHoldToggleRow(string label, bool toggle, float s)
+        {
+            GUILayout.BeginHorizontal("box", GUILayout.Height(48f * s));
+            GUILayout.Label(label, m_Label, GUILayout.ExpandWidth(true));
+            var on = new Color(0.86f, 0.61f, 0.15f);
+            var off = new Color(0.22f, 0.24f, 0.34f);
+            if (LayoutButton("HOLD", toggle ? off : on, GUILayout.Width(103f * s), GUILayout.Height(38f * s))) toggle = false;
+            if (LayoutButton("TOGGLE", toggle ? on : off, GUILayout.Width(103f * s), GUILayout.Height(38f * s))) toggle = true;
+            GUILayout.EndHorizontal();
+            return toggle;
         }
 
         void DrawGameplaySettings(float s)
@@ -1504,15 +1523,6 @@ namespace FPSLAN
                 GameSession.ScopeFieldOfView = GameSession.ScopeDefaultFov;
             }
 
-            GUILayout.Space(16f * s);
-            GUILayout.Label("LEAN · " + GameInputSettings.BindingLabel(GameAction.LeanLeft) + " / " +
-                GameInputSettings.BindingLabel(GameAction.LeanRight), m_Small);
-            GUILayout.Label(GameSession.LeanToggle
-                ? "Toggle: press once to lean, again to return (sprint also returns)."
-                : "Hold: lean while the key is held.", m_Tiny);
-            if (LayoutButton("LEAN MODE: " + (GameSession.LeanToggle ? "TOGGLE" : "HOLD"), new Color(0.28f, 0.36f, 0.56f),
-                    GUILayout.Height(38f * s)))
-                GameSession.LeanToggle = !GameSession.LeanToggle;
         }
 
         void DrawProfileSettings(float s)

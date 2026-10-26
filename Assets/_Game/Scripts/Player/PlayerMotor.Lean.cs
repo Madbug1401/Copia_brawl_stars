@@ -8,21 +8,21 @@ namespace FPSLAN
     ///   por isso dá para espreitar uma esquina mostrando só a cabeça e um ombro.
     /// - Justo para quem leva o tiro: a cabeça e o ombro inclinados têm hitbox próprio (esferas filhas do jogador),
     ///   os headshots usam a cabeça deslocada e a compensação de latência recua também a inclinação.
-    /// - Encurta junto a paredes (não se espreita através delas). Inclinar corta o sprint; no slide não inclina.
+    /// - Encurta junto a paredes (não se espreita através delas). Inclinar corta o sprint; também inclina no slide.
     /// - Manter premido (por defeito) ou alternar (SETTINGS > GAMEPLAY), como no R6.
     /// O dono simula; os outros recebem a inclinação no snapshot (<see cref="MotorState.Lean"/>).
     /// </summary>
     public partial class PlayerMotor
     {
-        [Header("Inclinar (Q/E)")]
+        // Inclinar (Q/E). Não serializados: valem sempre os valores daqui (o prefab não guarda cópias antigas).
         [Tooltip("Deslocamento lateral máximo dos olhos (m).")]
-        public float leanOffset = 0.38f;
+        [System.NonSerialized] public float leanOffset = 0.52f;
         [Tooltip("Rotação da câmara (graus) com a inclinação máxima.")]
-        public float leanRoll = 14f;
+        [System.NonSerialized] public float leanRoll = 18f;
         [Tooltip("Quanto os olhos descem (m) com a inclinação máxima.")]
-        public float leanDrop = 0.06f;
+        [System.NonSerialized] public float leanDrop = 0.06f;
         [Tooltip("Velocidade da transição (inclinação por segundo; 7 ≈ 0,15 s até ao fim).")]
-        public float leanSpeed = 7f;
+        [System.NonSerialized] public float leanSpeed = 7f;
 
         const float LeanHeadRadius = 0.27f, LeanBodyRadius = 0.3f;
         const float LeanBodyHeight = 1.12f;   // centro do ombro inclinado (de pé)
@@ -80,7 +80,7 @@ namespace FPSLAN
         /// <summary>Lado pedido pelo jogador neste frame (−1, 0, +1). Também trata o modo alternar e o sprint.</summary>
         int ResolveLeanDir(in PlayerCommands cmd, bool alive)
         {
-            if (!alive || m_Sliding || m_Launched)
+            if (!alive || m_Launched)
             {
                 m_LeanToggleDir = 0;
                 return 0;
@@ -90,8 +90,8 @@ namespace FPSLAN
             {
                 if (cmd.leanLeftPressed) m_LeanToggleDir = m_LeanToggleDir == -1 ? 0 : -1;
                 if (cmd.leanRightPressed) m_LeanToggleDir = m_LeanToggleDir == 1 ? 0 : 1;
-                // Correr (sprint para a frente) cancela a inclinação, como no R6
-                if (cmd.sprint && cmd.move.y > 0.1f && !cmd.leanLeftPressed && !cmd.leanRightPressed) m_LeanToggleDir = 0;
+                // Correr (sprint para a frente) cancela a inclinação, como no R6 — mas não durante o slide
+                if (!m_Sliding && cmd.sprint && cmd.move.y > 0.1f && !cmd.leanLeftPressed && !cmd.leanRightPressed) m_LeanToggleDir = 0;
                 return m_LeanToggleDir;
             }
 
@@ -106,7 +106,6 @@ namespace FPSLAN
 
         void UpdateLean(int dir, float dt)
         {
-            if (m_Sliding) dir = 0;
             float target = dir;
             if (dir != 0) target *= LeanRoom(dir);
             // A afastar-se de uma parede é imediato; inclinar segue a velocidade normal
