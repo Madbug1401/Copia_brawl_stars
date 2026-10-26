@@ -1552,6 +1552,12 @@ namespace FPSLAN
                     }
                 }
                 GUILayout.EndHorizontal();
+
+                // modos (manter premido / alternar), partilhados com o teclado
+                if (id == "Aim")
+                    { bool v = DrawHoldToggleRow("Aim mode (Lince scope)", GameSession.AimToggle, s); if (v != GameSession.AimToggle) GameSession.AimToggle = v; }
+                else if (id == "LeanRight")
+                    { bool v = DrawHoldToggleRow("Lean mode", GameSession.LeanToggle, s); if (v != GameSession.LeanToggle) GameSession.LeanToggle = v; }
             }
             GUILayout.EndScrollView();
 
