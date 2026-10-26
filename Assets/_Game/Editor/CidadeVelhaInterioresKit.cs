@@ -30,6 +30,8 @@ namespace FPSLAN.EditorTools
             public Vector3 center;
             public Vector3 size;
             public Quaternion rot;
+            /// <summary>Bloqueia o movimento mas deixa passar tiros (ex.: grades de janela): vai para a layer Ignore Raycast.</summary>
+            public bool shotThrough;
         }
 
         public struct LightDef
@@ -405,12 +407,12 @@ namespace FPSLAN.EditorTools
 
         // ------------------------------------------------------------------ colisores e luzes
 
-        public void Col(string name, Vector3 a, Vector3 b)
+        public void Col(string name, Vector3 a, Vector3 b, bool shotThrough = false)
         {
             var mn = Vector3.Min(a, b);
             var mx = Vector3.Max(a, b);
             var lc = (mn + mx) * 0.5f;
-            Cols.Add(new ColBox { name = name, center = m_M.MultiplyPoint3x4(lc), size = mx - mn, rot = m_M.rotation });
+            Cols.Add(new ColBox { name = name, center = m_M.MultiplyPoint3x4(lc), size = mx - mn, rot = m_M.rotation, shotThrough = shotThrough });
         }
 
         /// <summary>Colisor rodado: centro e rotação locais.</summary>

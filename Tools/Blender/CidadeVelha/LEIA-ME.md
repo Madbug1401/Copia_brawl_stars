@@ -204,3 +204,15 @@ Menu **FPS-LAN ▸ Mapas ▸ Cidade Velha: spawns do Deathmatch nas casas e na i
   - Se não houver nenhum, escolhe entre os livres. Se ainda assim não houver, escolhe entre todos.
 - **Outros modos:** o Pique-Gemas, o It Takes Two e os restantes ignoram estes pontos e funcionam como antes.
 - **Depois de reconstruir a Cidade Velha a partir do Blender** (que volta a trazer as faixas), é preciso correr outra vez os interiores (4 e 4.1) e a seguir este menu.
+
+### 4.5 Janelas com grades (tiros passam, jogadores não)
+
+As janelas do rés-do-chão das casas (`_Janela_`, com grades) têm a parede de colisão aberta no vão. Em cada vão há um
+colisor `COL_<casa>_Grade` na layer **Ignore Raycast** (2):
+
+- **O jogador não passa:** o `CharacterController` colide com a layer 2.
+- **Os tiros passam:** `CombatMath.ShotMask` ignora a layer 2, por isso dá para acertar em quem está do outro lado,
+  entre as barras.
+- **Projéteis e facada:** também passam pelo vão, porque usam a mesma máscara.
+
+Gerado pelo menu dos interiores (4 e 4.1). Depois de o voltar a correr, corre também o 4.4 (spawns do Deathmatch).

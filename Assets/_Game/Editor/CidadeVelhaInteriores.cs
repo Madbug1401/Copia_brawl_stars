@@ -2790,7 +2790,8 @@ namespace FPSLAN.EditorTools
             foreach (var c in k.Cols)
             {
                 var go = new GameObject("COL_" + c.name + "_" + i++);
-                go.layer = layer;
+                // grades: o jogador não passa, mas os tiros passam entre as barras (CombatMath.ShotMask ignora a layer 2)
+                go.layer = c.shotThrough ? 2 : layer;
                 go.transform.SetParent(g, false);
                 go.transform.position = c.center;
                 go.transform.rotation = c.rot;
