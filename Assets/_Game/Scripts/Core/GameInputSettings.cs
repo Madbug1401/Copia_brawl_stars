@@ -24,17 +24,52 @@ namespace FPSLAN
         Emote,
         Crouch,   // acrescentado no fim: as teclas guardadas usam o nome, mas assim nada muda de número
         ThermalScope,   // acrescentado no fim (as teclas guardadas usam o nome)
+        LeanLeft,       // inclinar (estilo Rainbow Six Siege)
+        LeanRight,
     }
 
     public static class GameInputSettings
     {
         const string PreferencePrefix = "fpslan.input.";
 
+        /// <summary>Versão do esquema de teclas por defeito (2: Q/E inclinam; corpo-a-corpo em C, Super em X).</summary>
+        const int LayoutVersion = 2;
+        static bool s_Migrated;
+
+        /// <summary>
+        /// Teclas guardadas com o esquema antigo: quem tinha o corpo-a-corpo no Q ou o Super no E (escolhido à mão)
+        /// passa para os novos valores por defeito, para não chocar com o inclinar. Corre uma vez.
+        /// </summary>
+        static void MigrateLayout()
+        {
+            if (s_Migrated) return;
+            s_Migrated = true;
+            const string versionKey = PreferencePrefix + "layout";
+            if (PlayerPrefs.GetInt(versionKey, 1) >= LayoutVersion) return;
+            if (PlayerPrefs.HasKey(PreferencePrefix + GameAction.Melee) && PlayerPrefs.GetInt(PreferencePrefix + GameAction.Melee) == (int)KeyCode.Q)
+                PlayerPrefs.DeleteKey(PreferencePrefix + GameAction.Melee);
+            if (PlayerPrefs.HasKey(PreferencePrefix + GameAction.Super) && PlayerPrefs.GetInt(PreferencePrefix + GameAction.Super) == (int)KeyCode.E)
+                PlayerPrefs.DeleteKey(PreferencePrefix + GameAction.Super);
+            // Uma tecla escolhida à mão que agora é a de outra ação por defeito: a nova ação fica sem tecla até ser escolhida
+            foreach (GameAction action in System.Enum.GetValues(typeof(GameAction)))
+            {
+                if (PlayerPrefs.HasKey(PreferencePrefix + action)) continue;
+                var def = DefaultBinding(action);
+                foreach (GameAction other in System.Enum.GetValues(typeof(GameAction)))
+                    if (other != action && PlayerPrefs.HasKey(PreferencePrefix + other) && PlayerPrefs.GetInt(PreferencePrefix + other) == (int)def)
+                        PlayerPrefs.SetInt(PreferencePrefix + action, (int)KeyCode.None);
+            }
+            PlayerPrefs.SetInt(versionKey, LayoutVersion);
+            PlayerPrefs.Save();
+        }
+
         public static KeyCode GetBinding(GameAction action)
         {
+            MigrateLayout();
             var fallback = DefaultBinding(action);
             var stored = PlayerPrefs.GetInt(PreferencePrefix + action, (int)fallback);
             var key = (KeyCode)stored;
+            if (key == KeyCode.None && PlayerPrefs.HasKey(PreferencePrefix + action)) return KeyCode.None; // sem tecla (migração)
             return key != KeyCode.None && System.Enum.IsDefined(typeof(KeyCode), key) ? key : fallback;
         }
 
@@ -62,8 +97,8 @@ namespace FPSLAN
             PlayerPrefs.Save();
         }
 
-        public static bool IsHeld(GameAction action) => IsHeld(GetBinding(action));
-        public static bool WasPressedThisFrame(GameAction action) => ReadKeyPressedThisFrame(GetBinding(action));
+        public static bool IsHeld(GameAction action) { var k = GetBinding(action); return k != KeyCode.None && IsHeld(k); }
+        public static bool WasPressedThisFrame(GameAction action) { var k = GetBinding(action); return k != KeyCode.None && ReadKeyPressedThisFrame(k); }
         public static bool WasPressedThisFrame(KeyCode key) => ReadKeyPressedThisFrame(key);
         public static bool IsHeldKey(KeyCode key) => IsHeld(key);
         public static bool HasCustomBinding(GameAction action) => PlayerPrefs.HasKey(PreferencePrefix + action);
@@ -71,6 +106,7 @@ namespace FPSLAN
         public static string BindingLabel(GameAction action)
         {
             var key = GetBinding(action);
+            if (key == KeyCode.None) return "—";
             if (key >= KeyCode.Mouse0 && key <= KeyCode.Mouse6)
                 return "Mouse " + ((int)key - (int)KeyCode.Mouse0 + 1);
             return key.ToString().Replace("Left", "Left ").Replace("Right", "Right ");
@@ -85,8 +121,8 @@ namespace FPSLAN
                 case GameAction.MoveLeft: return KeyCode.A;
                 case GameAction.MoveRight: return KeyCode.D;
                 case GameAction.Fire: return KeyCode.Mouse0;
-                case GameAction.Melee: return KeyCode.Q;
-                case GameAction.Super: return KeyCode.E;
+                case GameAction.Melee: return KeyCode.C;
+                case GameAction.Super: return KeyCode.X;
                 case GameAction.Jump: return KeyCode.Space;
                 case GameAction.Sprint: return KeyCode.LeftShift;
                 case GameAction.Scoreboard: return KeyCode.Tab;
@@ -97,6 +133,8 @@ namespace FPSLAN
                 case GameAction.Emote: return KeyCode.Y;
                 case GameAction.Crouch: return KeyCode.LeftControl;
                 case GameAction.ThermalScope: return KeyCode.Mouse2;
+                case GameAction.LeanLeft: return KeyCode.Q;
+                case GameAction.LeanRight: return KeyCode.E;
                 default: return KeyCode.None;
             }
         }

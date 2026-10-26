@@ -11,6 +11,7 @@ namespace FPSLAN
         public float Yaw;
         public float Pitch;
         public byte Flags; // bit0: no chão, bit1: a mover, bit2: agachado, bit3: a deslizar (slide)
+        public sbyte Lean; // inclinar (Q/E): −127 esquerda … 0 … 127 direita
 
         public bool Grounded => (Flags & 1) != 0;
         public bool Moving => (Flags & 2) != 0;
@@ -108,8 +109,12 @@ namespace FPSLAN
             get
             {
                 if (IsOwner) return cameraRoot.position;
-                var basePos = IsServer && m_HasLatest ? m_Latest.Position : transform.position;
-                return basePos + Vector3.up * EyeHeight;
+                bool latest = IsServer && m_HasLatest;
+                var basePos = latest ? m_Latest.Position : transform.position;
+                // Inclinado (Q/E): os olhos estão deslocados para o lado
+                float side = cameraRoot != null ? cameraRoot.localPosition.x : 0f;
+                var right = latest ? Quaternion.Euler(0f, m_Latest.Yaw, 0f) * Vector3.right : transform.right;
+                return basePos + Vector3.up * EyeHeight + right * side;
             }
         }
 
@@ -123,6 +128,7 @@ namespace FPSLAN
             m_Controller = GetComponent<CharacterController>();
             m_Player = GetComponent<PlayerNetwork>();
             CrouchAwake();
+            LeanAwake();
         }
 
         public override void OnNetworkSpawn()
@@ -166,8 +172,11 @@ namespace FPSLAN
 
             m_RecoilPitch = Mathf.MoveTowards(m_RecoilPitch, 0f, 18f * dt);
             transform.rotation = Quaternion.Euler(0f, m_Yaw, 0f);
-            cameraRoot.localRotation = Quaternion.Euler(m_Pitch - m_RecoilPitch + SlideCameraPitch, 0f, m_SlideRoll);
+            cameraRoot.localRotation = Quaternion.Euler(m_Pitch - m_RecoilPitch + SlideCameraPitch, 0f, m_SlideRoll + LeanCameraRoll);
             if (aimPivot != null) aimPivot.localRotation = Quaternion.Euler(m_Pitch, 0f, 0f);
+
+            // Inclinar (PlayerMotor.Lean.cs): lado pedido neste frame
+            int leanDir = ResolveLeanDir(cmd, alive);
 
             if (!m_Controller.enabled)
             {
@@ -181,7 +190,7 @@ namespace FPSLAN
             Vector3 wish = rooted ? Vector3.zero : transform.right * cmd.move.x + transform.forward * cmd.move.y;
             if (wish.sqrMagnitude > 1f) wish.Normalize();
 
-            float sprintAmount = cmd.sprint && cmd.move.y > 0.1f && !rooted ? 1f : 0f;
+            float sprintAmount = cmd.sprint && cmd.move.y > 0.1f && !rooted && leanDir == 0 ? 1f : 0f; // inclinar corta o sprint (R6)
             m_Sprinting = sprintAmount > 0.001f && alive;
             // Velocidade efetiva = base do Brawler × melhorias/pet (calculados no host) × estados
             float speed = Mathf.Lerp(move.walkSpeed, move.sprintSpeed * m_Player.SprintMultiplier, sprintAmount) *
@@ -192,6 +201,7 @@ namespace FPSLAN
 
             // Agachar / slide (PlayerMotor.Crouch.cs): pode reduzir a velocidade alvo e controla a velocidade no slide
             UpdateCrouchSlide(cmd, wish, ref speed, grounded, alive, rooted, dt);
+            UpdateLean(leanDir, dt);
 
             // Plataformas de salto
             m_PadCooldown -= dt;
@@ -275,7 +285,8 @@ namespace FPSLAN
                 Position = transform.position,
                 Yaw = m_Yaw,
                 Pitch = m_Pitch,
-                Flags = f
+                Flags = f,
+                Lean = PackLean()
             };
             m_HasLatest = true;
 
@@ -387,6 +398,7 @@ namespace FPSLAN
             transform.rotation = Quaternion.Euler(0f, s.Yaw, 0f);
             if (aimPivot != null) aimPivot.localRotation = Quaternion.Euler(s.Pitch, 0f, 0f);
             ApplyRemoteCrouch(s.Crouched, s.Sliding, Time.deltaTime);
+            ApplyRemoteLean(s.Lean);
         }
 
         /// <summary>Estado interpolado na hora 't' (na escala dos snapshots). Extrapola pouco e nunca atravessa teleportes.</summary>
@@ -425,6 +437,7 @@ namespace FPSLAN
                 Yaw = Mathf.LerpAngle(a.State.Yaw, b.State.Yaw, k),
                 Pitch = Mathf.Lerp(a.State.Pitch, b.State.Pitch, k),
                 Flags = k < 0.5f ? a.State.Flags : b.State.Flags,
+                Lean = (sbyte)Mathf.RoundToInt(Mathf.Lerp(a.State.Lean, b.State.Lean, k)),
             };
         }
 
@@ -522,6 +535,7 @@ namespace FPSLAN
             m_Launched = false;
             m_VerticalVelocity = 0f;
             ResetCrouch();
+            ResetLean();
             transform.rotation = Quaternion.Euler(0f, m_Yaw, 0f);
             if (m_Player.Bot != null) m_Player.Bot.OnTeleported(yaw);
             PushState(true);

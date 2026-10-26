@@ -20,6 +20,9 @@ namespace FPSLAN
         public bool meleePressed;
         public bool superPressed;
         public bool interact;
+        public bool leanLeft, leanRight;              // teclas de inclinar premidas
+        public bool leanLeftPressed, leanRightPressed;
+        public bool leanToggle;                       // modo alternar (definição do jogador); falso = manter premido
 
         public static PlayerCommands FromHuman(bool allowed)
         {
@@ -41,6 +44,11 @@ namespace FPSLAN
                 meleePressed = InputReader.MeleePressed,
                 superPressed = InputReader.SuperPressed,
                 interact = InputReader.InteractHeld,
+                leanLeft = InputReader.LeanLeftHeld,
+                leanRight = InputReader.LeanRightHeld,
+                leanLeftPressed = InputReader.LeanLeftPressed,
+                leanRightPressed = InputReader.LeanRightPressed,
+                leanToggle = GameSession.LeanToggle,
             };
         }
     }
@@ -133,7 +141,9 @@ namespace FPSLAN
             // Agachado/slide: a cabeça está mais baixa
             var motor = victim.GetComponent<PlayerMotor>();
             float drop = motor != null ? motor.CrouchDrop : 0f;
-            return IsHeadshot(victim.transform.position - Vector3.up * drop, hitPoint, rayOrigin, rayDir);
+            // Inclinado (Q/E): a cabeça está deslocada para o lado (e um pouco mais baixa)
+            var lean = motor != null ? motor.LeanHeadOffset : Vector3.zero;
+            return IsHeadshot(victim.transform.position - Vector3.up * drop + lean, hitPoint, rayOrigin, rayDir);
         }
 
         public static bool IsHeadshot(Vector3 victimFeet, Vector3 hitPoint, Vector3 rayOrigin, Vector3 rayDir)

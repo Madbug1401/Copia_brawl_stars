@@ -1372,6 +1372,8 @@ namespace FPSLAN
                 case GameAction.Emote: return "SITA spray wheel (hold)";
                 case GameAction.Crouch: return "Crouch / slide (while sprinting)";
                 case GameAction.ThermalScope: return "Thermal scope (Lince, while aiming)";
+                case GameAction.LeanLeft: return "Lean left";
+                case GameAction.LeanRight: return "Lean right";
                 default: return action.ToString();
             }
         }
@@ -1437,6 +1439,7 @@ namespace FPSLAN
                 GameAction.MoveForward, GameAction.MoveBackward, GameAction.MoveLeft, GameAction.MoveRight,
                 GameAction.Fire, GameAction.Melee, GameAction.Super, GameAction.Jump, GameAction.Sprint,
                 GameAction.Scoreboard, GameAction.Pause, GameAction.Aim, GameAction.ThermalScope, GameAction.Interact, GameAction.FeedPet, GameAction.Emote, GameAction.Crouch,
+                GameAction.LeanLeft, GameAction.LeanRight,
             };
             foreach (var action in actions)
             {
@@ -1500,6 +1503,16 @@ namespace FPSLAN
                 GameSession.AimSensitivity = 0.5f;
                 GameSession.ScopeFieldOfView = GameSession.ScopeDefaultFov;
             }
+
+            GUILayout.Space(16f * s);
+            GUILayout.Label("LEAN · " + GameInputSettings.BindingLabel(GameAction.LeanLeft) + " / " +
+                GameInputSettings.BindingLabel(GameAction.LeanRight), m_Small);
+            GUILayout.Label(GameSession.LeanToggle
+                ? "Toggle: press once to lean, again to return (sprint also returns)."
+                : "Hold: lean while the key is held.", m_Tiny);
+            if (LayoutButton("LEAN MODE: " + (GameSession.LeanToggle ? "TOGGLE" : "HOLD"), new Color(0.28f, 0.36f, 0.56f),
+                    GUILayout.Height(38f * s)))
+                GameSession.LeanToggle = !GameSession.LeanToggle;
         }
 
         void DrawProfileSettings(float s)

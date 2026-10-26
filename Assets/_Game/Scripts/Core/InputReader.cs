@@ -17,11 +17,14 @@ namespace FPSLAN
         public static bool JumpPressed => ReadJumpPressed();
         public static bool Fire => ReadFire();
         public static bool MeleePressed => GameInputSettings.WasPressedThisFrame(GameAction.Melee);
-        /// <summary>Agachar (Ctrl por defeito; C também funciona enquanto a tecla não for redefinida).</summary>
-        public static bool CrouchHeld => GameInputSettings.IsHeld(GameAction.Crouch) ||
-            (!GameInputSettings.HasCustomBinding(GameAction.Crouch) && GameInputSettings.IsHeldKey(KeyCode.C));
-        public static bool CrouchPressed => GameInputSettings.WasPressedThisFrame(GameAction.Crouch) ||
-            (!GameInputSettings.HasCustomBinding(GameAction.Crouch) && GameInputSettings.WasPressedThisFrame(KeyCode.C));
+        /// <summary>Agachar (Ctrl por defeito; o C passou a ser o corpo-a-corpo).</summary>
+        public static bool CrouchHeld => GameInputSettings.IsHeld(GameAction.Crouch);
+        public static bool CrouchPressed => GameInputSettings.WasPressedThisFrame(GameAction.Crouch);
+        /// <summary>Inclinar (Q esquerda / E direita por defeito).</summary>
+        public static bool LeanLeftHeld => GameInputSettings.IsHeld(GameAction.LeanLeft);
+        public static bool LeanRightHeld => GameInputSettings.IsHeld(GameAction.LeanRight);
+        public static bool LeanLeftPressed => GameInputSettings.WasPressedThisFrame(GameAction.LeanLeft);
+        public static bool LeanRightPressed => GameInputSettings.WasPressedThisFrame(GameAction.LeanRight);
         public static bool AimHeld => GameInputSettings.IsHeld(GameAction.Aim);
         public static bool InteractHeld => GameInputSettings.IsHeld(GameAction.Interact);
         public static bool ThermalTogglePressed => GameInputSettings.WasPressedThisFrame(GameAction.ThermalScope);
@@ -48,8 +51,7 @@ namespace FPSLAN
         static bool ReadSprint() => GameInputSettings.IsHeld(GameAction.Sprint);
         static bool ReadJumpPressed() => GameInputSettings.WasPressedThisFrame(GameAction.Jump);
         static bool ReadFire() => GameInputSettings.IsHeld(GameAction.Fire);
-        static bool ReadSuperPressed() => GameInputSettings.WasPressedThisFrame(GameAction.Super) ||
-            (!GameInputSettings.HasCustomBinding(GameAction.Super) && GameInputSettings.WasPressedThisFrame(KeyCode.E));
+        static bool ReadSuperPressed() => GameInputSettings.WasPressedThisFrame(GameAction.Super);
         static bool ReadScoreboardHeld() => GameInputSettings.IsHeld(GameAction.Scoreboard);
         static bool ReadPausePressed() => GameInputSettings.WasPressedThisFrame(GameAction.Pause);
         static float ReadScroll()
@@ -71,8 +73,7 @@ namespace FPSLAN
         static bool ReadSprint() => GameInputSettings.IsHeld(GameAction.Sprint);
         static bool ReadJumpPressed() => GameInputSettings.WasPressedThisFrame(GameAction.Jump);
         static bool ReadFire() => GameInputSettings.IsHeld(GameAction.Fire);
-        static bool ReadSuperPressed() => GameInputSettings.WasPressedThisFrame(GameAction.Super) ||
-            (!GameInputSettings.HasCustomBinding(GameAction.Super) && Input.GetKeyDown(KeyCode.E));
+        static bool ReadSuperPressed() => GameInputSettings.WasPressedThisFrame(GameAction.Super);
         static bool ReadScoreboardHeld() => GameInputSettings.IsHeld(GameAction.Scoreboard);
         static bool ReadPausePressed() => GameInputSettings.WasPressedThisFrame(GameAction.Pause);
         static float ReadScroll()
