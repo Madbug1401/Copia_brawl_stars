@@ -129,7 +129,7 @@ namespace FPSLAN
         }
 
         /// <summary>Área clicável invisível (cartões).</summary>
-        public static bool Hit(Rect r) => GUI.Button(r, GUIContent.none, GUIStyle.none);
+        public static bool Hit(Rect r) => PadNav.Hit(r);
 
         /// <summary>Barra de progresso arredondada com texto.</summary>
         public static void Bar(Rect r, float t, Color fill, string text, GUIStyle style = null)

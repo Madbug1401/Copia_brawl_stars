@@ -61,7 +61,7 @@ namespace FPSLAN
                       (GameInputSettings.IsHeld(GameAction.MoveLeft) ? 1f : 0f);
             float y = (GameInputSettings.IsHeld(GameAction.MoveForward) ? 1f : 0f) -
                       (GameInputSettings.IsHeld(GameAction.MoveBackward) ? 1f : 0f);
-            return Vector2.ClampMagnitude(new Vector2(x, y) + GamepadInput.LeftStick, 1f);
+            return Vector2.ClampMagnitude(new Vector2(x, y) + GamepadInput.MoveStick, 1f);
         }
 
         // Escala igual ao "Mouse X/Y" do Input Manager antigo (0.1 por pixel).
@@ -84,7 +84,7 @@ namespace FPSLAN
                       (GameInputSettings.IsHeld(GameAction.MoveLeft) ? 1f : 0f);
             float y = (GameInputSettings.IsHeld(GameAction.MoveForward) ? 1f : 0f) -
                       (GameInputSettings.IsHeld(GameAction.MoveBackward) ? 1f : 0f);
-            return Vector2.ClampMagnitude(new Vector2(x, y) + GamepadInput.LeftStick, 1f);
+            return Vector2.ClampMagnitude(new Vector2(x, y) + GamepadInput.MoveStick, 1f);
         }
 
         static Vector2 ReadLook() => new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y")) + GamepadInput.LookDelta(Time.deltaTime);

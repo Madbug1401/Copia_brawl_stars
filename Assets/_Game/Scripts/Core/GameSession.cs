@@ -14,6 +14,9 @@ namespace FPSLAN
         const string KeyPadEnabled = "fpslan.pad.enabled";
         const string KeyPadLook = "fpslan.pad.look";
         const string KeyPadInvertY = "fpslan.pad.invertY";
+        const string KeyPadMove = "fpslan.pad.move";
+        const string KeyPadDeadL = "fpslan.pad.deadL";
+        const string KeyPadDeadR = "fpslan.pad.deadR";
         const string KeyMasterVolume = "fpslan.audio.masterVolume";
         const string KeyMuted = "fpslan.audio.muted";
 
@@ -75,6 +78,26 @@ namespace FPSLAN
         {
             get => GetClampedFloat(KeyPadLook, 1f, 0.3f, 3f);
             set => PlayerPrefs.SetFloat(KeyPadLook, Mathf.Clamp(value, 0.3f, 3f));
+        }
+
+        /// <summary>Sensibilidade do stick esquerdo (andar): &gt;1 chega à velocidade máxima com menos inclinação.</summary>
+        public static float ControllerMoveSensitivity
+        {
+            get => GetClampedFloat(KeyPadMove, 1f, 0.5f, 2f);
+            set => PlayerPrefs.SetFloat(KeyPadMove, Mathf.Clamp(value, 0.5f, 2f));
+        }
+
+        /// <summary>Zona morta dos sticks (fração do curso ignorada perto do centro).</summary>
+        public static float ControllerDeadZoneL
+        {
+            get => GetClampedFloat(KeyPadDeadL, 0.18f, 0.02f, 0.5f);
+            set => PlayerPrefs.SetFloat(KeyPadDeadL, Mathf.Clamp(value, 0.02f, 0.5f));
+        }
+
+        public static float ControllerDeadZoneR
+        {
+            get => GetClampedFloat(KeyPadDeadR, 0.18f, 0.02f, 0.5f);
+            set => PlayerPrefs.SetFloat(KeyPadDeadR, Mathf.Clamp(value, 0.02f, 0.5f));
         }
 
         public static bool ControllerInvertY

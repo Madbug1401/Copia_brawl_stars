@@ -158,6 +158,8 @@ namespace FPSLAN
             if (selected) Line(new Rect(r.x + 3 * Scale, r.y + 8 * Scale, 4 * Scale, Mathf.Max(1, r.height - 16 * Scale)), Cyan);
             Text(r, text, style, !enabled ? Muted : White);
             var evt = Event.current;
+            // comando PlayStation nos menus (foco com a cruzeta, X carrega)
+            if (PadNav.Item(r, text, GUI.enabled && enabled)) return true;
             if (GUI.enabled && enabled && evt.type == EventType.MouseDown && evt.button == 0 && r.Contains(evt.mousePosition))
             { GUIUtility.hotControl = id; evt.Use(); }
             if (evt.type == EventType.MouseUp && evt.button == 0 && GUIUtility.hotControl == id)

@@ -569,9 +569,9 @@ namespace FPSLAN
             GUILayout.Space(8 * s);
             GUILayout.Label("Game mode", m_Small);
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("‹", m_Button, GUILayout.Width(48 * s), GUILayout.Height(38 * s))) CycleGameMode(-1);
+            if (GUILayout.Button("‹", m_Button, GUILayout.Width(48 * s), GUILayout.Height(38 * s)) | PadNav.Item(GUILayoutUtility.GetLastRect(), "‹")) CycleGameMode(-1);
             GUILayout.Label(GameModeLabel(MatchManager.MenuSelectedMode), m_Label, GUILayout.Height(38 * s));
-            if (GUILayout.Button("›", m_Button, GUILayout.Width(48 * s), GUILayout.Height(38 * s))) CycleGameMode(1);
+            if (GUILayout.Button("›", m_Button, GUILayout.Width(48 * s), GUILayout.Height(38 * s)) | PadNav.Item(GUILayoutUtility.GetLastRect(), "›")) CycleGameMode(1);
             // Casual: melhorias limitadas ativas · Competitiva: atributos normalizados, pets só cosméticos
             bool comp = MatchManager.MenuSelectedCompetitive;
             if (LayoutButton(comp ? "COMPETITIVE" : "CASUAL", comp ? new Color(0.85f, 0.35f, 0.3f) : new Color(0.3f, 0.65f, 0.4f),
@@ -755,7 +755,7 @@ namespace FPSLAN
                 Tex(lvRect, m_Circle, new Color(1f, 0.78f, 0.25f));
                 Outlined(lvRect, charLevel.ToString(), m_TinyCenter, Color.white, 1f);
 
-                if (b.available && GUI.Button(r, GUIContent.none, GUIStyle.none) && !isSel)
+                if (b.available && PadNav.Hit(r) && !isSel)
                 {
                     selected = idx;
                     GameSession.LocalHeroId = idx;
@@ -1526,10 +1526,16 @@ namespace FPSLAN
             GUILayout.EndHorizontal();
             if (connected)
                 GUILayout.Label("Live test → " + GamepadInput.DebugReadout(), m_Tiny);
-            GUILayout.Label("Stick look sensitivity: " + GameSession.ControllerLookSensitivity.ToString("0.00") + "   (L stick: move · R stick: look)", m_Label);
-            float padLook = GUILayout.HorizontalSlider(GameSession.ControllerLookSensitivity, 0.3f, 3f);
-            if (!Mathf.Approximately(padLook, GameSession.ControllerLookSensitivity))
-                GameSession.ControllerLookSensitivity = padLook;
+            // sensibilidades dos sticks: slider (rato) e − / + (comando)
+            float sv;
+            sv = PadSlider("R stick sensitivity (look)", GameSession.ControllerLookSensitivity, 0.3f, 3f, 0.1f, s);
+            if (!Mathf.Approximately(sv, GameSession.ControllerLookSensitivity)) GameSession.ControllerLookSensitivity = sv;
+            sv = PadSlider("L stick sensitivity (move)", GameSession.ControllerMoveSensitivity, 0.5f, 2f, 0.1f, s);
+            if (!Mathf.Approximately(sv, GameSession.ControllerMoveSensitivity)) GameSession.ControllerMoveSensitivity = sv;
+            sv = PadSlider("R stick dead zone", GameSession.ControllerDeadZoneR, 0.02f, 0.5f, 0.02f, s);
+            if (!Mathf.Approximately(sv, GameSession.ControllerDeadZoneR)) GameSession.ControllerDeadZoneR = sv;
+            sv = PadSlider("L stick dead zone", GameSession.ControllerDeadZoneL, 0.02f, 0.5f, 0.02f, s);
+            if (!Mathf.Approximately(sv, GameSession.ControllerDeadZoneL)) GameSession.ControllerDeadZoneL = sv;
             GUILayout.Space(6f * s);
             GUILayout.Label("Select an action, then press a button on the controller. Buttons already in use are swapped.", m_Tiny);
 
@@ -1572,6 +1578,21 @@ namespace FPSLAN
                 m_SettingsMessage = "Default controller buttons restored.";
             }
             HandlePadCapture();
+        }
+
+        /// <summary>Linha com nome e valor, − / + (navegáveis com o comando) e slider (rato). Devolve o valor novo.</summary>
+        float PadSlider(string label, float value, float min, float max, float step, float s)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(label + ": " + value.ToString("0.00"), m_Label, GUILayout.Width(330f * s));
+            if (LayoutButton("−", new Color(0.28f, 0.36f, 0.56f), GUILayout.Width(44f * s), GUILayout.Height(32f * s)))
+                value = Mathf.Max(min, value - step);
+            float slid = GUILayout.HorizontalSlider(value, min, max, GUILayout.ExpandWidth(true), GUILayout.Height(32f * s));
+            if (!Mathf.Approximately(slid, value)) value = slid;
+            if (LayoutButton("+", new Color(0.28f, 0.36f, 0.56f), GUILayout.Width(44f * s), GUILayout.Height(32f * s)))
+                value = Mathf.Min(max, value + step);
+            GUILayout.EndHorizontal();
+            return Mathf.Round(value * 100f) / 100f;
         }
 
         void HandlePadCapture()

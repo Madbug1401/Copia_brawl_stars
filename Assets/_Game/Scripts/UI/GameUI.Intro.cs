@@ -108,7 +108,7 @@ namespace FPSLAN
                     bool keySkip = Event.current.type == EventType.KeyDown &&
                         (Event.current.keyCode == KeyCode.Escape || Event.current.keyCode == KeyCode.Space ||
                          Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter);
-                    if (GUI.Button(skip, "SKIP", m_MT14) || keySkip)
+                    if (GUI.Button(skip, "SKIP", m_MT14) | PadNav.Item(skip, "BACK") || keySkip)
                     {
                         CompleteOpeningIntro();
                         if (keySkip) Event.current.Use();

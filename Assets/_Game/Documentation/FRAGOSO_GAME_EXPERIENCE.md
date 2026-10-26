@@ -166,7 +166,9 @@ em uso, as duas trocam). Botões por defeito:
 L stick andar · R stick olhar (sensibilidade e inverter Y nas definições) · R2 atacar · L2 mirar · L1 Super ·
 R1 facada · X saltar · L3 sprint · Círculo agachar/slide · cruzeta ←/→ inclinar · Quadrado reanimar ·
 Triângulo comida do pet · Create roda de sprays ·
-Touchpad marcador · Options pausa · Lince a mirar: cruzeta ↑/↓ zoom, R3 luneta térmica. Os menus usam o rato.
+Touchpad marcador · Options pausa · Lince a mirar: cruzeta ↑/↓ zoom, R3 luneta térmica.
+**Menus com o comando**: cruzeta (ou stick esquerdo) move o foco entre botões, X carrega, Círculo volta (BACK/CLOSE)
+(`PadNav`). Na aba CONTROLLER: sensibilidade e zona morta de cada stick (L e R), com − / + navegáveis.
 (`GamepadInput` + eixos `FPSLAN_*` no InputManager.)
 | Q | Facada |
 

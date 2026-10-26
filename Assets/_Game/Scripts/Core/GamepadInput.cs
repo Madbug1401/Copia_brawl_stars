@@ -28,7 +28,6 @@ namespace FPSLAN
     /// </summary>
     public static class GamepadInput
     {
-        const float StickDead = 0.18f;
         /// <summary>Velocidade de rotação com o stick no máximo (graus/s) com a sensibilidade do comando a 1.</summary>
         public const float LookDegreesPerSecond = 200f;
 
@@ -170,11 +169,11 @@ namespace FPSLAN
             catch (System.ArgumentException) { s_AxisMissing[index] = true; return 0f; }
         }
 
-        static Vector2 Dead(Vector2 v)
+        static Vector2 Dead(Vector2 v, float dead)
         {
             float m = v.magnitude;
-            if (m < StickDead) return Vector2.zero;
-            return v / m * Mathf.Clamp01((m - StickDead) / (1f - StickDead));
+            if (m < dead) return Vector2.zero;
+            return v / m * Mathf.Clamp01((m - dead) / (1f - dead));
         }
 
         public static Vector2 LeftStick
@@ -183,12 +182,16 @@ namespace FPSLAN
             {
                 if (!Active) return Vector2.zero;
 #if FPSLAN_INPUTSYS && ENABLE_INPUT_SYSTEM
-                return Gamepad.current != null ? Dead(Gamepad.current.leftStick.ReadValue()) : Vector2.zero;
+                var v = Gamepad.current != null ? Dead(Gamepad.current.leftStick.ReadValue(), GameSession.ControllerDeadZoneL) : Vector2.zero;
 #else
-                return Dead(new Vector2(Axis(0, "FPSLAN_LX"), Axis(1, "FPSLAN_LY")));
+                var v = Dead(new Vector2(Axis(0, "FPSLAN_LX"), Axis(1, "FPSLAN_LY")), GameSession.ControllerDeadZoneL);
 #endif
+                return v;
             }
         }
+
+        /// <summary>Stick esquerdo para andar, com a sensibilidade do stick esquerdo (máximo 1).</summary>
+        public static Vector2 MoveStick => Vector2.ClampMagnitude(LeftStick * GameSession.ControllerMoveSensitivity, 1f);
 
         public static Vector2 RightStick
         {
@@ -196,9 +199,9 @@ namespace FPSLAN
             {
                 if (!Active) return Vector2.zero;
 #if FPSLAN_INPUTSYS && ENABLE_INPUT_SYSTEM
-                var v = Gamepad.current != null ? Dead(Gamepad.current.rightStick.ReadValue()) : Vector2.zero;
+                var v = Gamepad.current != null ? Dead(Gamepad.current.rightStick.ReadValue(), GameSession.ControllerDeadZoneR) : Vector2.zero;
 #else
-                var v = Dead(new Vector2(Axis(2, "FPSLAN_RX"), Axis(3, "FPSLAN_RY")));
+                var v = Dead(new Vector2(Axis(2, "FPSLAN_RX"), Axis(3, "FPSLAN_RY")), GameSession.ControllerDeadZoneR);
 #endif
                 if (GameSession.ControllerInvertY) v.y = -v.y;
                 return v;
