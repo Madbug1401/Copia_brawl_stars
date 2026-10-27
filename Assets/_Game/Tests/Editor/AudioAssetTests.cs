@@ -12,7 +12,7 @@ namespace FPSLAN.Tests
         {
             var catalog = Resources.Load<SfxCatalog>("Audio/SfxCatalog");
             Assert.NotNull(catalog);
-            Assert.AreEqual(26, catalog.cues.Length);
+            Assert.AreEqual(40, catalog.cues.Length);   // 26 (18/10) + 14 do pacote P1 (26/10)
             var sounds = new HashSet<Sound>();
             int count = 0;
             foreach (var cue in catalog.cues)
@@ -50,7 +50,7 @@ namespace FPSLAN.Tests
                         Assert.LessOrEqual(clip.length, .32f, "Full recording must not play on every step/burst");
                 }
             }
-            Assert.AreEqual(36, count);
+            Assert.AreEqual(51, count);
             Assert.False(sounds.Contains(Sound.Snare), "The poison file must not be used for a metal snare");
             Assert.False(sounds.Contains(Sound.UiClick), "Menu feedback is independent from weapon recordings");
         }
@@ -61,6 +61,8 @@ namespace FPSLAN.Tests
             Assert.AreEqual(24, (int)Sound.Smg);
             Assert.AreEqual(25, (int)Sound.Minigun);
             Assert.AreEqual(37, (int)Sound.Evolve);
+            Assert.AreEqual(39, (int)Sound.GemSpawn);
+            Assert.AreEqual(51, (int)Sound.SuperNCage);
             foreach (var pair in new[] {
                 ("gunslinger/gunslinger_Primary", Sound.Smg),
                 ("gunslinger/gunslinger_Super", Sound.Minigun),

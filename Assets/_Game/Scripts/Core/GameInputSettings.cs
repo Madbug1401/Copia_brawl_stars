@@ -32,6 +32,36 @@ namespace FPSLAN
     {
         const string PreferencePrefix = "fpslan.input.";
 
+        // GetBinding corre dezenas de vezes por frame (cada leitura de input): as chaves e o conjunto de teclas
+        // válidas são calculados uma vez, em vez de concatenar strings e usar Enum.IsDefined (reflexão + boxing).
+        static readonly string[] s_Keys = BuildKeys();
+        static readonly System.Collections.Generic.HashSet<int> s_DefinedKeyCodes = BuildDefinedKeyCodes();
+
+        static string[] BuildKeys()
+        {
+            var actions = (GameAction[])System.Enum.GetValues(typeof(GameAction));
+            int max = 0;
+            foreach (var a in actions) max = Mathf.Max(max, (int)a);
+            var keys = new string[max + 1];
+            foreach (var a in actions) keys[(int)a] = PreferencePrefix + a;
+            return keys;
+        }
+
+        static System.Collections.Generic.HashSet<int> BuildDefinedKeyCodes()
+        {
+            var set = new System.Collections.Generic.HashSet<int>();
+            foreach (KeyCode k in System.Enum.GetValues(typeof(KeyCode))) set.Add((int)k);
+            return set;
+        }
+
+        static string Key(GameAction action)
+        {
+            int i = (int)action;
+            return i >= 0 && i < s_Keys.Length && s_Keys[i] != null ? s_Keys[i] : PreferencePrefix + action;
+        }
+
+        static bool IsDefinedKey(KeyCode key) => s_DefinedKeyCodes.Contains((int)key);
+
         /// <summary>Versão do esquema de teclas por defeito (2: Q/E inclinam; corpo-a-corpo em C, Super em X).</summary>
         const int LayoutVersion = 2;
         static bool s_Migrated;
@@ -46,18 +76,18 @@ namespace FPSLAN
             s_Migrated = true;
             const string versionKey = PreferencePrefix + "layout";
             if (PlayerPrefs.GetInt(versionKey, 1) >= LayoutVersion) return;
-            if (PlayerPrefs.HasKey(PreferencePrefix + GameAction.Melee) && PlayerPrefs.GetInt(PreferencePrefix + GameAction.Melee) == (int)KeyCode.Q)
-                PlayerPrefs.DeleteKey(PreferencePrefix + GameAction.Melee);
-            if (PlayerPrefs.HasKey(PreferencePrefix + GameAction.Super) && PlayerPrefs.GetInt(PreferencePrefix + GameAction.Super) == (int)KeyCode.E)
-                PlayerPrefs.DeleteKey(PreferencePrefix + GameAction.Super);
+            if (PlayerPrefs.HasKey(Key(GameAction.Melee)) && PlayerPrefs.GetInt(Key(GameAction.Melee)) == (int)KeyCode.Q)
+                PlayerPrefs.DeleteKey(Key(GameAction.Melee));
+            if (PlayerPrefs.HasKey(Key(GameAction.Super)) && PlayerPrefs.GetInt(Key(GameAction.Super)) == (int)KeyCode.E)
+                PlayerPrefs.DeleteKey(Key(GameAction.Super));
             // Uma tecla escolhida à mão que agora é a de outra ação por defeito: a nova ação fica sem tecla até ser escolhida
             foreach (GameAction action in System.Enum.GetValues(typeof(GameAction)))
             {
-                if (PlayerPrefs.HasKey(PreferencePrefix + action)) continue;
+                if (PlayerPrefs.HasKey(Key(action))) continue;
                 var def = DefaultBinding(action);
                 foreach (GameAction other in System.Enum.GetValues(typeof(GameAction)))
-                    if (other != action && PlayerPrefs.HasKey(PreferencePrefix + other) && PlayerPrefs.GetInt(PreferencePrefix + other) == (int)def)
-                        PlayerPrefs.SetInt(PreferencePrefix + action, (int)KeyCode.None);
+                    if (other != action && PlayerPrefs.HasKey(Key(other)) && PlayerPrefs.GetInt(Key(other)) == (int)def)
+                        PlayerPrefs.SetInt(Key(action), (int)KeyCode.None);
             }
             PlayerPrefs.SetInt(versionKey, LayoutVersion);
             PlayerPrefs.Save();
@@ -67,10 +97,10 @@ namespace FPSLAN
         {
             MigrateLayout();
             var fallback = DefaultBinding(action);
-            var stored = PlayerPrefs.GetInt(PreferencePrefix + action, (int)fallback);
+            var stored = PlayerPrefs.GetInt(Key(action), (int)fallback);
             var key = (KeyCode)stored;
-            if (key == KeyCode.None && PlayerPrefs.HasKey(PreferencePrefix + action)) return KeyCode.None; // sem tecla (migração)
-            return key != KeyCode.None && System.Enum.IsDefined(typeof(KeyCode), key) ? key : fallback;
+            if (key == KeyCode.None && PlayerPrefs.HasKey(Key(action))) return KeyCode.None; // sem tecla (migração)
+            return key != KeyCode.None && IsDefinedKey(key) ? key : fallback;
         }
 
         public static bool TrySetBinding(GameAction action, KeyCode key)
@@ -85,7 +115,7 @@ namespace FPSLAN
                 if (other != action && GetBinding(other) == key)
                     return false;
 
-            PlayerPrefs.SetInt(PreferencePrefix + action, (int)key);
+            PlayerPrefs.SetInt(Key(action), (int)key);
             PlayerPrefs.Save();
             return true;
         }
@@ -93,7 +123,7 @@ namespace FPSLAN
         public static void ResetBindings()
         {
             foreach (GameAction action in System.Enum.GetValues(typeof(GameAction)))
-                PlayerPrefs.DeleteKey(PreferencePrefix + action);
+                PlayerPrefs.DeleteKey(Key(action));
             PlayerPrefs.Save();
         }
 
@@ -102,7 +132,7 @@ namespace FPSLAN
         public static bool WasPressedThisFrame(GameAction action) { var k = GetBinding(action); return (k != KeyCode.None && ReadKeyPressedThisFrame(k)) || GamepadInput.ActionPressed(action); }
         public static bool WasPressedThisFrame(KeyCode key) => ReadKeyPressedThisFrame(key);
         public static bool IsHeldKey(KeyCode key) => IsHeld(key);
-        public static bool HasCustomBinding(GameAction action) => PlayerPrefs.HasKey(PreferencePrefix + action);
+        public static bool HasCustomBinding(GameAction action) => PlayerPrefs.HasKey(Key(action));
 
         public static string BindingLabel(GameAction action)
         {

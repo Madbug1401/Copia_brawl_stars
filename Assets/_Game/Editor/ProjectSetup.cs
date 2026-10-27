@@ -1026,7 +1026,7 @@ namespace FPSLAN.EditorTools
         {
             var outputPath = System.Environment.GetEnvironmentVariable("FPSLAN_WINDOWS_OUTPUT");
             if (string.IsNullOrWhiteSpace(outputPath))
-                outputPath = Path.Combine(Directory.GetCurrentDirectory(), "build windows", "FPS-LAN.exe");
+                outputPath = Path.Combine(Directory.GetCurrentDirectory(), "build windows", "CHIEFS&GEMS.exe");   // build oficial: mesmo nome e pasta
 
             var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToArray();
             if (scenes.Length == 0)

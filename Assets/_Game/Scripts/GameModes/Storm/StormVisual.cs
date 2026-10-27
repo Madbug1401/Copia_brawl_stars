@@ -28,6 +28,7 @@ namespace FPSLAN
         {
             m_Storm = GetComponent<StormManager>();
             m_Mpb = new MaterialPropertyBlock();
+            useGUILayout = false;   // só usa GUI.* (sem GUILayout): o Unity deixa de enviar o evento Layout
         }
 
         void Start()

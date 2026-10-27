@@ -20,6 +20,21 @@ namespace FPSLAN
 
         void Start()
         {
+            // Ambiente sonoro do vulcão (2D, discreto, em ciclo)
+            var bed = Resources.Load<AudioClip>("Audio/Ambience/VolcanoInterior_loop");
+            if (bed != null)
+            {
+                var src = gameObject.AddComponent<AudioSource>();
+                src.clip = bed;
+                src.loop = true;
+                src.playOnAwake = false;
+                src.spatialBlend = 0f;
+                src.volume = 0.22f;
+                src.priority = 200;
+                src.time = Random.Range(0f, bed.length * 0.9f);
+                src.Play();
+            }
+
             m_Next = new float[fumaroles.Length];
             for (int i = 0; i < m_Next.Length; i++) m_Next[i] = Time.time + Random.Range(0f, 2f);
             if (craterLight != null)

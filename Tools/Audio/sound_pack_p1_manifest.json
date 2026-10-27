@@ -1,0 +1,278 @@
+{
+  "cues": [
+    {
+      "sound": "SuperReady",
+      "source": "super caregado/mixkit-game-success-alert-2039.wav",
+      "sourceSha256": "7fd53035349a866ef8a886d295f4dd881f68de04e403c466522ac8d40a722344",
+      "gain": 0.37158,
+      "volume": 0.8,
+      "pitchVariation": 0,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Habilidades/SuperReady.wav",
+          "sourceWindow": [
+            0.0,
+            1.0
+          ],
+          "seconds": 1.0
+        }
+      ]
+    },
+    {
+      "sound": "MatchEnd",
+      "source": "game finished/mixkit-fantasy-game-sweep-notification-255.wav",
+      "sourceSha256": "9579050e296b489766e0d91aef6cf49b59ae9302ed801c4d7502cd5481ca42f3",
+      "gain": 0.72214,
+      "volume": 0.8,
+      "pitchVariation": 0,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Partida/MatchEnd.wav",
+          "sourceWindow": [
+            0.0,
+            1.6
+          ],
+          "seconds": 1.6
+        }
+      ]
+    },
+    {
+      "sound": "FinalTick",
+      "source": "Ultimos 10 segundos - tick por segundo/mixkit-tick-tock-clock-close-up-1059.wav",
+      "sourceSha256": "bbcda2007cd8c695acaea103a656ffccd9e8b6484232c9c00e4d1ada0c22c756",
+      "gain": 0.44389,
+      "volume": 0.75,
+      "pitchVariation": 0,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Partida/FinalTick_01.wav",
+          "sourceWindow": [
+            0.57,
+            0.85
+          ],
+          "seconds": 0.28
+        },
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Partida/FinalTick_02.wav",
+          "sourceWindow": [
+            1.07,
+            1.35
+          ],
+          "seconds": 0.28
+        }
+      ]
+    },
+    {
+      "sound": "LowHealthBeat",
+      "source": "batimento cardiaco com vida baixa/mixkit-human-single-heart-beat-490.wav",
+      "sourceSha256": "c7719e58bf79c3067f608b4859e54f66c0ebdd2f58b059290569fc597c380cac",
+      "gain": 0.57591,
+      "volume": 0.85,
+      "pitchVariation": 0,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Partida/LowHealthBeat.wav",
+          "sourceWindow": [
+            0.0,
+            0.6
+          ],
+          "seconds": 0.6
+        }
+      ]
+    },
+    {
+      "sound": "GemSpawn",
+      "source": "Gerador central cria uma gema (substitui o/mixkit-long-pop-2358.wav",
+      "sourceSha256": "551c9e9a322d29efb24582b7465d8c5605338bd263d5c84eb93c148cf0648d48",
+      "gain": 0.50268,
+      "volume": 0.7,
+      "pitchVariation": 0.03,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/GemRush/GemSpawn.wav",
+          "sourceWindow": [
+            0.0,
+            0.45
+          ],
+          "seconds": 0.45
+        }
+      ]
+    },
+    {
+      "sound": "GemPickup",
+      "source": "Tu ou um aliado apanha uma gema/mixkit-soap-bubble-sound-2925.wav",
+      "sourceSha256": "ab7f6ea9d4f5dc3fcce68cace823dda8da35e5a634f6b129eaf93a77045080ab",
+      "gain": 0.41038,
+      "volume": 0.75,
+      "pitchVariation": 0.04,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/GemRush/GemPickup.wav",
+          "sourceWindow": [
+            0.0,
+            0.5
+          ],
+          "seconds": 0.5
+        }
+      ]
+    },
+    {
+      "sound": "GemCountdown",
+      "source": "Equipa atinge o objetivo de gemas comeca a/mixkit-fantasy-game-success-notification-270.wav",
+      "sourceSha256": "1403241fba1db6b31e464e99e8e6fd694950e30f8ba148e8ec8de7d38da2d85c",
+      "gain": 0.57605,
+      "volume": 0.8,
+      "pitchVariation": 0,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/GemRush/GemCountdown.wav",
+          "sourceWindow": [
+            0.0,
+            1.8
+          ],
+          "seconds": 1.8
+        }
+      ]
+    },
+    {
+      "sound": "PetFoodDenied",
+      "source": "UPRA sem municao/mixkit-video-game-mystery-alert-234.wav",
+      "sourceSha256": "7923f2c1383daa8f6d51ce1ce834dd1e59ffd4e8eea8aba142d12ba2f96ebdd2",
+      "gain": 0.62968,
+      "volume": 0.65,
+      "pitchVariation": 0,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Pets/PetFoodDenied.wav",
+          "sourceWindow": [
+            0.0,
+            0.43
+          ],
+          "seconds": 0.43
+        }
+      ]
+    },
+    {
+      "sound": "SuperEkko",
+      "source": "super sfx/echo.wav",
+      "sourceSha256": "f814ada50796674b680fcd6074dccaed612340ad54dbf22a7e23b0d0a683e27b",
+      "gain": 0.81387,
+      "volume": 0.8,
+      "pitchVariation": 0.02,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Habilidades/SuperEkko.wav",
+          "sourceWindow": [
+            0.0,
+            0.176
+          ],
+          "seconds": 0.176
+        }
+      ]
+    },
+    {
+      "sound": "SuperLince",
+      "source": "super sfx/lins.wav",
+      "sourceSha256": "aa1085ba2eb7fb36c59dc75cb8b515e95fa53e87318895774f5655f813ba342e",
+      "gain": 0.79888,
+      "volume": 0.8,
+      "pitchVariation": 0.02,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Habilidades/SuperLince.wav",
+          "sourceWindow": [
+            0.0,
+            0.3
+          ],
+          "seconds": 0.3
+        }
+      ]
+    },
+    {
+      "sound": "SuperRiot",
+      "source": "super sfx/riot.wav",
+      "sourceSha256": "f1ad83a5d55073c09b4f9bf2a9f75813212b227cea7582451aba033da5654d55",
+      "gain": 0.4757,
+      "volume": 0.85,
+      "pitchVariation": 0.02,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Habilidades/SuperRiot.wav",
+          "sourceWindow": [
+            0.0,
+            1.6
+          ],
+          "seconds": 1.6
+        }
+      ]
+    },
+    {
+      "sound": "SuperMrS",
+      "source": "super sfx/MS.wav",
+      "sourceSha256": "551c9e9a322d29efb24582b7465d8c5605338bd263d5c84eb93c148cf0648d48",
+      "gain": 0.56552,
+      "volume": 0.8,
+      "pitchVariation": 0.02,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Habilidades/SuperMrS.wav",
+          "sourceWindow": [
+            0.0,
+            0.45
+          ],
+          "seconds": 0.45
+        }
+      ]
+    },
+    {
+      "sound": "SuperLupus",
+      "source": "super sfx/plus marinus.wav",
+      "sourceSha256": "ac8da81893658e17c1c47b5ada519964599c12c64ee7c3f4cfcfd02309ca78a5",
+      "gain": 0.75898,
+      "volume": 0.85,
+      "pitchVariation": 0.02,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Habilidades/SuperLupus.wav",
+          "sourceWindow": [
+            0.12,
+            1.4
+          ],
+          "seconds": 1.28
+        }
+      ]
+    },
+    {
+      "sound": "SuperNCage",
+      "source": "super sfx/N Cage.wav",
+      "sourceSha256": "78040d4d9f09f878ee8f298942d03952373d1f890cd5903c4c521aa71eb9e2c2",
+      "gain": 0.81205,
+      "volume": 0.8,
+      "pitchVariation": 0.02,
+      "clips": [
+        {
+          "asset": "Assets/_Game/Resources/Audio/Sfx/Habilidades/SuperNCage.wav",
+          "sourceWindow": [
+            0.0,
+            0.38
+          ],
+          "seconds": 0.38
+        }
+      ]
+    }
+  ],
+  "ambience": [
+    {
+      "asset": "Assets/_Game/Resources/Audio/Ambience/LavaBubble_loop.wav",
+      "source": "ambiente/lava sound/mixkit-bubbling-volcano-lava-flow-2444.wav",
+      "channels": 1,
+      "seconds": 57.147
+    },
+    {
+      "asset": "Assets/_Game/Resources/Audio/Ambience/VolcanoInterior_loop.wav",
+      "source": "ambiente/momentum/mixkit-inside-a-volcano-2438.wav",
+      "channels": 2,
+      "seconds": 7.99
+    }
+  ]
+}

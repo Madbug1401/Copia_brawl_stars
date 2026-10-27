@@ -49,6 +49,44 @@ namespace FPSLAN
             if (Instance == this) Instance = null;
         }
 
+        /// <summary>Lava a borbulhar: poucas fontes 3D em ciclo, nos maiores aglomerados de lava (blocos de 12 m).</summary>
+        void Start()
+        {
+            var clip = Resources.Load<AudioClip>("Audio/Ambience/LavaBubble_loop");
+            if (clip == null || m_Cells.Count == 0) return;
+            const float block = 12f;
+            var groups = new Dictionary<Vector2Int, (Vector3 sum, int n)>();
+            foreach (var c in m_Cells)
+            {
+                var k = new Vector2Int(Mathf.FloorToInt(c.x / block), Mathf.FloorToInt(c.z / block));
+                groups.TryGetValue(k, out var g);
+                groups[k] = (g.sum + c, g.n + 1);
+            }
+            var list = new List<(Vector3 sum, int n)>(groups.Values);
+            list.Sort((a, b) => b.n.CompareTo(a.n));
+            int sources = Mathf.Min(6, list.Count);
+            for (int i = 0; i < sources; i++)
+            {
+                if (list[i].n < 8) break;   // poças muito pequenas não justificam uma fonte
+                var go = new GameObject("LavaAudio_" + i);
+                go.transform.SetParent(transform, false);
+                go.transform.position = list[i].sum / list[i].n + Vector3.up * 0.4f;
+                var src = go.AddComponent<AudioSource>();
+                src.clip = clip;
+                src.loop = true;
+                src.playOnAwake = false;
+                src.spatialBlend = 1f;
+                src.rolloffMode = AudioRolloffMode.Linear;
+                src.minDistance = 3f;
+                src.maxDistance = 20f;
+                src.dopplerLevel = 0f;
+                src.volume = 0.55f;
+                src.priority = 200;
+                src.time = Random.Range(0f, clip.length * 0.9f);
+                src.Play();
+            }
+        }
+
         void Decode()
         {
             m_Mask = new byte[Mathf.Max(0, nx * ny)];

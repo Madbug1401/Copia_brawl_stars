@@ -153,3 +153,74 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 1bf9a6dd0cf4b5cd481ec672eecac291, type: 3}
     volume: 0.8
     pitchVariation: 0
+  - sound: 19
+    clips:
+    - {fileID: 8300000, guid: 8b12fc2449fa0ff9cbe3d8bcfca2c6a7, type: 3}
+    volume: 0.8
+    pitchVariation: 0
+  - sound: 45
+    clips:
+    - {fileID: 8300000, guid: 438824b771857a44d2eff22f0417d82d, type: 3}
+    volume: 0.8
+    pitchVariation: 0
+  - sound: 43
+    clips:
+    - {fileID: 8300000, guid: 33ca1d0792fb877bd3a265f1e92593e5, type: 3}
+    - {fileID: 8300000, guid: 7cdeff3f1932b0554dabd4a2e0d5bd1a, type: 3}
+    volume: 0.75
+    pitchVariation: 0
+  - sound: 44
+    clips:
+    - {fileID: 8300000, guid: 9995a46de0f7c2103598c146e36ebecc, type: 3}
+    volume: 0.85
+    pitchVariation: 0
+  - sound: 39
+    clips:
+    - {fileID: 8300000, guid: 7295b46c56a80c01124b9f7cf8ec65cf, type: 3}
+    volume: 0.7
+    pitchVariation: 0.03
+  - sound: 40
+    clips:
+    - {fileID: 8300000, guid: 3ab7b389d2307278e743abe2078603df, type: 3}
+    volume: 0.75
+    pitchVariation: 0.04
+  - sound: 41
+    clips:
+    - {fileID: 8300000, guid: c1b15127d4044e7c0a1b8cbf1a9c40ed, type: 3}
+    volume: 0.8
+    pitchVariation: 0
+  - sound: 42
+    clips:
+    - {fileID: 8300000, guid: 38c9eb4aad0e76dc86d90824de77cf02, type: 3}
+    volume: 0.65
+    pitchVariation: 0
+  - sound: 46
+    clips:
+    - {fileID: 8300000, guid: 57b73d47093ab0f4dd3d77f46ea8c9de, type: 3}
+    volume: 0.8
+    pitchVariation: 0.02
+  - sound: 47
+    clips:
+    - {fileID: 8300000, guid: aebc2dcae7fdb985120a8d84e7cbaa40, type: 3}
+    volume: 0.8
+    pitchVariation: 0.02
+  - sound: 48
+    clips:
+    - {fileID: 8300000, guid: 1f1d06be259e055ed8d7834684c6f7f4, type: 3}
+    volume: 0.85
+    pitchVariation: 0.02
+  - sound: 49
+    clips:
+    - {fileID: 8300000, guid: df547819d2d4f76f801b0f8962f176d4, type: 3}
+    volume: 0.8
+    pitchVariation: 0.02
+  - sound: 50
+    clips:
+    - {fileID: 8300000, guid: 4519a86140179b593544af0be3195483, type: 3}
+    volume: 0.85
+    pitchVariation: 0.02
+  - sound: 51
+    clips:
+    - {fileID: 8300000, guid: 12c9c1a2183d65db9777b871e58fbfc5, type: 3}
+    volume: 0.8
+    pitchVariation: 0.02

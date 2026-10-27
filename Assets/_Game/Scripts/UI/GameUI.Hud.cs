@@ -10,6 +10,7 @@ namespace FPSLAN
         static readonly Color HudLime = new Color(0.65f, 0.95f, 0.12f);
         GUIStyle m_HudTitle, m_HudNumber, m_HudSmall, m_HudName, m_HudFeed;
         float m_HudStyleScale = -1f;
+        static readonly GUIContent s_HudMeasure = new GUIContent();
         Texture2D m_HudGradient;
         readonly Texture2D[] m_HudIcons = new Texture2D[4];
 
@@ -44,7 +45,8 @@ namespace FPSLAN
             // Nomes como LUPUS MARINUS cabem no retrato sem perder o fim do texto.
             if (!string.IsNullOrEmpty(text) && (style == m_HudName || style == m_HudTitle))
             {
-                float preferredWidth = style.CalcSize(new GUIContent(text)).x;
+                s_HudMeasure.text = text;
+                float preferredWidth = style.CalcSize(s_HudMeasure).x;
                 if (preferredWidth > rect.width)
                     style.fontSize = Mathf.Max(8, Mathf.FloorToInt(oldSize * rect.width / preferredWidth));
             }

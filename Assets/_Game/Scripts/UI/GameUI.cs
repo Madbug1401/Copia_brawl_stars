@@ -224,10 +224,54 @@ namespace FPSLAN
 
         // ================================================================== update
 
+        // ---------------- sons de partida (pacote P1): fim de jogo, últimos 10 s e batimento com vida baixa
+        MatchPhase m_AudioLastPhase;
+        bool m_AudioPhaseKnown;
+        int m_AudioLastSecond = -1;
+        float m_AudioNextBeat;
+
+        void UpdateMatchAudio()
+        {
+            var match = MatchManager.Instance;
+            if (!m_InGame || match == null || !match.IsSpawned)
+            {
+                m_AudioPhaseKnown = false;
+                m_AudioLastSecond = -1;
+                return;
+            }
+
+            var phase = match.Phase.Value;
+            if (m_AudioPhaseKnown && m_AudioLastPhase == MatchPhase.Playing && phase == MatchPhase.Ended)
+                Sfx.Play2D(Sound.MatchEnd, 0.9f);
+            m_AudioLastPhase = phase;
+            m_AudioPhaseKnown = true;
+
+            // Tick por segundo nos últimos 10 s (o cooperativo não tem relógio de partida)
+            int second = phase == MatchPhase.Playing && !match.IsCoop ? Mathf.CeilToInt(match.TimeRemaining) : -1;
+            if (second >= 1 && second <= 10 && m_AudioLastSecond > second)
+                Sfx.Play2D(Sound.FinalTick, second <= 3 ? 0.95f : 0.7f);
+            m_AudioLastSecond = second;
+
+            // Batimento cardíaco abaixo de 30% de vida: mais rápido e mais forte quanto menos vida
+            var me = PlayerNetwork.Local;
+            var health = me != null ? me.Health : null;
+            if (phase == MatchPhase.Playing && health != null && !health.IsDead && health.MaxHealth > 0)
+            {
+                float frac = health.Health.Value / (float)health.MaxHealth;
+                if (frac <= 0.3f && Time.time >= m_AudioNextBeat)
+                {
+                    float k = Mathf.Clamp01(frac / 0.3f);
+                    Sfx.Play2D(Sound.LowHealthBeat, Mathf.Lerp(0.95f, 0.55f, k));
+                    m_AudioNextBeat = Time.time + Mathf.Lerp(0.62f, 1.05f, k);
+                }
+            }
+        }
+
         void Update()
         {
             m_InGame = NM != null && NM.IsListening && PlayerNetwork.Local != null;
             MenuAudio.SetMenuMusic(!m_InGame, m_MScreen == MenuScreen.Setup);   // música do menu fora das partidas
+            UpdateMatchAudio();
 
             if (!m_InGame) m_Paused = false;
             if (InputReader.PausePressed && !m_CapturingBinding)
@@ -243,6 +287,7 @@ namespace FPSLAN
             bool lockCursor = GameplayInputAllowed && Application.isFocused;
             Cursor.lockState = lockCursor ? CursorLockMode.Locked : CursorLockMode.None;
             Cursor.visible = !lockCursor;
+            useGUILayout = NeedsGuiLayout;
 
             // Bots pedidos no menu: adicionados assim que o host está pronto
             if (m_PendingBots > 0 && m_InGame && NM.IsServer)
@@ -470,10 +515,19 @@ namespace FPSLAN
 
         // ================================================================== OnGUI
 
+        /// <summary>
+        /// Só os menus e as definições usam GUILayout. Durante a partida (HUD, pausa, resultados) tudo é GUI.* com
+        /// retângulos, por isso o Unity pode saltar o evento Layout: metade das chamadas a OnGUI por frame.
+        /// </summary>
+        bool NeedsGuiLayout => !m_InGame || m_SettingsOpen;
+
         void OnGUI()
         {
             GUI.skin = MenuTheme.Skin;
             EnsureStyles();
+            // Se as definições abriram a meio deste evento (clique na pausa), este evento não teve Layout:
+            // desenhá-las com GUILayout agora daria erro. Ficam para o evento seguinte (imperceptível).
+            bool layoutReady = useGUILayout;
 
             if (!m_InGame)
             {
@@ -497,7 +551,7 @@ namespace FPSLAN
                 DrawScoreboard();
 
             if (m_Paused && !ProgressionUI.IsOpen) DrawPauseMenu();
-            if (m_SettingsOpen) DrawSettingsMenu();
+            if (m_SettingsOpen && layoutReady) DrawSettingsMenu();
             if (m_InGame && !m_Paused && !m_SettingsOpen && IsScopeActive())
                 DrawScopeOverlay();
         }
@@ -1334,6 +1388,7 @@ namespace FPSLAN
         void OpenSettings()
         {
             m_SettingsOpen = true;
+            useGUILayout = true;   // o evento atual já começou sem Layout; as definições aparecem no seguinte
             m_SettingsTab = UseNewMenu && !m_InGame ? SettingsTabProfile : SettingsTabControls;
             m_Name = GameSession.LocalName;
             m_CapturingBinding = false;

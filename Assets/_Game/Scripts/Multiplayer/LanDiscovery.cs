@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -174,12 +175,36 @@ namespace FPSLAN
         static void Broadcast(Socket s, byte[] data)
         {
             if (s == null) return;
-            foreach (var target in BroadcastTargets())
+            foreach (var target in CachedBroadcastTargets())
             {
                 try { s.SendTo(data, new IPEndPoint(target, DiscoveryPort)); }
                 catch { /* interface sem rota: ignora */ }
             }
         }
+
+        // Enumerar as interfaces de rede no Windows demora dezenas de ms. Feito na thread principal a cada anúncio,
+        // o host engasgava uma vez por segundo durante a partida. A lista é calculada numa thread de fundo e
+        // reutilizada; até chegar a primeira, usa-se o broadcast geral e o loopback.
+        const float TargetsRefreshInterval = 15f;
+        static volatile List<IPAddress> s_Targets;
+        static float s_TargetsNextRefresh;
+        static int s_TargetsRefreshing;
+
+        static List<IPAddress> CachedBroadcastTargets()
+        {
+            if (Time.unscaledTime >= s_TargetsNextRefresh && Interlocked.CompareExchange(ref s_TargetsRefreshing, 1, 0) == 0)
+            {
+                s_TargetsNextRefresh = Time.unscaledTime + TargetsRefreshInterval;
+                ThreadPool.QueueUserWorkItem(_ =>
+                {
+                    try { s_Targets = BroadcastTargets(); }
+                    finally { Interlocked.Exchange(ref s_TargetsRefreshing, 0); }
+                });
+            }
+            return s_Targets ?? s_DefaultTargets;
+        }
+
+        static readonly List<IPAddress> s_DefaultTargets = new List<IPAddress> { IPAddress.Broadcast, IPAddress.Loopback };
 
         static List<IPAddress> BroadcastTargets()
         {
@@ -248,6 +273,8 @@ namespace FPSLAN
             return s.Length > max ? s.Substring(0, max) : s;
         }
 
+        static string s_CodeId;   // o código compilado não muda durante a execução
+
         /// <summary>Identifica a build: versão, configuração do Netcode e código compilado.</summary>
         public static string Fingerprint
         {
@@ -255,10 +282,12 @@ namespace FPSLAN
             {
                 var nm = NetworkManager.Singleton;
                 ulong config = nm != null && nm.NetworkConfig != null ? nm.NetworkConfig.GetConfig(false) : 0UL;
-                string code;
-                try { code = typeof(LanDiscovery).Assembly.ManifestModule.ModuleVersionId.ToString("N").Substring(0, 8); }
-                catch { code = "?"; }
-                return Clean(Application.version, 16) + "-" + config.ToString("x") + "-" + code;
+                if (s_CodeId == null)
+                {
+                    try { s_CodeId = typeof(LanDiscovery).Assembly.ManifestModule.ModuleVersionId.ToString("N").Substring(0, 8); }
+                    catch { s_CodeId = "?"; }
+                }
+                return Clean(Application.version, 16) + "-" + config.ToString("x") + "-" + s_CodeId;
             }
         }
 

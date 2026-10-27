@@ -111,6 +111,7 @@ namespace FPSLAN
         void Awake()
         {
             s_Instance = this;
+            useGUILayout = false;   // só usa GUI.* (sem GUILayout): o Unity deixa de enviar o evento Layout
             m_Ctx = GameExperience.Current;
             m_Ctx.Feedback += OnFeedback;
             m_Preview = new BrawlerPreview(new Vector3(80f, -400f, 0f));

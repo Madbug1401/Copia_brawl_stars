@@ -1,3 +1,4 @@
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -11,7 +12,9 @@ namespace FPSLAN
     public partial class PlayerNetwork
     {
         public readonly NetworkVariable<PetFeedingState> PetFeeding = new NetworkVariable<PetFeedingState>();
-        string m_FoodMatchId;
+        // Comparado por valor a cada frame: FixedString evita converter o MatchId para string (alocação) em cada tick.
+        FixedString64Bytes m_FoodMatchId;
+        bool m_FoodMatchKnown;
         bool m_FeedPending, m_ServerBoostStarted;
         float m_FeedRequestedAt;
         int m_FeedRequestId, m_LastFeedReply;
@@ -68,9 +71,10 @@ namespace FPSLAN
             if (IsServer)
             {
                 var match = MatchManager.Instance;
-                string id = match != null && match.IsSpawned ? match.MatchId.Value.ToString() : "";
-                if (id != m_FoodMatchId)
+                var id = match != null && match.IsSpawned ? match.MatchId.Value : default;
+                if (!m_FoodMatchKnown || id != m_FoodMatchId)
                 {
+                    m_FoodMatchKnown = true;
                     m_FoodMatchId = id;
                     PetFeeding.Value = default;
                     m_ServerBoostStarted = false;
@@ -123,7 +127,7 @@ namespace FPSLAN
             if (why != null)
             {
                 EmoteHintText(why);
-                Sfx.Play2D(Sound.Empty, 0.4f);
+                Sfx.Play2D(Sound.PetFoodDenied, 0.6f);
                 return false;
             }
             m_FeedPending = true;

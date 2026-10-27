@@ -45,6 +45,20 @@ namespace FPSLAN
         PetAlert,
         Evolve,
         UiClick,
+        // Pacote P1 (26/10/2026) — acrescentados antes de Count (valores serializados estáveis)
+        GemSpawn,
+        GemPickup,
+        GemCountdown,
+        PetFoodDenied,
+        FinalTick,
+        LowHealthBeat,
+        MatchEnd,
+        SuperEkko,
+        SuperLince,
+        SuperRiot,
+        SuperMrS,
+        SuperLupus,
+        SuperNCage,
         Count
     }
 
@@ -147,7 +161,7 @@ namespace FPSLAN
                     int index = (int)cue.sound;
                     s_Imported[index] = cue;
                     // As gravações substituem os placeholders sem os deixar em memória.
-                    UnityEngine.Object.Destroy(s_Clips[index]);
+                    if (s_Clips[index] != null) UnityEngine.Object.Destroy(s_Clips[index]);
                     s_Clips[index] = cue.clips[0];
                 }
 
@@ -208,6 +222,21 @@ namespace FPSLAN
             next = (next + 1) % pool.Length;
             src.Stop();
             return src;
+        }
+
+        /// <summary>Assinatura sonora do Super de cada personagem (Count = sem som próprio).</summary>
+        public static Sound SuperSignature(string brawlerId)
+        {
+            switch (brawlerId)
+            {
+                case "gunslinger": return Sound.SuperEkko;
+                case "sniper": return Sound.SuperLince;
+                case "shotgunner": return Sound.SuperRiot;
+                case "sprayer": return Sound.SuperMrS;
+                case "artillery": return Sound.SuperLupus;
+                case "trapper": return Sound.SuperNCage;
+                default: return Sound.Count;
+            }
         }
 
         public static void Play2D(Sound sound, float volume = 1f)

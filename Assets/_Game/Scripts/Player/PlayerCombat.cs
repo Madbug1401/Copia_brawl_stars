@@ -207,7 +207,11 @@ namespace FPSLAN
             m_Player.Visuals?.OnSuperModeChanged(true);
             if (m_Player.IsLocalHuman)
             {
-                Sfx.Play2D(b.super.attack.visuals.sound == Sound.Minigun ? Sound.MinigunSpin : Sound.SuperReady, 0.8f);
+                bool minigun = b.super.attack.visuals.sound == Sound.Minigun;
+                var signature = Sfx.SuperSignature(b.brawlerId);
+                if (minigun) Sfx.Play2D(Sound.MinigunSpin, 0.8f);
+                if (signature != Sound.Count) Sfx.Play2D(signature, 0.9f);
+                else if (!minigun) Sfx.Play2D(Sound.SuperReady, 0.8f);
                 if (!string.IsNullOrEmpty(mode.label)) GameUI.Toast(mode.label.ToUpperInvariant() + "!", Color.Lerp(b.vfx.superColor, Color.white, 0.3f));
             }
             ActivateModeRpc();

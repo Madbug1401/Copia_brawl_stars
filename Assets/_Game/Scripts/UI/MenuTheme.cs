@@ -20,6 +20,8 @@ namespace FPSLAN
         static float s_Scale = -1f;
         static readonly System.Collections.Generic.Dictionary<GUIStyle, GUIStyle> s_TextStyles = new System.Collections.Generic.Dictionary<GUIStyle, GUIStyle>();
         static readonly System.Collections.Generic.Dictionary<int, float> s_Hover = new System.Collections.Generic.Dictionary<int, float>();
+        static readonly GUIContent s_Measure = new GUIContent();
+        static readonly int s_ButtonHint = "FPSLAN.MenuTheme.Button".GetHashCode();
         public static GUISkin Skin { get { Ensure(); return s_Skin; } }
 
         public static void Ensure()
@@ -130,7 +132,8 @@ namespace FPSLAN
             clean.clipping = TextClipping.Clip;
             if (!clean.wordWrap && !string.IsNullOrEmpty(text))
             {
-                float preferred = clean.CalcSize(new GUIContent(text)).x;
+                s_Measure.text = text;   // reutilizado: Text corre centenas de vezes por frame
+                float preferred = clean.CalcSize(s_Measure).x;
                 if (preferred > r.width) clean.fontSize = Mathf.Max(8, Mathf.FloorToInt(clean.fontSize * r.width / preferred));
             }
             clean.normal.textColor = clean.hover.textColor = color;
@@ -141,7 +144,7 @@ namespace FPSLAN
             Ensure();
             bool selected = intent == Selected;
             bool hover = GUI.enabled && enabled && r.Contains(Event.current.mousePosition);
-            int id = GUIUtility.GetControlID("FPSLAN.MenuTheme.Button".GetHashCode(), FocusType.Passive, r);
+            int id = GUIUtility.GetControlID(s_ButtonHint, FocusType.Passive, r);
             s_Hover.TryGetValue(id, out float h);
             if (Event.current.type == EventType.Repaint)
             {

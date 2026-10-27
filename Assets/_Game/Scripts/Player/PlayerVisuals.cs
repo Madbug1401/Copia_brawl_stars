@@ -254,8 +254,15 @@ namespace FPSLAN
             {
                 Fx.Ring(transform.position, c, 3f, 0.4f);
                 Fx.Sparks(transform.position + Vector3.up * 1.2f, c, 10, 4f);
-                if (!m_Player.IsLocalHuman) Sfx.PlayAt(b != null && b.super.attack != null && b.super.attack.visuals.sound == Sound.Minigun ? Sound.MinigunSpin : Sound.SuperReady,
-                    transform.position + Vector3.up, 1f);
+                if (!m_Player.IsLocalHuman)
+                {
+                    bool minigun = b != null && b.super.attack != null && b.super.attack.visuals.sound == Sound.Minigun;
+                    var signature = b != null ? Sfx.SuperSignature(b.brawlerId) : Sound.Count;
+                    var at = transform.position + Vector3.up;
+                    if (minigun) Sfx.PlayAt(Sound.MinigunSpin, at, 1f);
+                    if (signature != Sound.Count) Sfx.PlayAt(signature, at, 1f);
+                    else if (!minigun) Sfx.PlayAt(Sound.SuperReady, at, 1f);
+                }
             }
             else Fx.Smoke(transform.position + Vector3.up * 1.2f, Vector3.up * 0.5f, 0.4f, 0.5f, 0.4f);
         }
@@ -443,6 +450,18 @@ namespace FPSLAN
             m_Rig?.OnAttack(super, dur);
             m_View?.OnAttack(super);
             m_RevealedUntil = Time.time + 1.3f;
+
+            // Super de disparo direto (Riot, Mr.S, Lupus, N.Cage): assinatura sonora da personagem.
+            // Os Supers de modo (Ekko, Lince) tocam-na ao ativar o modo (OnSuperModeChanged / PlayerCombat).
+            if (super && b != null && !b.super.IsMode)
+            {
+                var signature = Sfx.SuperSignature(b.brawlerId);
+                if (signature != Sound.Count)
+                {
+                    if (m_Player.IsLocalHuman) Sfx.Play2D(signature, 0.9f);
+                    else Sfx.PlayAt(signature, transform.position + Vector3.up, 1f);
+                }
+            }
 
             if (m_Player.IsLocalHuman)
             {

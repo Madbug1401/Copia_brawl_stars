@@ -52,6 +52,7 @@ namespace FPSLAN
         float m_ParticleCarry;
         float m_HaloAngle, m_BaseAngle;
         bool m_WasWarning;
+        int m_LastCountdownTeam = -1;
         Vector3 m_HaloScale = Vector3.zero;
         Quaternion m_HaloRot, m_BaseRot;
 
@@ -134,8 +135,13 @@ namespace FPSLAN
                 else EmitRisingParticles(warn, dt);
             }
             if (warn > 0f && !m_WasWarning && m_Mgr.spawnPoint != null)
-                Sfx.PlayAt(Sound.Twirl, m_Mgr.spawnPoint.position, 0.5f);
+                Sfx.PlayAt(Sound.GemSpawn, m_Mgr.spawnPoint.position, 0.8f);
             m_WasWarning = warn > 0f;
+
+            // Uma equipa atingiu o objetivo: começa a contagem para vencer
+            int countdownTeam = m_Mgr.CountdownTeam.Value;
+            if (countdownTeam >= 0 && m_LastCountdownTeam < 0) Sfx.Play2D(Sound.GemCountdown, 0.85f);
+            m_LastCountdownTeam = countdownTeam;
         }
 
         void Place(View v, GemNetState g, double now, float dt)
@@ -308,8 +314,8 @@ namespace FPSLAN
             Fx.Sparks(position, c, 14, 4f);
             Fx.Ring(Ground(position), c, 1.8f, 0.3f);
             Fx.Light(position, m_Mgr.gemColor, 2.2f, 4f, 0.2f);
-            if (local != null && local.Id == playerId) Sfx.Play2D(Sound.SuperReady, 0.6f);
-            else Sfx.PlayAt(Sound.Crate, position, 0.5f);
+            if (local != null && local.Id == playerId) Sfx.Play2D(Sound.GemPickup, 0.8f);
+            else Sfx.PlayAt(Sound.GemPickup, position, 0.6f);
         }
 
         // ---------------------------------------------------------------- pool

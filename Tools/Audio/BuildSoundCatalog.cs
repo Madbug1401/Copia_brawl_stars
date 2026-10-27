@@ -11,8 +11,12 @@ public static class BuildSoundCatalog
     public static string Main()
     {
         AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-        var manifest = JObject.Parse(File.ReadAllText("Tools/Audio/sound_pack_manifest.json"));
         var cues = new List<SfxCatalog.Cue>();
+        // Pacote original (18/10) + pacote P1 (26/10). Cada efeito aparece num só manifesto.
+        foreach (var manifestPath in new[] { "Tools/Audio/sound_pack_manifest.json", "Tools/Audio/sound_pack_p1_manifest.json" })
+        {
+        if (!File.Exists(manifestPath)) continue;
+        var manifest = JObject.Parse(File.ReadAllText(manifestPath));
         foreach (var data in manifest["cues"])
         {
             var clips = new List<AudioClip>();
@@ -28,6 +32,7 @@ public static class BuildSoundCatalog
                 sound = (Sound)Enum.Parse(typeof(Sound), (string)data["sound"]),
                 clips = clips.ToArray(), volume = (float)data["volume"], pitchVariation = (float)data["pitchVariation"]
             });
+        }
         }
         const string path = "Assets/_Game/Resources/Audio/SfxCatalog.asset";
         var catalog = AssetDatabase.LoadAssetAtPath<SfxCatalog>(path);

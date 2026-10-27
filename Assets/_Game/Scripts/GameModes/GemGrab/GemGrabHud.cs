@@ -18,7 +18,11 @@ namespace FPSLAN
         GUIStyle m_Big, m_Mid, m_Small;
         int m_StyleHeight;
 
-        void Awake() => m_Mgr = GetComponent<GemGrabManager>();
+        void Awake()
+        {
+            m_Mgr = GetComponent<GemGrabManager>();
+            useGUILayout = false;   // só usa GUI.* (sem GUILayout): o Unity deixa de enviar o evento Layout
+        }
 
         void Styles(float s)
         {
