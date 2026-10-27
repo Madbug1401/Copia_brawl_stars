@@ -607,7 +607,7 @@ namespace FPSLAN
             bool available = MenuCharacterBrawler(i) != null && (!MenuCoopSetup || i < 2);
             MText(new Rect(cell.x - 10 * K, pr.yMax + 2 * K, cell.width + 20 * K, 22 * K), s_Roster[i].name, m_MT14,
                 selected ? MCyan : (available ? MWhite : MMuted));
-            if (GUI.enabled && GUI.Button(cell, GUIContent.none, GUIStyle.none))
+            if (GUI.enabled && PadNav.Hit(cell))
             {
                 if (!available) { MenuNotice(MenuCoopSetup ? "This mission features Lince and Riot." : s_Roster[i].name + " is not available yet."); return false; }
                 return true;
@@ -727,7 +727,7 @@ namespace FPSLAN
                 MText(frame, "COMING SOON", m_MT14, MMuted);
             }
 
-            if (GUI.enabled && GUI.Button(r, GUIContent.none, GUIStyle.none))
+            if (GUI.enabled && PadNav.Hit(r))
             {
                 FocusMapIsland(i);   // a aproximação acontece sempre: mostra de que ilha se trata
                 if (MenuCoopSetup && m.key != "santiago") { MenuNotice("First mission: The Pelourinho Heist. More missions are coming later."); m_BgReturnAt = Time.unscaledTime + BgTravelTime + 1.6f; return false; }
@@ -866,7 +866,7 @@ namespace FPSLAN
             MDraw9(m_MLine, dots, Fade(MCyanDim, 0.4f + 0.6f * h));
             for (int i = 0; i < 3; i++)
                 MTex(new Rect(dots.center.x - 3.5f * K, dots.y + 10 * K + i * 12 * K, 7 * K, 7 * K), Art.CircleTexture, MWhite, ScaleMode.StretchToFill);
-            if (GUI.enabled && GUI.Button(dots, GUIContent.none, GUIStyle.none)) m_MAudioOpen = !m_MAudioOpen;
+            if (GUI.enabled && PadNav.Hit(dots)) m_MAudioOpen = !m_MAudioOpen;
 
             if (m_MAudioT > 0.001f) DrawAudioQuickPanel();
         }
@@ -1348,7 +1348,7 @@ namespace FPSLAN
                 MText(new Rect(rr.x, rr.yMax - 22 * K, rr.width, 18 * K), badge, m_MT12, MCoral);
 
             if (!GUI.enabled) return MClick.None;
-            if (GUI.Button(r, GUIContent.none, GUIStyle.none))
+            if (PadNav.Hit(r, text))
                 return kind == MBtn.Disabled ? MClick.DisabledClicked : MClick.Clicked;
             return MClick.None;
         }
