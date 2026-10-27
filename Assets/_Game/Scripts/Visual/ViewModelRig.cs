@@ -45,6 +45,10 @@ namespace FPSLAN
         /// <summary>Cotovelo do braço da faca, no espaço do balanço.</summary>
         static readonly Vector3 KnifeElbow = new Vector3(0.42f, -0.72f, 0.05f);
         FirstPersonArms m_ModelArms;
+        /// <summary>Braços animados no Blender (Resources/Characters/&lt;id&gt;_fpview), se existirem. Hoje: Mr.S.</summary>
+        BakedViewArms m_Baked;
+        /// <summary>Usa os braços animados no Blender quando o personagem os tiver (desligar volta às mãos estilizadas).</summary>
+        public static bool UseBakedArms = true;
         HandPalette m_Palette;
         // mão de apoio (caçadeira/sniper): ponto da arma e rotação da mão em relação à arma
         Transform m_SupportT;
@@ -259,8 +263,16 @@ namespace FPSLAN
             if (m_HandR != null) { m_HandRRestRot = m_HandR.localRotation; m_HandRRestPos = m_HandR.localPosition; }
             if (m_HandL != null) { m_HandLRestRot = m_HandL.localRotation; m_HandLRestPos = m_HandL.localPosition; }
 
+            // Braços animados no Blender (Mr.S): substituem as mãos estilizadas; as latas seguem as mãos.
+            if (UseBakedArms && Style == RigStyle.DualSprayCans)
+            {
+                m_Baked = BakedViewArms.TryCreate(b, m_Sway, camera.GetComponent<Camera>(), layer, m_GunR, m_GunL);
+                if (m_Baked != null) DestroyStylizedHands();
+            }
+
             // Braços do próprio modelo (opcional) ou mãos estilizadas com antebraços com as cores do personagem.
-            if (!(UseModelArms && TryModelArms(b)))
+            if (m_Baked != null) { }
+            else if (!(UseModelArms && TryModelArms(b)))
             {
                 if (m_HandR != null && Style == RigStyle.Bow)
                 {
@@ -504,7 +516,7 @@ namespace FPSLAN
                 case RigStyle.DualExplosives: m_Throw = 0f; m_ThrowSide = m_NextThrowSide; m_NextThrowSide ^= 1; break;
                 case RigStyle.Bow: m_Draw = 0f; m_KickL = 1f; break;
                 case RigStyle.SprayCan:
-                case RigStyle.DualSprayCans: m_Spray = super ? 1.2f : 0.65f; break;
+                case RigStyle.DualSprayCans: m_Spray = super ? 1.2f : 0.65f; if (m_Baked != null) m_Baked.OnSpray(m_Spray); break;
                 case RigStyle.Shotgun: m_Pump = 0f; break;
             }
             if (super && !m_SuperMode) m_Raise = 1f;
@@ -568,6 +580,7 @@ namespace FPSLAN
         /// <summary>Uma carga recarregou: pequena animação (revólver a girar, cartucho na caçadeira, etc.).</summary>
         public void OnChargeReloaded()
         {
+            if (m_Baked != null) m_Baked.OnReload();
             if (Style == RigStyle.DualRevolvers && m_Twirl < 0f)
             {
                 m_Twirl = 0f;
@@ -716,6 +729,7 @@ namespace FPSLAN
                 case RigStyle.DualSprayCans:
                 {
                     m_Spray = Mathf.MoveTowards(m_Spray, 0f, dt);
+                    if (m_Baked != null) break;   // as latas seguem as mãos animadas (BakedViewArms)
                     float shake = m_Spray > 0f ? 1f : 0f;
                     var jitterR = new Vector3(Mathf.Sin(time * 70f), Mathf.Cos(time * 63f), 0f) * 0.006f * shake;
                     var jitterL = new Vector3(Mathf.Cos(time * 66f), Mathf.Sin(time * 71f), 0f) * 0.006f * shake;
@@ -852,7 +866,8 @@ namespace FPSLAN
             // ---------------- faca: a arma da direita baixa enquanto a mão direita dá o golpe
             if (m_KnifeHand != null)
             {
-                if (m_MeleeSwing > 0f && m_GunR != null && Style != RigStyle.Bow)
+                if (m_Baked != null) m_Baked.SetRightDrop(m_MeleeSwing * 1.6f);
+                else if (m_MeleeSwing > 0f && m_GunR != null && Style != RigStyle.Bow)
                     m_GunR.localPosition += new Vector3(0.04f, -0.32f, -0.06f) * Mathf.Clamp01(m_MeleeSwing * 1.6f);
                 // arco: a mão direita (da corda) é a que pega na faca
                 bool knifeOut = m_Knife.gameObject.activeSelf;
