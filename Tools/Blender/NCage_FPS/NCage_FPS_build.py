@@ -376,7 +376,8 @@ POSES = {
     "fetch": dict(grip=(-0.19, -0.16, -0.52), cant=-18, pitch=4,  r=(0.36, -0.66, -0.05),  rf=(-0.2, -0.6, -0.6), rh="pinch"),
     "carry": dict(grip=(-0.14, -0.24, -0.50), cant=-18, pitch=10,  r=(0.22, -0.30, -0.42), rf=(-0.4, 0.15, -1),  rh="pinch"),
     "nock":  dict(grip=(-0.12, -0.26, -0.50), cant=-18, pitch=12,  r=None,                 rf=None,              rh="hook", draw=0.0),
-    "aim":   dict(grip=(-0.035, -0.07, -0.60), cant=-5,  pitch=0,  r=None,                 rf=None,              rh="hook", draw=1.0),
+    # a mirar o arco fica inclinado (topo para a esquerda) e um pouco à esquerda: o centro do ecrã (a mira) fica livre
+    "aim":   dict(grip=tuple(float(x) for x in os.environ.get("AIMG", "-0.16,-0.10,-0.60").split(",")), cant=float(os.environ.get("AIMC", "20")),  pitch=0,  r=None,                 rf=None,              rh="hook", draw=1.0),
 }
 ANCHOR = Vector(tuple(float(x) for x in os.environ.get("ANC", "0.15,-0.20,-0.34").split(",")))
 PALM_DRAW = Vector((float(os.environ.get("PDX", "-0.85")), float(os.environ.get("PDY", "-0.5")), 0.0))   # palma para a cara e um pouco para baixo: os nós dos dedos ficam à vista   # nó da flecha com a corda toda puxada (junto à cara)
