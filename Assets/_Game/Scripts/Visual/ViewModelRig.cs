@@ -47,6 +47,7 @@ namespace FPSLAN
         FirstPersonArms m_ModelArms;
         /// <summary>Braços animados no Blender (Resources/Characters/&lt;id&gt;_fpview), se existirem. Hoje: Mr.S.</summary>
         BakedViewArms m_Baked;
+        BakedBowArms m_BakedBow;
         /// <summary>Usa os braços animados no Blender quando o personagem os tiver (desligar volta às mãos estilizadas).</summary>
         public static bool UseBakedArms = true;
         HandPalette m_Palette;
@@ -269,9 +270,19 @@ namespace FPSLAN
                 m_Baked = BakedViewArms.TryCreate(b, m_Sway, camera.GetComponent<Camera>(), layer, m_GunR, m_GunL);
                 if (m_Baked != null) DestroyStylizedHands();
             }
+            // N.Cage: braços animados no Blender com o próprio arco composto e as 3 flechas (substituem o arco e as mãos)
+            if (UseBakedArms && Style == RigStyle.Bow)
+            {
+                m_BakedBow = BakedBowArms.TryCreate(b, m_Sway, camera.GetComponent<Camera>(), layer);
+                if (m_BakedBow != null)
+                {
+                    DestroyStylizedHands();
+                    if (m_GunL != null) m_GunL.gameObject.SetActive(false);
+                }
+            }
 
             // Braços do próprio modelo (opcional) ou mãos estilizadas com antebraços com as cores do personagem.
-            if (m_Baked != null) { }
+            if (m_Baked != null || m_BakedBow != null) { }
             else if (!(UseModelArms && TryModelArms(b)))
             {
                 if (m_HandR != null && Style == RigStyle.Bow)
@@ -299,8 +310,10 @@ namespace FPSLAN
             }
             m_Knife.gameObject.SetActive(false);
 
-            foreach (var w in new[] { m_WeaponR, m_WeaponL })
-                if (w != null) m_WeaponRenderers.AddRange(w.root.GetComponentsInChildren<Renderer>(true));
+            if (m_BakedBow != null) m_WeaponRenderers.AddRange(m_BakedBow.WeaponRenderers);
+            else
+                foreach (var w in new[] { m_WeaponR, m_WeaponL })
+                    if (w != null) m_WeaponRenderers.AddRange(w.root.GetComponentsInChildren<Renderer>(true));
 
             foreach (var t in Root.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = layer;
             foreach (var r in Root.GetComponentsInChildren<Renderer>(true))
@@ -500,6 +513,7 @@ namespace FPSLAN
         public Vector3 GetMuzzle(int shotIndex)
         {
             if (m_SuperMode && m_Minigun != null) return m_Minigun.Muzzle(0);
+            if (m_BakedBow != null) return m_BakedBow.Muzzle;
             bool dual = m_WeaponL != null && m_WeaponR != null;
             WeaponModel w;
             // dinamite: o 1.º disparo sai antes de OnAttack, por isso usa a mão "seguinte"
@@ -514,7 +528,7 @@ namespace FPSLAN
             switch (Style)
             {
                 case RigStyle.DualExplosives: m_Throw = 0f; m_ThrowSide = m_NextThrowSide; m_NextThrowSide ^= 1; break;
-                case RigStyle.Bow: m_Draw = 0f; m_KickL = 1f; break;
+                case RigStyle.Bow: m_Draw = 0f; m_KickL = 1f; if (m_BakedBow != null) m_BakedBow.OnAttack(); break;
                 case RigStyle.SprayCan:
                 case RigStyle.DualSprayCans: m_Spray = super ? 1.2f : 0.65f; if (m_Baked != null) m_Baked.OnSpray(m_Spray); break;
                 case RigStyle.Shotgun: m_Pump = 0f; break;
@@ -773,6 +787,7 @@ namespace FPSLAN
 
                 case RigStyle.Bow:
                 {
+                    if (m_BakedBow != null) break;   // braços e arco animados no Blender (BakedBowArms)
                     // Solta → volta a puxar a corda ao longo do cooldown
                     m_Draw = Mathf.MoveTowards(m_Draw, 1f, dt * 2.2f);
                     float pull = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((m_Draw - 0.15f) / 0.85f));
@@ -867,6 +882,7 @@ namespace FPSLAN
             if (m_KnifeHand != null)
             {
                 if (m_Baked != null) m_Baked.SetRightDrop(m_MeleeSwing * 1.6f);
+                else if (m_BakedBow != null) m_BakedBow.SetDrop(m_MeleeSwing * 1.6f);
                 else if (m_MeleeSwing > 0f && m_GunR != null && Style != RigStyle.Bow)
                     m_GunR.localPosition += new Vector3(0.04f, -0.32f, -0.06f) * Mathf.Clamp01(m_MeleeSwing * 1.6f);
                 // arco: a mão direita (da corda) é a que pega na faca
