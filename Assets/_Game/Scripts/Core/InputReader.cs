@@ -25,7 +25,7 @@ namespace FPSLAN
         public static bool LeanRightHeld => GameInputSettings.IsHeld(GameAction.LeanRight);
         public static bool LeanLeftPressed => GameInputSettings.WasPressedThisFrame(GameAction.LeanLeft);
         public static bool LeanRightPressed => GameInputSettings.WasPressedThisFrame(GameAction.LeanRight);
-        /// <summary>A mirar (Lince): tecla premida, ou ligado/desligado em modo alternar (SETTINGS > CONTROLS).</summary>
+        /// <summary>A mirar (todas as personagens; o Lince usa a luneta): tecla premida, ou ligado/desligado em modo alternar (SETTINGS > CONTROLS).</summary>
         public static bool AimHeld
         {
             get

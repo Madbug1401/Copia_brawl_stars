@@ -704,6 +704,7 @@ namespace FPSLAN
                     look = look,
                     superReady = m_Player.Combat.SuperReady,
                     cooldown01 = cooldown01,
+                    aiming = AimingDownSights(dead),
                 });
             }
 
@@ -721,8 +722,9 @@ namespace FPSLAN
 
                 // Abrandado: campo de visão mais fechado; sprint: ligeiramente mais aberto
                 bool sniper = m_Player.Brawler != null && m_Player.Brawler.firstPerson.rig == RigStyle.Sniper;
-                if (dead || !sniper) InputReader.ResetAimToggle(); // modo alternar: morrer ou trocar de personagem sai da luneta
+                if (dead) InputReader.ResetAimToggle(); // modo alternar: morrer sai da mira
                 bool scoped = !dead && GameUI.GameplayInputAllowed && sniper && InputReader.AimHeld;
+                bool ads = !scoped && AimingDownSights(dead);   // outras armas: a arma vem ao centro e há um zoom ligeiro
                 // a mirar pela luneta: esconde a arma e as mãos (só se vê a mira no ecrã)
                 bool emote = (m_Emotes != null && m_Emotes.HidesWeapon) || m_Player.SprayWheelOpen;
                 if (m_View != null) m_View.SetVisible(!dead && !scoped && !emote);
@@ -737,15 +739,25 @@ namespace FPSLAN
                     }
                 }
                 ThermalScope.Tick(m_Camera, scoped);
-                float fov = scoped ? GameSession.ScopeFieldOfView :
+                float fov = scoped ? GameSession.ScopeFieldOfView : ads ? GameSession.AimDownSightsFov :
                     (m_Player.Health.IsSlowed ? 78f : (motor.IsSprinting && motor.IsMoving ? 90f : 85f));
                 if (motor.IsLaunched) fov = 92f;
                 if (motor.IsSliding && !scoped) fov = 98f; // slide: abre o campo de visão (sensação de velocidade)
-                m_Camera.fieldOfView = Mathf.Lerp(m_Camera.fieldOfView, fov, 1f - Mathf.Exp(-(scoped ? 14f : 8f) * dt));
+                m_Camera.fieldOfView = Mathf.Lerp(m_Camera.fieldOfView, fov, 1f - Mathf.Exp(-(scoped ? 14f : ads ? 12f : 8f) * dt));
                 if (m_ViewCamera != null) m_ViewCamera.fieldOfView = m_Camera.fieldOfView;
             }
 
             UpdateTrajectory(dead);
+        }
+
+        /// <summary>A mirar com a arma (botão direito / gatilho de mira), sem ser a luneta do Lince e sem correr.</summary>
+        bool AimingDownSights(bool dead)
+        {
+            if (dead || !GameUI.GameplayInputAllowed || !InputReader.AimHeld) return false;
+            var b = m_Player.Brawler;
+            if (b == null || b.firstPerson.rig == RigStyle.Sniper) return false;
+            var motor = m_Player.Motor;
+            return !(motor.IsSprinting && motor.IsMoving);
         }
 
         /// <summary>Mostra a trajetória/alvo dos ataques que usam ponto-alvo (arcos, minas, salto).</summary>

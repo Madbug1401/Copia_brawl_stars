@@ -48,6 +48,8 @@ namespace FPSLAN
         public const float ScopeMinFov = 10f, ScopeMaxFov = 55f, ScopeDefaultFov = 32f;
         /// <summary>Campo de visão normal da 1.ª pessoa (para mostrar o zoom como "4.0x").</summary>
         public const float NormalFov = 85f;
+        /// <summary>A mirar com as outras armas (sem luneta): zoom ligeiro (campo de visão em graus).</summary>
+        public const float AimDownSightsFov = 64f;
 
         public static float ScopeFieldOfView
         {

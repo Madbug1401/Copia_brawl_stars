@@ -33,7 +33,8 @@ namespace FPSLAN
         Arm m_L, m_R;
         Camera m_Camera;
         Transform m_CanL, m_CanR;
-        float m_RightDrop;
+        float m_RightDrop, m_Aim;
+        Vector3 m_LBase;
 
         enum Mode { Idle, Spray, Shake }
 
@@ -80,7 +81,8 @@ namespace FPSLAN
             m_L = MakeArm(prefab, m_Frame, "L");
             m_R = MakeArm(prefab, m_Mirror, "R");
             if (m_L == null || m_R == null) return false;
-            m_R.idleOffset = 0.35f;   // as duas mãos não respiram exatamente juntas
+            m_R.idleOffset = 0.35f;
+            m_LBase = m_L.root.localPosition;   // as duas mãos não respiram exatamente juntas
 
             // material toon do próprio personagem (mesma textura e UV); unhas num toon liso
             Material skin = null;
@@ -202,6 +204,7 @@ namespace FPSLAN
         public void EditorStep(float dt)
         {
             Step(m_L, dt); Step(m_R, dt);
+            PlaceArms();
             UpdateFov();
             if (m_L != null) m_L.anim.Sample();
             if (m_R != null) m_R.anim.Sample();
@@ -210,6 +213,16 @@ namespace FPSLAN
 
         /// <summary>Golpe de faca: o braço direito baixa (0..1).</summary>
         public void SetRightDrop(float k) => m_RightDrop = Mathf.Clamp01(k);
+
+        /// <summary>A mirar (0..1): as duas latas aproximam-se do centro e sobem um pouco.</summary>
+        public void SetAim(float k) => m_Aim = Mathf.Clamp01(k);
+
+        void PlaceArms()
+        {
+            var aim = new Vector3(0.06f, 0.025f, 0f) * m_Aim;
+            if (m_L != null) m_L.root.localPosition = m_LBase + aim;
+            if (m_Mirror != null) m_Mirror.localPosition = new Vector3(0f, -0.35f, -0.08f) * Mathf.SmoothStep(0f, 1f, m_RightDrop) + new Vector3(-aim.x, aim.y, 0f);
+        }
 
         static void Switch(Arm a, AnimationState next, Mode mode)
         {
@@ -224,7 +237,7 @@ namespace FPSLAN
             float dt = Time.deltaTime;
             Step(m_L, dt);
             Step(m_R, dt);
-            if (m_Mirror != null) m_Mirror.localPosition = new Vector3(0f, -0.35f, -0.08f) * Mathf.SmoothStep(0f, 1f, m_RightDrop);
+            PlaceArms();
             UpdateFov();
         }
 

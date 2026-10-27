@@ -13,6 +13,8 @@ namespace FPSLAN
         public Vector2 look;
         public bool superReady;
         public float cooldown01;
+        /// <summary>A mirar (botão direito): a arma vem para o centro do ecrã.</summary>
+        public bool aiming;
     }
 
     /// <summary>
@@ -48,6 +50,7 @@ namespace FPSLAN
         /// <summary>Braços animados no Blender (Resources/Characters/&lt;id&gt;_fpview), se existirem. Hoje: Mr.S.</summary>
         BakedViewArms m_Baked;
         BakedBowArms m_BakedBow;
+        float m_Aim;   // 0..1: a mirar (arma ao centro)
         /// <summary>Usa os braços animados no Blender quando o personagem os tiver (desligar volta às mãos estilizadas).</summary>
         public static bool UseBakedArms = true;
         HandPalette m_Palette;
@@ -500,6 +503,23 @@ namespace FPSLAN
             return s;
         }
 
+        bool IsDual => Style == RigStyle.DualRevolvers || Style == RigStyle.DualSMG || Style == RigStyle.DualSprayCans || Style == RigStyle.DualExplosives;
+
+        /// <summary>Deslocamento do conjunto (braços + arma) a mirar: a arma de uma mão / o arco vêm para o centro.</summary>
+        Vector3 AimOffset()
+        {
+            if (IsDual) return new Vector3(0f, 0.01f, 0f);              // as duas armas juntam-se (ver Tick)
+            if (m_SuperMode && m_Minigun != null) return new Vector3(-0.08f, 0.04f, -0.02f);
+            if (Style == RigStyle.Bow)
+            {
+                // o apoio das flechas vem para o centro do ecrã (arco animado: marcador "Ponta"; arco do jogo: o punho)
+                float x = m_BakedBow != null ? 0.13f : -m_GunLRest.x * 0.8f;
+                return new Vector3(x, 0.02f, -0.02f);
+            }
+            // arma de uma mão (caçadeira, lata, pistola...): ao centro e à altura dos olhos, um pouco mais perto
+            return new Vector3(-m_GunRRest.x * 0.92f, 0.075f, -0.05f);
+        }
+
         Transform Holder(string name, Vector3 pos)
         {
             var t = new GameObject(name).transform;
@@ -680,7 +700,12 @@ namespace FPSLAN
                 }
             }
 
-            m_Sway.localPosition = new Vector3(bobX + m_SwayV.x, bobY + idle + m_SwayV.y - m_Land * 0.03f - sprint * 0.04f + m_Raise * 0.05f, -sprint * 0.03f);
+            // ---------------- a mirar: a arma vem para o centro, o balanço e o bob quase desaparecem
+            m_Aim = Mathf.MoveTowards(m_Aim, f.aiming && !f.sprinting && m_Melee < 0f ? 1f : 0f, dt / 0.16f);
+            float aim = Mathf.SmoothStep(0f, 1f, m_Aim);
+            float steady = 1f - 0.75f * aim;
+            m_Sway.localPosition = new Vector3((bobX + m_SwayV.x) * steady, (bobY + idle + m_SwayV.y) * steady - m_Land * 0.03f - sprint * 0.04f + m_Raise * 0.05f, -sprint * 0.03f)
+                + AimOffset() * aim;
             m_Sway.localRotation = Quaternion.Euler(sprint * 12f - m_Raise * 12f, -sprint * 18f, sprint * 10f + m_SwayV.x * 60f);
 
             // ---------------- recuo
@@ -876,6 +901,14 @@ namespace FPSLAN
                 default:
                     PoseGun(m_GunR, m_GunRRest, m_KickR, 0.06f, 12f, 0f);
                     break;
+            }
+
+            // ---------------- a mirar com duas armas: juntam-se ao centro e sobem para a linha dos olhos
+            if (m_Baked != null) m_Baked.SetAim(aim);
+            if (aim > 0f && IsDual && m_Baked == null && !(m_SuperMode && m_Minigun != null))
+            {
+                if (m_GunR != null) m_GunR.localPosition += new Vector3(-m_GunRRest.x * 0.45f, 0.03f, -0.03f) * aim;
+                if (m_GunL != null) m_GunL.localPosition += new Vector3(-m_GunLRest.x * 0.45f, 0.03f, -0.03f) * aim;
             }
 
             // ---------------- faca: a arma da direita baixa enquanto a mão direita dá o golpe

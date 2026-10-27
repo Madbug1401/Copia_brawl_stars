@@ -1373,7 +1373,7 @@ namespace FPSLAN
                 case GameAction.Sprint: return "Sprint";
                 case GameAction.Scoreboard: return "Scoreboard";
                 case GameAction.Pause: return "Pause";
-                case GameAction.Aim: return "Aim (Lince)";
+                case GameAction.Aim: return "Aim";
                 case GameAction.Interact: return "Revive partner (hold)";
                 case GameAction.FeedPet: return "Feed pet (UPRA)";
                 case GameAction.Emote: return "SITA spray wheel (hold)";
@@ -1473,7 +1473,7 @@ namespace FPSLAN
 
                 // Campos de modo (manter premido / alternar) logo a seguir às teclas a que se aplicam
                 if (action == GameAction.Aim)
-                    { bool v = DrawHoldToggleRow("Aim mode (Lince scope)", GameSession.AimToggle, s); if (v != GameSession.AimToggle) GameSession.AimToggle = v; }
+                    { bool v = DrawHoldToggleRow("Aim mode", GameSession.AimToggle, s); if (v != GameSession.AimToggle) GameSession.AimToggle = v; }
                 else if (action == GameAction.LeanRight)
                     { bool v = DrawHoldToggleRow("Lean mode", GameSession.LeanToggle, s); if (v != GameSession.LeanToggle) GameSession.LeanToggle = v; }
             }
@@ -1563,7 +1563,7 @@ namespace FPSLAN
 
                 // modos (manter premido / alternar), partilhados com o teclado
                 if (id == "Aim")
-                    { bool v = DrawHoldToggleRow("Aim mode (Lince scope)", GameSession.AimToggle, s); if (v != GameSession.AimToggle) GameSession.AimToggle = v; }
+                    { bool v = DrawHoldToggleRow("Aim mode", GameSession.AimToggle, s); if (v != GameSession.AimToggle) GameSession.AimToggle = v; }
                 else if (id == "LeanRight")
                     { bool v = DrawHoldToggleRow("Lean mode", GameSession.LeanToggle, s); if (v != GameSession.LeanToggle) GameSession.LeanToggle = v; }
             }
