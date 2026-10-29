@@ -24,7 +24,38 @@ namespace FPSLAN
         {
             if (PlayerPrefs.HasKey(KeyQuality))
                 QualitySettings.SetQualityLevel(ClampQuality(PlayerPrefs.GetInt(KeyQuality)), true);
+            else if (!Application.isEditor && !BenchmarkRunner.IsRequested)   // o benchmark não grava preferências
+            {
+                // Primeiro arranque: em vez de Ultra (13 FPS num portátil com gráfica integrada), um nível adequado
+                // ao hardware. Fica guardado como escolha e o jogador muda-o em SETTINGS → GRAPHICS.
+                Quality = RecommendedQuality(SystemInfo.graphicsDeviceName, SystemInfo.graphicsMemorySize,
+                    SystemInfo.systemMemorySize, QualitySettings.names);
+            }
             ApplyDisplay();
+        }
+
+        /// <summary>
+        /// Nível inicial pelo hardware. Gráficas integradas (Intel HD/UHD/Iris, AMD "Radeon Graphics"/Vega das APUs)
+        /// ficam em Low ou Medium; dedicadas em Medium, High ou Very High consoante a memória gráfica. Com pouca RAM
+        /// nunca passa de Medium. Medido num i7-4600U + Intel HD 4400, 1280×720: Ultra 13 FPS, High 23, Low 35.
+        /// </summary>
+        public static int RecommendedQuality(string gpuName, int vramMb, int ramMb, string[] levels)
+        {
+            string gpu = (gpuName ?? "").ToLowerInvariant();
+            // Intel Arc e Radeon RX (incluindo RX Vega 56/64) são placas dedicadas
+            bool dedicatedName = gpu.Contains(" arc") || gpu.Contains(" rx");
+            bool integrated = !dedicatedName && (gpu.Contains("intel") || gpu.Contains("vega") ||
+                              (gpu.Contains("radeon") && gpu.Contains("graphics"))) ||
+                              vramMb > 0 && vramMb < 1024;
+            string level;
+            if (integrated) level = vramMb >= 2048 && ramMb >= 12000 ? "Medium" : "Low";
+            else if (vramMb >= 6144) level = "Very High";
+            else if (vramMb >= 3072) level = "High";
+            else level = "Medium";
+            if (ramMb > 0 && ramMb < 6000 && (level == "High" || level == "Very High")) level = "Medium";
+            int index = levels != null ? System.Array.IndexOf(levels, level) : -1;
+            // Nomes diferentes (níveis renomeados): cai para o meio da lista em vez do máximo.
+            return index >= 0 ? index : Mathf.Max(0, (levels != null ? levels.Length : 1) / 2 - 1);
         }
 
         // ------------------------------------------------------------------ qualidade

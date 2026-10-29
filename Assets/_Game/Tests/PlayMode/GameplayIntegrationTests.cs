@@ -161,7 +161,7 @@ namespace FPSLAN.Tests
             // Pet equipado por defeito (cão) sincronizado no loadout do dono e criado em jogo
             Assert.AreEqual(m_Ctx.PetCatalog.Find("pet_dog").StableHash, host.Loadout.Value.petHash);
             yield return Wait(0.3f);
-            Assert.Greater(Object.FindObjectsByType<PetFollower>(FindObjectsSortMode.None).Length, 0, "pet a seguir o jogador");
+            Assert.Greater(Object.FindObjectsByType<PetFollower>().Length, 0, "pet a seguir o jogador");
 
             var ekko = AddBot(Ekko);
             var lm = AddBot(LupusMarinus);
@@ -186,23 +186,29 @@ namespace FPSLAN.Tests
             Ready(host);
             yield return null;
 
-            // ---------------- Lince: 38 corpo / 50 cabeça (hitscan validado no host)
+            // ---------------- Lince: 55 corpo; cabeça cresce com a distância, 80 a 1 m até 150 a 60 m
+            // (hitscan validado no host). A ~8 m: 80 + 70 × (8 − 1) / 59 ≈ 88. O esperado vem da distância real do olho à
+            // cabeça (±1 de arredondamento), para o teste não partir com pequenos ajustes à câmara ou à hitbox.
             Place(lince, F(0f, 0f), 0f);
             Place(ekko, F(0f, 8f), 180f);
             Ready(ekko);
             int hp = ekko.Health.Health.Value;
+            var sniper = lince.Brawler.primary.attack;
+            int expectedHead = sniper.effect.DirectDamage(0, Vector3.Distance(lince.Motor.EyePosition, Head(ekko)), sniper.Range, true);
             CombatSystem.Instance.StartAttack(Ctx(lince, false, Head(ekko)));
-            Assert.AreEqual(50, Damage(ekko, hp), "headshot da Lince");
+            int head = Damage(ekko, hp);
+            Assert.AreEqual(expectedHead, head, 1, "headshot da Lince a ~8 m");
+            Assert.Greater(head, 80, "a 8 m o headshot já é maior do que a 1 m");
             Ready(ekko);
             hp = ekko.Health.Health.Value;
             CombatSystem.Instance.StartAttack(Ctx(lince, false, Chest(ekko)));
-            Assert.AreEqual(38, Damage(ekko, hp), "corpo da Lince");
+            Assert.AreEqual(55, Damage(ekko, hp), "corpo da Lince");
 
             // ---------------- Tiro fatal: corpo não elimina, cabeça elimina; paredes bloqueiam
             Ready(ekko);
             hp = ekko.Health.Health.Value;
             CombatSystem.Instance.StartAttack(Ctx(lince, true, Chest(ekko)));
-            Assert.AreEqual(38, Damage(ekko, hp), "tiro fatal no corpo = dano normal");
+            Assert.AreEqual(55, Damage(ekko, hp), "tiro fatal no corpo = dano normal");
             Assert.IsFalse(ekko.Health.IsDead);
             var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
             wall.transform.position = F(0f, 4f) + Vector3.up * 1.5f;
@@ -219,14 +225,14 @@ namespace FPSLAN.Tests
             Assert.IsFalse(ekko.Health.IsDead);
             Prepare(ekko, F(15f, 15f), 0f);
 
-            // ---------------- Riot: disparo completo de perto = 54
+            // ---------------- Riot: caçadeira pump, 10 bagos × 6 = 60 até 6 m (todos acertam a 1,4 m)
             Place(riot, F(-6f, 0f), 0f);
             Place(mrs, F(-6f, 1.4f), 180f);
             Ready(mrs);
             hp = mrs.Health.Health.Value;
             CombatSystem.Instance.StartAttack(Ctx(riot, false, Chest(mrs)));
             yield return Wait(0.4f);
-            Assert.AreEqual(54, Damage(mrs, hp), "caçadeira de perto");
+            Assert.AreEqual(60, Damage(mrs, hp), "caçadeira de perto");
 
             // ---------------- N.Cage: três flechas = 100
             Place(ncage, F(6f, 0f), 0f);
@@ -265,7 +271,7 @@ namespace FPSLAN.Tests
             int spray = Damage(lince, hp);
             Assert.That(spray, Is.InRange(50, 60), "spray do Mr.S");
 
-            // ---------------- N.Cage: armadilhas prendem 5 s, 40 de veneno, sem cadeias
+            // ---------------- N.Cage: armadilhas prendem 2 s, 16 de veneno (8/s), sem cadeias
             Place(ncage, F(0f, -14f), 0f);
             var snareCtx = Ctx(ncage, true, F(0f, -8f));
             CombatSystem.Instance.StartAttack(snareCtx);
@@ -283,9 +289,10 @@ namespace FPSLAN.Tests
             yield return Wait(1.0f);
             Assert.Less(Vector3.Distance(Flat(rootedAt), Flat(riot.transform.position)), 0.05f, "não se mexe preso");
             Assert.AreEqual(2, CombatSystem.Instance.TrapCount(ncage.Id, true), "a armadilha desaparece ao disparar");
-            yield return Wait(4.2f);
-            Assert.IsFalse(riot.Status.IsRooted, "solta-se ao fim de 5 s");
-            Assert.AreEqual(40, riotHp - riot.Health.Health.Value, "40 de veneno no total");
+            // Mede antes de a regeneração começar (3 s depois do último dano de veneno)
+            yield return Wait(1.2f);
+            Assert.IsFalse(riot.Status.IsRooted, "solta-se ao fim de 2 s");
+            Assert.AreEqual(16, riotHp - riot.Health.Health.Value, "16 de veneno no total");
             // Imune logo a seguir: outra armadilha não o volta a prender
             riot.ScriptedCommands = () => default;
             Place(riot, snares.DesiredPosition(snareCtx, 1), 0f);

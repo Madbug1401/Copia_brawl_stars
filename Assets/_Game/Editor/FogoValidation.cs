@@ -32,8 +32,8 @@ namespace FPSLAN.EditorTools
             if (scene.path != FogoBuilder.ScenePath) EditorSceneManager.OpenScene(FogoBuilder.ScenePath);
             Physics.SyncTransforms();
             var sb = new StringBuilder();
-            var storm = Object.FindFirstObjectByType<StormManager>();
-            var lavaSrc = Object.FindFirstObjectByType<LavaArea>();
+            var storm = Object.FindAnyObjectByType<StormManager>();
+            var lavaSrc = Object.FindAnyObjectByType<LavaArea>();
             if (storm == null || lavaSrc == null) return "Cena Fogo sem StormManager/LavaArea.";
 
             var lava = Object.Instantiate(lavaSrc.gameObject).GetComponent<LavaArea>();
@@ -202,7 +202,7 @@ namespace FPSLAN.EditorTools
                 }
             var extra = new StringBuilder();
             int spawnOk = 0, spawnN = 0;
-            foreach (var sp in Object.FindObjectsByType<SpawnPoint>(FindObjectsSortMode.None))
+            foreach (var sp in Object.FindObjectsByType<SpawnPoint>())
             {
                 spawnN++;
                 var p = sp.transform.position;
@@ -336,7 +336,7 @@ namespace FPSLAN.EditorTools
                 prev = ph.radius;
             }
             int mapCorners = 0;
-            var info = Object.FindFirstObjectByType<MapInfo>();
+            var info = Object.FindAnyObjectByType<MapInfo>();
             if (info != null)
                 foreach (var cx in new[] { -1f, 1f })
                     foreach (var cz in new[] { -1f, 1f })
@@ -351,7 +351,7 @@ namespace FPSLAN.EditorTools
             long tris = 0, bushTris = 0;
             int renderers = 0, lights = 0;
             var mats = new HashSet<Material>();
-            foreach (var r in Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None))
+            foreach (var r in Object.FindObjectsByType<MeshRenderer>())
             {
                 if (!r.enabled || !r.gameObject.activeInHierarchy) continue;
                 var mf = r.GetComponent<MeshFilter>();
@@ -363,10 +363,10 @@ namespace FPSLAN.EditorTools
                 if (r.GetComponentInParent<Bush>() != null) bushTris += t;
                 foreach (var m in r.sharedMaterials) if (m != null) mats.Add(m);
             }
-            foreach (var l in Object.FindObjectsByType<Light>(FindObjectsSortMode.None)) if (l.enabled) lights++;
-            int bushes = Object.FindObjectsByType<Bush>(FindObjectsSortMode.None).Length;
+            foreach (var l in Object.FindObjectsByType<Light>()) if (l.enabled) lights++;
+            int bushes = Object.FindObjectsByType<Bush>().Length;
             int bushCols = 0;
-            foreach (var b in Object.FindObjectsByType<Bush>(FindObjectsSortMode.None)) bushCols += b.GetComponentsInChildren<Collider>(true).Length;
+            foreach (var b in Object.FindObjectsByType<Bush>()) bushCols += b.GetComponentsInChildren<Collider>(true).Length;
             sb.AppendLine($"DESEMPENHO (cena em repouso): {tris:N0} triângulos em {renderers} renderers, {mats.Count} materiais, {lights} luzes na cena.");
             sb.AppendLine($"  arbustos: {bushes} zonas, {bushTris:N0} triângulos, {bushCols} colisores (devem ser 0: atravessam-se).");
         }

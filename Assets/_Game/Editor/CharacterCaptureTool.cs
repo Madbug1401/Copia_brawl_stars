@@ -154,7 +154,7 @@ namespace FPSLAN.EditorTools
 
         static IEnumerable<Animator> Rigs()
         {
-            foreach (var a in Object.FindObjectsByType<Animator>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            foreach (var a in Object.FindObjectsByType<Animator>(FindObjectsInactive.Exclude))
                 if (a.transform.parent != null && a.transform.parent.name.StartsWith("Rig_") && a.transform.parent.name.EndsWith("_model"))
                     yield return a;
         }

@@ -25,7 +25,14 @@ namespace FPSLAN
         Renderer[] m_Renderers;
         float m_Fade = 1f, m_Applied = 1f;
 
-        void Awake() => m_Renderers = GetComponentsInChildren<Renderer>(true);
+        void Awake() => RefreshRenderers();
+
+        /// <summary>Volta a recolher os renderers (o LeafBush chama-a quando cria a malha leve de LOD em jogo).</summary>
+        public void RefreshRenderers()
+        {
+            m_Renderers = GetComponentsInChildren<Renderer>(true);
+            m_Applied = -1f;   // reaplica o fade atual também aos renderers novos
+        }
         void OnEnable() { if (!s_All.Contains(this)) s_All.Add(this); }
         void OnDisable() => s_All.Remove(this);
 

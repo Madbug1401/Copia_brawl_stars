@@ -36,6 +36,12 @@ namespace FPSLAN
         readonly Dictionary<ulong, float> m_NextFx = new Dictionary<ulong, float>();
         readonly List<Vector3> m_Cells = new List<Vector3>();
 
+        // Fontes do borbulhar. Com rolloff linear não se ouvem para lá de maxDistance, mas continuariam a ser
+        // descodificadas (Vorbis) e misturadas: longe do jogador local ficam em pausa e retomam onde iam.
+        const float AudioCheckInterval = 0.25f, AudioPauseMargin = 4f, AudioResumeMargin = 2f;
+        readonly List<AudioSource> m_AudioSources = new List<AudioSource>();
+        float m_NextAudioCheck;
+
         public IReadOnlyList<Vector3> LavaCells => m_Cells;
 
         void Awake()
@@ -84,6 +90,24 @@ namespace FPSLAN
                 src.priority = 200;
                 src.time = Random.Range(0f, clip.length * 0.9f);
                 src.Play();
+                m_AudioSources.Add(src);
+            }
+        }
+
+        void CullDistantAudio()
+        {
+            if (m_AudioSources.Count == 0 || Time.unscaledTime < m_NextAudioCheck) return;
+            m_NextAudioCheck = Time.unscaledTime + AudioCheckInterval;
+            var me = PlayerNetwork.Local;
+            var cam = me != null && me.Visuals != null ? me.Visuals.PlayerCamera : null;
+            Vector3 listener = cam != null ? cam.transform.position : Vector3.zero;
+            foreach (var src in m_AudioSources)
+            {
+                if (src == null) continue;
+                if (cam == null) { if (!src.isPlaying) src.UnPause(); continue; }   // sem jogador local: como antes
+                float d = Vector3.Distance(src.transform.position, listener);
+                if (src.isPlaying && d > src.maxDistance + AudioPauseMargin) src.Pause();
+                else if (!src.isPlaying && d < src.maxDistance + AudioResumeMargin) src.UnPause();
             }
         }
 
@@ -137,6 +161,7 @@ namespace FPSLAN
 
         void Update()
         {
+            CullDistantAudio();
             var nm = NetworkManager.Singleton;
             if (nm == null || !nm.IsListening) return;
             float dt = Time.deltaTime;

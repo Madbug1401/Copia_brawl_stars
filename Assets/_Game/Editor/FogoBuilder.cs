@@ -562,7 +562,7 @@ namespace FPSLAN.EditorTools
             gm.emitterRenderers = new Renderer[0];
 
             // aterragens: metade a −Z escolhida em rocha seca e livre, e o espelho em +Z (justo para as duas equipas)
-            var lava = Object.FindFirstObjectByType<LavaArea>();
+            var lava = Object.FindAnyObjectByType<LavaArea>();
             LavaArea tmp = null;
             if (lava != null)
             {

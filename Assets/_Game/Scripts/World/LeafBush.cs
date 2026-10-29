@@ -30,7 +30,16 @@ namespace FPSLAN
         Mesh m_Mesh;
         bool m_Dirty = true;
 
-        void OnEnable() => Rebuild();
+        // LOD em jogo: de perto a malha completa; mais longe uma malha leve (folhas com menos anéis/lados e menos
+        // densas). A troca segue o lodBias de cada nível de qualidade (Ultra ≈ 47 m, High ≈ 23 m, Low ≈ 9 m).
+        // Só existe em Play/build e nunca é gravada na cena.
+        const float LodScreenHeight = 0.07f, LodDensity = 0.75f;
+        const int LodRings = 4, LodSides = 5;
+        Mesh m_LodMesh;
+        MeshRenderer m_LodRenderer;
+
+        // Reativar um arbusto não volta a gerar as malhas (só na primeira vez ou depois de mudar os parâmetros)
+        void OnEnable() { if (m_Mesh == null || m_Dirty) Rebuild(); }
         void OnValidate() => m_Dirty = true;
 
         void Update()
@@ -40,6 +49,7 @@ namespace FPSLAN
 
         void OnDestroy()
         {
+            if (m_LodMesh != null) Destroy(m_LodMesh);
             if (m_Mesh == null) return;
             if (Application.isPlaying) Destroy(m_Mesh);
             else DestroyImmediate(m_Mesh);
@@ -57,6 +67,36 @@ namespace FPSLAN
             Generate(m_Mesh, size, seed, density, palette);
             var mf = GetComponent<MeshFilter>();
             if (mf != null) mf.sharedMesh = m_Mesh;
+            if (Application.isPlaying) RebuildLod();
+        }
+
+        void RebuildLod()
+        {
+            var main = GetComponent<MeshRenderer>();
+            if (main == null) return;
+            if (m_LodMesh == null) m_LodMesh = new Mesh { name = "LeafBush_LOD1", hideFlags = HideFlags.DontSave };
+            Generate(m_LodMesh, size, seed, density * LodDensity, palette, LodRings, LodSides);
+            if (m_LodRenderer == null)
+            {
+                // Só existe em Play/build (nunca em edição), por isso não precisa de HideFlags: morre com o arbusto
+                var go = new GameObject("Leaves_LOD1") { layer = gameObject.layer };
+                go.transform.SetParent(transform, false);
+                go.AddComponent<MeshFilter>().sharedMesh = m_LodMesh;
+                m_LodRenderer = go.AddComponent<MeshRenderer>();
+                // O Bush do pai torna os renderers translúcidos (jogador dentro, luneta térmica): passa a incluir este
+                var bush = GetComponentInParent<Bush>();
+                if (bush != null) bush.RefreshRenderers();
+            }
+            m_LodRenderer.sharedMaterials = main.sharedMaterials;
+            m_LodRenderer.shadowCastingMode = main.shadowCastingMode;
+            m_LodRenderer.receiveShadows = main.receiveShadows;
+            m_LodRenderer.lightProbeUsage = main.lightProbeUsage;
+            m_LodRenderer.reflectionProbeUsage = main.reflectionProbeUsage;
+            var group = GetComponent<LODGroup>();
+            if (group == null) group = gameObject.AddComponent<LODGroup>();
+            // Último nível com altura 0: o arbusto nunca desaparece à distância
+            group.SetLODs(new[] { new LOD(LodScreenHeight, new Renderer[] { main }), new LOD(0f, new Renderer[] { m_LodRenderer }) });
+            group.RecalculateBounds();
         }
 
         // ------------------------------------------------------------------ geração
@@ -80,7 +120,10 @@ namespace FPSLAN
             public float phase;
         }
 
-        public static void Generate(Mesh mesh, Vector3 size, int seed, float density, int paletteIndex)
+        public static void Generate(Mesh mesh, Vector3 size, int seed, float density, int paletteIndex) =>
+            Generate(mesh, size, seed, density, paletteIndex, LeafRings, LeafSides);
+
+        static void Generate(Mesh mesh, Vector3 size, int seed, float density, int paletteIndex, int rings, int sides)
         {
             var rng = new System.Random(seed);
             System.Func<float, float, float> R = (a, b) => a + (b - a) * (float)rng.NextDouble();
@@ -212,7 +255,7 @@ namespace FPSLAN
                     var col = Color.Lerp(dark, light, Mathf.Clamp01(tc)) + tint;
                     col = new Color(Mathf.Clamp01(col.r + j), Mathf.Clamp01(col.g + j), Mathf.Clamp01(col.b + j), 1f);
 
-                    AddLeaf(V, C, T, basePos, L, W, N, ln, wd, th, crease, curl, col);
+                    AddLeaf(V, C, T, basePos, L, W, N, ln, wd, th, crease, curl, col, rings, sides);
                 }
             }
 
@@ -240,20 +283,20 @@ namespace FPSLAN
 
         /// <summary>Uma folha: amêndoa fechada (topo inchado com sulco no meio, fundo achatado), ponta curvada.</summary>
         static void AddLeaf(List<Vector3> V, List<Color> C, List<int> T, Vector3 basePos, Vector3 L, Vector3 W, Vector3 N,
-            float len, float wid, float thick, float crease, float curl, Color col)
+            float len, float wid, float thick, float crease, float curl, Color col, int rings, int sides)
         {
             var vein = new Color(col.r * 0.78f, col.g * 0.78f, col.b * 0.78f, 1f);
             int vb = V.Count;
-            for (int k = 0; k <= LeafRings; k++)
+            for (int k = 0; k <= rings; k++)
             {
-                float u = k / (float)LeafRings;
+                float u = k / (float)rings;
                 float w = wid * 0.5f * Mathf.Pow(Mathf.Max(0f, Mathf.Sin(Mathf.PI * Mathf.Pow(u, 0.85f))), 0.6f);
                 float tt = thick * Mathf.Pow(Mathf.Max(0f, Mathf.Sin(Mathf.PI * u)), 0.5f);
                 float bend = curl * len * u * u;
                 var center = basePos + L * (u * len);
-                for (int j = 0; j < LeafSides; j++)
+                for (int j = 0; j < sides; j++)
                 {
-                    float a = 2f * Mathf.PI * j / LeafSides;
+                    float a = 2f * Mathf.PI * j / sides;
                     float cc = Mathf.Cos(a), ss = Mathf.Sin(a);
                     float up = ss >= 0f
                         ? Mathf.Pow(ss, 0.7f) * tt * (1f - crease * Mathf.Exp(-cc * cc / 0.06f))
@@ -262,11 +305,11 @@ namespace FPSLAN
                     C.Add(ss > 0.9f ? vein : col);
                 }
             }
-            for (int k = 0; k < LeafRings; k++)
-                for (int j = 0; j < LeafSides; j++)
+            for (int k = 0; k < rings; k++)
+                for (int j = 0; j < sides; j++)
                 {
-                    int i0 = vb + k * LeafSides + j, i1 = vb + k * LeafSides + (j + 1) % LeafSides;
-                    int i2 = i0 + LeafSides, i3 = i1 + LeafSides;
+                    int i0 = vb + k * sides + j, i1 = vb + k * sides + (j + 1) % sides;
+                    int i2 = i0 + sides, i3 = i1 + sides;
                     T.Add(i0); T.Add(i1); T.Add(i2);
                     T.Add(i1); T.Add(i3); T.Add(i2);
                 }
