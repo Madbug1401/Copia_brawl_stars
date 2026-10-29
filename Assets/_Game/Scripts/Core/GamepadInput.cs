@@ -310,7 +310,7 @@ namespace FPSLAN
 
         public static PadButton GetBinding(string id)
         {
-            int v = PlayerPrefs.GetInt(PrefPrefix + id, (int)DefaultBinding(id));
+            int v = Prefs.GetInt(PrefPrefix + id, (int)DefaultBinding(id));
             return System.Enum.IsDefined(typeof(PadButton), v) ? (PadButton)v : DefaultBinding(id);
         }
 
@@ -323,18 +323,18 @@ namespace FPSLAN
                 foreach (var other in BindableIds)
                     if (other != id && GetBinding(other) == b)
                     {
-                        PlayerPrefs.SetInt(PrefPrefix + other, (int)old);
+                        Prefs.SetInt(PrefPrefix + other, (int)old);
                         swapped = other;
                     }
-            PlayerPrefs.SetInt(PrefPrefix + id, (int)b);
-            PlayerPrefs.Save();
+            Prefs.SetInt(PrefPrefix + id, (int)b);
+            Prefs.Save();
             return swapped;
         }
 
         public static void ResetBindings()
         {
-            foreach (var id in BindableIds) PlayerPrefs.DeleteKey(PrefPrefix + id);
-            PlayerPrefs.Save();
+            foreach (var id in BindableIds) Prefs.DeleteKey(PrefPrefix + id);
+            Prefs.Save();
         }
 
         public static bool ActionHeld(GameAction action)

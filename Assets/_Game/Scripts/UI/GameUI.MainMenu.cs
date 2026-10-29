@@ -85,7 +85,7 @@ namespace FPSLAN
         const string KeyMenuMap = "fpslan.map";
 
         /// <summary>Mapa escolhido no menu (chave). Fica guardado para quando houver mais do que um mapa jogável.</summary>
-        public static string SelectedMapKey => PlayerPrefs.GetString(KeyMenuMap, "pradaria");
+        public static string SelectedMapKey => Prefs.GetString(KeyMenuMap, "pradaria");
 
         // ================================================================== estado
 
@@ -524,7 +524,7 @@ namespace FPSLAN
                 if (MenuButton(ranked, competitive ? "COMPETITIVE" : "CASUAL", 2098, MBtn.Normal, competitive, m_MT14) == MClick.Clicked && !MenuCoopSetup)
                 {
                     MatchManager.MenuSelectedCompetitive = !competitive;
-                    PlayerPrefs.SetInt("fpslan.competitive", !competitive ? 1 : 0);
+                    Prefs.SetInt("fpslan.competitive", !competitive ? 1 : 0);
                 }
             }
 
@@ -575,7 +575,7 @@ namespace FPSLAN
             {
                 m_MModeSel = i;
                 MatchManager.MenuSelectedMode = gm;
-                PlayerPrefs.SetInt("fpslan.mode", (int)gm);
+                Prefs.SetInt("fpslan.mode", (int)gm);
                 if (gm == GameMode.ItTakesTwo)
                 {
                     SelectMap(1);
@@ -748,7 +748,7 @@ namespace FPSLAN
         {
             m_BgReturnAt = 0f;
             m_MMapSel = i;
-            PlayerPrefs.SetString(KeyMenuMap, s_Maps[i].key);
+            Prefs.SetString(KeyMenuMap, s_Maps[i].key);
         }
 
         void DrawSetupActions(Rect r, SetupContext ctx)
@@ -796,7 +796,7 @@ namespace FPSLAN
             if (MenuButton(new Rect(x + 176 * K, y, w - 176 * K, 34 * K), BotManager.DifficultyLabel(BotManager.Difficulty).ToUpperInvariant(), 5003, MBtn.Normal, false, m_MT14) == MClick.Clicked)
             {
                 BotManager.Difficulty = (BotDifficulty)(((int)BotManager.Difficulty + 1) % 3);
-                PlayerPrefs.SetInt("fpslan.botdiff", (int)BotManager.Difficulty);
+                Prefs.SetInt("fpslan.botdiff", (int)BotManager.Difficulty);
                 BotManager.ApplyDifficulty();
             }
             y += 46 * K;
@@ -846,7 +846,7 @@ namespace FPSLAN
 
         static void QuitGame()
         {
-            PlayerPrefs.Save();
+            Prefs.Save();
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;   // no Editor: sai do Play em vez de fechar o Unity
 #else
@@ -1540,6 +1540,27 @@ namespace FPSLAN
             style.wordWrap = oldWrap;
             style.fontSize = oldSize;
             style.font = oldFont;
+        }
+
+        // As imagens do menu estão sem compressão (tamanhos não múltiplos de 4) e chegavam a ficar dezenas de MB em memória
+        // durante toda a partida. Ao entrar numa partida liberta-as (os retratos ficam: o HUD usa-os); no regresso ao menu
+        // voltam a carregar-se quando forem precisas.
+        static readonly List<string> s_MTexRelease = new List<string>();
+
+        void ReleaseMenuTextures(bool keepPortraits)
+        {
+            s_MTexRelease.Clear();
+            foreach (var kv in m_MTex)
+                if (!(keepPortraits && kv.Key.StartsWith("portrait_", System.StringComparison.Ordinal))) s_MTexRelease.Add(kv.Key);
+            foreach (var name in s_MTexRelease) UnloadMenuTexture(name);
+        }
+
+        void UnloadMenuTexture(string name)
+        {
+            // Uma imagem em falta (null) fica na cache: o aviso aparece uma vez e não se volta a procurar
+            if (!m_MTex.TryGetValue(name, out var t) || t == null) return;
+            m_MTex.Remove(name);
+            Resources.UnloadAsset(t);
         }
 
         Texture2D MenuTexture(string name)

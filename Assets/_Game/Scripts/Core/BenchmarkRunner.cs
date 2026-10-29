@@ -38,6 +38,7 @@ namespace FPSLAN
         float m_OrbitRadius, m_OrbitStart;
         const float OrbitHeight = 7f;
         static Camera[] s_Cameras = new Camera[8];
+        string m_RenderLine = "";
 
         /// <summary>O jogo foi aberto em modo benchmark (nada deve ser gravado nas preferências).</summary>
         public static bool IsRequested => System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-benchmark") >= 0;
@@ -112,6 +113,12 @@ namespace FPSLAN
             long gcSum = 0, gcMax = 0;
             int gcFrames = 0;
             int gen0 = System.GC.CollectionCount(0);
+            // Contadores de render: só existem em builds de desenvolvimento (a zero aparecem como indisponíveis)
+            var renderNames = new[] { "Batches Count", "SetPass Calls Count", "Draw Calls Count", "Triangles Count", "Shadow Casters Count" };
+            var render = new ProfilerRecorder[renderNames.Length];
+            var renderSum = new double[renderNames.Length];
+            for (int k = 0; k < render.Length; k++) render[k] = ProfilerRecorder.StartNew(ProfilerCategory.Render, renderNames[k]);
+            int renderFrames = 0;
             using (var gc = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC Allocated In Frame"))
             {
                 yield return null;
@@ -120,6 +127,8 @@ namespace FPSLAN
                 {
                     yield return null;
                     frameMs.Add(Time.unscaledDeltaTime * 1000f);
+                    for (int k = 0; k < render.Length; k++) if (render[k].Valid) renderSum[k] += render[k].LastValue;
+                    renderFrames++;
                     if (gc.Valid)
                     {
                         long a = gc.LastValue;
@@ -129,6 +138,17 @@ namespace FPSLAN
                 }
             }
             gen0 = System.GC.CollectionCount(0) - gen0;
+            var renderLine = new StringBuilder("render_por_frame:");
+            for (int k = 0; k < render.Length; k++)
+            {
+                double avg = renderSum[k] / Mathf.Max(1, renderFrames);
+                // Disponível = o contador existe neste build (um 0 real, p. ex. sem sombras, mostra-se como 0)
+                bool available = render[k].Valid && (renderSum[k] > 0 || Debug.isDebugBuild);
+                renderLine.Append(' ').Append(renderNames[k].Replace(" Count", "").Replace(' ', '_').ToLowerInvariant()).Append('=')
+                          .Append(available ? avg.ToString("F0") : "indisponível");
+                render[k].Dispose();
+            }
+            m_RenderLine = renderLine.ToString();
             Finish(Report(frameMs, gcSum, gcMax, gcFrames, gen0));
         }
 
@@ -222,6 +242,7 @@ namespace FPSLAN
             sb.AppendLine(gcFrames > 0 && gcMax > 0
                 ? $"gc_bytes_por_frame médio={gcSum / (double)gcFrames:F0} máx={gcMax} recolhas_gen0={gen0}"
                 : $"gc_bytes_por_frame=indisponível neste build recolhas_gen0={gen0}");
+            if (m_RenderLine.Length > 0) sb.AppendLine(m_RenderLine);
             sb.AppendLine($"memória: managed_heap={Mb(Profiler.GetMonoUsedSizeLong())} total_alocada={Mb(Profiler.GetTotalAllocatedMemoryLong())} " +
                           $"gráfica={Mb(Profiler.GetAllocatedMemoryForGraphicsDriver())}");
             return sb.ToString();

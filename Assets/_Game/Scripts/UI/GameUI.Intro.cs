@@ -24,6 +24,7 @@ namespace FPSLAN
         static bool s_OpeningIntroComplete;
         float m_IntroStartedAt = -1f;
         bool m_IntroLoaded;
+        bool m_IntroTeamLogoFromResources, m_IntroGameLogoFromResources;
         Texture2D m_IntroWorld;
         Texture2D m_IntroRegion;
 
@@ -43,8 +44,8 @@ namespace FPSLAN
             if (!m_IntroLoaded)
             {
                 m_IntroLoaded = true;
-                if (m_IntroTeamLogo == null) m_IntroTeamLogo = Resources.Load<Texture2D>("UI/Menu/team_logo");
-                if (m_IntroGameLogo == null) m_IntroGameLogo = Resources.Load<Texture2D>("UI/Menu/game_logo");
+                if (m_IntroTeamLogo == null) { m_IntroTeamLogo = Resources.Load<Texture2D>("UI/Menu/team_logo"); m_IntroTeamLogoFromResources = true; }
+                if (m_IntroGameLogo == null) { m_IntroGameLogo = Resources.Load<Texture2D>("UI/Menu/game_logo"); m_IntroGameLogoFromResources = true; }
                 m_IntroWorld = MenuTexture("bg_world");
                 m_IntroRegion = MenuTexture("bg_cape_verde");
                 if (m_IntroTeamLogo == null)
@@ -129,6 +130,20 @@ namespace FPSLAN
             s_OpeningIntroComplete = true;
             m_MScreenT = 0f;
             m_MLastTime = Time.unscaledTime;
+            ReleaseIntroTextures();
+        }
+
+        /// <summary>A intro só corre uma vez por execução: os mapas e logótipos dela (sem compressão) deixam de ser precisos.</summary>
+        void ReleaseIntroTextures()
+        {
+            UnloadMenuTexture("bg_world");
+            UnloadMenuTexture("bg_cape_verde");
+            m_IntroWorld = m_IntroRegion = null;
+            // Só os carregados por Resources: um logótipo atribuído no Inspector pertence à cena
+            if (m_IntroTeamLogoFromResources && m_IntroTeamLogo != null) Resources.UnloadAsset(m_IntroTeamLogo);
+            if (m_IntroGameLogoFromResources && m_IntroGameLogo != null) Resources.UnloadAsset(m_IntroGameLogo);
+            if (m_IntroTeamLogoFromResources) m_IntroTeamLogo = null;
+            if (m_IntroGameLogoFromResources) m_IntroGameLogo = null;
         }
 
         void DrawIntroLogo(Rect screen, Texture2D logo, float elapsed, bool gameLogo)

@@ -92,14 +92,14 @@ namespace FPSLAN
             m_Name = GameSession.LocalName;
             m_Ip = GameSession.LastIp;
             m_Hero = BrawlerRegistry.Sanitize(GameSession.LocalHeroId);
-            m_MenuBots = PlayerPrefs.GetInt("fpslan.bots", 0);
-            MatchManager.MenuSelectedMode = (GameMode)Mathf.Clamp(PlayerPrefs.GetInt("fpslan.mode", 0), 0, System.Enum.GetValues(typeof(GameMode)).Length - 1);
-            BotManager.Difficulty = (BotDifficulty)PlayerPrefs.GetInt("fpslan.botdiff", (int)BotDifficulty.Normal);
+            m_MenuBots = Prefs.GetInt("fpslan.bots", 0);
+            MatchManager.MenuSelectedMode = (GameMode)Mathf.Clamp(Prefs.GetInt("fpslan.mode", 0), 0, System.Enum.GetValues(typeof(GameMode)).Length - 1);
+            BotManager.Difficulty = (BotDifficulty)Prefs.GetInt("fpslan.botdiff", (int)BotDifficulty.Normal);
             m_LocalIps = ConnectionManager.GetLocalIPv4();
             m_Preview = new BrawlerPreview();
             GameSession.ApplyAudioSettings();
             GraphicsOptions.ApplyDisplay();   // resolução e ecrã inteiro/janela escolhidos em SETTINGS → GRAPHICS
-            MatchManager.MenuSelectedCompetitive = PlayerPrefs.GetInt("fpslan.competitive", 0) == 1;
+            MatchManager.MenuSelectedCompetitive = Prefs.GetInt("fpslan.competitive", 0) == 1;
             // Ecrãs de progressão (perfil, personagens, skins, pets, missões, recompensas)
             if (GetComponent<ProgressionUI>() == null) gameObject.AddComponent<ProgressionUI>();
             // armas, mãos e projéteis da 1.ª pessoa carregados no menu (não no 1.º spawn)
@@ -269,7 +269,9 @@ namespace FPSLAN
 
         void Update()
         {
+            bool wasInGame = m_InGame;
             m_InGame = NM != null && NM.IsListening && PlayerNetwork.Local != null;
+            if (m_InGame && !wasInGame) ReleaseMenuTextures(keepPortraits: true);
             MenuAudio.SetMenuMusic(!m_InGame, m_MScreen == MenuScreen.Setup);   // música do menu fora das partidas
             UpdateMatchAudio();
 
@@ -632,7 +634,7 @@ namespace FPSLAN
                     GUILayout.Width(150 * s), GUILayout.Height(38 * s)))
             {
                 MatchManager.MenuSelectedCompetitive = !comp;
-                PlayerPrefs.SetInt("fpslan.competitive", comp ? 0 : 1);
+                Prefs.SetInt("fpslan.competitive", comp ? 0 : 1);
             }
             GUILayout.EndHorizontal();
 
@@ -850,7 +852,7 @@ namespace FPSLAN
             if (LayoutButton("Difficulty: " + BotManager.DifficultyLabel(BotManager.Difficulty), new Color(0.55f, 0.5f, 0.95f), GUILayout.Height(36 * s)))
             {
                 BotManager.Difficulty = (BotDifficulty)(((int)BotManager.Difficulty + 1) % 3);
-                PlayerPrefs.SetInt("fpslan.botdiff", (int)BotManager.Difficulty);
+                Prefs.SetInt("fpslan.botdiff", (int)BotManager.Difficulty);
                 BotManager.ApplyDifficulty();
             }
             GUILayout.EndHorizontal();
@@ -885,7 +887,7 @@ namespace FPSLAN
             int count = System.Enum.GetValues(typeof(GameMode)).Length;
             int value = ((int)MatchManager.MenuSelectedMode + delta + count) % count;
             MatchManager.MenuSelectedMode = (GameMode)value;
-            PlayerPrefs.SetInt("fpslan.mode", value);
+            Prefs.SetInt("fpslan.mode", value);
         }
 
         static string GameModeLabel(GameMode mode)
@@ -907,8 +909,8 @@ namespace FPSLAN
             m_Name = GameSession.LocalName;
             GameSession.LocalHeroId = m_Hero;
             GameSession.LastIp = (m_Ip ?? "").Trim();
-            PlayerPrefs.SetInt("fpslan.bots", m_MenuBots);
-            PlayerPrefs.Save();
+            Prefs.SetInt("fpslan.bots", m_MenuBots);
+            Prefs.Save();
         }
 
         // ================================================================== em jogo
@@ -1402,7 +1404,7 @@ namespace FPSLAN
             m_CapturingBinding = false;
             m_SettingsMessage = null;
             SaveProfileName();
-            PlayerPrefs.Save();
+            Prefs.Save();
         }
 
         void ChangeSettingsTab(int tab)
@@ -1919,7 +1921,7 @@ namespace FPSLAN
             if (MenuButton(new Rect(x, panel.y + 225 * s, bw, 48 * s), "LEAVE MATCH", 8103, MBtn.Normal, false, m_MT17) == MClick.Clicked)
             {
                 m_Paused = false;
-                PlayerPrefs.Save();
+                Prefs.Save();
                 ConnectionManager.Instance?.Leave();
             }
             if (hasRoom)

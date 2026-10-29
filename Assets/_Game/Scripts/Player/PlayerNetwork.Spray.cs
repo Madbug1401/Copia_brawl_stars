@@ -21,8 +21,8 @@ namespace FPSLAN
         public string SprayHint => Time.time < m_SprayHintUntil ? m_SprayHint : null;
         public static int LastSprayColor
         {
-            get => Mathf.Clamp(PlayerPrefs.GetInt(LastSprayPref, 0), 0, Branding.SprayColors.Length - 1);
-            set => PlayerPrefs.SetInt(LastSprayPref, value);
+            get => Mathf.Clamp(Prefs.GetInt(LastSprayPref, 0), 0, Branding.SprayColors.Length - 1);
+            set => Prefs.SetInt(LastSprayPref, value);
         }
 
         float m_NextSprayLocal, m_WheelOpenedAt, m_SprayHintUntil;

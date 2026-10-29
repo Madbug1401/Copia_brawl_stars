@@ -22,8 +22,8 @@ namespace FPSLAN
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void ApplyOnStartup()
         {
-            if (PlayerPrefs.HasKey(KeyQuality))
-                QualitySettings.SetQualityLevel(ClampQuality(PlayerPrefs.GetInt(KeyQuality)), true);
+            if (Prefs.HasKey(KeyQuality))
+                QualitySettings.SetQualityLevel(ClampQuality(Prefs.GetInt(KeyQuality)), true);
             else if (!Application.isEditor && !BenchmarkRunner.IsRequested)   // o benchmark não grava preferências
             {
                 // Primeiro arranque: em vez de Ultra (13 FPS num portátil com gráfica integrada), um nível adequado
@@ -69,8 +69,8 @@ namespace FPSLAN
             {
                 value = ClampQuality(value);
                 QualitySettings.SetQualityLevel(value, true);
-                PlayerPrefs.SetInt(KeyQuality, value);
-                PlayerPrefs.Save();
+                Prefs.SetInt(KeyQuality, value);
+                Prefs.Save();
             }
         }
 
@@ -78,7 +78,7 @@ namespace FPSLAN
 
         // ------------------------------------------------------------------ resolução e modo de ecrã
 
-        public static bool Windowed => PlayerPrefs.GetInt(KeyWindowed, 0) == 1;
+        public static bool Windowed => Prefs.GetInt(KeyWindowed, 0) == 1;
 
         /// <summary>Resolução do monitor (a que o jogo usa por defeito).</summary>
         public static Vector2Int Native
@@ -92,10 +92,10 @@ namespace FPSLAN
             }
         }
 
-        public static bool HasSavedResolution => PlayerPrefs.HasKey(KeyWidth) && PlayerPrefs.HasKey(KeyHeight);
+        public static bool HasSavedResolution => Prefs.HasKey(KeyWidth) && Prefs.HasKey(KeyHeight);
 
         public static Vector2Int SavedResolution => HasSavedResolution
-            ? new Vector2Int(PlayerPrefs.GetInt(KeyWidth), PlayerPrefs.GetInt(KeyHeight))
+            ? new Vector2Int(Prefs.GetInt(KeyWidth), Prefs.GetInt(KeyHeight))
             : Native;
 
         /// <summary>Resoluções disponíveis (sem repetir taxas de atualização), da menor para a maior.</summary>
@@ -121,10 +121,10 @@ namespace FPSLAN
 
         public static void SetDisplay(Vector2Int resolution, bool windowed)
         {
-            PlayerPrefs.SetInt(KeyWidth, Mathf.Max(MinWidth, resolution.x));
-            PlayerPrefs.SetInt(KeyHeight, Mathf.Max(MinHeight, resolution.y));
-            PlayerPrefs.SetInt(KeyWindowed, windowed ? 1 : 0);
-            PlayerPrefs.Save();
+            Prefs.SetInt(KeyWidth, Mathf.Max(MinWidth, resolution.x));
+            Prefs.SetInt(KeyHeight, Mathf.Max(MinHeight, resolution.y));
+            Prefs.SetInt(KeyWindowed, windowed ? 1 : 0);
+            Prefs.Save();
             ApplyDisplay();
         }
 
@@ -146,14 +146,14 @@ namespace FPSLAN
         /// <summary>Mostrar o ping (ou HOST) no canto do HUD durante o jogo. Ligado por defeito.</summary>
         public static bool ShowPing
         {
-            get => PlayerPrefs.GetInt(KeyShowPing, 1) == 1;
-            set { PlayerPrefs.SetInt(KeyShowPing, value ? 1 : 0); PlayerPrefs.Save(); }
+            get => Prefs.GetInt(KeyShowPing, 1) == 1;
+            set { Prefs.SetInt(KeyShowPing, value ? 1 : 0); Prefs.Save(); }
         }
 
         public static bool ShowFps
         {
-            get => PlayerPrefs.GetInt(KeyShowFps, 0) == 1;
-            set { PlayerPrefs.SetInt(KeyShowFps, value ? 1 : 0); PlayerPrefs.Save(); }
+            get => Prefs.GetInt(KeyShowFps, 0) == 1;
+            set { Prefs.SetInt(KeyShowFps, value ? 1 : 0); Prefs.Save(); }
         }
 
         static float s_Fps = 60f;

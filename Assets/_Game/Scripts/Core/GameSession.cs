@@ -22,26 +22,26 @@ namespace FPSLAN
 
         public static string LocalName
         {
-            get => PlayerPrefs.GetString(KeyName, "Player" + Random.Range(10, 99));
-            set => PlayerPrefs.SetString(KeyName, Sanitize(value));
+            get => Prefs.GetString(KeyName, "Player" + Random.Range(10, 99));
+            set => Prefs.SetString(KeyName, Sanitize(value));
         }
 
         public static int LocalHeroId
         {
-            get => PlayerPrefs.GetInt(KeyHero, 0);
-            set => PlayerPrefs.SetInt(KeyHero, value);
+            get => Prefs.GetInt(KeyHero, 0);
+            set => Prefs.SetInt(KeyHero, value);
         }
 
         public static float Sensitivity
         {
             get => GetClampedFloat(KeySens, 2f, 0.2f, 10f);
-            set => PlayerPrefs.SetFloat(KeySens, Mathf.Clamp(value, 0.2f, 10f));
+            set => Prefs.SetFloat(KeySens, Mathf.Clamp(value, 0.2f, 10f));
         }
 
         public static float AimSensitivity
         {
             get => GetClampedFloat(KeyAimSensitivity, 0.5f, 0.2f, 1f);
-            set => PlayerPrefs.SetFloat(KeyAimSensitivity, Mathf.Clamp(value, 0.2f, 1f));
+            set => Prefs.SetFloat(KeyAimSensitivity, Mathf.Clamp(value, 0.2f, 1f));
         }
 
         /// <summary>Limites do zoom da luneta (campo de visão em graus): menos graus = mais zoom.</summary>
@@ -52,7 +52,7 @@ namespace FPSLAN
         public static float ScopeFieldOfView
         {
             get => GetClampedFloat(KeyScopeFov, ScopeDefaultFov, ScopeMinFov, ScopeMaxFov);
-            set => PlayerPrefs.SetFloat(KeyScopeFov, Mathf.Clamp(value, ScopeMinFov, ScopeMaxFov));
+            set => Prefs.SetFloat(KeyScopeFov, Mathf.Clamp(value, ScopeMinFov, ScopeMaxFov));
         }
 
         /// <summary>Roda do rato na luneta: cada passo para a frente aproxima ~18%, para trás afasta. Fica guardado.</summary>
@@ -69,41 +69,41 @@ namespace FPSLAN
         /// <summary>Comando PlayStation ativo (definições ▸ controlos).</summary>
         public static bool ControllerEnabled
         {
-            get => PlayerPrefs.GetInt(KeyPadEnabled, 1) == 1;
-            set => PlayerPrefs.SetInt(KeyPadEnabled, value ? 1 : 0);
+            get => Prefs.GetInt(KeyPadEnabled, 1) == 1;
+            set => Prefs.SetInt(KeyPadEnabled, value ? 1 : 0);
         }
 
         /// <summary>Sensibilidade do stick direito (1 = 200°/s no máximo).</summary>
         public static float ControllerLookSensitivity
         {
             get => GetClampedFloat(KeyPadLook, 1f, 0.3f, 3f);
-            set => PlayerPrefs.SetFloat(KeyPadLook, Mathf.Clamp(value, 0.3f, 3f));
+            set => Prefs.SetFloat(KeyPadLook, Mathf.Clamp(value, 0.3f, 3f));
         }
 
         /// <summary>Sensibilidade do stick esquerdo (andar): &gt;1 chega à velocidade máxima com menos inclinação.</summary>
         public static float ControllerMoveSensitivity
         {
             get => GetClampedFloat(KeyPadMove, 1f, 0.5f, 2f);
-            set => PlayerPrefs.SetFloat(KeyPadMove, Mathf.Clamp(value, 0.5f, 2f));
+            set => Prefs.SetFloat(KeyPadMove, Mathf.Clamp(value, 0.5f, 2f));
         }
 
         /// <summary>Zona morta dos sticks (fração do curso ignorada perto do centro).</summary>
         public static float ControllerDeadZoneL
         {
             get => GetClampedFloat(KeyPadDeadL, 0.18f, 0.02f, 0.5f);
-            set => PlayerPrefs.SetFloat(KeyPadDeadL, Mathf.Clamp(value, 0.02f, 0.5f));
+            set => Prefs.SetFloat(KeyPadDeadL, Mathf.Clamp(value, 0.02f, 0.5f));
         }
 
         public static float ControllerDeadZoneR
         {
             get => GetClampedFloat(KeyPadDeadR, 0.18f, 0.02f, 0.5f);
-            set => PlayerPrefs.SetFloat(KeyPadDeadR, Mathf.Clamp(value, 0.02f, 0.5f));
+            set => Prefs.SetFloat(KeyPadDeadR, Mathf.Clamp(value, 0.02f, 0.5f));
         }
 
         public static bool ControllerInvertY
         {
-            get => PlayerPrefs.GetInt(KeyPadInvertY, 0) == 1;
-            set => PlayerPrefs.SetInt(KeyPadInvertY, value ? 1 : 0);
+            get => Prefs.GetInt(KeyPadInvertY, 0) == 1;
+            set => Prefs.SetInt(KeyPadInvertY, value ? 1 : 0);
         }
 
         public static float MasterVolume
@@ -112,8 +112,8 @@ namespace FPSLAN
             set
             {
                 float volume = Mathf.Clamp01(value);
-                PlayerPrefs.SetFloat(KeyMasterVolume, volume);
-                if (volume > 0.001f) PlayerPrefs.SetInt(KeyMuted, 0);   // mexer no volume tira o mudo
+                Prefs.SetFloat(KeyMasterVolume, volume);
+                if (volume > 0.001f) Prefs.SetInt(KeyMuted, 0);   // mexer no volume tira o mudo
                 ApplyAudioSettings();
             }
         }
@@ -123,8 +123,8 @@ namespace FPSLAN
         /// <summary>Mira da Lince (botão direito): falso = manter premido; verdadeiro = carregar para entrar na luneta e outra vez para sair.</summary>
         public static bool AimToggle
         {
-            get => PlayerPrefs.GetInt(KeyAimToggle, 0) == 1;
-            set { PlayerPrefs.SetInt(KeyAimToggle, value ? 1 : 0); PlayerPrefs.Save(); InputReader.ResetAimToggle(); }
+            get => Prefs.GetInt(KeyAimToggle, 0) == 1;
+            set { Prefs.SetInt(KeyAimToggle, value ? 1 : 0); Prefs.Save(); InputReader.ResetAimToggle(); }
         }
 
         const string KeyLeanToggle = "fpslan.leanToggle";
@@ -132,17 +132,17 @@ namespace FPSLAN
         /// <summary>Inclinar (Q/E): falso = manter a tecla premida; verdadeiro = carregar uma vez para inclinar e outra para voltar.</summary>
         public static bool LeanToggle
         {
-            get => PlayerPrefs.GetInt(KeyLeanToggle, 0) == 1;
-            set { PlayerPrefs.SetInt(KeyLeanToggle, value ? 1 : 0); PlayerPrefs.Save(); }
+            get => Prefs.GetInt(KeyLeanToggle, 0) == 1;
+            set { Prefs.SetInt(KeyLeanToggle, value ? 1 : 0); Prefs.Save(); }
         }
 
         /// <summary>Silenciar sem perder o volume escolhido (botão de mudo do menu).</summary>
         public static bool Muted
         {
-            get => PlayerPrefs.GetInt(KeyMuted, 0) == 1;
+            get => Prefs.GetInt(KeyMuted, 0) == 1;
             set
             {
-                PlayerPrefs.SetInt(KeyMuted, value ? 1 : 0);
+                Prefs.SetInt(KeyMuted, value ? 1 : 0);
                 ApplyAudioSettings();
             }
         }
@@ -151,20 +151,20 @@ namespace FPSLAN
 
         static float GetClampedFloat(string key, float fallback, float minimum, float maximum)
         {
-            float value = PlayerPrefs.GetFloat(key, fallback);
+            float value = Prefs.GetFloat(key, fallback);
             if (float.IsNaN(value) || float.IsInfinity(value))
             {
                 Debug.LogWarning("Preferência numérica inválida '" + key + "'; será usada a predefinição.");
                 value = fallback;
-                PlayerPrefs.SetFloat(key, fallback);
+                Prefs.SetFloat(key, fallback);
             }
             return Mathf.Clamp(value, minimum, maximum);
         }
 
         public static string LastIp
         {
-            get => PlayerPrefs.GetString(KeyIp, "127.0.0.1");
-            set => PlayerPrefs.SetString(KeyIp, value);
+            get => Prefs.GetString(KeyIp, "127.0.0.1");
+            set => Prefs.SetString(KeyIp, value);
         }
 
         /// <summary>Nomes curtos e só com caracteres de 1–2 bytes, para caberem num FixedString64Bytes.</summary>

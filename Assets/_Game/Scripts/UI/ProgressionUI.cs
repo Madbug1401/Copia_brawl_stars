@@ -460,7 +460,7 @@ namespace FPSLAN
             {
                 GameSession.LocalHeroId = selected;
                 if (me != null) me.ChangeHero(selected);
-                PlayerPrefs.Save();
+                Prefs.Save();
             }
             if (Btn(new Rect(pv.x + 10 * s, pv.yMax - 46 * s, pv.width - 20 * s, 34 * s), "CHARACTER SKINS", PanelBlue, true, ButtonSmall))
             {

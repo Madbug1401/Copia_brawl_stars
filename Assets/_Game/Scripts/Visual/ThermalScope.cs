@@ -22,8 +22,8 @@ namespace FPSLAN
         /// <summary>Modo térmico escolhido (fica guardado entre partidas).</summary>
         public static bool Enabled
         {
-            get => PlayerPrefs.GetInt(Key, 0) == 1;
-            set => PlayerPrefs.SetInt(Key, value ? 1 : 0);
+            get => Prefs.GetInt(Key, 0) == 1;
+            set => Prefs.SetInt(Key, value ? 1 : 0);
         }
 
         /// <summary>A câmara local está agora em visão térmica (a mirar com o modo ligado).</summary>

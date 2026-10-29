@@ -75,31 +75,31 @@ namespace FPSLAN
             if (s_Migrated) return;
             s_Migrated = true;
             const string versionKey = PreferencePrefix + "layout";
-            if (PlayerPrefs.GetInt(versionKey, 1) >= LayoutVersion) return;
-            if (PlayerPrefs.HasKey(Key(GameAction.Melee)) && PlayerPrefs.GetInt(Key(GameAction.Melee)) == (int)KeyCode.Q)
-                PlayerPrefs.DeleteKey(Key(GameAction.Melee));
-            if (PlayerPrefs.HasKey(Key(GameAction.Super)) && PlayerPrefs.GetInt(Key(GameAction.Super)) == (int)KeyCode.E)
-                PlayerPrefs.DeleteKey(Key(GameAction.Super));
+            if (Prefs.GetInt(versionKey, 1) >= LayoutVersion) return;
+            if (Prefs.HasKey(Key(GameAction.Melee)) && Prefs.GetInt(Key(GameAction.Melee)) == (int)KeyCode.Q)
+                Prefs.DeleteKey(Key(GameAction.Melee));
+            if (Prefs.HasKey(Key(GameAction.Super)) && Prefs.GetInt(Key(GameAction.Super)) == (int)KeyCode.E)
+                Prefs.DeleteKey(Key(GameAction.Super));
             // Uma tecla escolhida à mão que agora é a de outra ação por defeito: a nova ação fica sem tecla até ser escolhida
             foreach (GameAction action in System.Enum.GetValues(typeof(GameAction)))
             {
-                if (PlayerPrefs.HasKey(Key(action))) continue;
+                if (Prefs.HasKey(Key(action))) continue;
                 var def = DefaultBinding(action);
                 foreach (GameAction other in System.Enum.GetValues(typeof(GameAction)))
-                    if (other != action && PlayerPrefs.HasKey(Key(other)) && PlayerPrefs.GetInt(Key(other)) == (int)def)
-                        PlayerPrefs.SetInt(Key(action), (int)KeyCode.None);
+                    if (other != action && Prefs.HasKey(Key(other)) && Prefs.GetInt(Key(other)) == (int)def)
+                        Prefs.SetInt(Key(action), (int)KeyCode.None);
             }
-            PlayerPrefs.SetInt(versionKey, LayoutVersion);
-            PlayerPrefs.Save();
+            Prefs.SetInt(versionKey, LayoutVersion);
+            Prefs.Save();
         }
 
         public static KeyCode GetBinding(GameAction action)
         {
             MigrateLayout();
             var fallback = DefaultBinding(action);
-            var stored = PlayerPrefs.GetInt(Key(action), (int)fallback);
+            var stored = Prefs.GetInt(Key(action), (int)fallback);
             var key = (KeyCode)stored;
-            if (key == KeyCode.None && PlayerPrefs.HasKey(Key(action))) return KeyCode.None; // sem tecla (migração)
+            if (key == KeyCode.None && Prefs.HasKey(Key(action))) return KeyCode.None; // sem tecla (migração)
             return key != KeyCode.None && IsDefinedKey(key) ? key : fallback;
         }
 
@@ -115,16 +115,16 @@ namespace FPSLAN
                 if (other != action && GetBinding(other) == key)
                     return false;
 
-            PlayerPrefs.SetInt(Key(action), (int)key);
-            PlayerPrefs.Save();
+            Prefs.SetInt(Key(action), (int)key);
+            Prefs.Save();
             return true;
         }
 
         public static void ResetBindings()
         {
             foreach (GameAction action in System.Enum.GetValues(typeof(GameAction)))
-                PlayerPrefs.DeleteKey(Key(action));
-            PlayerPrefs.Save();
+                Prefs.DeleteKey(Key(action));
+            Prefs.Save();
         }
 
         // teclado/rato ou comando PlayStation (GamepadInput)
@@ -132,7 +132,7 @@ namespace FPSLAN
         public static bool WasPressedThisFrame(GameAction action) { var k = GetBinding(action); return (k != KeyCode.None && ReadKeyPressedThisFrame(k)) || GamepadInput.ActionPressed(action); }
         public static bool WasPressedThisFrame(KeyCode key) => ReadKeyPressedThisFrame(key);
         public static bool IsHeldKey(KeyCode key) => IsHeld(key);
-        public static bool HasCustomBinding(GameAction action) => PlayerPrefs.HasKey(Key(action));
+        public static bool HasCustomBinding(GameAction action) => Prefs.HasKey(Key(action));
 
         public static string BindingLabel(GameAction action)
         {

@@ -50,8 +50,8 @@ Quem já escolheu um nível não é afetado.
 - **Arbustos procedurais** (`LeafBush`): ~30 mil triângulos cada e projetam sombra (365 mil na Cidade Velha).
   Em jogo têm LOD: de perto a malha completa (idêntica), mais longe uma malha com 38% dos triângulos; a troca segue o
   `lodBias` de cada nível (Ultra ≈ 47 m, High ≈ 23 m, Low ≈ 9 m). Medido: Low +2,9% FPS, High +4% FPS e p95 −9%.
-- **CPU**: a interface é toda IMGUI (`OnGUI`), o maior custo de CPU e de lixo de memória que resta (~6 KB e ~135
-  alocações por frame no jogo). O GC é incremental e o heap pequeno (~4 MB), por isso não causa picos visíveis.
+- **CPU**: a interface é toda IMGUI (`OnGUI`), o maior custo de CPU e de lixo de memória que resta (~1,5 ms, ~6 KB e
+  ~135 alocações por frame no jogo; também ~95 das ~195 SetPass calls por frame em Low). O GC é incremental e o heap pequeno (~4 MB), por isso não causa picos visíveis.
 - **Criação de objetos em combate**: os pools de projéteis e efeitos enchem-se nas primeiras utilizações (~9 ms no total,
   espalhados pelos primeiros tiros). Depois disso, 2 em 2000 frames criam um componente (0,12 ms): sem fugas.
 
@@ -64,6 +64,12 @@ Quem já escolheu um nível não é afetado.
 - Fontes de som da lava em pausa quando inaudíveis (custo dos loops de ambiente −54%).
 - Pacote Sentis (não usado) removido: build 366 → 324 MB, avisos de build 493 → 2.
 - LOD dos arbustos (ver acima).
+- Preferências em cache (`Core/Prefs.cs`): cada `PlayerPrefs.GetInt`/`HasKey` ia ao registo do Windows (~16 µs) e o input,
+  o HUD e as definições liam teclas e opções ~30 vezes por frame. Ler uma tecla passou de 19 µs para 0,12 µs;
+  no jogo (build de desenvolvimento, Low) `PlayerMotor` 2,29 → 0,56 ms, `PlayerCombat` 1,65 → <0,1 ms,
+  HUD 1,86 → 1,46 ms por frame: +16% FPS. Todo o código do jogo usa `Prefs` em vez de `PlayerPrefs`.
+- Imagens do menu e da intro (sem compressão) libertadas quando deixam de ser precisas: a intro ao terminar, as do
+  menu ao entrar numa partida (os retratos do HUD ficam); no regresso ao menu voltam a carregar-se.
 
 ## Ideias medidas mas não aplicadas
 
