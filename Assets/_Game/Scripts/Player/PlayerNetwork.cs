@@ -170,6 +170,7 @@ namespace FPSLAN
             Loadout.OnValueChanged -= OnLoadoutChanged;
             if (IsOwner && !IsBot && GameExperience.Current != null) GameExperience.Current.ProfileChanged -= OnLocalProfileChanged;
             if (IsServer) MatchStatsTracker.ServerForget(this);
+            ShutdownVoice();
             All.Remove(this);
             if (Local == this) Local = null;
         }
@@ -207,6 +208,7 @@ namespace FPSLAN
         {
             TickPetFood();
             TickSpray();
+            TickVoice();
             if (IsSpawned && IsServer) ServerSamplePing();
             if (IsSpawned && IsOwner && !IsServer && !IsBot && Time.unscaledTimeAsDouble >= m_NextPingSend)
             {

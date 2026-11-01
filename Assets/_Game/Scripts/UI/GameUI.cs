@@ -980,6 +980,7 @@ namespace FPSLAN
                 bool teamMode = MatchManager.Instance != null && MatchManager.IsTeamMode(MatchManager.Instance.Mode.Value);
                 if (teamMode) Panel(nameRect, new Color(0.015f, 0.035f, 0.065f, 0.88f));
                 Outlined(nameRect, label, m_OverheadName, teamMode ? (mate ? TeamPresentation.Ally : TeamPresentation.Enemy) : Color.Lerp(p.Brawler.Tint, Color.white, 0.4f), 1.2f);
+                if (p.IsSpeaking) DrawSpeakingDot(new Vector2(nameRect.center.x, nameRect.y - 9 * k), 8 * k);
 
                 if (p.Combat.SuperReady)
                 {
@@ -1045,6 +1046,7 @@ namespace FPSLAN
             DrawHudFeed(s);
             DrawHudNetwork(s);
             DrawHudEmotes(me, s);
+            DrawHudVoice(me, s);
             HudLabel(new Rect(22 * s, 16 * s, 360 * s, 22 * s),
                 GameInputSettings.BindingLabel(GameAction.Scoreboard) + " · SCOREBOARD    " +
                 GameInputSettings.BindingLabel(GameAction.Pause) + " · MENU", m_HudSmall, new Color(1, 1, 1, 0.65f));
@@ -1438,6 +1440,7 @@ namespace FPSLAN
                 case GameAction.ThermalScope: return "Thermal scope (Lince, while aiming)";
                 case GameAction.LeanLeft: return "Lean left";
                 case GameAction.LeanRight: return "Lean right";
+                case GameAction.PushToTalk: return "Voice chat (hold to talk)";
                 default: return action.ToString();
             }
         }
@@ -1508,7 +1511,7 @@ namespace FPSLAN
                 GameAction.MoveForward, GameAction.MoveBackward, GameAction.MoveLeft, GameAction.MoveRight,
                 GameAction.Fire, GameAction.Melee, GameAction.Super, GameAction.Jump, GameAction.Sprint,
                 GameAction.Scoreboard, GameAction.Pause, GameAction.Aim, GameAction.ThermalScope, GameAction.Interact, GameAction.FeedPet, GameAction.Emote, GameAction.Crouch,
-                GameAction.LeanLeft, GameAction.LeanRight,
+                GameAction.LeanLeft, GameAction.LeanRight, GameAction.PushToTalk,
             };
             foreach (var action in actions)
             {
@@ -1769,6 +1772,51 @@ namespace FPSLAN
             GUILayout.Label("Changes apply immediately and are saved on this device.", m_Tiny);
             if (LayoutButton("RESET VOLUME", new Color(0.4f, 0.46f, 0.6f), GUILayout.Height(38f * s)))
                 GameSession.MasterVolume = 1f;
+
+            GUILayout.Space(18f * s);
+            GUILayout.Label("PROXIMITY VOICE CHAT", m_Small);
+            var vmode = GameSession.VoiceMode;
+            GUILayout.BeginHorizontal();
+            if (LayoutButton("PUSH TO TALK", vmode == VoiceMode.PushToTalk ? PanelBlue : new Color(0.22f, 0.24f, 0.34f), GUILayout.Height(38f * s)))
+                GameSession.VoiceMode = VoiceMode.PushToTalk;
+            if (LayoutButton("AUTOMATIC", vmode == VoiceMode.Automatic ? PanelBlue : new Color(0.22f, 0.24f, 0.34f), GUILayout.Height(38f * s)))
+                GameSession.VoiceMode = VoiceMode.Automatic;
+            if (LayoutButton("OFF", vmode == VoiceMode.Off ? PanelBlue : new Color(0.22f, 0.24f, 0.34f), GUILayout.Height(38f * s)))
+                GameSession.VoiceMode = VoiceMode.Off;
+            GUILayout.EndHorizontal();
+            vmode = GameSession.VoiceMode;
+            if (vmode == VoiceMode.PushToTalk)
+                GUILayout.Label("Hold [" + GameInputSettings.BindingLabel(GameAction.PushToTalk) + "] to talk.", m_Tiny);
+            else if (vmode == VoiceMode.Automatic)
+            {
+                GUILayout.Label("Transmits automatically when you speak. Sensitivity: " + Mathf.RoundToInt(GameSession.VoiceSensitivity * 100f) + "%", m_Label);
+                float sens = GUILayout.HorizontalSlider(GameSession.VoiceSensitivity, 0f, 1f);
+                if (!Mathf.Approximately(sens, GameSession.VoiceSensitivity)) GameSession.VoiceSensitivity = sens;
+                if (VoiceMic.IsRecording)
+                {
+                    // medidor: barra = nível atual do micro, traço = limiar de ativação
+                    var bar = GUILayoutUtility.GetRect(10f, 12f * s, GUILayout.ExpandWidth(true));
+                    Panel(bar, new Color(0f, 0f, 0f, 0.5f));
+                    float scale = 1f / 0.12f;
+                    bool over = VoiceMic.Rms >= GameSession.VoiceActivationThreshold;
+                    Panel(new Rect(bar.x, bar.y, bar.width * Mathf.Clamp01(VoiceMic.Rms * scale), bar.height), over ? new Color(0.35f, 1f, 0.5f) : new Color(0.6f, 0.65f, 0.75f));
+                    float tx = bar.x + bar.width * Mathf.Clamp01(GameSession.VoiceActivationThreshold * scale);
+                    Panel(new Rect(tx - 1f, bar.y - 2f, 2f, bar.height + 4f), Color.white);
+                    GUILayout.Label("Speak normally: the bar should pass the white line only when you talk.", m_Tiny);
+                }
+                else GUILayout.Label("Join a match to see the microphone meter.", m_Tiny);
+            }
+            else GUILayout.Label("Voice chat is off: you don't transmit and don't hear other players.", m_Tiny);
+
+            if (vmode != VoiceMode.Off)
+            {
+                GUILayout.Label("Voices volume: " + Mathf.RoundToInt(GameSession.VoiceVolume * 100f) + "%", m_Label);
+                float vv = GUILayout.HorizontalSlider(GameSession.VoiceVolume, 0f, 1f);
+                if (!Mathf.Approximately(vv, GameSession.VoiceVolume)) GameSession.VoiceVolume = vv;
+            }
+            GUILayout.Label("Players hear you up to " + Mathf.RoundToInt(VoicePlayback.MaxDistance) +
+                " m away (allies and enemies). Use headphones to avoid echo.", m_Tiny);
+            GUILayout.Label(VoiceMic.Available ? "Microphone: " + (VoiceMic.DeviceName ?? "default") : "No microphone detected.", m_Tiny);
         }
 
         // ------------------------------------------------------------------ GRAPHICS
@@ -1934,5 +1982,38 @@ namespace FPSLAN
             }
         }
 
+
+        /// <summary>Indicador de voz: "A FALAR" no canto quando transmites, e quem está a falar perto de ti.</summary>
+        void DrawHudVoice(PlayerNetwork me, float s)
+        {
+            if (!GameSession.VoiceEnabled) return;
+            float x = 22 * s, y = Screen.height * 0.42f;
+            if (me.VoiceTransmitting)
+            {
+                var r = new Rect(x, y, 150 * s, 26 * s);
+                Panel(r, new Color(0.02f, 0.05f, 0.1f, 0.78f));
+                DrawSpeakingDot(new Vector2(r.x + 14 * s, r.center.y), 10 * s, VoiceMic.Level);
+                HudLabel(new Rect(r.x + 26 * s, r.y, r.width - 30 * s, r.height), "TALKING", m_HudSmall, Color.white);
+                y += 30 * s;
+            }
+            foreach (var p in PlayerNetwork.All)
+            {
+                if (p == null || p == me || !p.IsSpawned || !p.IsSpeaking) continue;
+                var r = new Rect(x, y, 190 * s, 22 * s);
+                Panel(r, new Color(0.02f, 0.05f, 0.1f, 0.6f));
+                DrawSpeakingDot(new Vector2(r.x + 12 * s, r.center.y), 8 * s);
+                bool mate = MatchManager.AreTeammates(me, p);
+                HudLabel(new Rect(r.x + 24 * s, r.y, r.width - 28 * s, r.height), p.DisplayName, m_HudSmall,
+                    mate ? TeamPresentation.Ally : TeamPresentation.Enemy);
+                y += 25 * s;
+            }
+        }
+
+        void DrawSpeakingDot(Vector2 c, float size, float level = -1f)
+        {
+            float pulse = level >= 0f ? Mathf.Clamp01(level * 3f) : 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 12f);
+            float d = size * (1f + 0.35f * pulse);
+            Tex(new Rect(c.x - d / 2f, c.y - d / 2f, d, d), m_Circle, new Color(0.35f, 1f, 0.5f, 0.75f + 0.25f * pulse));
+        }
     }
 }

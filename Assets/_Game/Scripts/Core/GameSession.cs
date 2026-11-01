@@ -118,6 +118,42 @@ namespace FPSLAN
             }
         }
 
+        const string KeyVoiceEnabled = "fpslan.voice.enabled", KeyVoiceVolume = "fpslan.voice.volume";
+        const string KeyVoiceMode = "fpslan.voice.mode", KeyVoiceSensitivity = "fpslan.voice.sensitivity";
+
+        /// <summary>Modo da voz: carregar para falar, automático (deteta a voz) ou desligado.</summary>
+        public static VoiceMode VoiceMode
+        {
+            get
+            {
+                // versão anterior só tinha ligado/desligado
+                int fallback = Prefs.GetInt(KeyVoiceEnabled, 1) == 0 ? (int)VoiceMode.Off : (int)VoiceMode.PushToTalk;
+                int v = Prefs.GetInt(KeyVoiceMode, fallback);
+                return v >= 0 && v <= 2 ? (VoiceMode)v : VoiceMode.PushToTalk;
+            }
+            set { Prefs.SetInt(KeyVoiceMode, (int)value); Prefs.Save(); }
+        }
+
+        /// <summary>Voz por proximidade ligada (micro + ouvir os outros).</summary>
+        public static bool VoiceEnabled => VoiceMode != VoiceMode.Off;
+
+        /// <summary>Modo automático: 0 = só voz alta, 1 = apanha tudo.</summary>
+        public static float VoiceSensitivity
+        {
+            get => GetClampedFloat(KeyVoiceSensitivity, 0.6f, 0f, 1f);
+            set => Prefs.SetFloat(KeyVoiceSensitivity, Mathf.Clamp01(value));
+        }
+
+        /// <summary>Nível (RMS) a partir do qual o modo automático começa a transmitir.</summary>
+        public static float VoiceActivationThreshold => Mathf.Lerp(0.06f, 0.004f, VoiceSensitivity);
+
+        /// <summary>Volume das vozes dos outros jogadores (0..1).</summary>
+        public static float VoiceVolume
+        {
+            get => GetClampedFloat(KeyVoiceVolume, 1f, 0f, 1f);
+            set => Prefs.SetFloat(KeyVoiceVolume, Mathf.Clamp01(value));
+        }
+
         const string KeyAimToggle = "fpslan.aimToggle";
 
         /// <summary>Mira da Lince (botão direito): falso = manter premido; verdadeiro = carregar para entrar na luneta e outra vez para sair.</summary>

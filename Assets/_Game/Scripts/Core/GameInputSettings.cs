@@ -26,6 +26,7 @@ namespace FPSLAN
         ThermalScope,   // acrescentado no fim (as teclas guardadas usam o nome)
         LeanLeft,       // inclinar (estilo Rainbow Six Siege)
         LeanRight,
+        PushToTalk,     // voz por proximidade (manter premido)
     }
 
     public static class GameInputSettings
@@ -63,7 +64,7 @@ namespace FPSLAN
         static bool IsDefinedKey(KeyCode key) => s_DefinedKeyCodes.Contains((int)key);
 
         /// <summary>Versão do esquema de teclas por defeito (2: Q/E inclinam; corpo-a-corpo em C, Super em X).</summary>
-        const int LayoutVersion = 2;
+        const int LayoutVersion = 3;   // 3: push-to-talk no V
         static bool s_Migrated;
 
         /// <summary>
@@ -166,6 +167,7 @@ namespace FPSLAN
                 case GameAction.ThermalScope: return KeyCode.Mouse2;
                 case GameAction.LeanLeft: return KeyCode.Q;
                 case GameAction.LeanRight: return KeyCode.E;
+                case GameAction.PushToTalk: return KeyCode.V;
                 default: return KeyCode.None;
             }
         }

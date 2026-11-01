@@ -680,33 +680,37 @@ namespace FPSLAN
                 e.Use();
             }
 
+            // As setas ficam por cima dos cartões: o IMGUI dá o clique ao primeiro controlo desenhado, por isso os cartões
+            // ignoram o rato quando ele está sobre uma seta (senão o clique na seta selecionava o mapa por baixo).
+            var leftArrow = new Rect(strip.x - 6 * K, strip.center.y - 22 * K, 36 * K, 44 * K);
+            var rightArrow = new Rect(strip.xMax - 30 * K, strip.center.y - 22 * K, 36 * K, 44 * K);
+            bool showLeft = maxScroll > 1f && m_MMapScrollTarget > 1f;
+            bool showRight = maxScroll > 1f && m_MMapScrollTarget < maxScroll - 1f;
+            bool overArrow = (showLeft && Expand(leftArrow, 4 * K).Contains(e.mousePosition)) ||
+                             (showRight && Expand(rightArrow, 4 * K).Contains(e.mousePosition));
+
             GUI.BeginGroup(strip);
             for (int i = 0; i < s_Maps.Length; i++)
             {
                 var r = new Rect(i * (cardW + gap) - m_MMapScroll, 0, cardW, cardH);
                 if (r.xMax < 0 || r.x > strip.width) continue;
-                if (DrawMapCard(r, i)) SelectMap(i);
+                if (DrawMapCard(r, i, overArrow)) SelectMap(i);
             }
             GUI.EndGroup();
 
-            if (maxScroll > 1f)
-            {
-                if (m_MMapScrollTarget > 1f &&
-                    MenuIconButton(new Rect(strip.x - 6 * K, strip.center.y - 22 * K, 36 * K, 44 * K), "‹", 4100))
-                    m_MMapScrollTarget = Mathf.Max(0f, m_MMapScrollTarget - (cardW + gap));
-                if (m_MMapScrollTarget < maxScroll - 1f &&
-                    MenuIconButton(new Rect(strip.xMax - 30 * K, strip.center.y - 22 * K, 36 * K, 44 * K), "›", 4101))
-                    m_MMapScrollTarget = Mathf.Min(maxScroll, m_MMapScrollTarget + (cardW + gap));
-            }
+            if (showLeft && MenuIconButton(leftArrow, "‹", 4100))
+                m_MMapScrollTarget = Mathf.Max(0f, m_MMapScrollTarget - (cardW + gap));
+            if (showRight && MenuIconButton(rightArrow, "›", 4101))
+                m_MMapScrollTarget = Mathf.Min(maxScroll, m_MMapScrollTarget + (cardW + gap));
         }
 
         /// <summary>Cartão de mapa só com a imagem (sem nome): o jogador descobre a ilha pela aproximação do fundo.</summary>
-        bool DrawMapCard(Rect r, int i)
+        bool DrawMapCard(Rect r, int i, bool blocked = false)
         {
             var m = s_Maps[i];
             var e = Event.current;
             bool sel = m_MMapSel == i;
-            bool hover = GUI.enabled && r.Contains(e.mousePosition);
+            bool hover = GUI.enabled && !blocked && r.Contains(e.mousePosition);
             float h = HoverAnim(4000 + i, hover || sel ? 1f : 0f);
             var frame = Expand(r, -4 * K * (1f - h));
             if (sel) MDraw9(m_MGlow, Expand(frame, 10 * K), Fade(MCyan, 0.45f));
@@ -727,7 +731,7 @@ namespace FPSLAN
                 MText(frame, "COMING SOON", m_MT14, MMuted);
             }
 
-            if (GUI.enabled && PadNav.Hit(r))
+            if (GUI.enabled && !blocked && PadNav.Hit(r))
             {
                 FocusMapIsland(i);   // a aproximação acontece sempre: mostra de que ilha se trata
                 if (MenuCoopSetup && m.key != "santiago") { MenuNotice("First mission: The Pelourinho Heist. More missions are coming later."); m_BgReturnAt = Time.unscaledTime + BgTravelTime + 1.6f; return false; }
