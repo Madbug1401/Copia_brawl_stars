@@ -27,7 +27,9 @@ namespace FPSLAN
 
         enum Mode { Carregar, Mirar, Atirar }
 
-        Transform m_Frame, m_Root, m_Muzzle;
+        Transform m_Frame, m_Root, m_Muzzle, m_BowBone;
+        Vector3 m_RootPos; Quaternion m_RootRot;
+        float m_Aim;
         Camera m_Camera;
         Animation m_Anim;
         AnimationState m_Carregar, m_Mirar, m_Atirar, m_Cur, m_Prev;
@@ -73,6 +75,7 @@ namespace FPSLAN
                     case "CamRef_Frente": camF = t; break;
                     case "CamRef_Cima": camU = t; break;
                     case "Ponta": m_Muzzle = t; break;
+                    case "Arco": if (m_BowBone == null) m_BowBone = t; break;
                 }
             }
             if (cam == null || camF == null || camU == null || m_Muzzle == null) { Debug.LogWarning("[BakedBowArms] Faltam marcadores no FBX."); return false; }
@@ -85,6 +88,7 @@ namespace FPSLAN
             var local = camInFrame.inverse * Matrix4x4.TRS(m_Root.localPosition, m_Root.localRotation, m_Root.localScale);
             m_Root.localPosition = local.GetColumn(3);
             m_Root.localRotation = local.rotation;
+            m_RootPos = m_Root.localPosition; m_RootRot = m_Root.localRotation;
 
             foreach (AnimationState st in m_Anim)
             {
@@ -178,12 +182,42 @@ namespace FPSLAN
         /// <summary>Golpe de faca: os braços com o arco baixam (0..1).</summary>
         public void SetDrop(float k) => m_Drop = Mathf.Clamp01(k);
 
+        /// <summary>A mirar (0..1): o arco fica direito (sem inclinação) e encostado à esquerda da mira.</summary>
+        public void SetAim(float k) => m_Aim = Mathf.Clamp01(k);
+
+        /// <summary>Onde fica o apoio das flechas a mirar (referencial da câmara, m): à esquerda e um pouco abaixo da mira.</summary>
+        public static Vector2 AimRestTarget = new Vector2(-0.07f, -0.02f);
+
+        /// <summary>
+        /// A mirar: roda o conjunto à volta do eixo da câmara para o arco ficar vertical e desloca-o para o apoio das
+        /// flechas ficar ao lado da mira (o arco nunca tapa o centro do ecrã). Feito depois da animação deste frame.
+        /// </summary>
+        void AimPose()
+        {
+            if (m_Root == null) return;
+            m_Root.localPosition = m_RootPos; m_Root.localRotation = m_RootRot;
+            if (m_Aim <= 0f || m_BowBone == null || m_Muzzle == null) return;
+            var a = m_Frame.InverseTransformPoint(m_BowBone.position);
+            var b = m_Frame.InverseTransformPoint(m_Muzzle.position);
+            var up = b - a;
+            if (new Vector2(up.x, up.y).sqrMagnitude < 1e-6f) return;
+            float ang = Mathf.Atan2(up.x, up.y) * Mathf.Rad2Deg;      // inclinação do arco no ecrã (0 = vertical)
+            var q = Quaternion.AngleAxis(ang * m_Aim, Vector3.forward);
+            var pr = q * b;
+            var shift = new Vector3((AimRestTarget.x - pr.x) * m_Aim, (AimRestTarget.y - pr.y) * m_Aim, 0f);
+            m_Root.localPosition = q * m_RootPos + shift;
+            m_Root.localRotation = q * m_RootRot;
+        }
+
+        void LateUpdate() => AimPose();
+
         /// <summary>Avança a animação fora do Play (pré-visualização / testes no editor).</summary>
         public void EditorStep(float dt)
         {
             Step(dt);
             UpdateFov();
             m_Anim.Sample();
+            AimPose();
         }
 
         void Switch(AnimationState next, Mode mode)

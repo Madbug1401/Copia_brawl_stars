@@ -513,7 +513,8 @@ namespace FPSLAN
             if (Style == RigStyle.Bow)
             {
                 // o apoio das flechas vem para o centro do ecrã (arco animado: marcador "Ponta"; arco do jogo: o punho)
-                float x = m_BakedBow != null ? 0.13f : -m_GunLRest.x * 0.8f;
+                if (m_BakedBow != null) return Vector3.zero;              // o próprio BakedBowArms endireita e afasta o arco da mira
+                float x = -m_GunLRest.x * 0.8f;
                 return new Vector3(x, 0.02f, -0.02f);
             }
             if (Style == RigStyle.Shotgun) return Vector3.zero;          // a caçadeira alinha-se sozinha (ShotgunAimRest)
@@ -924,6 +925,7 @@ namespace FPSLAN
 
             // ---------------- a mirar com duas armas: juntam-se ao centro e sobem para a linha dos olhos
             if (m_Baked != null) m_Baked.SetAim(aim);
+            if (m_BakedBow != null) m_BakedBow.SetAim(aim);
             if (aim > 0f && IsDual && m_Baked == null && !(m_SuperMode && m_Minigun != null))
             {
                 if (m_GunR != null) m_GunR.localPosition += new Vector3(-m_GunRRest.x * 0.45f, 0.03f, -0.03f) * aim;
