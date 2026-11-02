@@ -25,6 +25,7 @@ MonoBehaviour:
     - {x: 15, y: 0.49}
     - {x: 18, y: 0.35}
     - {x: 31, y: 0.2}
+    flatDamagePerPellet: 2
     canHeadshot: 0
     headshotMultiplier: 1.5
     headshotDamage: 0

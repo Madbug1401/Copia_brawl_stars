@@ -34,6 +34,13 @@ namespace FPSLAN.Tests
             return total;
         }
 
+        static int PelletTotal(AttackDefinition a, float distance)
+        {
+            float total = 0f;
+            for (int i = 0; i < a.delivery.ShotCount; i++) total += a.effect.PelletDamage(distance, a.Range, false);
+            return Mathf.RoundToInt(total);
+        }
+
         // ------------------------------------------------------------------ nomes e ids
 
         [TestCase("gunslinger", "Ekko")]
@@ -180,7 +187,10 @@ namespace FPSLAN.Tests
             Assert.AreEqual(0.49f, e.DistanceMultiplier(15f, a.Range), 0.001f);
             Assert.AreEqual(0.35f, e.DistanceMultiplier(18f, a.Range), 0.001f);
             Assert.Less(e.DistanceMultiplier(a.Range, a.Range), 0.35f, "continua a descer até ao alcance máximo");
-            Assert.AreEqual(60, ShotTotal(a, 3f), "10 × 6 de perto");
+            Assert.AreEqual(2f, e.flatDamagePerPellet, 0.001f, "+2 por bago (+20 no total) em qualquer distância");
+            Assert.AreEqual(80, PelletTotal(a, 3f), "10 × (6 + 2) de perto");
+            Assert.AreEqual(Mathf.RoundToInt(10 * 6 * e.DistanceMultiplier(20f, a.Range)) + 20, PelletTotal(a, 20f), "+20 aos 20 m");
+            Assert.AreEqual(Mathf.RoundToInt(10 * 6 * e.DistanceMultiplier(31f, a.Range)) + 20, PelletTotal(a, 31f), "+20 no alcance máximo");
         }
 
         [Test]

@@ -994,6 +994,17 @@ namespace FPSLAN
                 GameInputSettings.BindingLabel(GameAction.Pause) + " · MENU", m_HudSmall, new Color(1, 1, 1, 0.65f));
         }
 
+        /// <summary>Raio no ecrã (píxeis) do cone dos bagos da caçadeira, com o campo de visão atual (cresce a mirar).</summary>
+        static float ShotgunSpreadRadiusPixels(BrawlerDefinition b)
+        {
+            float spread = 5.5f;
+            if (b.primary.attack != null && b.primary.attack.delivery is PumpShotgunDelivery pump) spread = pump.spreadDegrees;
+            var cam = Camera.main;
+            float fov = cam != null ? cam.fieldOfView : GameSession.NormalFov;
+            float r = Mathf.Tan(spread * Mathf.Deg2Rad) / Mathf.Tan(Mathf.Max(10f, fov) * 0.5f * Mathf.Deg2Rad) * Screen.height * 0.5f;
+            return Mathf.Clamp(r, 12f, Screen.height * 0.25f);
+        }
+
         void DrawCrosshair(PlayerNetwork me, float cx, float cy, float s)
         {
             float g = 6 * s, l = 9 * s, t = 3 * s;
@@ -1015,6 +1026,15 @@ namespace FPSLAN
                 Fill(new Rect(cx + d * 0.55f, cy - 0.75f * s, d * 0.35f, 1.5f * s), rc);
                 Tex(new Rect(cx - 2f * s, cy - 2f * s, 4 * s, 4 * s), m_Circle, rc);
                 if (armed) Outlined(new Rect(cx - 200, cy - 64 * s, 400, 24 * s), "FATAL SHOT READY · aim for the head", m_TinyCenter, rc, 1.2f);
+            }
+            else if (brawler != null && brawler.firstPerson.rig == RigStyle.Shotgun)
+            {
+                // Riot: mira redonda (esfera) do tamanho do leque dos bagos, com ponto central
+                float d = 2f * ShotgunSpreadRadiusPixels(brawler);
+                Tex(new Rect(cx - d / 2f - 1, cy - d / 2f - 1, d + 2, d + 2), m_Ring, ink);
+                Tex(new Rect(cx - d / 2f, cy - d / 2f, d, d), m_Ring, cc);
+                Tex(new Rect(cx - 3.5f * s, cy - 3.5f * s, 7 * s, 7 * s), m_Circle, ink);
+                Tex(new Rect(cx - 2.5f * s, cy - 2.5f * s, 5 * s, 5 * s), m_Circle, cc);
             }
             else
             {

@@ -516,8 +516,25 @@ namespace FPSLAN
                 float x = m_BakedBow != null ? 0.13f : -m_GunLRest.x * 0.8f;
                 return new Vector3(x, 0.02f, -0.02f);
             }
-            // arma de uma mão (caçadeira, lata, pistola...): ao centro e à altura dos olhos, um pouco mais perto
+            if (Style == RigStyle.Shotgun) return Vector3.zero;          // a caçadeira alinha-se sozinha (ShotgunAimRest)
+            // arma de uma mão (lata, pistola...): ao centro e à altura dos olhos, um pouco mais perto
             return new Vector3(-m_GunRRest.x * 0.92f, 0.075f, -0.05f);
+        }
+
+        /// <summary>Quanto abaixo da linha da mira fica o cano a mirar (m) e quanto a arma se aproxima.</summary>
+        public static float ShotgunAimDrop = 0.045f, ShotgunAimPullBack = 0.05f;
+        Vector3? m_MuzzleLocalR;
+
+        /// <summary>
+        /// Posição da caçadeira a mirar (no espaço do balanço, sem rotação): a boca do cano fica no eixo da câmara,
+        /// <see cref="ShotgunAimDrop"/> abaixo do centro — com a arma direita, o cano aponta para a mira.
+        /// </summary>
+        Vector3 ShotgunAimRest()
+        {
+            if (m_MuzzleLocalR == null)
+                m_MuzzleLocalR = m_WeaponR != null && m_GunR != null ? m_GunR.InverseTransformPoint(m_WeaponR.Muzzle(0)) : new Vector3(0f, 0.03f, 0.5f);
+            var mz = Vector3.Scale(m_MuzzleLocalR.Value, m_GunR != null ? m_GunR.localScale : Vector3.one);
+            return new Vector3(-mz.x, -ShotgunAimDrop - mz.y, m_GunRRest.z - ShotgunAimPullBack);
         }
 
         Transform Holder(string name, Vector3 pos)
@@ -844,8 +861,10 @@ namespace FPSLAN
                     if (m_ModelArms != null && m_ModelArms.drivenWeapon != null) m_ModelArms.kick = m_KickR;   // a arma segue as mãos animadas
                     else
                     {
-                        PoseGun(m_GunR, m_GunRRest, m_KickR, kickBack, kickRot, 0f);
-                        m_GunR.localRotation = m_GunRRot * m_GunR.localRotation;
+                        // a mirar (caçadeira): a arma fica direita e o cano alinhado com a mira, logo abaixo do centro
+                        bool ads = Style == RigStyle.Shotgun && aim > 0f;
+                        PoseGun(m_GunR, ads ? Vector3.Lerp(m_GunRRest, ShotgunAimRest(), aim) : m_GunRRest, m_KickR, kickBack, kickRot, 0f);
+                        m_GunR.localRotation = (ads ? Quaternion.Slerp(m_GunRRot, Quaternion.identity, aim) : m_GunRRot) * m_GunR.localRotation;
                     }
                     if (m_WeaponR != null && m_WeaponR.pump != null)
                     {

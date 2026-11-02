@@ -262,7 +262,7 @@ namespace FPSLAN
                     {
                         var e = ctx.Effect;
                         bool head = e.canHeadshot && CombatMath.IsHeadshot(health, point, origin, dir);
-                        float dmg = e.damage * e.DistanceMultiplier(hit.distance, range) * (head ? e.headshotMultiplier : 1f);
+                        float dmg = e.PelletDamage(hit.distance, range, head);
                         PelletVictim v = null;
                         foreach (var pv in m_PelletVictims) if (pv.health == health) { v = pv; break; }
                         if (v == null) { v = new PelletVictim { health = health }; m_PelletVictims.Add(v); }

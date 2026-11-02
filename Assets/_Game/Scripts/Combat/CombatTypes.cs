@@ -17,6 +17,9 @@ namespace FPSLAN
         [Tooltip("Queda de dano por distância em metros (x = distância, y = multiplicador), por ordem crescente de x. " +
                  "Se tiver pontos, substitui perto/longe: antes do 1.º ponto vale o 1.º y, entre pontos interpola, depois do último vale o último y.")]
         public Vector2[] falloffCurve = new Vector2[0];
+        [Tooltip("Caçadeira: dano somado a cada bago que acerta, depois da queda por distância (não cai com a distância). " +
+                 "Ex.: 2 com 10 bagos = +20 de dano em qualquer distância.")]
+        public float flatDamagePerPellet = 0f;
         public bool canHeadshot = true;
         public float headshotMultiplier = 1.5f;
         [Tooltip("Dano fixo de um headshot (antes da distância). 0 = damage × headshotMultiplier.")]
@@ -109,6 +112,12 @@ namespace FPSLAN
                 return Mathf.RoundToInt(BaseDamageForShot(shotIndex) * dm * headshotMultiplier);
             }
             return Mathf.RoundToInt(BaseDamageForShot(shotIndex) * dm);
+        }
+
+        /// <summary>Dano de um bago de caçadeira (sem arredondar: os bagos somam-se e o total é arredondado).</summary>
+        public float PelletDamage(float distance, float range, bool headshot)
+        {
+            return (damage * DistanceMultiplier(distance, range) + flatDamagePerPellet) * (headshot && canHeadshot ? headshotMultiplier : 1f);
         }
 
         /// <summary>Multiplicador do splash a 'distance' metros do centro da explosão (1 no centro).</summary>
