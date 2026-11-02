@@ -34,7 +34,11 @@ namespace FPSLAN
         Camera m_Camera;
         Transform m_CanL, m_CanR;
         float m_RightDrop, m_Aim;
-        Vector3 m_LBase;
+        Vector3 m_LBase, m_RBase;
+        Quaternion m_LBaseRot, m_RBaseRot;
+        /// <summary>A mirar: braços um pouco para fora e para baixo (m) e distância (m) do ponto para onde viram os bicos.</summary>
+        public static Vector3 AimOutDown = new Vector3(0.025f, -0.035f, 0f);
+        public static float AimTargetDistance = 8f;
 
         enum Mode { Idle, Spray, Shake }
 
@@ -82,7 +86,8 @@ namespace FPSLAN
             m_R = MakeArm(prefab, m_Mirror, "R");
             if (m_L == null || m_R == null) return false;
             m_R.idleOffset = 0.35f;
-            m_LBase = m_L.root.localPosition;   // as duas mãos não respiram exatamente juntas
+            m_LBase = m_L.root.localPosition; m_LBaseRot = m_L.root.localRotation;
+            m_RBase = m_R.root.localPosition; m_RBaseRot = m_R.root.localRotation;   // as duas mãos não respiram exatamente juntas
 
             // material toon do próprio personagem (mesma textura e UV); unhas num toon liso
             Material skin = null;
@@ -214,14 +219,38 @@ namespace FPSLAN
         /// <summary>Golpe de faca: o braço direito baixa (0..1).</summary>
         public void SetRightDrop(float k) => m_RightDrop = Mathf.Clamp01(k);
 
-        /// <summary>A mirar (0..1): as duas latas aproximam-se do centro e sobem um pouco.</summary>
+        /// <summary>
+        /// A mirar (0..1): os braços afastam-se um pouco para os lados e baixam (o centro do ecrã fica livre) e as latas
+        /// rodam para os bicos apontarem para a mira (ver <see cref="AimCans"/>).
+        /// </summary>
         public void SetAim(float k) => m_Aim = Mathf.Clamp01(k);
 
         void PlaceArms()
         {
-            var aim = new Vector3(0.06f, 0.025f, 0f) * m_Aim;
-            if (m_L != null) m_L.root.localPosition = m_LBase + aim;
-            if (m_Mirror != null) m_Mirror.localPosition = new Vector3(0f, -0.35f, -0.08f) * Mathf.SmoothStep(0f, 1f, m_RightDrop) + new Vector3(-aim.x, aim.y, 0f);
+            // o braço direito está dentro do espelho (escala X = -1): "para fora" é +X no espaço dele também
+            var off = new Vector3(-AimOutDown.x, AimOutDown.y, AimOutDown.z) * m_Aim;
+            if (m_L != null) { m_L.root.localPosition = m_LBase + off; m_L.root.localRotation = m_LBaseRot; }
+            if (m_R != null) { m_R.root.localPosition = m_RBase + off; m_R.root.localRotation = m_RBaseRot; }
+            if (m_Mirror != null) m_Mirror.localPosition = new Vector3(0f, -0.35f, -0.08f) * Mathf.SmoothStep(0f, 1f, m_RightDrop);
+        }
+
+        /// <summary>Roda cada braço à volta da sua lata para o jato apontar para o ponto da mira (depois da animação).</summary>
+        void AimCans()
+        {
+            if (m_Aim <= 0f) return;
+            foreach (var a in new[] { m_L, m_R })
+            {
+                if (a == null || a.can == null || a.canFwd == null) continue;
+                var parent = a.root.parent;
+                var c = parent.InverseTransformPoint(a.can.position);
+                var f = parent.InverseTransformPoint(a.canFwd.position) - c;
+                var target = parent.InverseTransformPoint(m_Frame.TransformPoint(new Vector3(0f, 0f, AimTargetDistance)));
+                var d = target - c;
+                if (f.sqrMagnitude < 1e-8f || d.sqrMagnitude < 1e-8f) continue;
+                var q = Quaternion.Slerp(Quaternion.identity, Quaternion.FromToRotation(f, d), m_Aim);
+                a.root.localPosition = c + q * (a.root.localPosition - c);
+                a.root.localRotation = q * a.root.localRotation;
+            }
         }
 
         static void Switch(Arm a, AnimationState next, Mode mode)
@@ -297,6 +326,7 @@ namespace FPSLAN
         {
             // As latas do jogo seguem as mãos (depois da animação deste frame). A rotação é tirada no referencial da
             // câmara sem o achatamento, e o braço direito vem espelhado (a lata continua uma lata normal, não espelhada).
+            AimCans();
             Place(m_CanL, m_L, false);
             Place(m_CanR, m_R, true);
         }
