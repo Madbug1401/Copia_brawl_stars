@@ -20,7 +20,17 @@ BOW = G + "arco/base.fbx"
 ARROW = G + "flecha/base.fbx"
 OUT = os.environ.get("NC_OUT", "/tmp/claude-0/nc/out/")
 
-bpy.ops.wm.read_factory_settings(use_empty=True)
+if os.environ.get("NC_LIVE") == "1":
+    # dentro do Blender aberto (BlenderMCP): limpa a cena sem reiniciar (manter o addon ligado)
+    for _c in (bpy.data.objects, bpy.data.meshes, bpy.data.armatures, bpy.data.materials, bpy.data.images,
+               bpy.data.cameras, bpy.data.lights, bpy.data.actions, bpy.data.worlds, bpy.data.particles, bpy.data.node_groups):
+        for _d in list(_c):
+            try: _c.remove(_d)
+            except Exception: pass
+    for _c in list(bpy.data.collections): bpy.data.collections.remove(_c)
+    bpy.context.scene.timeline_markers.clear()
+else:
+    bpy.ops.wm.read_factory_settings(use_empty=True)
 sc = bpy.context.scene
 sc.render.fps = 30
 
@@ -64,9 +74,128 @@ for _m in body.data.materials:
     if _nmap is not None and _nmap.outputs[0].is_linked and _nmap.inputs["Color"].is_linked:
         _nt.links.new(_nmap.outputs[0], _bp.inputs["Normal"])
     _nt.links.new(_bp.outputs[0], _b.inputs["Normal"])
+# ---------------------------------------------------------------- pele mais realista (v8)
+# 1) tom mais uniforme: a textura do boneco tem sombras pintadas (manchas escuras nos dedos); mistura-se com a cor
+#    média da pele dos braços  2) rubor nas articulações, nós dos dedos e pontas dos dedos (pele mais fina e
+#    vermelha)  3) pregas finas nas articulações  4) translucidez muito leve (luz atravessa as pontas dos dedos)
+SKIN_EVEN = float(os.environ.get("SKEVEN", "0.15"))
+SKIN_SSS = float(os.environ.get("SKSSS", "0.06"))
+_img = None
+for _m in body.data.materials:
+    _t = next((n for n in _m.node_tree.nodes if n.bl_idname == "ShaderNodeTexImage" and n.image), None)
+    if _t: _img = _t.image; break
+_mean = (0.45, 0.25, 0.18)
+if _img is not None:
+    _px = _img.pixels[:]; _w, _h = _img.size
+    _uv = body.data.uv_layers.active.data
+    _acc = [0.0, 0.0, 0.0]; _n = 0
+    for _i in range(0, len(_uv), 7):
+        _u, _v = _uv[_i].uv
+        _x = min(_w - 1, max(0, int((_u % 1.0) * _w))); _y = min(_h - 1, max(0, int((_v % 1.0) * _h)))
+        _k = (_y * _w + _x) * 4
+        for _c in range(3): _acc[_c] += _px[_k + _c]
+        _n += 1
+    if _n: _mean = tuple(a / _n for a in _acc)
+    # os píxeis vêm em sRGB; a cor do nó é linear
+    _mean = tuple(((c + 0.055) / 1.055) ** 2.4 if c > 0.04045 else c / 12.92 for c in _mean)
+print("PELE média", [round(c, 3) for c in _mean])
+# máscara "Rubor" nos vértices: perto das articulações dos dedos (nós) e das pontas
+_joints = []
+_W = arm.matrix_world
+for _side in ("Left", "Right"):
+    for _f in ("Thumb", "Index", "Middle", "Ring", "Pinky"):
+        for _i in (1, 2, 3, 4):
+            _b = arm.data.bones.get(f"smartrig:{_side}Hand{_f}{_i}")
+            if _b: _joints.append((_W @ _b.head_local, 0.011 if _i > 1 else 0.014))
+        _b = arm.data.bones.get(f"smartrig:{_side}Hand{_f}4")
+        if _b: _joints.append((_W @ _b.tail_local, 0.012))
+_att = body.data.attributes.new("Rubor", 'FLOAT', 'POINT')
+_MW = body.matrix_world
+for _v in body.data.vertices:
+    _p = _MW @ _v.co; _r = 0.0
+    for _j, _rad in _joints:
+        _d = (_p - _j).length
+        if _d < _rad * 3: _r = max(_r, math.exp(-(_d / _rad) ** 2))
+    _att.data[_v.index].value = _r
+for _m in body.data.materials:
+    _nt = _m.node_tree; _b = next(n for n in _nt.nodes if n.bl_idname == "ShaderNodeBsdfPrincipled")
+    _bc = _b.inputs["Base Color"].links[0].from_socket if _b.inputs["Base Color"].is_linked else None
+    if _bc is None: continue
+    _even = _nt.nodes.new("ShaderNodeMix"); _even.data_type = 'RGBA'; _even.blend_type = 'MIX'
+    _nt.links.new(_bc, _even.inputs[6]); _even.inputs[7].default_value = (*_mean, 1.0)
+    # só as zonas mais escuras do que a média (sombras pintadas na textura) é que se aproximam da cor média
+    _ml = 0.2126 * _mean[0] + 0.7152 * _mean[1] + 0.0722 * _mean[2]
+    _bw = _nt.nodes.new("ShaderNodeRGBToBW"); _nt.links.new(_bc, _bw.inputs[0])
+    _dk = _nt.nodes.new("ShaderNodeMath"); _dk.operation = 'SUBTRACT'; _dk.inputs[0].default_value = _ml
+    _nt.links.new(_bw.outputs[0], _dk.inputs[1])
+    _dk2 = _nt.nodes.new("ShaderNodeMath"); _dk2.operation = 'MULTIPLY'; _dk2.use_clamp = True
+    _dk2.inputs[1].default_value = 2.2 / max(1e-3, _ml)
+    _nt.links.new(_dk.outputs[0], _dk2.inputs[0])
+    _ev = _nt.nodes.new("ShaderNodeMath"); _ev.operation = 'MULTIPLY_ADD'; _ev.use_clamp = True
+    _ev.inputs[1].default_value = 0.75; _ev.inputs[2].default_value = SKIN_EVEN
+    _nt.links.new(_dk2.outputs[0], _ev.inputs[0]); _nt.links.new(_ev.outputs[0], _even.inputs[0])
+    _at = _nt.nodes.new("ShaderNodeAttribute"); _at.attribute_name = "Rubor"
+    _rf = _nt.nodes.new("ShaderNodeMath"); _rf.operation = 'MULTIPLY'; _rf.inputs[1].default_value = 0.6
+    _nt.links.new(_at.outputs["Fac"], _rf.inputs[0])
+    _red = _nt.nodes.new("ShaderNodeMix"); _red.data_type = 'RGBA'; _red.blend_type = 'MULTIPLY'
+    _nt.links.new(_rf.outputs[0], _red.inputs[0]); _nt.links.new(_even.outputs[2], _red.inputs[6])
+    _red.inputs[7].default_value = (1.0, 0.58, 0.52, 1.0)
+    _nt.links.new(_red.outputs[2], _b.inputs["Base Color"])
+    _b.inputs["Subsurface Weight"].default_value = SKIN_SSS
+    _b.inputs["Subsurface Scale"].default_value = 0.004
+    # pregas nas articulações: ruído fino e alongado só onde há "Rubor"
+    _bpn = next(n for n in _nt.nodes if n.bl_idname == "ShaderNodeBump")
+    _cz = _nt.nodes.new("ShaderNodeTexNoise"); _cz.inputs["Scale"].default_value = 420.0; _cz.inputs["Detail"].default_value = 3.0
+    try: _cz.inputs["Distortion"].default_value = 2.5
+    except Exception: pass
+    _tc2 = _nt.nodes.new("ShaderNodeTexCoord"); _nt.links.new(_tc2.outputs["UV"], _cz.inputs["Vector"])
+    _cm = _nt.nodes.new("ShaderNodeMath"); _cm.operation = 'MULTIPLY'
+    _nt.links.new(_cz.outputs[0], _cm.inputs[0]); _nt.links.new(_at.outputs["Fac"], _cm.inputs[1])
+    _cs = _nt.nodes.new("ShaderNodeMath"); _cs.operation = 'MULTIPLY_ADD'
+    _cs.inputs[1].default_value = 1.6
+    _old = _bpn.inputs["Height"].links[0].from_socket
+    _nt.links.new(_cm.outputs[0], _cs.inputs[0]); _nt.links.new(_old, _cs.inputs[2])
+    _nt.links.new(_cs.outputs[0], _bpn.inputs["Height"])
+    # brilho: palma/pontas um pouco mais brilhantes onde há rubor (pele esticada)
+    _rg = _nt.nodes.new("ShaderNodeMapRange"); _rg.inputs["To Min"].default_value = 0.6; _rg.inputs["To Max"].default_value = 0.48
+    _nt.links.new(_at.outputs["Fac"], _rg.inputs["Value"]); _nt.links.new(_rg.outputs[0], _b.inputs["Roughness"])
+
 sub = body.modifiers.new("Suavizar", 'SUBSURF'); sub.levels = 2; sub.render_levels = 2   # iguais: as unhas estão presas à superfície suavizada
 bpy.ops.object.select_all(action='DESELECT'); body.select_set(True); bpy.context.view_layer.objects.active = body
 bpy.ops.object.shade_smooth()
+
+# ---------------------------------------------------------------- pelos finos nos antebraços (e poucos nas costas da mão)
+ARM_HAIR = int(os.environ.get("HAIR", "2200"))
+if ARM_HAIR > 0:
+    _pg = body.vertex_groups.new(name="Pelos")
+    _fa = {vg.index: vg.name for vg in body.vertex_groups}
+    for _v in body.data.vertices:
+        _w = 0.0
+        for _g in _v.groups:
+            _n = _fa.get(_g.group, "")
+            if _n.endswith("ForeArm"): _w = max(_w, _g.weight)
+            elif _n.endswith("Arm"): _w = max(_w, _g.weight * 0.7)
+            elif _n.endswith("Hand"): _w = max(_w, _g.weight * 0.25)
+        if _w > 0.02: _pg.add([_v.index], _w, 'REPLACE')
+    _ps = body.modifiers.new("Pelos", 'PARTICLE_SYSTEM').particle_system
+    _st = _ps.settings; _st.type = 'HAIR'; _st.count = ARM_HAIR
+    _st.hair_length = float(os.environ.get("HAIRLEN", "0.0025")); _st.use_advanced_hair = True
+    _st.emit_from = 'FACE'; _st.use_emit_random = True
+    _ps.vertex_group_density = "Pelos"; _ps.vertex_group_length = "Pelos"
+    _st.normal_factor = float(os.environ.get("HAIRN", "0.0008")); _st.tangent_factor = float(os.environ.get("HAIRT", "0.0038")); _st.tangent_phase = 0.15   # modo avançado: o comprimento vem destes fatores (m)
+    _st.factor_random = 0.0008; _st.phase_factor_random = 0.6
+    _st.length_random = 0.6
+    try:
+        _st.root_radius = 1.0; _st.tip_radius = 0.0; _st.radius_scale = 0.000022; _st.use_close_tip = True
+    except Exception: pass
+    _st.display_step = 3; _st.render_step = 3
+    _hm = bpy.data.materials.new("NCage_Pelos"); _hm.use_nodes = True
+    _hb = _hm.node_tree.nodes["Principled BSDF"]
+    _hb.inputs["Base Color"].default_value = (0.09, 0.055, 0.04, 1); _hb.inputs["Roughness"].default_value = 0.45
+    try: _hb.inputs["Alpha"].default_value = 0.85
+    except Exception: pass
+    body.data.materials.append(_hm); _st.material = len(body.data.materials)
+    print("pelos", ARM_HAIR, "escala", tuple(round(x,4) for x in body.matrix_world.to_scale()))
 
 # ---------------------------------------------------------------- unhas (moldadas aos dedos e presas ao esqueleto)
 from mathutils import Matrix
@@ -325,13 +454,17 @@ HANDS = {
     "hook":    {"Index": (8, 62, 38), "Middle": (6, 66, 40), "Ring": (12, 64, 38), "Pinky": (60, 75, 50), "Thumb": (30, 40, 30, 35)},
     "open":    {"Index": (-5, 5, 5), "Middle": (-5, 5, 5), "Ring": (0, 8, 5), "Pinky": (5, 10, 8), "Thumb": (-5, 0, 5, 30)},
 }
+GRIP_CURL = float(os.environ.get("GCURL", "1.0"))     # mão do arco: quanto os dedos fecham à volta do punho
+GRIP_THUMB = float(os.environ.get("GTHUMB", "1.0"))
 def set_hand(side, pose_a, pose_b=None, k=0.0):
     A = HANDS[pose_a]; B = HANDS[pose_b] if pose_b else A
+    cs = GRIP_CURL if (side == "Left" and pose_a.startswith("grip")) else 1.0
+    ts = GRIP_THUMB if (side == "Left" and pose_a.startswith("grip")) else 1.0
     for f in ("Index", "Middle", "Ring", "Pinky"):
-        finger(side, f, [a + (b - a) * k for a, b in zip(A[f], B[f])])
+        finger(side, f, [(a + (b - a) * k) * cs for a, b in zip(A[f], B[f])])
     ta = A["Thumb"]; tb = B["Thumb"]
     tv = [a + (b - a) * k for a, b in zip(ta, tb)]
-    thumb(side, tv[:3], tv[3])
+    thumb(side, [x * ts for x in tv[:3]], tv[3])
 
 # ---------------------------------------------------------------- pontos da mão medidos no próprio modelo
 def hand_rel(side, pose, kind):
@@ -382,6 +515,10 @@ POSES = {
 ANCHOR = Vector(tuple(float(x) for x in os.environ.get("ANC", "0.15,-0.20,-0.34").split(",")))
 PALM_DRAW = Vector((float(os.environ.get("PDX", "-0.85")), float(os.environ.get("PDY", "-0.5")), 0.0))   # palma para a cara e um pouco para baixo: os nós dos dedos ficam à vista   # nó da flecha com a corda toda puxada (junto à cara)
 
+GRIP_ROLL = float(os.environ.get("GROLL", "0"))
+GRIP_BOWSPACE = os.environ.get("GBOW", "1") == "1"
+GRIP_FX = float(os.environ.get("GFX", "0.0")); GRIP_FZ = float(os.environ.get("GFZ", "0.0"))
+GRIP_OFF = Vector(tuple(float(x) for x in os.environ.get("GRIPOFF", "0,0,0").split(",")))
 BOW_YAW = float(os.environ.get('BOWYAW', '15'))
 FWDL_X = float(os.environ.get('FWDLX', '0.65'))
 def bow_matrix(grip_c, cant, pitch):
@@ -436,7 +573,18 @@ def sample(f):
     grip_w = BW @ GRIP; rest_w = BW @ REST; nock_rest_w = BW @ NOCK_REST
     # mão esquerda no punho: pulso atrás e à esquerda do punho, palma para a direita (para o arco)
     fwdL = CD((FWDL_X, 0.10, -1.0)); palmL = CD((1.0, 0.0, -FWDL_X * 0.6))
-    s["L"] = wrist_for("L", grip_w, fwdL, palmL, REL_GRIP)
+    if GRIP_BOWSPACE:
+        # mão orientada pelo próprio arco: palma encostada à face lateral do punho, dedos para a frente do arco
+        # (envolvem a frente do punho), ligeiramente para cima
+        B3 = BW.to_3x3()
+        # como numa pistola: palma na face lateral do punho (lado de fora), a parte de trás do punho na "teia" entre o
+        # polegar e o indicador, dedos à volta da frente do punho e pontas na outra face
+        fwdL = (B3 @ Vector((GRIP_FX, -1.0, GRIP_FZ))).normalized()
+        palmL = (B3 @ Vector((-1.0, 0.0, 0.0))).normalized()
+    if GRIP_ROLL: palmL = Matrix.Rotation(math.radians(GRIP_ROLL), 3, fwdL) @ palmL
+    # a mão do arco fica no punho (atrás do apoio da flecha), por fora do arco: deslocamento no espaço do arco
+    s["L"] = wrist_for("L", grip_w + BW.to_3x3() @ GRIP_OFF, fwdL, palmL, REL_GRIP)
+    if GRIP_REL is not None: s["L"] = BW @ GRIP_REL
     # corda: quanto está puxada e onde está o nó
     draw = None
     if "draw" in PA or "draw" in PB:
@@ -537,6 +685,123 @@ def key_obj(o, Mw, f, parent_inv):
 
 pL.parent = root; pR.parent = root
 pL.location = Vector((-0.55, -0.55, 0.05)); pR.location = Vector((0.75, 0.0, 0.75))
+
+# ---------------------------------------------------------------- mão do arco "agarra" o punho (sem atravessar)
+# 1) a pose da mão em relação ao arco é tirada do frame 20 e fica FIXA no arco (o pulso não escorrega no punho);
+# 2) a palma é empurrada para fora do punho até não o atravessar; 3) cada dedo (e o polegar) fecha até tocar no
+# punho e pára aí — os dedos ficam encostados à volta do punho, como numa mão real.
+AUTO_GRIP = os.environ.get("AUTOGRIP", "1") == "1"
+GRIP_REL = None; AUTO_CURL = {}; AUTO_THUMB_SPREAD = 40
+if AUTO_GRIP:
+    from mathutils.bvhtree import BVHTree
+    # cópia só com o esqueleto (sem suavização/pelos): não mexer nos modificadores do corpo (as unhas estão
+    # ligadas à superfície suavizada)
+    _proxy = bpy.data.objects.new("NCage_Proxy", body.data.copy()); sc.collection.objects.link(_proxy)
+    _proxy.matrix_world = body.matrix_world.copy(); _proxy.parent = body.parent; _proxy.matrix_parent_inverse = body.matrix_parent_inverse.copy()
+    _proxy.matrix_world = body.matrix_world.copy()
+    for _vg in body.vertex_groups: _proxy.vertex_groups.new(name=_vg.name)
+    _amd = _proxy.modifiers.new("Esq", 'ARMATURE'); _amd.object = arm
+    _proxy.hide_render = True
+    def _set_target(M):
+        L = RWi @ M; loc, rot, _ = L.decompose()
+        tL.location = loc; tL.rotation_mode = 'QUATERNION'; tL.rotation_quaternion = rot
+    _s20 = sample(20)
+    BW20 = _s20["bow"]
+    # a mão desce no punho (fica por baixo do apoio das flechas)
+    _s20["L"] = Matrix.Translation(BW20.to_3x3() @ Vector((0.0, 0.0, float(os.environ.get("GDZ", "-0.03"))))) @ _s20["L"]
+    bow.matrix_world = BW20
+    _set_target(_s20["L"])
+    GRIP_REL = BW20.inverted() @ _s20["L"]
+    bpy.context.view_layer.update()
+    # punho do arco (sem corda nem cabos: só faces com y local < 0.04 m)
+    _bv = [BW20 @ v.co for v in bow.data.vertices]
+    _bp = [p.vertices[:] for p in bow.data.polygons if all(bow.data.vertices[i].co.y < 0.04 for i in p.vertices)]
+    _bvh = BVHTree.FromPolygons(_bv, _bp)
+    _gn = {g.index: g.name for g in body.vertex_groups}
+    _part = {}
+    for _v in body.data.vertices:
+        if not _v.groups: continue
+        _g = max(_v.groups, key=lambda g: g.weight); _n = _gn[_g.group]
+        if _n.startswith("smartrig:LeftHand") or _n == "smartrig:LeftForeArm":
+            _k = _n.replace("smartrig:LeftHand", "") or "Palma"
+            if _n == "smartrig:LeftForeArm": _k = "Antebraco"
+            elif _k != "Palma": _k = _k[:-1]   # Index1..4 -> Index
+            _part.setdefault(_k, []).append(_v.index)
+    _D = Vector((0.0013, 0.0007, 1.0)).normalized()
+    def _pen(keys):
+        dg = bpy.context.evaluated_depsgraph_get(); ee = _proxy.evaluated_get(dg); em = ee.to_mesh(); MW = _proxy.matrix_world
+        n_in = 0; dmin = 9.0
+        for k in keys:
+            for i in _part.get(k, []):
+                p = MW @ em.vertices[i].co; n = 0; o = p.copy()
+                for _ in range(16):
+                    h = _bvh.ray_cast(o, _D)
+                    if h[0] is None: break
+                    n += 1; o = h[0] + _D * 1e-5
+                q = _bvh.find_nearest(p)
+                if n % 2 == 1: n_in += 1
+                elif q[0] is not None: dmin = min(dmin, q[3])
+        ee.to_mesh_clear(); return n_in, dmin
+    def _curl_all(t, thumb_t):
+        for f in ("Index", "Middle", "Ring", "Pinky"):
+            finger("Left", f, [a * t for a in HANDS["grip"][f]])
+        th = HANDS["grip"]["Thumb"]; thumb("Left", [a * thumb_t for a in th[:3]], th[3])
+    # 2) dedos abertos, empurra a palma para fora (na horizontal do arco, a partir do eixo do punho)
+    _curl_all(0.15, 0.3); bpy.context.view_layer.update()
+    _dg = bpy.context.evaluated_depsgraph_get(); _ee = _proxy.evaluated_get(_dg); _em = _ee.to_mesh()
+    _cen = sum((_proxy.matrix_world @ _em.vertices[i].co for i in _part["Palma"]), Vector()) / len(_part["Palma"])
+    _ee.to_mesh_clear()
+    _cl = BW20.inverted() @ _cen
+    # empurra para trás da palma (sentido contrário àquele para onde a palma está virada)
+    _H3 = _s20["L"].to_3x3().normalized()
+    _px, _pz = PALM_LOCAL["L"]
+    _dir = -(_H3 @ Vector((_px, 0.0, _pz)).normalized())
+    _push = 0.0
+    for _it in range(40):
+        bpy.context.view_layer.update(); _n_in, _dm = _pen(["Palma"])
+        if _n_in == 0 and _dm > 0.002: break
+        _push += 0.002; M = _s20["L"].copy(); M.translation += _dir * _push; _set_target(M)
+    GRIP_REL = BW20.inverted() @ (Matrix.Translation(_dir * _push) @ _s20["L"])
+    print("AUTOGRIP palma empurrada", round(_push, 3), "m", "toque", round(_dm, 4), "centro palma (arco)", [round(x, 3) for x in _cl], "dir", [round(x, 2) for x in (BW20.inverted().to_3x3() @ _dir)])
+    # 3) fecha cada dedo até tocar
+    # polegar: escolhe a abertura (para o lado) que deixa fechar mais sem entrar no punho
+    _th = HANDS["grip"]["Thumb"]; _bt = (0.0, _th[3])
+    for _sp in (40, 55, 70, 25, 85, 10):
+        _best = 0.0
+        for st in range(1, 25):
+            t = st * 0.05; thumb("Left", [a * t for a in _th[:3]], _sp); bpy.context.view_layer.update()
+            n_in, dm = _pen(["Thumb"])
+            if n_in > 0: break
+            _best = t
+            if dm < 0.0015: break
+        if _best > _bt[0]: _bt = (_best, _sp)
+    AUTO_THUMB_SPREAD = _bt[1]
+    thumb("Left", [a * _bt[0] for a in _th[:3]], _bt[1])
+    print("AUTOGRIP polegar", _bt)
+    for f in ("Index", "Middle", "Ring", "Pinky"):
+        best = 0.0
+        for st in range(1, 33):
+            t = st * 0.05
+            if f == "Thumb":
+                th = HANDS["grip"]["Thumb"]; thumb("Left", [a * t for a in th[:3]], th[3])
+            else:
+                finger("Left", f, [a * t for a in HANDS["grip"][f]])
+            bpy.context.view_layer.update()
+            n_in, dm = _pen([f])
+            if st in (1, 4, 8, 12, 16, 20): print("  dedo", f, round(t, 2), n_in, round(dm, 4))
+            if n_in > 0: break
+            best = t
+            if dm < 0.0015: break
+        AUTO_CURL[f] = best
+        if f == "Thumb":
+            th = HANDS["grip"]["Thumb"]; thumb("Left", [a * best for a in th[:3]], th[3])
+        else:
+            finger("Left", f, [a * best for a in HANDS["grip"][f]])
+    AUTO_CURL["Thumb"] = _bt[0]
+    print("AUTOGRIP dedos", {k: round(v, 2) for k, v in AUTO_CURL.items()})
+    bpy.data.objects.remove(_proxy, do_unlink=True)
+    bow.matrix_world = Matrix.Identity(4)
+pL.location = Vector((-0.55, -0.55, 0.05)); pR.location = Vector((0.75, 0.0, 0.75))
 for f in range(START, END + 1):
     s = sample(f)
     key_obj(tL, s["L"], f, RWi); key_obj(tR, s["R"], f, RWi)
@@ -575,7 +840,13 @@ for f in range(START, END + 1):
         for p in ("location", "rotation_quaternion", "scale"): ao.keyframe_insert(p, frame=f)
     # dedos
     lk = ease((f - 84) / 12.0) if f < 111 else 1.0 - ease((f - 118) / 15.0)
-    set_hand("Left", "grip", "gripsoft", lk)       # a mirar, a mão do arco relaxa (o arco "assenta" na palma)
+    if AUTO_CURL:
+        # dedos encostados ao punho (fecho medido); a mirar relaxam um pouco (o arco "assenta" na palma)
+        for _f in ("Index", "Middle", "Ring", "Pinky"):
+            finger("Left", _f, [x * AUTO_CURL[_f] * (1.0 - 0.12 * lk) for x in HANDS["grip"][_f]])
+        _th = HANDS["grip"]["Thumb"]; thumb("Left", [x * AUTO_CURL["Thumb"] * (1.0 - 0.1 * lk) for x in _th[:3]], AUTO_THUMB_SPREAD)
+    else:
+        set_hand("Left", "grip", "gripsoft", lk)       # a mirar, a mão do arco relaxa (o arco "assenta" na palma)
     a, b, k = s["rh"]; set_hand("Right", a, b, k)
     for side in ("Left", "Right"):
         for bnm in [x.name for x in arm.pose.bones if x.name.startswith(f"smartrig:{side}Hand") and x.name != f"smartrig:{side}Hand"]:
@@ -700,3 +971,31 @@ if MODE == "nails":
             pos = CAMW.translation; cc.data.lens = 110
             cc.location = pos; cc.rotation_euler = (c - pos).to_track_quat('-Z', 'Y').to_euler()
             sc.render.filepath = OUT + f"nails_{side}_{f:03d}.png"; bpy.ops.render.render(write_still=True)
+
+if MODE == "ui":
+    # Blender aberto: aspeto final no viewport, vista pela câmara FPS, no frame da mira
+    setup_look()
+    sc.frame_set(int(os.environ.get("NC_FRAME", "100")))
+    for _a in bpy.context.screen.areas:
+        if _a.type == 'VIEW_3D':
+            for _s in _a.spaces:
+                if _s.type == 'VIEW_3D':
+                    _s.shading.type = 'MATERIAL'; _s.region_3d.view_perspective = 'CAMERA'
+    print("UI pronto")
+
+if MODE == "gripview":
+    # verificação da mão do arco: vista de lado (por fora) e de cima
+    setup_look(); sc.eevee.taa_render_samples = 8
+    sc.render.resolution_x = 960; sc.render.resolution_y = 540
+    cc = bpy.data.objects.new("gv", bpy.data.cameras.new("gv")); sc.collection.objects.link(cc); sc.camera = cc
+    cc.data.lens = 40; cc.data.clip_start = 0.005
+    for f in [int(x) for x in ARGS[1].split(",")]:
+        sc.frame_set(f)
+        BWf = bow.matrix_world; g = BWf @ GRIP
+        for nm, d in (("fora", CD((-1.0, 0.25, 0.35))), ("frente", CD((0.15, 0.2, -1.0))), ("fps", None)):
+            if d is None:
+                pos = CAMW.translation; cc.data.lens = 35
+            else:
+                pos = g + d * float(os.environ.get("GVD", "0.8")); cc.data.lens = 45
+            cc.location = pos; cc.rotation_euler = (g - pos).to_track_quat('-Z', 'Y').to_euler()
+            sc.render.filepath = OUT + f"grip_{nm}_{f:03d}.png"; bpy.ops.render.render(write_still=True)
