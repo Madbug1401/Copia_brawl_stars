@@ -27,7 +27,7 @@ namespace FPSLAN
 
         enum Mode { Carregar, Mirar, Atirar }
 
-        Transform m_Frame, m_Root, m_Muzzle, m_BowBone;
+        Transform m_Frame, m_Root, m_Muzzle, m_BowBone, m_ArrowMid;
         Vector3 m_RootPos; Quaternion m_RootRot;
         float m_Aim;
         Camera m_Camera;
@@ -76,6 +76,7 @@ namespace FPSLAN
                     case "CamRef_Cima": camU = t; break;
                     case "Ponta": m_Muzzle = t; break;
                     case "Arco": if (m_BowBone == null) m_BowBone = t; break;
+                    case "Flecha_Meio": if (m_ArrowMid == null) m_ArrowMid = t; break;
                 }
             }
             if (cam == null || camF == null || camU == null || m_Muzzle == null) { Debug.LogWarning("[BakedBowArms] Faltam marcadores no FBX."); return false; }
@@ -185,8 +186,10 @@ namespace FPSLAN
         /// <summary>A mirar (0..1): o arco fica direito (sem inclinação) e encostado à esquerda da mira.</summary>
         public void SetAim(float k) => m_Aim = Mathf.Clamp01(k);
 
-        /// <summary>Onde fica o apoio das flechas a mirar (referencial da câmara, m): à esquerda e um pouco abaixo da mira.</summary>
-        public static Vector2 AimRestTarget = new Vector2(-0.07f, -0.02f);
+        /// <summary>A mirar, a ponta das flechas fica logo por baixo da mira: ângulo (tangente) abaixo do centro do ecrã.</summary>
+        public static float AimTipBelow = 0.06f;
+        /// <summary>Comprimento da flecha (m, no modelo).</summary>
+        public const float ArrowLength = 0.75f;
 
         /// <summary>
         /// A mirar: roda o conjunto à volta do eixo da câmara para o arco ficar vertical e desloca-o para o apoio das
@@ -203,9 +206,17 @@ namespace FPSLAN
             if (new Vector2(up.x, up.y).sqrMagnitude < 1e-6f) return;
             float ang = Mathf.Atan2(up.x, up.y) * Mathf.Rad2Deg;      // inclinação do arco no ecrã (0 = vertical)
             var q = Quaternion.AngleAxis(ang * m_Aim, Vector3.forward);
-            var pr = q * b;
-            var shift = new Vector3((AimRestTarget.x - pr.x) * m_Aim, (AimRestTarget.y - pr.y) * m_Aim, 0f);
-            m_Root.localPosition = q * m_RootPos + shift;
+            // ponta da flecha do meio (nó -> apoio, comprimento da flecha), no referencial sem o achatamento
+            var nock = m_ArrowMid != null ? m_Frame.InverseTransformPoint(m_ArrowMid.position) : b + Vector3.back * 0.5f;
+            var dirA = (b - nock).normalized;
+            var tip = q * (nock + dirA * ArrowLength);
+            // roda o conjunto à volta da câmara para a ponta ficar logo por baixo da mira (rodar mantém o tamanho e a
+            // composição no ecrã; deslocar exigia mover a mão muito); no ecrã, z conta multiplicado por k (achatamento)
+            float k = Mathf.Max(0.05f, m_Frame.localScale.z);
+            var target = new Vector3(0f, -AimTipBelow * k, 1f);
+            var r = Quaternion.Slerp(Quaternion.identity, Quaternion.FromToRotation(tip.normalized, target.normalized), m_Aim);
+            q = r * q;
+            m_Root.localPosition = q * m_RootPos;
             m_Root.localRotation = q * m_RootRot;
         }
 
